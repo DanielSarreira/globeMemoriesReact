@@ -1,0 +1,72 @@
+.sidebar {
+  width: 12%;
+  height: 100vh;
+  background: linear-gradient(135deg, #2e2d2f, #3a3a3c); /* Gradiente no fundo */
+  color: #ecf0f1;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  text-align: center;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2); /* Adiciona sombra para destaque */
+  overflow-y: auto; /* Habilita scroll caso necessário */
+  transition: all 0.3s ease-in-out; /* Suaviza transições */
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #f1c40f; /* Título destacado */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); /* Sombra no título */
+}
+
+.sidebar nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav ul li {
+  margin: 15px 0;
+  animation: fadeIn 0.6s ease-in-out both; /* Animação ao carregar */
+}
+
+.sidebar nav ul li:nth-child(odd) {
+  animation-delay: 0.2s;
+}
+
+.sidebar nav ul li:nth-child(even) {
+  animation-delay: 0.4s;
+}
+
+.sidebar nav ul li a {
+  color: #ecf0f1;
+  text-decoration: none;
+  font-size: 1.2rem;
+  padding: 10px 15px;
+  display: block;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+  background-color: rgba(255, 255, 255, 0.1); /* Fundo leve */
+}
+
+.sidebar nav ul li a:hover {
+  color: #fff;
+  background-color: #3498db; /* Destaque ao passar o mouse */
+  transform: translateX(5px); /* Move ligeiramente para a direita */
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4); /* Adiciona sombra ao hover */
+}
+
+/* Efeito de animação */
+@keyframes fadeIn {
+  0% {
+      opacity: 0;
+      transform: translateY(20px);
+  }
+  100% {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}

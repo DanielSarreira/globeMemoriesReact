@@ -1,0 +1,150 @@
+/* src/styles/TravelDetails.css */
+
+.travel-details-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.travel-info {
+  display: flex;
+  justify-content: space-between; /* Garante que os itens ocupem o espaço igualmente */
+  margin-bottom: 20px;
+}
+
+.highlight-image {
+  flex: 0 0 50%; /* Ocupa 50% do espaço */
+  margin-right: 20px; /* Espaço entre a imagem e as informações */
+}
+
+.highlight-image img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.info {
+  flex: 0 0 50%; /* Ocupa 50% do espaço */
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-top: 20px;
+}
+
+.gallery {
+  margin: 20px 0;
+}
+
+.gallery-images {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.gallery-images img {
+  width: 48%;
+  margin: 1%;
+  border-radius: 10px;
+}
+
+.comments-section {
+  margin: 20px 0;
+}
+
+.comments-section form {
+  display: flex;
+  flex-direction: column;
+}
+
+.comments-section textarea {
+  width: 100%;
+  height: 80px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.recommended-travels {
+  margin-top: 30px;
+}
+
+.carousel {
+  display: flex;
+  align-items: center;
+}
+
+.carousel-button {
+  background-color: #f0f0f0;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 5px;
+  margin: 0 10px;
+  transition: background-color 0.3s;
+}
+
+.carousel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.recommended-card {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  width: 250px;
+  transition: transform 0.2s;
+}
+
+.card img {
+  width: 100%;
+  border-radius: 5px;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+.carousel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recommended-travel-list {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+}
+
+.recommended-travel-item {
+  flex: 1 1 25%; /* Cada viagem ocupa 25% para mostrar 4 por vez */
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.carousel-button {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: black; /* Certifique-se de que a cor padrão é preta */
+}
+
+.carousel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

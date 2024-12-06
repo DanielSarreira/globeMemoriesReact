@@ -1,0 +1,74 @@
+body {
+  font-family: 'Montserrat', sans-serif; /* ou qualquer outra fonte que escolher */
+  text-align: center; /* Para centralizar o texto */
+}
+
+
+
+h1, h2, h3 {
+  font-family: 'Montserrat', sans-serif; /* Ou outra fonte */
+}
+
+p {
+  font-family: 'Open Sans', sans-serif; /* Ou outra fonte */
+}
+
+
+  
+  header, footer {
+    background-color: #1872cc;
+    
+  }
+  
+  nav a {
+    text-decoration: none;
+    color: #007bff;
+  }
+  
+  .travel-card {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px;
+  }
+  
+  .travel-detail {
+    margin: 20px;
+  }
+  
+
+  :root {
+    --primary-color: #1abc9c;
+    --secondary-color: #2980b9;
+    --accent-color: #e67e22;
+    --error-color: #e74c3c;
+    --text-color: #2c3e50;
+    --text-light: #95a5a6;
+    --background-light: #052d36;
+    --background-dark: #34495e;
+  }
+  
+  
+  /* styles.css ou Travels.css */
+body {
+  font-family: 'Montserrat', sans-serif; /* Define a fonte para todo o corpo */
+  text-align: center; /* Centraliza o texto */
+}
+
+/* Estilos para a página de viagens */
+.travels-container {
+  font-family: 'Montserrat', sans-serif; /* Aplique aqui se quiser que apenas esta seção utilize a fonte */
+}
+
+.filters input,
+.filters select,
+.filters button {
+  font-family: 'Montserrat', sans-serif; /* Aplique a fonte nos campos de entrada e botões */
+}
+
+.travel-item h3 {
+  font-family: 'Montserrat', sans-serif; /* Aplique a fonte nos títulos das viagens */
+}
+
+.travel-item p {
+  font-family: 'Montserrat', sans-serif; /* Aplique a mesma fonte nos parágrafos, se desejar */
+}

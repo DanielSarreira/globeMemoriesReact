@@ -1,0 +1,309 @@
+.travels-container {
+  display: flex;
+  flex-direction: column;
+  padding: 50px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+}
+
+.filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-by-country-city {
+  display: flex;
+  gap: 15px;
+}
+
+.filter-by-country-city select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: white;
+  font-size: 14px;
+}
+
+.search-input {
+  padding: 10px;
+  width: 30%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.sort-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-group select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.travels-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.travel-item {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.travel-item:hover {
+  transform: scale(1.01);
+}
+
+.travel-item h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #2980b9;
+  font-weight: 600;
+}
+
+.travel-item p {
+  margin: 5px 0;
+  color: #7f8c8d;
+}
+
+.travel-stars {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.travel-stars span {
+  font-size: 20px;
+}
+
+
+.country-city-filters {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .country-city-filters select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    font-size: 14px;
+  }
+  
+
+  .checkbox-group {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .checkbox-group input[type="checkbox"] {
+    display: none; /* Esconder a checkbox padrão */
+  }
+  
+  .checkbox-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    padding: 10px 15px; /* Adiciona um espaço ao redor do texto */
+    border: 2px solid #2980b9; /* Cor da borda */
+    border-radius: 5px; /* Cantos arredondados */
+    background-color: #fff; /* Cor de fundo */
+    transition: background-color 0.3s ease, border-color 0.3s ease; /* Efeito de transição */
+  }
+  
+  .checkbox-group input[type="checkbox"]:checked + label {
+    background-color: #2980b9; /* Cor de fundo quando selecionado */
+    color: #fff; /* Cor do texto quando selecionado */
+    border-color: #1c6691; /* Cor da borda quando selecionado */
+  }
+  
+  /* Efeito de hover */
+  .checkbox-group label:hover {
+    background-color: #e6f0f3; /* Cor de fundo ao passar o mouse */
+  }
+  
+
+  .filters {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 50px;
+  }
+  
+  .search-input {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  
+  .checkbox-label {
+    margin-right: 10px;
+  }
+  
+  .country-city-filters {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .travels-list {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .travel-item {
+    border: 1px solid #e4e5e9;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .travel-stars {
+    margin: 5px 0;
+  }
+  
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  
+  .checkbox-label {
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .checkbox-label input {
+    margin-right: 5px;
+  }
+  
+  /* Cor da checkbox quando está ativa */
+  .checkbox-label.active {
+    color: #007bff; /* Cor que você preferir */
+    font-weight: bold;
+  }
+  
+  .checkbox-label.active input {
+    accent-color: #007bff; /* Cor do checkbox selecionado */
+  }
+  
+
+  .travels-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+    gap: 20px; /* Espaçamento entre os itens */
+  }
+  
+  .travel-item {
+    background-color: #fff; /* Cor de fundo */
+    border: 1px solid #ddd; /* Bordas */
+    border-radius: 5px; /* Bordas arredondadas */
+    padding: 20px; /* Espaçamento interno */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  }
+  
+  .travel-stars {
+    margin: 10px 0; /* Margem para estrelas */
+  }
+  
+
+  .see-all-button {
+    padding: 10px 15px;
+    background-color: #007BFF; /* Cor de fundo */
+    color: white; /* Cor do texto */
+    border: none;
+    border-radius: 5px; /* Cantos arredondados */
+    cursor: pointer; /* Cursor de ponteiro ao passar o mouse */
+    transition: background-color 0.3s; /* Efeito de transição */
+  }
+  
+  .see-all-button:hover {
+    background-color: #0056b3; /* Cor de fundo ao passar o mouse */
+  }
+  
+
+  .selected-categories {
+    margin-top: 10px;
+  }
+  
+  .selected-category {
+    display: inline-block;
+    margin-right: 10px;
+    background-color: #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 5px;
+  }
+  
+  .selected-category button {
+    margin-left: 5px;
+    background: transparent;
+    border: none;
+    color: #ff0000; /* Cor do botão "X" */
+    cursor: pointer;
+  }
+  
+
+  
+  
+  .travel-content {
+    display: flex; /* Usar flexbox para alinhar a imagem e o texto */
+  }
+  
+  .highlight-image {
+    width: 300px; /* Defina a largura da imagem de destaque */
+    height: auto; /* Manter a proporção da imagem */
+    margin-right: 120px; /* Espaço entre a imagem e o texto */
+  }
+  
+  .travel-text {
+    flex-grow: 1; /* Permitir que o texto preencha o espaço restante */
+    margin-top: 10px;
+  }
+  
+
+  .details-button {
+    display: inline-block;
+    background-color: #4CAF50; /* Cor de fundo */
+    color: white; /* Cor do texto */
+    padding: 10px 20px; /* Espaçamento interno */
+    font-size: 16px; /* Tamanho da fonte */
+    font-weight: bold; /* Negrito */
+    border: none; /* Remover borda padrão */
+    border-radius: 5px; /* Bordas arredondadas */
+    text-decoration: none; /* Remover sublinhado */
+    cursor: pointer; /* Mostrar cursor de mão */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    transition: all 0.3s ease; /* Transição suave */
+  }
+  
+  .details-button:hover {
+    background-color: #45a049; /* Cor de fundo ao passar o mouse */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Sombra mais pronunciada */
+    transform: scale(1.05); /* Efeito de zoom */
+  }
+  
+  .details-button:active {
+    background-color: #3e8e41; /* Cor ao clicar */
+    transform: scale(0.95); /* Leve retração */
+  }
+  
