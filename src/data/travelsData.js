@@ -1,233 +1,132 @@
 const travels = [
   {
     id: 1,
-    name: "Viagem a Itália",
-    user: "Usuário 1",
-    country: "Itália",
-    city: "Roma",
-    price: 135,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição Curta",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
+    name: "Viagem a Lisboa",
+    user: "Daniel",
+    category: ["Aventura", "Natureza"],
+    country: "Portugal",
+    city: "Lisboa",
+    price: 50,
+    days: 1,
+    transport: "Carro, Avião",
+    startDate: "2024-12-01",
+    endDate: "2024-12-03",
     highlightImage: require('../images/highlightImage/praia.jpg'),
     images: [
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg')
+      require('../images/banners/home.jpg')
     ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
+    stars: 4,
+    description: "Uma viagem incrível para explorar as montanhas de Portugal.",
+    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
+    activities: ["Caminhada nas montanhas", "Passeio de barco", "Visita ao Castelo de São Jorge"],
+    accommodations: [
+      { "name": "Hotel XYZ", "type": "Hotel", "priceRange": "€€€", "link": "https://hotelxyz.com" }
+    ],
+    foodRecommendations: [
+      { "dish": "Bacalhau à Brás", "restaurant": "Restaurante ABC", "link": "https://restauranteabc.com" }
+    ],
+    climate: {
+      "averageTemperature": "15°C",
+      "bestTimeToVisit": "Primavera e Outono"
+    },
+    pointsOfInterest: [
+      { "name": "Torre de Belém", "type": "Monumento histórico", "link": "https://torrebelém.com" },
+      { "name": "Parque das Nações", "type": "Parque", "link": "https://parquedasnacoes.com" }
+    ],
+    safety: {
+      "tips": ["Evitar zonas desertas à noite", "Manter objetos de valor no hotel"],
+      "vaccinations": ["Vacina contra hepatite A e B"]
+    },
+    itinerary: [
+      { "day": 1, "activities": ["Chegada a Lisboa", "Visita ao Castelo de São Jorge", "Jantar em restaurante local"] },
+      { "day": 2, "activities": ["Passeio de barco no rio Tejo", "Almoço na Praça do Comércio"] }
+    ],
+    localTransport: [
+      { "type": "Metrô", "station": "Estação Baixa-Chiado", "link": "https://metrolisboa.pt" },
+      { "type": "Ônibus", "line": "Linha 28", "link": "https://carris.pt" }
+    ],
+    languageAndCulture: {
+      "language": "Português",
+      "usefulPhrases": ["Bom dia", "Onde fica a estação de metrô?", "Quanto custa?"]
+    },
+    reviews: [
+      { "user": "João", "rating": 5, "comment": "Viagem fantástica, recomendo muito a Lisboa!" },
+      { "user": "Maria", "rating": 4, "comment": "Excelente cidade, mas um pouco cara." }
+    ]
   },
+  
   
   {
     id: 2,
-    name: "Viagem A Espanha 2",
-    user: "Usuário 1",
+    name: "Viagem à Montanha",
+    user: "João",
+    category: ["Aventura", "Natureza"],
     country: "Portugal",
-    city: "Lisboa",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
+    city: "Serra da Estrela",
+    price: 200,
+    days: 3,
+    transport: "Carro",
+    startDate: "2024-12-01",
+    endDate: "2024-12-03",
     highlightImage: require('../images/highlightImage/praia.jpg'),
     images: [
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg')
     ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  },
-
-  
+    stars: 4,
+    description: "Uma viagem incrível para explorar as montanhas de Portugal.",
+    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
   },
 
   {
     id: 3,
-    name: "Viagem A Espanha 3",
-    user: "Usuário 1",
-    country: "Espanha",
-    city: "Madrid",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
+    name: "Viagem à Montanha",
+    user: "João",
+    category: ["Aventura", "Natureza"],
+    country: "Portugal",
+    city: "Serra da Estrela",
+    price: 200,
+    days: 3,
+    transport: "Carro",
+    startDate: "2024-12-01",
+    endDate: "2024-12-03",
     highlightImage: require('../images/highlightImage/praia.jpg'),
     images: [
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg')
     ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
+    stars: 4,
+    description: "Uma viagem incrível para explorar as montanhas de Portugal.",
+    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
   },
 
   {
     id: 4,
-    name: "Viagem A Espanha 4",
-    user: "Usuário 1",
-    country: "Espanha",
-    city: "Madrid",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
+    name: "Viagem à Montanha",
+    user: "João",
+    category: ["Aventura", "Natureza"],
+    country: "Portugal",
+    city: "Serra da Estrela",
+    price: 200,
+    days: 3,
+    transport: "Carro",
+    startDate: "2024-12-01",
+    endDate: "2024-12-03",
     highlightImage: require('../images/highlightImage/praia.jpg'),
     images: [
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg')
     ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
-  },
-
-
-  {
-    id: 5,
-    name: "Viagem A Espanha 4",
-    user: "Usuário 1",
-    country: "Espanha",
-    city: "Madrid",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
+    stars: 4,
+    description: "Uma viagem incrível para explorar as montanhas de Portugal.",
     longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
-    highlightImage: require('../images/highlightImage/praia.jpg'),
-    images: [
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg')
-    ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
   },
 
-
-  {
-    id: 6,
-    name: "Viagem A Espanha 4",
-    user: "Usuário 1",
-    country: "Espanha",
-    city: "Madrid",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
-    highlightImage: require('../images/highlightImage/praia.jpg'),
-    images: [
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg')
-    ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
-  },
-
-  {
-    id: 7,
-    name: "Viagem A Espanha 4",
-    user: "Usuário 1",
-    country: "Espanha",
-    city: "Madrid",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
-    highlightImage: require('../images/highlightImage/praia.jpg'),
-    images: [
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg')
-    ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
-  },
-
-  {
-    id: 8,
-    name: "Teste",
-    user: "Usuário 1",
-    country: "Espanha",
-    city: "Madrid",
-    price: 500,
-    stars: 4, // Avaliação em estrelas
-    category: ['Praia', 'Histórico'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
-    highlightImage: require('../images/highlightImage/praia.jpg'),
-    images: [
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg')
-    ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
-  },
-
-  {
-    id: 9,
-    name: "Viagem a Bruxelas",
-    user: "Usuário 1",
-    country: "Alemanha",
-    city: "Bruxelas",
-    price: 10,
-    stars: 1, // Avaliação em estrelas
-    category: ['Ilhas', 'Fotografia'], // Lista de categorias
-    startDate: "2023-01-01",
-    endDate: "2023-01-10",
-    description: "Descrição da viagem A",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências únicas.",
-    highlightImage: require('../images/highlightImage/praia.jpg'),
-    images: [
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg'),
-      require('../images/highlightImage/praia.jpg')
-    ],
-    location: {
-      lat: 38.7223,
-      lng: -9.1393
-  }
-  },
-  
 
 ];
 

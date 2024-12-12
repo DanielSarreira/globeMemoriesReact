@@ -3,8 +3,7 @@ import travels from '../data/travelsData.js';
 import '../styles/Travels.css';
 import { FaStar } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-
-
+import Slider from '@mui/material/Slider';
 
 const Travels = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,15 +11,15 @@ const Travels = () => {
   const [sortOption, setSortOption] = useState('recent');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
-  
-
-  
-  
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [daysRange, setDaysRange] = useState([1, 30]);
+  const [transportFilter, setTransportFilter] = useState('');
 
   const uniqueCountries = [...new Set(travels.map(travel => travel.country))];
   const uniqueCities = selectedCountry
     ? [...new Set(travels.filter(travel => travel.country === selectedCountry).map(travel => travel.city))]
     : [];
+  const uniqueTransportMethods = [...new Set(travels.map(travel => travel.transport))];
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
 
@@ -41,12 +40,21 @@ const Travels = () => {
 
   const handleSortChange = (e) => setSortOption(e.target.value);
 
+  const handlePriceChange = (event, newValue) => setPriceRange(newValue);
+
+  const handleDaysChange = (event, newValue) => setDaysRange(newValue);
+
+  const handleTransportChange = (e) => setTransportFilter(e.target.value);
+
   const handleSeeAll = () => {
     setSearchTerm('');
     setCategoryFilter([]);
     setSelectedCountry('');
     setSelectedCity('');
     setSortOption('recent');
+    setPriceRange([0, 1000]);
+    setDaysRange([1, 30]);
+    setTransportFilter('');
   };
 
   const renderStars = (stars) => (
@@ -61,8 +69,11 @@ const Travels = () => {
       (Array.isArray(travel.category) && categoryFilter.every(category => travel.category.includes(category)));
     const matchesCountry = selectedCountry === '' || travel.country === selectedCountry;
     const matchesCity = selectedCity === '' || travel.city === selectedCity;
+    const matchesPrice = travel.price >= priceRange[0] && travel.price <= priceRange[1];
+    const matchesDays = travel.days >= daysRange[0] && travel.days <= daysRange[1];
+    const matchesTransport = transportFilter === '' || travel.transport === transportFilter;
 
-    return matchesSearch && matchesCategory && matchesCountry && matchesCity;
+    return matchesSearch && matchesCategory && matchesCountry && matchesCity && matchesPrice && matchesDays && matchesTransport;
   })
   .sort((a, b) => {
     if (sortOption === 'recent') {
@@ -82,7 +93,6 @@ const Travels = () => {
   return (
     <div className="travels-container">
       <div className="filters">
-       
         <h1>Categorias:</h1>
         <div className="checkbox-group">
           {[
@@ -95,7 +105,7 @@ const Travels = () => {
             'Praias Paradisíacas', 'Roteiros Personalizados', 'Viagens de Estudo',
             'Histórias e Lendas Locais', 'Aventuras Urbanas', 'Roteiros de Compras',
             'Turismo de Aventura', 'Experiências Gastronômicas', 'Rotas Cênicas', 
-            'Ilhas', 'Turismo de Natureza', 'Road Trips', 'Turismo Religioso'
+            'Ilhas', 'Turismo de Natureza', 'Road Trips', 'Turismo Religioso',
           ].map((category) => (
             <label key={category} className={`checkbox-label ${categoryFilter.includes(category) ? 'active' : ''}`}>
               <input
@@ -145,27 +155,62 @@ const Travels = () => {
             </select>
           )}
         </div>
+        
+        <div className="filter-group">
+          <label>Faixa de Preço:</label>
+          <Slider
+            value={priceRange}
+            onChange={handlePriceChange}
+            valueLabelDisplay="auto"
+            min={0}
+            max={1000}
+          />
+          <p>De: {priceRange[0]}€ até {priceRange[1]}€</p>
+        </div>
+
+        <div className="filter-group2">
+        <label>Número de Dias:</label>
+          <Slider
+            value={daysRange}
+            onChange={handleDaysChange}
+            valueLabelDisplay="auto"
+            min={1}
+            max={30}
+          />
+          <p>De {daysRange[0]} a {daysRange[1]} dias</p>
+        </div>
+        
+
+        <div>
+        
+        </div>
+
+        
+
+        <div className="filter-group">
+          <label>Método de Transporte:</label>
+          <select value={transportFilter} onChange={handleTransportChange}>
+            <option value="">Selecionar Transporte</option>
+            {uniqueTransportMethods.map((transport) => (
+              <option key={transport} value={transport}>{transport}</option>
+            ))}
+          </select>
+        </div>
+        
 
         <div className="sort-group">
           <label>Ordenar por:</label>
           <select onChange={handleSortChange} value={sortOption}>
-          <option value="recent">Mais recente</option>
-          <option value="name">Nome (A-Z)</option>
-          <option value="name-desc">Nome (Z-A)</option>
-          <option value="price-asc">Preço (Crescente)</option>
-          <option value="price-desc">Preço (Decrescente)</option>
+            <option value="recent">Mais recente</option>
+            <option value="name">Nome (A-Z)</option>
+            <option value="name-desc">Nome (Z-A)</option>
+            <option value="price-asc">Preço (Crescente)</option>
+            <option value="price-desc">Preço (Decrescente)</option>
           </select>
         </div>
 
-
         <button onClick={handleSeeAll} className="see-all-button">Ver Tudo</button>
       </div>
-      
-
-      
-
-
-
 
       <div className="travels-list">
         {filteredTravels.length > 0 ? (
@@ -179,11 +224,16 @@ const Travels = () => {
                   <p><b>Categorias:</b> {Array.isArray(travel.category) ? travel.category.join(', ') : travel.category}</p>
                   <p><b>País:</b> {travel.country} | <b>Cidade:</b> {travel.city}</p>
                   <p><b>Preço:</b> {travel.price}€</p>
-                  
+                  <p><b>Duração:</b> {travel.days} dias</p>
+                  <p><b>Transporte:</b> {travel.transport}</p>
                   <p><b>Datas:</b> {travel.startDate} a {travel.endDate}</p>
-                  <p>{travel.description}</p>
-                  <Link to={`/travel/${travel.id}`} className="details-button">Mais Informações</Link>
                   <div className="travel-stars">{renderStars(travel.stars)}</div>
+                </div>
+                <div className="travel-button">
+                <Link to={`/travel/${travel.id}`} className="details-button" onClick={() => window.scrollTo(0, 0)} // Rola para o topo ao clicar
+>
+                  Ver Detalhes
+                </Link>
                 </div>
               </div>
             </div>

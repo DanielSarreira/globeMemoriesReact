@@ -1,10 +1,10 @@
 .content {
   margin-left: 12%; /* Altera para 12% para o sidebar */
   padding: 0px 0px; /* Adiciona 30px à esquerda e 20px em cima e embaixo */
-  padding-left: 20px;
+  padding-left: 0px;
   padding-right: 0px;
   background-color: #ecf0f1; /* Cor de fundo do conteúdo */
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  background: linear-gradient(359deg, #ffffff 0%, #012a71 100%);
   min-height: 100vh; /* Garante que o conteúdo ocupa toda a altura da página */
   min-width: 100vh;
   text-align: center;

@@ -76,8 +76,64 @@ const TravelDetails = () => {
           <p><strong>Avaliação da Viagem:</strong> {renderStars(travel.stars)}</p>
           <p><strong>Data de Início:</strong> {travel.startDate}</p>
           <p><strong>Data de Fim:</strong> {travel.endDate}</p>
+          <p><strong>Duração:</strong> {travel.days} dia(s)</p> {/* Duração */}
+          <p><strong>Método de Transporte:</strong> {travel.transport}</p> {/* Transporte */}
           <p><strong>Descrição Curta:</strong> {travel.description}</p>
           <p><strong>Categoria:</strong> {travel.category.join(', ')}</p>
+          <p><strong>Descrição Longa:</strong> {travel.longDescription}</p> {/* Descrição Longa */}
+          <p><strong>Atividades:</strong> {travel.activities.join(', ')}</p> {/* Atividades */}
+          <p><strong>Acomodações:</strong> 
+            {travel.accommodations.map((acc, index) => (
+              <span key={index}>
+                {acc.name} ({acc.type} - {acc.priceRange}) - 
+                <a href={acc.link} target="_blank" rel="noopener noreferrer">Link</a>
+              </span>
+            ))}
+          </p> {/* Acomodações */}
+          <p><strong>Recomendações de Comida:</strong> 
+            {travel.foodRecommendations.map((food, index) => (
+              <span key={index}>
+                {food.dish} - 
+                <a href={food.link} target="_blank" rel="noopener noreferrer">{food.restaurant}</a>
+              </span>
+            ))}
+          </p> {/* Recomendações de comida */}
+          <p><strong>Clima:</strong> Média de {travel.climate.averageTemperature}, melhor época para visitar: {travel.climate.bestTimeToVisit}</p>
+          <p><strong>Pontos de Interesse:</strong> 
+            {travel.pointsOfInterest.map((poi, index) => (
+              <span key={index}>
+                {poi.name} ({poi.type}) - 
+                <a href={poi.link} target="_blank" rel="noopener noreferrer">Link</a>
+              </span>
+            ))}
+          </p> {/* Pontos de Interesse */}
+          <p><strong>Segurança:</strong>
+            Dicas: {travel.safety.tips.join(', ')} | Vacinas: {travel.safety.vaccinations.join(', ')}
+          </p> {/* Segurança */}
+          <p><strong>Itinerário:</strong>
+            {travel.itinerary.map((itinerary, index) => (
+              <div key={index}>
+                <strong>Dia {itinerary.day}:</strong>
+                <ul>
+                  {itinerary.activities.map((activity, idx) => (
+                    <li key={idx}>{activity}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </p> {/* Itinerário */}
+          <p><strong>Transporte Local:</strong> 
+            {travel.localTransport.map((lt, index) => (
+              <span key={index}>
+                {lt.type} ({lt.station || lt.line}) - 
+                <a href={lt.link} target="_blank" rel="noopener noreferrer">Link</a>
+              </span>
+            ))}
+          </p> {/* Transporte Local */}
+          <p><strong>Idioma e Cultura:</strong> 
+            Idioma: {travel.languageAndCulture.language} | 
+            Frases úteis: {travel.languageAndCulture.usefulPhrases.join(', ')}
+          </p> {/* Idioma e Cultura */}
           <button onClick={handleFavoriteToggle}>
             {isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
           </button>

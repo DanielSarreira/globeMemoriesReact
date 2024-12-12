@@ -1,9 +1,9 @@
 .sidebar {
   width: 12%;
   height: 100vh;
-  background: linear-gradient(135deg, #2e2d2f, #3a3a3c); /* Gradiente no fundo */
+  background: linear-gradient(135deg, #0e0e0d, #256ae7);
   color: #ecf0f1;
-  padding: 20px;
+  padding: 0px;
   position: fixed;
   top: 0;
   left: 0;
@@ -13,23 +13,29 @@
   transition: all 0.3s ease-in-out; /* Suaviza transições */
 }
 
+.sidebar p{
+  color: #fff;
+}
+
+
 .sidebar h2 {
   text-align: center;
   margin-bottom: 30px;
-  font-size: 1.8rem;
+  font-size: 0.9rem;
   font-weight: bold;
-  color: #f1c40f; /* Título destacado */
+  color: #fff; /* Título destacado */
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); /* Sombra no título */
 }
 
 .sidebar nav ul {
   list-style-type: none;
-  padding: 0;
+  padding: 15px;
+  padding-top: 20px;
   margin: 0;
 }
 
 .sidebar nav ul li {
-  margin: 15px 0;
+  margin: 25px 0;
   animation: fadeIn 0.6s ease-in-out both; /* Animação ao carregar */
 }
 
@@ -44,17 +50,17 @@
 .sidebar nav ul li a {
   color: #ecf0f1;
   text-decoration: none;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   padding: 10px 15px;
   display: block;
   border-radius: 5px;
   transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.1); /* Fundo leve */
+  background-color: rgba(0, 0, 0, 0.6); /* Fundo leve */
 }
 
 .sidebar nav ul li a:hover {
   color: #fff;
-  background-color: #3498db; /* Destaque ao passar o mouse */
+  background: linear-gradient(135deg, #000000 0%, #000000 100%);
   transform: translateX(5px); /* Move ligeiramente para a direita */
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4); /* Adiciona sombra ao hover */
 }

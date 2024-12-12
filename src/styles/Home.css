@@ -3,13 +3,14 @@
   }
   
   .hero-section {
-    background: url('') no-repeat center center/cover;
-    height: 60vh;
+    background: url('../images/banners/home.jpg') no-repeat center center/cover;
+    height: 70vh;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
     color: white;
+    
   }
   
   .hero-text h1 {

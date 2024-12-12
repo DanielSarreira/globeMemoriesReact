@@ -4,10 +4,10 @@ import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import '../styles/Register.css'; // Ficheiro CSS
 import logo from '../images/register.jpg';
 
-
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
+    username: '', // Adicionado o campo Username
     email: '',
     password: '',
     confirmPassword: '',
@@ -50,6 +50,7 @@ const Register = () => {
         setErrorMessage('');
         setFormData({
           name: '',
+          username: '', // Limpa o campo Username
           email: '',
           password: '',
           confirmPassword: '',
@@ -68,7 +69,6 @@ const Register = () => {
 
   return (
     <div className="register-page">
-      
       <div className="register-right">
         <div className="register-container">
           <h2>Crie a sua conta</h2>
@@ -81,6 +81,18 @@ const Register = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Insira o seu nome"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Username</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Escolha um nome de utilizador"
                 required
               />
             </div>

@@ -43,25 +43,6 @@ const Sidebar = () => {
               <FaUser className="icon" /> O Meu Perfil
             </Link>
           </li>
-          <li onClick={toggleCategories} className="dropdown">
-            <span>
-              <FaPlane className="icon" /> Categorias
-            </span>
-            {showCategories && (
-              <ul className="dropdown-menu">
-                <li><Link to="/travels/adventure">Aventura</Link></li>
-                <li><Link to="/travels/culture">Cultura</Link></li>
-                <li><Link to="/travels/nature">Natureza</Link></li>
-                <li><Link to="/travels/luxury">Luxo</Link></li>
-                <li><Link to="/travels/budget">Econômicas</Link></li>
-              </ul>
-            )}
-          </li>
-          <li>
-            <Link to="/settings">
-              <FaCog className="icon" /> Configurações
-            </Link>
-          </li>
           <li>
             <Link to="/login">
               <FaSignInAlt className="icon" /> Login
@@ -75,6 +56,11 @@ const Sidebar = () => {
           <li>
             <Link to="/logout">
               <FaSignOutAlt className="icon" /> Logout
+            </Link>
+          </li>
+          <li>
+            <Link to="/settings">
+              <FaCog className="icon" /> Configurações
             </Link>
           </li>
         </ul>

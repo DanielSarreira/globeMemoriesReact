@@ -1,309 +1,211 @@
+/* Travels Container */
 .travels-container {
   display: flex;
   flex-direction: column;
-  padding: 50px;
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  gap: 20px;
+  margin: 20px;
 }
 
+p{
+  color: #000;
+}
+label{
+  color: #000;
+}
+h1{
+  color: #000;
+}
+
+.travel-item p {
+  font-family: 'Montserrat', sans-serif;
+  color: #000;
+}
+.travel-item h3 {
+  font-family: 'Montserrat', sans-serif;
+  color: #000;
+}
+
+/* Filters Section */
 .filters {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filter-by-country-city {
-  display: flex;
+  flex-direction: column;
   gap: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.filter-by-country-city select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: white;
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
   font-size: 14px;
+  background: #e9ecef;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.checkbox-label.active {
+  background: #007bff;
+  color: #000;
+}
+
+.selected-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.selected-category {
+  background: #d9534f;
+  color: #000;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.selected-category button {
+  background: transparent;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  margin-left: 5px;
 }
 
 .search-input {
   padding: 10px;
-  width: 30%;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.sort-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.filter-group{
+  width: 50%;
+  display: inline;
+  align-items: center !important;
+}
+
+.filter-group2{
+  width: 50%;
+  display: inline;
+}
+
+
+.country-city-filters select,
+.filter-group select {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.filter-group label {
+  font-weight: bold;
 }
 
 .sort-group select {
-  padding: 5px;
+  padding: 8px;
+  font-size: 14px;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 4px;
+  width: 100%;
 }
 
+.see-all-button {
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.see-all-button:hover {
+  background-color: #0056b3;
+}
+
+/* Travels List */
 .travels-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr); /* Garante 3 itens por linha */
   gap: 20px;
+  margin-top: 20px;
 }
 
+/* Travel Item */
 .travel-item {
-  background-color: #fff;
+  background-color: white;
   border: 1px solid #ddd;
-  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .travel-item:hover {
-  transform: scale(1.01);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
-.travel-item h3 {
+.highlight-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.travel-content {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.travel-text h3 {
+  font-size: 18px;
+  font-weight: bold;
   margin: 0;
-  font-size: 20px;
-  color: #2980b9;
-  font-weight: 600;
+  padding: 10px;
 }
 
-.travel-item p {
-  margin: 5px 0;
-  color: #7f8c8d;
+.travel-text p {
+  font-size: 14px;
+  margin: 0;
+  padding: 3px;
 }
 
+.details-button {
+  text-align: center;
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.details-button:hover {
+  background-color: #0056b3;
+}
+
+/* Stars */
 .travel-stars {
   display: flex;
-  justify-content: center;
   gap: 5px;
-  margin: 10px 0;
+  justify-content: center;
+  padding: 10px;
 }
-
-.travel-stars span {
-  font-size: 20px;
-}
-
-
-.country-city-filters {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .country-city-filters select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: white;
-    font-size: 14px;
-  }
-  
-
-  .checkbox-group {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .checkbox-group input[type="checkbox"] {
-    display: none; /* Esconder a checkbox padrão */
-  }
-  
-  .checkbox-group label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 14px;
-    color: #333;
-    padding: 10px 15px; /* Adiciona um espaço ao redor do texto */
-    border: 2px solid #2980b9; /* Cor da borda */
-    border-radius: 5px; /* Cantos arredondados */
-    background-color: #fff; /* Cor de fundo */
-    transition: background-color 0.3s ease, border-color 0.3s ease; /* Efeito de transição */
-  }
-  
-  .checkbox-group input[type="checkbox"]:checked + label {
-    background-color: #2980b9; /* Cor de fundo quando selecionado */
-    color: #fff; /* Cor do texto quando selecionado */
-    border-color: #1c6691; /* Cor da borda quando selecionado */
-  }
-  
-  /* Efeito de hover */
-  .checkbox-group label:hover {
-    background-color: #e6f0f3; /* Cor de fundo ao passar o mouse */
-  }
-  
-
-  .filters {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 50px;
-  }
-  
-  .search-input {
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 2px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .checkbox-group {
-    display: flex;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-  
-  .checkbox-label {
-    margin-right: 10px;
-  }
-  
-  .country-city-filters {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  
-  .travels-list {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .travel-item {
-    border: 1px solid #e4e5e9;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-  }
-  
-  .travel-stars {
-    margin: 5px 0;
-  }
-  
-  .checkbox-group {
-    display: flex;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-  
-  .checkbox-label {
-    margin-right: 10px;
-    display: flex;
-    align-items: center;
-  }
-  
-  .checkbox-label input {
-    margin-right: 5px;
-  }
-  
-  /* Cor da checkbox quando está ativa */
-  .checkbox-label.active {
-    color: #007bff; /* Cor que você preferir */
-    font-weight: bold;
-  }
-  
-  .checkbox-label.active input {
-    accent-color: #007bff; /* Cor do checkbox selecionado */
-  }
-  
-
-  .travels-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
-    gap: 20px; /* Espaçamento entre os itens */
-  }
-  
-  .travel-item {
-    background-color: #fff; /* Cor de fundo */
-    border: 1px solid #ddd; /* Bordas */
-    border-radius: 5px; /* Bordas arredondadas */
-    padding: 20px; /* Espaçamento interno */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
-  }
-  
-  .travel-stars {
-    margin: 10px 0; /* Margem para estrelas */
-  }
-  
-
-  .see-all-button {
-    padding: 10px 15px;
-    background-color: #007BFF; /* Cor de fundo */
-    color: white; /* Cor do texto */
-    border: none;
-    border-radius: 5px; /* Cantos arredondados */
-    cursor: pointer; /* Cursor de ponteiro ao passar o mouse */
-    transition: background-color 0.3s; /* Efeito de transição */
-  }
-  
-  .see-all-button:hover {
-    background-color: #0056b3; /* Cor de fundo ao passar o mouse */
-  }
-  
-
-  .selected-categories {
-    margin-top: 10px;
-  }
-  
-  .selected-category {
-    display: inline-block;
-    margin-right: 10px;
-    background-color: #e0e0e0;
-    padding: 5px 10px;
-    border-radius: 5px;
-  }
-  
-  .selected-category button {
-    margin-left: 5px;
-    background: transparent;
-    border: none;
-    color: #ff0000; /* Cor do botão "X" */
-    cursor: pointer;
-  }
-  
-
-  
-  
-  .travel-content {
-    display: flex; /* Usar flexbox para alinhar a imagem e o texto */
-  }
-  
-  .highlight-image {
-    width: 300px; /* Defina a largura da imagem de destaque */
-    height: auto; /* Manter a proporção da imagem */
-    margin-right: 120px; /* Espaço entre a imagem e o texto */
-  }
-  
-  .travel-text {
-    flex-grow: 1; /* Permitir que o texto preencha o espaço restante */
-    margin-top: 10px;
-  }
-  
-
-  .details-button {
-    display: inline-block;
-    background-color: #4CAF50; /* Cor de fundo */
-    color: white; /* Cor do texto */
-    padding: 10px 20px; /* Espaçamento interno */
-    font-size: 16px; /* Tamanho da fonte */
-    font-weight: bold; /* Negrito */
-    border: none; /* Remover borda padrão */
-    border-radius: 5px; /* Bordas arredondadas */
-    text-decoration: none; /* Remover sublinhado */
-    cursor: pointer; /* Mostrar cursor de mão */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra sutil */
-    transition: all 0.3s ease; /* Transição suave */
-  }
-  
-  .details-button:hover {
-    background-color: #45a049; /* Cor de fundo ao passar o mouse */
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Sombra mais pronunciada */
-    transform: scale(1.05); /* Efeito de zoom */
-  }
-  
-  .details-button:active {
-    background-color: #3e8e41; /* Cor ao clicar */
-    transform: scale(0.95); /* Leve retração */
-  }
-  
