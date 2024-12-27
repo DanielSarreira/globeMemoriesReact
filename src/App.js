@@ -1,8 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import Sidebar from './components/Sidebar'; // Importa o Sidebar
+import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import Travels from './pages/Travels';
 import TravelDetails from './components/TravelDetails';
@@ -13,19 +13,29 @@ import Register from './pages/Register';
 import CreateTravel from './components/CreateTravel';
 import EditTravel from './components/EditTravel';
 import NotFound from './pages/NotFound';
-import './App.css'; // Importa o CSS do App
+import './App.css';
 
 const App = () => {
+  const location = useLocation();
+
+  // Condição para verificar se a página é de Login ou Registro
+  const isLoginOrRegister = location.pathname === '/login' || location.pathname === '/register';
+
   return (
-    <Router>
-      <Sidebar /> {/* Adiciona o Sidebar */}
-      <div className="content">
+    <div className="app-container">
+      {/* Renderiza o Sidebar apenas se não estiver nas páginas de Login ou Register */}
+      {!isLoginOrRegister && <Sidebar />}
+
+      <div 
+        className="content" 
+        style={{ marginLeft: isLoginOrRegister ? '0' : '200px' }} // Remove a margem esquerda nas páginas de Login e Registro
+      >
         <Header />
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/travels" element={<Travels />} />
-            <Route path="/travel/:id" element={<TravelDetails />} /> {/* Correção aqui */}
+            <Route path="/travel/:id" element={<TravelDetails />} />
             <Route path="/my-travels" element={<MyTravels />} />
             <Route path="/profile" element={<ViewProfile />} />
             <Route path="/login" element={<Login />} />
@@ -37,8 +47,14 @@ const App = () => {
         </main>
         <Footer />
       </div>
-    </Router>
+    </div>
   );
 };
 
-export default App;
+const AppWrapper = () => (
+  <Router>
+    <App />
+  </Router>
+);
+
+export default AppWrapper;

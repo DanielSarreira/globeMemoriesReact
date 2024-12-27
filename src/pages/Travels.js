@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import Slider from '@mui/material/Slider';
 
 const Travels = () => {
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState([]);
   const [sortOption, setSortOption] = useState('recent');
@@ -22,6 +23,7 @@ const Travels = () => {
   const uniqueTransportMethods = [...new Set(travels.map(travel => travel.transport))];
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
+  
 
   const handleCategoryChange = (category) => {
     setCategoryFilter((prev) => 
@@ -45,6 +47,8 @@ const Travels = () => {
   const handleDaysChange = (event, newValue) => setDaysRange(newValue);
 
   const handleTransportChange = (e) => setTransportFilter(e.target.value);
+
+  
 
   const handleSeeAll = () => {
     setSearchTerm('');
@@ -90,10 +94,23 @@ const Travels = () => {
     return 0;
   });
 
+  
+
   return (
     <div className="travels-container">
       <div className="filters">
-        <h1>Categorias:</h1>
+        <h1>Descubra Destinos e Experiências Inesquecíveis</h1>
+
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Pesquisar Viagem..."
+          value={searchTerm}
+          onChange={handleSearch}
+        />
+        
+
+<h3>Categorias:</h3>
         <div className="checkbox-group">
           {[
             'Aventura', 'Cultural', 'Histórico', 'Natureza', 'Praia', 
@@ -119,6 +136,9 @@ const Travels = () => {
           ))}
         </div>
 
+
+        
+
         {categoryFilter.length > 0 && (
           <div className="selected-categories">
             <h4>Categorias Selecionadas:</h4>
@@ -129,14 +149,6 @@ const Travels = () => {
             ))}
           </div>
         )}
-
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Pesquisar..."
-          value={searchTerm}
-          onChange={handleSearch}
-        />
 
         <div className="country-city-filters">
           <select value={selectedCountry} onChange={handleCountryChange}>
