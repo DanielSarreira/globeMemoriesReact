@@ -1,16 +1,11 @@
 import React from 'react';
 import TravelCard from '../components/TravelCard';
-import { FaSearch } from 'react-icons/fa'; // Para adicionar ícones, se necessário
-import '../styles/Home.css'; // Adicione um arquivo de CSS específico para a Home
+import travelsData from '../data/travelsData'; // Importa os dados das viagens
+import '../styles/Home.css';
 
 const Home = () => {
-  // Exemplo de dados de viagens (pode ser obtido de uma API ou banco de dados)
-  const travels = [
-    { id: 1, title: 'Viagem a Paris', description: 'Descubra a Cidade Luz.', category: 'Cidade', imageUrl: '' },
-    { id: 2, title: 'Aventura na Amazônia', description: 'Explore a selva.', category: 'Aventura', imageUrl: '' },
-    
-    { id: 4, title: 'Viagem ao Egito', description: 'Misteriosa Terra dos Faraós.', category: 'História', imageUrl: '' },
-  ];
+  // Ordena as viagens por número de visualizações
+  const sortedTravels = travelsData.sort((a, b) => b.views - a.views);
 
   return (
     <div className="home-container">
@@ -23,39 +18,35 @@ const Home = () => {
         </div>
       </header>
 
-      {/* Categorias de Viagem */}
-      <section className="categories-section">
-        <h2>Categorias Populares</h2>
-        <div className="categories-list">
-          <div className="category-item">Praias</div>
-          <div className="category-item">Montanhas</div>
-          <div className="category-item">Aventura</div>
-          <div className="category-item">Cidades Históricas</div>
-        </div>
+      {/* Sobre a App */}
+      <section className="about-section">
+        <h2>Sobre a Globe Memories</h2>
+        <p>
+          A Globe Memories é uma rede social para viajantes, permitindo que você compartilhe suas aventuras,
+          descubra destinos incríveis e conecte-se com outros exploradores ao redor do mundo.
+        </p>
       </section>
 
-      {/* Viagens em Destaque */}
-      <section className="featured-travels-section">
-        <h2>Viagens em Destaque</h2>
+      {/* Viagens Mais Vistas */}
+      <section className="most-viewed-section">
+        <h2>Viagens Mais Vistas</h2>
         <div className="travel-list">
-          {travels.map(travel => (
+          {sortedTravels.map((travel) => (
             <TravelCard key={travel.id} travel={travel} />
           ))}
         </div>
       </section>
 
-      {/* Depoimentos de Usuários */}
+      {/* Opinião dos Utilizadores */}
       <section className="testimonials-section">
         <h2>O que dizem os nossos utilizadores?</h2>
         <div className="testimonials-list">
-          <div className="testimonial">
-            <p>"Esta plataforma me ajudou a planejar minha viagem dos sonhos para Paris!"</p>
-            <span>- João Silva</span>
-          </div>
-          <div className="testimonial">
-            <p>"Adoro compartilhar minhas viagens e encontrar novas aventuras por aqui!"</p>
-            <span>- Maria Oliveira</span>
-          </div>
+          {travelsData.map((travel) => (
+            <div className="testimonial" key={travel.id}>
+              <p>"{travel.userReview}"</p>
+              <span>- Viagem: {travel.title}</span>
+            </div>
+          ))}
         </div>
       </section>
 

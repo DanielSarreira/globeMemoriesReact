@@ -15,6 +15,7 @@ import EditTravel from './components/EditTravel';
 import AuthContent from './components/AuthContent';
 import NotFound from './pages/NotFound';
 import './App.css';
+import './styles/styles.css';
 
 const App = () => {
   const location = useLocation();

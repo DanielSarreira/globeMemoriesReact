@@ -110,7 +110,7 @@ const Travels = () => {
         />
         
 
-<h3>Categorias:</h3>
+<h2>Categorias:</h2>
         <div className="checkbox-group">
           {[
             'Aventura', 'Cultural', 'Histórico', 'Natureza', 'Praia', 
@@ -168,8 +168,9 @@ const Travels = () => {
           )}
         </div>
         
+        <div class="filtersStyles">
         <div className="filter-group">
-          <label>Faixa de Preço:</label>
+          <label>Preço da Viagem:</label>
           <Slider
             value={priceRange}
             onChange={handlePriceChange}
@@ -179,9 +180,10 @@ const Travels = () => {
           />
           <p>De: {priceRange[0]}€ até {priceRange[1]}€</p>
         </div>
+        
 
         <div className="filter-group2">
-        <label>Número de Dias:</label>
+        <label>Número de Dias da Viagem:</label>
           <Slider
             value={daysRange}
             onChange={handleDaysChange}
@@ -193,12 +195,6 @@ const Travels = () => {
         </div>
         
 
-        <div>
-        
-        </div>
-
-        
-
         <div className="filter-group">
           <label>Método de Transporte:</label>
           <select value={transportFilter} onChange={handleTransportChange}>
@@ -208,7 +204,7 @@ const Travels = () => {
             ))}
           </select>
         </div>
-        
+        </div>
 
         <div className="sort-group">
           <label>Ordenar por:</label>

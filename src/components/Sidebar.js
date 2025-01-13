@@ -17,14 +17,15 @@ const Sidebar = () => {
 
   return (
     <div className="sidebar">
-      <h2>Globe Memories</h2>
+      
       <div className="user-info">
+        <h2>Globe Memories</h2>
         <img
           src="https://via.placeholder.com/100" // Substitua pela URL do avatar do usuário
           alt="User Avatar"
           className="user-avatar"
         />
-        <p>Bem-vindo, Tiago!</p> {/* Personalize com o nome do usuário */}
+        <p>Bem-vindo!</p> {/* Personalize com o nome do usuário */}
       </div>
       <nav>
         <ul>

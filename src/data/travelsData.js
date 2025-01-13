@@ -12,6 +12,7 @@ const travels = [
     startDate: "2024-12-01",
     endDate: "2024-12-03",
     highlightImage: require('../images/highlightImage/praia.jpg'),
+    views:100,
     images: [
       require('../images/highlightImage/praia.jpg'),
       require('../images/highlightImage/praia.jpg'),
@@ -55,6 +56,8 @@ const travels = [
       { "user": "João", "rating": 5, "comment": "Viagem fantástica, recomendo muito a Lisboa!" },
       { "user": "Maria", "rating": 4, "comment": "Excelente cidade, mas um pouco cara." }
     ]
+    
+    
   },
   
   

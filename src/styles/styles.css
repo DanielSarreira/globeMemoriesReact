@@ -1,16 +1,16 @@
 body {
-  font-family: 'Montserrat', sans-serif; /* ou qualquer outra fonte que escolher */
+  font-family: 'Poppins', sans-serif;
   text-align: center; /* Para centralizar o texto */
 }
 
 
 
 h1, h2, h3 {
-  font-family: 'Montserrat', sans-serif; /* Ou outra fonte */
+  font-family: 'Poppins', sans-serif;
 }
 
 p {
-  font-family: 'Open Sans', sans-serif; /* Ou outra fonte */
+  font-family: 'Poppins', sans-serif;
 }
 
 
@@ -50,27 +50,27 @@ p {
   
   /* styles.css ou Travels.css */
 body {
-  font-family: 'Montserrat', sans-serif; /* Define a fonte para todo o corpo */
+  font-family: 'Poppins', sans-serif;
   text-align: center; /* Centraliza o texto */
 }
 
 /* Estilos para a página de viagens */
 .travels-container {
-  font-family: 'Montserrat', sans-serif; /* Aplique aqui se quiser que apenas esta seção utilize a fonte */
+  font-family: 'Poppins', sans-serif;
 }
 
 .filters input,
 .filters select,
 .filters button {
-  font-family: 'Montserrat', sans-serif; /* Aplique a fonte nos campos de entrada e botões */
+  font-family: 'Poppins', sans-serif;
 }
 
 .travel-item h3 {
-  font-family: 'Montserrat', sans-serif; /* Aplique a fonte nos títulos das viagens */
+  font-family: 'Poppins', sans-serif;
 }
 
 .travel-item p {
-  font-family: 'Montserrat', sans-serif; /* Aplique a mesma fonte nos parágrafos, se desejar */
+  font-family: 'Poppins', sans-serif;
 }
 
 
