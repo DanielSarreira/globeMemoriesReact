@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CreateTravel from './components/CreateTravel';
 import EditTravel from './components/EditTravel';
+import AuthContent from './components/AuthContent';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/create-travel" element={<CreateTravel />} />
             <Route path="/edit-travel" element={<EditTravel />} />
+            <Route path="/auth-content" element={<AuthContent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

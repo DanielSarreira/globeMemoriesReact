@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { request, setAuthHeader } from '../axios_helper';
 import { FaHome, FaPlane, FaUser, FaSignInAlt, FaUserPlus, FaCog, FaSignOutAlt, FaList } from 'react-icons/fa';
 import './Sidebar.css'; // Importa o CSS para estilização
 
@@ -8,6 +9,10 @@ const Sidebar = () => {
 
   const toggleCategories = () => {
     setShowCategories(!showCategories);
+  };
+
+  const logout = () => {
+    setAuthHeader(null);
   };
 
   return (
@@ -44,17 +49,7 @@ const Sidebar = () => {
             </Link>
           </li>
           <li>
-            <Link to="/login">
-              <FaSignInAlt className="icon" /> Login
-            </Link>
-          </li>
-          <li>
-            <Link to="/register">
-              <FaUserPlus className="icon" /> Registrar
-            </Link>
-          </li>
-          <li>
-            <Link to="/logout">
+            <Link onClick={logout} to="/login">
               <FaSignOutAlt className="icon" /> Logout
             </Link>
           </li>

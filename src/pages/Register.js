@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { request, setAuthHeader } from '../axios_helper';
 import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import '../styles/Register.css'; // Ficheiro CSS
 import logo from '../images/register.jpg';
@@ -7,7 +8,7 @@ import logo from '../images/register.jpg';
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
-    username: '', // Adicionado o campo Username
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -42,29 +43,31 @@ const Register = () => {
       return;
     }
 
-    // Simulação de envio para o backend
-    setTimeout(() => {
-      const registrationSuccess = Math.random() > 0.5;
-      if (registrationSuccess) {
-        setSuccessMessage('Registo bem-sucedido! Bem-vindo à Globe Memories.');
-        setErrorMessage('');
-        setFormData({
-          name: '',
-          username: '', // Limpa o campo Username
-          email: '',
-          password: '',
-          confirmPassword: '',
-        });
+    onRegister(e, formData.name, formData.email, formData.username, formData.password);
 
-        // Redireciona para a página principal da app (Home.js) após 2 segundos
-        setTimeout(() => {
-          navigate('/profile');
-        }, 2000);
-      } else {
-        setErrorMessage('Erro no registo. Tente novamente.');
-        setSuccessMessage('');
-      }
-    }, 1000);
+  };
+
+  const onRegister = (event, firstName, email, username, password) => {
+    event.preventDefault();
+    request(
+        "POST",
+        "/register",
+        {
+            firstName: firstName,
+            lastName: email,
+            login: username,
+            password: password
+        }).then(
+        (response) => {
+            setAuthHeader(response.data.token);
+            console.log(response);
+            navigate("/");
+        }).catch(
+        (error) => {
+            setAuthHeader(null);
+            console.log(error);
+        }
+    );
   };
 
   return (

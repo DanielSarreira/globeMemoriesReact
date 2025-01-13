@@ -8,7 +8,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null); // Estado do utilizador (null significa não autenticado)
+    const [user, setUser] = useState(); // Estado do utilizador (null significa não autenticado)
 
     // Função de login (exemplo simples)
     const login = (username) => {
