@@ -50,13 +50,13 @@ const Sidebar = () => {
             </Link>
           </li>
           <li>
-            <Link onClick={logout} to="/login">
-              <FaSignOutAlt className="icon" /> Logout
+            <Link to="/HelpSupport">
+              <FaCog className="icon" /> Ajuda e Suporte
             </Link>
           </li>
           <li>
-            <Link to="/settings">
-              <FaCog className="icon" /> Configurações
+            <Link onClick={logout} to="/login">
+              <FaSignOutAlt className="icon" /> Logout
             </Link>
           </li>
         </ul>
