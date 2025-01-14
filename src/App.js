@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CreateTravel from './components/CreateTravel';
 import EditTravel from './components/EditTravel';
+import HelpSupport from './pages/HelpSupport';
 import AuthContent from './components/AuthContent';
 import NotFound from './pages/NotFound';
 import './App.css';
@@ -49,6 +50,7 @@ const App = () => {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
             <Route path="/" element={<ProtectedRoute />}>
               <Route index element={<Home />} />
             </Route>
@@ -76,6 +78,11 @@ const App = () => {
             <Route path="*" element={<ProtectedRoute />}>
               <Route index element={<NotFound />} />
             </Route>
+
+            <Route path="/HelpSupport" element={<ProtectedRoute />}>
+            <Route index element={<HelpSupport />} />
+            </Route>
+
           </Routes>
         </main>
         <Footer />

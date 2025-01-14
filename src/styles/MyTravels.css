@@ -1,113 +1,332 @@
 .my-travels-page {
-    padding: 20px;
-    font-family: 'Montserrat', sans-serif;
-    min-height: 100vh;
-  }
-  
-  .travels-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 colunas fixas */
-    gap: 20px;
-  }
-  
-  .travel-card {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .travel-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  }
-  
-  .travel-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    border-bottom: 2px solid #3498db;
-  }
-  
-  .travel-card h3 {
-    margin: 15px 0;
-    color: #34495e;
-    font-size: 18px;
-    font-weight: bold;
-  }
-  
-  .card-actions {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
-  }
-  
-  .edit-button,
-  .delete-button {
-    border: none;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.3s ease;
-  }
-  
-  .edit-button {
-    background: #3498db;
-    color: white;
-  }
-  
-  .edit-button:hover {
-    background: #2980b9;
-  }
-  
-  .delete-button {
-    background: #e74c3c;
-    color: white;
-  }
-  
-  .delete-button:hover {
-    background: #c0392b;
-  }
-  
-  .add-travel-button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background: #2ecc71;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s ease;
-  }
-  
-  .add-travel-button:hover {
-    background: #27ae60;
-  }
-  
+  font-family: 'Poppins', sans-serif;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-  .travel-card input {
-    width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
+h1 {
+  color: #008cba;
+  text-align: center;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.filter-section label {
+  margin-right: 10px;
+}
+
+.travels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.travel-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s;
+}
+
+.travel-card:hover {
+  transform: scale(1.05);
+}
+
+.travel-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+
+/* Estilo geral do formulário */
+.travel-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Campo de texto */
+.travel-card input[type="text"],
+.travel-card textarea {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.travel-card input[type="text"]:focus,
+.travel-card textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Textarea específico */
+.travel-card textarea {
+  resize: vertical;
+  min-height: 100px;
+  max-height: 300px;
+}
+
+/* Estilo do input de arquivo */
+.travel-card input[type="file"] {
+  display: none;
+}
+
+/* Label para input de arquivo */
+.file-upload-label {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #fff;
+  background-color: #007bff;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.file-upload-label:hover {
+  background-color: #0056b3;
+}
+
+/* Botão de salvar */
+.save-button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.save-button:hover {
+  background-color: #218838;
+}
+
+
+/* Estilos do Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Opacidade maior para o fundo */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Garante que o modal ficará acima de outros elementos */
+  animation: fadeIn 0.3s ease-in-out; /* Animação de entrada */
+}
+
+.modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  animation: slideUp 0.5s ease-out; /* Animação de deslizamento */
+}
+
+/* Animação para o fade-in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  
-  .save-button {
-    background: #2ecc71;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
+  to {
+    opacity: 1;
   }
-  
-  .save-button:hover {
-    background: #27ae60;
+}
+
+/* Animação de deslizamento */
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
   }
-  
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #008cba;
+  font-size: 1.5rem;
+}
+
+.modal-header button.close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.modal-header button.close:hover {
+  color: #333;
+}
+
+/* Estilo do formulário dentro do modal */
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal input[type="text"],
+.modal textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.modal input[type="text"]:focus,
+.modal textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.modal textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.modal .save-button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal .save-button:hover {
+  background-color: #218838;
+}
+
+.modal .cancel-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal .cancel-button:hover {
+  background-color: #c82333;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  margin-top: 10px;
+  border-radius: 6px;
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #fff;
+  background-color: #007bff;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.file-upload-label:hover {
+  background-color: #0056b3;
+}
+
+/* Adicionando opacidade no fundo quando o modal estiver aberto */
+.my-travels-page {
+  position: relative;
+}
+
+.my-travels-page.modal-open {
+  overflow: hidden;
+}
+
+.my-travels-page.modal-open:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.modal .modal-content img {
+  max-width: 90%; /* A largura máxima será 90% do modal */
+  max-height: 400px; /* Altura máxima */
+  display: block; /* Garante que a imagem seja um bloco */
+  margin: 0 auto; /* Centraliza a imagem dentro do modal */
+  border-radius: 10px; /* Adiciona bordas arredondadas */
+  object-fit: contain; /* Ajusta o conteúdo da imagem para caber na área */
+}
