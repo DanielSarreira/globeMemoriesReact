@@ -42,9 +42,13 @@ const App = () => {
       {!isLoginOrRegister && <Sidebar />}
 
       <div 
-        className="content" 
-        style={{ marginLeft: isLoginOrRegister ? '0' : '200px' }} // Remove a margem esquerda nas páginas de Login e Registro
-      >
+  className="content" 
+  style={{
+    width: isLoginOrRegister ? '100%' : 'calc(100% - 200px)',
+    backgroundColor: isLoginOrRegister ? '#F4F7FA' : 'transparent',
+    minHeight: '100vh'
+  }}
+>
         <Header />
         <main>
           <Routes>

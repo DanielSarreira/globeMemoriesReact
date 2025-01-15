@@ -4,8 +4,9 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.8rem 0;
-    background: #1359b9;
+    background: #500000;
     color: white;
+    height: 15px;
   }
   
   .header-logo h1 {

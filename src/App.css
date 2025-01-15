@@ -6,7 +6,6 @@
   width: calc(100% - 200px);
   background-color: #F4F7FA;
   min-height: 100vh;
-  padding-bottom: 50px;
 }
 
 
@@ -21,13 +20,16 @@ header{
 }
 
 footer{
-  background-color: #000; /* Cor do cabeçalho e rodapé */
-  color: #fff; /* Cor do texto */
+  background-color: #500000; /* Cor do cabeçalho e rodapé */
   padding: 30px;
   text-align: center;
   margin-top: 0px;
 }
 
+
+footer p{
+  color: #fff;
+}
 
 button {
   background-color: #000000; /* Cor do botão */
