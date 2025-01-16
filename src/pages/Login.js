@@ -4,20 +4,20 @@ import { request, setAuthHeader } from '../axios_helper';
 import '../styles/Login.css'; // Arquivo de estilo
 
 const Login = () => {
-  const [login, setLogin] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target; // Extract name and value from the event
-    if (name === "login") setLogin(value); // Update login state if name is username
+    if (name === "username") setUsername(value); // Update login state if name is username
     if (name === "password") setPassword(value); // Update password state if name is password
   };
 
   // Submit login
   const onSubmitLogin = (e) => {
-    onLogin(e, login, password);
+    onLogin(e, username, password);
   };
 
   const onLogin = (e, username, password) => {
@@ -26,7 +26,7 @@ const Login = () => {
       "POST",
       "/login",
       {
-        login: username,
+        username: username,
         password: password
       }).then(
       (response) => {
@@ -53,11 +53,11 @@ const Login = () => {
           <div className="form-group">
             <label>Utilizador</label>
             <input
-              type="login" 
-              id="loginName" 
-              name="login" 
+              type="username" 
+              id="username" 
+              name="username" 
               placeholder="Insira o seu utilizador"
-              value={login}
+              value={username}
               onChange={handleInputChange}
               required
             />

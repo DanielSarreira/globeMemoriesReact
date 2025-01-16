@@ -7,7 +7,9 @@ import logo from '../images/register.jpg';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
+    nationality: '',
     username: '',
     email: '',
     password: '',
@@ -43,19 +45,21 @@ const Register = () => {
       return;
     }
 
-    onRegister(e, formData.name, formData.email, formData.username, formData.password);
+    onRegister(e, formData.firstName, formData.lastName, formData.nationality, formData.email, formData.username, formData.password);
 
   };
 
-  const onRegister = (event, firstName, email, username, password) => {
+  const onRegister = (event, firstName, lastName, nationality, email, username, password) => {
     event.preventDefault();
     request(
         "POST",
         "/register",
         {
             firstName: firstName,
-            lastName: email,
-            login: username,
+            lastName: lastName,
+            nationality: nationality,
+            email: email,
+            username: username,
             password: password
         }).then(
         (response) => {
@@ -77,19 +81,43 @@ const Register = () => {
           <h2>Crie a sua conta</h2>
           <form onSubmit={handleSubmit} className="register-form">
             <div className="form-group">
-              <label>Nome</label>
+              <label>Primeiro Nome</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
-                placeholder="Insira o seu nome"
+                placeholder="Insira o seu Nome"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label>Username</label>
+              <label>Último Nome</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Insira o seu Apelido"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Nacionalidade</label>
+              <input
+                type="text"
+                name="nationality"
+                value={formData.nationality}
+                onChange={handleChange}
+                placeholder="Insira a sua Nacionalidade "
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Nome de Utilizador</label>
               <input
                 type="text"
                 name="username"
