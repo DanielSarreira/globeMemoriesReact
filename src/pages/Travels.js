@@ -99,7 +99,8 @@ const Travels = () => {
   return (
     <div className="travels-container">
       <div className="filters">
-        <h1>Descubra Destinos e Experiências Inesquecíveis</h1>
+        
+
 
         <input
           type="text"
@@ -108,9 +109,26 @@ const Travels = () => {
           value={searchTerm}
           onChange={handleSearch}
         />
+
+<div className="country-city-filters">
+          <select value={selectedCountry} onChange={handleCountryChange}>
+            <option value="">Selecionar País</option>
+            {uniqueCountries.map((country) => (
+              <option key={country} value={country}>{country}</option>
+            ))}
+          </select>
+
+          {selectedCountry && (
+            <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
+              <option value="">Selecionar Cidade</option>
+              {uniqueCities.map((city) => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          )}
+        </div>
         
 
-<h2>Categorias:</h2>
         <div className="checkbox-group">
           {[
             'Aventura', 'Cultural', 'Histórico', 'Natureza', 'Praia', 
@@ -150,23 +168,7 @@ const Travels = () => {
           </div>
         )}
 
-        <div className="country-city-filters">
-          <select value={selectedCountry} onChange={handleCountryChange}>
-            <option value="">Selecionar País</option>
-            {uniqueCountries.map((country) => (
-              <option key={country} value={country}>{country}</option>
-            ))}
-          </select>
-
-          {selectedCountry && (
-            <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
-              <option value="">Selecionar Cidade</option>
-              {uniqueCities.map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          )}
-        </div>
+        
         
         <div class="filtersStyles">
         <div className="filter-group">

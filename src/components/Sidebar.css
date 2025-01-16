@@ -2,30 +2,54 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 200px;
   height: 100%;
-  width: 200px;
-  text-align: left;
-  background: #720000;
+  width: 270px;
+  text-align: center;
+  background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
   color: #fff;
   transition: all 0.3s linear;
   z-index: 999;
   overflow-y: auto;
 }
 
-.sidebar p{
-  color: #fff;
+.user-info nav ul li a{
+  padding: 0px;
+  color: #000 !important;
 }
 
-
-.sidebar h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #fff; /* Título destacado */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); /* Sombra no título */
+.user-info,
+nav {
+  position: relative;
+  z-index: 1; /* Mantém o conteúdo acima do vídeo */
+  color: white; /* Ajuste conforme necessário */
 }
+
+.user-avatar {
+  border-radius: 50%;
+  margin: 10px 0;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+nav ul li {
+  margin: 20px 0;
+}
+
+nav ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  margin-right: 15px;
+}
+
 
 .sidebar nav ul {
   list-style-type: none;
@@ -48,28 +72,42 @@
 }
 
 .sidebar nav ul li a {
-  color: #000;
+  color: #fff;
   text-decoration: none;
-  font-size: 0.9rem;
-  padding: 10px 15px;
+  font-size: 1.1rem;
+  padding: 15px 15px;
   display: block;
   border-radius: 5px;
   transition: all 0.3s ease;
-  background-color: #fff; /* Fundo leve */
+  
 }
 
 .sidebar nav ul li a:hover {
-  
-  
   transform: translateX(5px); /* Move ligeiramente para a direita */
-  box-shadow: 4px 4px 10px rgba(255, 255, 255, 0.3); /* Adiciona sombra ao hover */
+  box-shadow: 4px 4px 10px rgba(255, 255, 255, 0.5); /* Adiciona sombra ao hover */
+  background-color: #fff;
+  color: #000;
+}
+
+
+.sidebar nav .top ul li a  {
+  background-color: #000;
 }
 
 .sidebar .user-info{
-  background: #500000;
+  background: #ffffff ;
   padding: 14px;
   margin-bottom: 10px;
 }
+
+.sidebar .user-info p{
+  color: #000;
+}
+
+.sidebar .user-info h2{
+color: #000;
+}
+
 
 /* Efeito de animação */
 @keyframes fadeIn {

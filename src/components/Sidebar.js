@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
-import { FaHome, FaPlane, FaUser, FaSignInAlt, FaUserPlus, FaCog, FaSignOutAlt, FaList } from 'react-icons/fa';
+import { FaHome, FaPlane, FaUser, FaSignInAlt, FaUserPlus, FaCog, FaSignOutAlt, FaList, FaAddressBook, FaMonero, FaAd } from 'react-icons/fa';
 import './Sidebar.css'; // Importa o CSS para estilização
 
 const Sidebar = () => {
@@ -20,12 +20,16 @@ const Sidebar = () => {
       
       <div className="user-info">
         <h2>Globe Memories</h2>
-        <img
-          src="https://via.placeholder.com/100" // Substitua pela URL do avatar do usuário
-          alt="User Avatar"
-          className="user-avatar"
-        />
-        <p>Bem-vindo!</p> {/* Personalize com o nome do usuário */}
+        <p>Bem-vindo(a) !</p> {/* Personalize com o nome do usuário */}
+        <nav>
+          <ul>
+              <li>
+                <Link onClick={logout} to="/login">
+                <FaSignOutAlt className="icon" /> Logout
+                </Link>
+              </li>
+          </ul>
+        </nav>
       </div>
       <nav>
         <ul>
@@ -54,11 +58,13 @@ const Sidebar = () => {
               <FaCog className="icon" /> Ajuda e Suporte
             </Link>
           </li>
+          <div className='top'>
           <li>
-            <Link onClick={logout} to="/login">
-              <FaSignOutAlt className="icon" /> Logout
+            <Link to="/profile">
+              <FaAd className="icon" /> Adicionar Viagem
             </Link>
           </li>
+          </div>
         </ul>
       </nav>
     </div>

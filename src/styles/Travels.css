@@ -57,8 +57,8 @@ h2{
 }
 
 .checkbox-label.active {
-  background: #007bff;
-  color: #000;
+  background: #4CAF50;
+  color: #fff;
 }
 
 .selected-categories {
@@ -68,20 +68,29 @@ h2{
 }
 
 .selected-category {
-  background: #d9534f;
-  color: #000;
+  background: #4CAF50;
+  color: #fff;
   padding: 5px 10px;
   border-radius: 4px;
   display: flex;
   align-items: center;
 }
 
-.selected-category button {
-  background: transparent;
+.selected-categories h4{
   color: #000;
+}
+
+.selected-category button {
+  background: #f44336;
+  color: #fff;
   border: none;
   cursor: pointer;
-  margin-left: 5px;
+  margin-left: 20px;
+}
+
+.selected-category button:hover {
+  background: #fff;
+  color: #f44336;
 }
 
 .search-input {
@@ -132,7 +141,7 @@ h2{
 
 .see-all-button {
   padding: 10px;
-  background-color: #007bff;
+  background-color: #2575fc;
   color: #fff;
   font-size: 16px;
   border: none;
@@ -142,7 +151,7 @@ h2{
 }
 
 .see-all-button:hover {
-  background-color: #0056b3;
+  background-color: #2575fc;
 }
 
 /* Travels List */
@@ -197,7 +206,7 @@ h2{
 .details-button {
   text-align: center;
   padding: 8px 15px;
-  background-color: #007bff;
+  background-color: #2575fc;
   color: #fff;
   font-size: 14px;
   text-decoration: none;
@@ -206,7 +215,7 @@ h2{
 }
 
 .details-button:hover {
-  background-color: #0056b3;
+  background-color: #2575fc;
 }
 
 /* Stars */

@@ -4,11 +4,9 @@
   right: 0;
   transition: width 0.3s linear;
   width: calc(100% - 200px);
-  background-color: #F4F7FA;
+  background-color: #f9f9fb !important;
   min-height: 100vh;
 }
-
-
 
 header{
   background-color: #2e2d2f; /* Cor do cabeçalho e rodapé */
@@ -20,10 +18,11 @@ header{
 }
 
 footer{
-  background-color: #500000; /* Cor do cabeçalho e rodapé */
-  padding: 30px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  padding: 10px;
   text-align: center;
   margin-top: 0px;
+  display: none;
 }
 
 
@@ -31,8 +30,9 @@ footer p{
   color: #fff;
 }
 
+
 button {
-  background-color: #000000; /* Cor do botão */
+  background-color: #2575fc; /* Cor do botão */
   color: #ffffff; /* Cor do texto do botão */
   border: none;
   border-radius: 5px;
@@ -42,7 +42,7 @@ button {
 }
 
 button:hover {
-  background-color: #2980b9; /* Cor do botão ao passar o mouse */
+  background-color: #2575fc; /* Cor do botão ao passar o mouse */
 }
 
 

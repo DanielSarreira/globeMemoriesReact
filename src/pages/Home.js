@@ -2,6 +2,7 @@ import React from 'react';
 import TravelCard from '../components/TravelCard';
 import travelsData from '../data/travelsData'; // Importa os dados das viagens
 import '../styles/Home.css';
+import '../App.css';
 
 const Home = () => {
   // Ordena as viagens por número de visualizações
@@ -10,13 +11,7 @@ const Home = () => {
   return (
     <div className="home-container">
       {/* Header Section */}
-      <header className="hero-section">
-        <div className="hero-text">
-          <h1>Explore o Mundo com a Globe Memories</h1>
-          <p>Compartilhe as suas viagens e encontre inspirações para o seu próximo destino!</p>
-          <button className="explore-button">Explorar Viagens</button>
-        </div>
-      </header>
+   
 
       {/* Sobre a App */}
       <section className="about-section">
@@ -50,25 +45,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Chamada para Criar Conta */}
-      <section className="cta-section">
-        <h2>Junte-se a nós e compartilhe as suas aventuras!</h2>
-        <button className="cta-button">Criar Conta</button>
-      </section>
-
-      {/* Rodapé */}
-      <footer className="footer">
-        <div className="footer-links">
-          <a href="#">Sobre</a>
-          <a href="#">Termos de Uso</a>
-          <a href="#">Política de Privacidade</a>
-        </div>
-        <div className="social-icons">
-          <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
-          <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
-          <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer">Twitter</a>
-        </div>
-      </footer>
     </div>
   );
 };

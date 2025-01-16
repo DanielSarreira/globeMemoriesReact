@@ -1,10 +1,7 @@
-.home-container {
-  font-family: 'Montserrat', sans-serif;
-}
-
 .hero-section {
   background: url('../images/banners/home.jpg') no-repeat center center/cover;
-  height: 100vh;
+  padding-top: 150px;
+  height: 40vh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -75,16 +72,4 @@
   cursor: pointer;
 }
 
-.footer {
-  background-color: #333;
-  color: white;
-  text-align: center;
-  padding: 20px;
-}
 
-.footer-links a,
-.social-icons a {
-  color: white;
-  margin: 0 15px;
-  text-decoration: none;
-}

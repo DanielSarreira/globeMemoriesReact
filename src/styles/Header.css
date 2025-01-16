@@ -4,9 +4,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 1.8rem 0;
-    background: #500000;
-    color: white;
-    height: 15px;
+    background: #fff;
+    height: 26px;
+    border-bottom: 1.5px solid #ddd; /* Borda fina e cinza */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
   }
   
   .header-logo h1 {
@@ -16,11 +17,13 @@
   }
   
   .search-form {
+    display: none;
     display: flex;
     align-items: center;
   }
   
   .search-input {
+    display: none;
     padding: 0.5rem;
     margin-right: 0.5rem;
     border: none;
@@ -28,7 +31,8 @@
   }
   
   .search-button {
-    background-color: #ffc107;
+    display: none;
+    background-color: #2575fc;
     border: none;
     border-radius: 5px;
     padding: 0.5rem;
@@ -36,21 +40,22 @@
   }
   
   .search-button:hover {
-    background-color: #ffca28;
+    background-color: #2575fc;
   }
   
   .social-icons {
     display: flex;
     gap: 1rem;
+    padding-right: 20px;
   }
   
   .social-icons a {
-    color: white;
+    color: #000 !important;
     font-size: 20px;
     text-decoration: none;
   }
   
   .social-icons a:hover {
-    color: #ffc107;
+    color: #2575fc !important;
   }
   

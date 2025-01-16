@@ -5,8 +5,10 @@ body {
 
 
 
-h1, h2, h3 {
-  font-family: 'Poppins', sans-serif;
+h1, h2, h3, h4, h5 {
+  font-family: Zilla Slab;
+    font-weight: 600;
+    color: #2575fc;
 }
 
 p {
@@ -16,13 +18,13 @@ p {
 
   
   header {
-    background-color: #1872cc;
+    background-color: #2575fc;
     
   }
   
   nav a {
     text-decoration: none;
-    color: #007bff;
+    color: #2575fc;
   }
   
   .travel-card {
@@ -37,7 +39,7 @@ p {
   
 
   :root {
-    --primary-color: #1abc9c;
+    --primary-color: #2575fc;
     --secondary-color: #2980b9;
     --accent-color: #e67e22;
     --error-color: #e74c3c;

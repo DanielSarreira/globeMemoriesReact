@@ -44,7 +44,7 @@ const App = () => {
       <div 
   className="content" 
   style={{
-    width: isLoginOrRegister ? '100%' : 'calc(100% - 200px)',
+    width: isLoginOrRegister ? '100%' : 'calc(100% - 270px)',
     backgroundColor: isLoginOrRegister ? '#F4F7FA' : 'transparent',
     minHeight: '100vh'
   }}
