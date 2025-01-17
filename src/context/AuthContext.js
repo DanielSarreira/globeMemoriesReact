@@ -1,5 +1,5 @@
 // src/context/AuthContext.js
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Criar o contexto
 const AuthContext = createContext();
@@ -8,20 +8,18 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(); // Estado do utilizador (null significa não autenticado)
+    const [user, setUser] = useState();
 
-    // Função de login (exemplo simples)
-    const login = (username) => {
-        setUser({ username });
-    };
-
-    // Função de logout
-    const logout = () => {
-        setUser(null);
-    };
+    // Load user data from localStorage on app load
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, [user]);
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, setUser }}>
             {children}
         </AuthContext.Provider>
     );

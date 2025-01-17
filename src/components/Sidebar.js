@@ -12,6 +12,7 @@ const Sidebar = () => {
   };
 
   const logout = () => {
+    localStorage.removeItem("user");
     setAuthHeader(null);
   };
 

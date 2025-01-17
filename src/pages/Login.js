@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
+import { useAuth } from '../context/AuthContext'
 import '../styles/Login.css'; // Arquivo de estilo
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const { setUser } = useAuth();
 
   const navigate = useNavigate();
 
@@ -31,6 +33,8 @@ const Login = () => {
       }).then(
       (response) => {
         setAuthHeader(response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data));
+        setUser(response.data);
         console.log(response);
         navigate("/");
       }).catch(

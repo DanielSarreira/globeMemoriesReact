@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext'
 import '../styles/Profile.css';
 import defaultAvatar from '../images/assets/avatar.jpg'; // Imagem de avatar padrão
 
@@ -18,6 +19,7 @@ const Profile = () => {
     birthday: '',
     profilePicture: '', // Campo para foto de perfil
   });
+  const { user, setUser } = useAuth();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -66,214 +68,217 @@ const Profile = () => {
   return (
     <div className="profile-page">
       <div className="profile-container">
-        <form className="profile-form" onSubmit={handleSave}>
-          {/* Foto de perfil */}
-          <h2>O meu Perfil</h2>
-          <div className="profile-picture-container">
-            <img
-              src={formData.profilePicture || defaultAvatar} // Verifica se a foto de perfil existe
-              alt="Foto de perfil"
-              className="profile-picture"
-            />
-            <input
-              type="file"
-              name="profilePicture"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  setFormData((prevData) => ({
-                    ...prevData,
-                    profilePicture: URL.createObjectURL(file), // Mostra a imagem selecionada
-                  }));
-                }
-              }}
-            />
-          </div>
+        {user ?
+        <>
+          <form className="profile-form" onSubmit={handleSave}>
+            {/* Foto de perfil */}
+            <h2>O meu Perfil</h2>
+            <div className="profile-picture-container">
+              <img
+                src={formData.profilePicture || defaultAvatar} // Verifica se a foto de perfil existe
+                alt="Foto de perfil"
+                className="profile-picture"
+              />
+              <input
+                type="file"
+                name="profilePicture"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setFormData((prevData) => ({
+                      ...prevData,
+                      profilePicture: URL.createObjectURL(file), // Mostra a imagem selecionada
+                    }));
+                  }
+                }}
+              />
+            </div>
 
-          {/* Seção de Informações Obrigatórias e Complementares */}
-          <div className="form-section">
-            {/* Informações Obrigatórias (lado esquerdo) */}
-            <div className="form-left">
-              <h3>Informações Obrigatórias</h3>
-              <div className="form-group">
-                <label>Primeiro Nome</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.firstName}</p>
-                )}
+            {/* Seção de Informações Obrigatórias e Complementares */}
+            <div className="form-section">
+              {/* Informações Obrigatórias (lado esquerdo) */}
+              <div className="form-left">
+                <h3>Informações Obrigatórias</h3>
+                <div className="form-group">
+                  <label>Primeiro Nome</label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.firstName}</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Último Nome</label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.lastName}</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Username</label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.username}</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Email</label>
+                  {editing ? (
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.email}</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Palavra-Passe</label>
+                  {editing ? (
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>********</p>
+                  )}
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Último Nome</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.lastName}</p>
-                )}
-              </div>
+              {/* Informações Complementares (lado direito) */}
+              <div className="form-right">
+                <h3>Informações Complementares</h3>
+                <div className="form-group">
+                  <label>Sobre Mim</label>
+                  {editing ? (
+                    <textarea
+                      name="bio"
+                      value={formData.userBio}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.userBio}</p>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Username</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.username}</p>
-                )}
-              </div>
+                <div className="form-group">
+                  <label>País</label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.nationality}</p>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Email</label>
-                {editing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.email}</p>
-                )}
-              </div>
+                <div className="form-group">
+                  <label>Cidade</label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.city}</p>
+                  )}
+                </div>
 
-              <div className="form-group">
-                <label>Palavra-Passe</label>
-                {editing ? (
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>********</p>
-                )}
+                <div className="form-group">
+                  <label>Sexo</label>
+                  {editing ? (
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Selecione</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Feminino">Feminino</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  ) : (
+                    <p>{user.gender}</p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Aniversário</label>
+                  {editing ? (
+                    <input
+                      type="date"
+                      name="birthday"
+                      value={formData.birthday}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{user.birthDate}</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Informações Complementares (lado direito) */}
-            <div className="form-right">
-              <h3>Informações Complementares</h3>
-              <div className="form-group">
-                <label>Sobre Mim</label>
-                {editing ? (
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.bio}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>País</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.country}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Cidade</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.city}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Sexo</label>
-                {editing ? (
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
+            {/* Botões de ação */}
+            <div className="button-group">
+              {editing ? (
+                <>
+                  <button
+                    type="submit"
+                    className="save-button"
                   >
-                    <option value="">Selecione</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                    <option value="Outro">Outro</option>
-                  </select>
-                ) : (
-                  <p>{formData.gender}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Aniversário</label>
-                {editing ? (
-                  <input
-                    type="date"
-                    name="birthday"
-                    value={formData.birthday}
-                    onChange={handleInputChange}
-                  />
-                ) : (
-                  <p>{formData.birthday}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Botões de ação */}
-          <div className="button-group">
-            {editing ? (
-              <>
-                <button
-                  type="submit"
-                  className="save-button"
-                >
-                  Salvar
-                </button>
+                    Salvar
+                  </button>
+                  <button
+                    type="button"
+                    className="cancel-button"
+                    onClick={handleEditToggle}
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  className="cancel-button"
+                  className="edit-button"
                   onClick={handleEditToggle}
                 >
-                  Cancelar
+                  Editar Perfil
                 </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="edit-button"
-                onClick={handleEditToggle}
-              >
-                Editar Perfil
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+              )}
+            </div>
+          </form>
+        </> : null}
+      </div> 
     </div>
   );
 };

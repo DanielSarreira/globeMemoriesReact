@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider } from "./context/AuthContext";
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
@@ -14,7 +15,6 @@ import Register from './pages/Register';
 import CreateTravel from './components/CreateTravel';
 import EditTravel from './components/EditTravel';
 import HelpSupport from './pages/HelpSupport';
-import AuthContent from './components/AuthContent';
 import NotFound from './pages/NotFound';
 import './App.css';
 import './styles/styles.css';
@@ -51,43 +51,37 @@ const App = () => {
 >
         <Header />
         <main>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            <Route path="/" element={<ProtectedRoute />}>
-              <Route index element={<Home />} />
-            </Route>
-            <Route path="/travels" element={<ProtectedRoute />}>
-              <Route index element={<Travels />} />
-            </Route>
-            <Route path="/travel/:id" element={<ProtectedRoute />}>
-              <Route index element={<TravelDetails />} />
-            </Route>
-            <Route path="/my-travels" element={<ProtectedRoute />}>
-              <Route index element={<MyTravels />} />
-            </Route>
-            <Route path="/profile" element={<ProtectedRoute />}>
-              <Route index element={<ViewProfile />} />
-            </Route>
-            <Route path="/create-travel" element={<ProtectedRoute />}>
-              <Route index element={<CreateTravel />} />
-            </Route>
-            <Route path="/edit-travel" element={<ProtectedRoute />}>
-              <Route index element={<EditTravel />} />
-            </Route>
-            <Route path="/auth-content" element={<ProtectedRoute />}>
-              <Route index element={<AuthContent />} />
-            </Route>
-            <Route path="*" element={<ProtectedRoute />}>
-              <Route index element={<NotFound />} />
-            </Route>
-
-            <Route path="/HelpSupport" element={<ProtectedRoute />}>
-            <Route index element={<HelpSupport />} />
-            </Route>
-
-          </Routes>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<ProtectedRoute />}>
+                <Route index element={<Home />} />
+              </Route>
+              <Route path="/travels" element={<ProtectedRoute />}>
+                <Route index element={<Travels />} />
+              </Route>
+              <Route path="/travel/:id" element={<ProtectedRoute />}>
+                <Route index element={<TravelDetails />} />
+              </Route>
+              <Route path="/my-travels" element={<ProtectedRoute />}>
+                <Route index element={<MyTravels />} />
+              </Route>
+              <Route path="/profile" element={<ProtectedRoute />}>
+                <Route index element={<ViewProfile />} />
+              </Route>
+              <Route path="/create-travel" element={<ProtectedRoute />}>
+                <Route index element={<CreateTravel />} />
+              </Route>
+              <Route path="/edit-travel" element={<ProtectedRoute />}>
+                <Route index element={<EditTravel />} />
+              </Route>
+              <Route path="*" element={<ProtectedRoute />}>
+                <Route index element={<NotFound />} />
+              </Route>
+              <Route path="/HelpSupport" element={<ProtectedRoute />}>
+                <Route index element={<HelpSupport />} />
+              </Route>
+            </Routes>
         </main>
         <Footer />
       </div>
@@ -96,9 +90,11 @@ const App = () => {
 };
 
 const AppWrapper = () => (
-  <Router>
-    <App />
-  </Router>
+  <AuthProvider>
+    <Router>
+      <App />
+    </Router>
+  </AuthProvider>
 );
 
 export default AppWrapper;
