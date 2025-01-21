@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
+import ScrollToTop from "./components/ScrollToTop"; // Importa o componente
 import Home from './pages/Home';
 import Travels from './pages/Travels';
 import TravelDetails from './components/TravelDetails';
@@ -18,6 +19,7 @@ import HelpSupport from './pages/HelpSupport';
 import NotFound from './pages/NotFound';
 import './App.css';
 import './styles/styles.css';
+
 
 const App = () => {
   const location = useLocation();
@@ -92,9 +94,11 @@ const App = () => {
 const AppWrapper = () => (
   <AuthProvider>
     <Router>
+      <ScrollToTop /> {/* Garante que o scroll vai para o topo */}
       <App />
     </Router>
   </AuthProvider>
 );
+
 
 export default AppWrapper;

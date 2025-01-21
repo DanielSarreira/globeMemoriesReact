@@ -76,35 +76,11 @@ const TravelDetails = () => {
           <p><strong>País:</strong> {travel.country}</p>
           <p><strong>Cidade:</strong> {travel.city}</p>
           <p><strong>Preço da Viagem:</strong> {travel.price}€</p>
-          <p><strong>Avaliação da Viagem:</strong> {renderStars(travel.stars)}</p>
           <p><strong>Data de Início:</strong> {travel.startDate}</p>
           <p><strong>Data de Fim:</strong> {travel.endDate}</p>
           <p><strong>Duração:</strong> {travel.days} dia(s)</p>
-          <p><strong>Método de Transporte:</strong> {travel.transport}</p>
           <p><strong>Descrição Curta:</strong> {travel.description}</p>
           <p><strong>Categoria:</strong> {travel.category.join(', ')}</p>
-          <p>
-            <strong>Acomodações:</strong>
-            {travel.accommodations.map((acc, index) => (
-              <span key={index}>
-                {acc.name} ({acc.type} - {acc.priceRange}) -{' '}
-                <a href={acc.link} target="_blank" rel="noopener noreferrer">
-                  Link
-                </a>
-              </span>
-            ))}
-          </p>
-          <p>
-            <strong>Recomendações de Comida:</strong>
-            {travel.foodRecommendations.map((food, index) => (
-              <span key={index}>
-                {food.dish} -{' '}
-                <a href={food.link} target="_blank" rel="noopener noreferrer">
-                  {food.restaurant}
-                </a>
-              </span>
-            ))}
-          </p>
           <p>
             <strong>Clima:</strong> Média de {travel.climate.averageTemperature}
             , melhor época para visitar: {travel.climate.bestTimeToVisit}
@@ -120,6 +96,7 @@ const TravelDetails = () => {
               </span>
             ))}
           </p>
+          <p><strong>Avaliação da Viagem:</strong> {renderStars(travel.stars)}</p>
           <button onClick={handleFavoriteToggle}>
             {isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
           </button>
@@ -133,17 +110,32 @@ const TravelDetails = () => {
           className={`tab-button ${activeTab === 'description' ? 'active' : ''}`}
           onClick={() => setActiveTab('description')}
         >
-          Descrição Longa
+          Descrição da Viagem
         </button>
         <button 
-          className={`tab-button ${activeTab === 'interests' ? 'active' : ''}`}
-          onClick={() => setActiveTab('interests')}
+          className={`tab-button ${activeTab === 'accommodations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('accommodations')}
         >
-          Interesses
+          Estadias
         </button>
+
         <button 
-          className={`tab-button ${activeTab === 'activities_interests' ? 'active' : ''}`}
-          onClick={() => setActiveTab('activities_interests')}
+          className={`tab-button ${activeTab === 'foodRecommendations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('foodRecommendations')}
+        >
+          Alimentação
+        </button>
+
+        <button 
+          className={`tab-button ${activeTab === 'transport' ? 'active' : ''}`}
+          onClick={() => setActiveTab('transport')}
+        >
+          Método de Transporte
+        </button>
+
+        <button 
+          className={`tab-button ${activeTab === 'pointsOfInterest' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pointsOfInterest')}
         >
           Atividades e Pontos de Interesse
         </button>
@@ -153,23 +145,54 @@ const TravelDetails = () => {
       <div className="tab-content">
         {activeTab === 'description' && (
           <div>
-            <h2>Descrição Longa</h2>
+            <h2>Descrição da Viagem</h2>
             <p>{travel.longDescription}</p>
           </div>
         )}
-        {activeTab === 'interests' && (
+        {activeTab === 'accommodations' && (
           <div>
-            <h2>Interesses</h2>
-            <ul>
-              {travel.interests.map((interest, index) => (
-                <li key={index}>{interest}</li>
-              ))}
-            </ul>
+            <h2>Estadias</h2>
+            <p>
+            <strong>Acomodações:</strong>
+            {travel.accommodations.map((acc, index) => (
+              <span key={index}>
+                {acc.name} ({acc.type} - {acc.priceRange}) -{' '}
+                <a href={acc.link} target="_blank" rel="noopener noreferrer">
+                  Link
+                </a>
+              </span>
+            ))}
+          </p>
           </div>
         )}
-        {activeTab === 'activities_interests' && (
+        {activeTab === 'foodRecommendations' && (
           <div>
-            <h2>Atividades</h2>
+            <h2>Alimentação</h2>
+            <p>
+            <strong>Recomendações de Comida:</strong>
+            {travel.foodRecommendations.map((food, index) => (
+              <span key={index}>
+                {food.dish} -{' '}
+                <a href={food.link} target="_blank" rel="noopener noreferrer">
+                  {food.restaurant}
+                </a>
+              </span>
+            ))}
+          </p>
+          </div>
+        )}
+
+{activeTab === 'transport' && (
+          <div>
+            <h2>Método de Transporte</h2>
+            <p><strong>Método de Transporte:</strong> {travel.transport}</p>
+          </div>
+        )}
+
+
+{activeTab === 'pointsOfInterest' && (
+          <div>
+            <h2>Pontos de Interesse</h2>
             <ul>
               {travel.activities.map((activity, index) => (
                 <li key={index}>{activity}</li>

@@ -1,42 +1,41 @@
-.my-travels-page {
-  font-family: 'Poppins', sans-serif;
+.my-travels-container {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-h1 {
-  color: #008cba;
+  font-family: 'Montserrat', sans-serif;
   text-align: center;
 }
 
-.filter-section {
+h1 {
   margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
-.filter-section label {
-  margin-right: 10px;
+.add-travel-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.add-travel-btn:hover {
+  background-color: #45a049;
 }
 
 .travels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 20px;
 }
 
 .travel-card {
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
-}
-
-.travel-card:hover {
-  transform: scale(1.05);
+  text-align: left;
 }
 
 .travel-image {
@@ -45,288 +44,122 @@ h1 {
   object-fit: cover;
 }
 
-.card-actions {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
+.travels-grid .travel-info {
+  padding: 15px;
+  display: block;
 }
 
-button {
-  cursor: pointer;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
+.travels-grid .travel-info h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  color: #333;
   align-items: center;
 }
 
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
+.travels-grid .travel-info p {
+  margin: 5px 0;
+  color: #555;
 }
 
-
-/* Estilo geral do formulário */
-.travel-card form {
+.travel-actions {
+  margin-top: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
 }
 
-/* Campo de texto */
-.travel-card input[type="text"],
-.travel-card textarea {
-  width: 100%;
-  padding: 10px 15px;
+.details-btn,
+.delete-btn {
+  padding: 8px 12px;
   font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  outline: none;
-  transition: border-color 0.3s ease;
-}
-
-.travel-card input[type="text"]:focus,
-.travel-card textarea:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-}
-
-/* Textarea específico */
-.travel-card textarea {
-  resize: vertical;
-  min-height: 100px;
-  max-height: 300px;
-}
-
-/* Estilo do input de arquivo */
-.travel-card input[type="file"] {
-  display: none;
-}
-
-/* Label para input de arquivo */
-.file-upload-label {
-  display: inline-block;
-  padding: 10px 20px;
-  font-size: 14px;
-  color: #fff;
-  background-color: #007bff;
-  border-radius: 6px;
+  border: none;
   cursor: pointer;
-  text-align: center;
-  transition: background-color 0.3s ease;
+  border-radius: 5px;
 }
 
-.file-upload-label:hover {
+.details-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.details-btn:hover {
   background-color: #0056b3;
 }
 
-/* Botão de salvar */
-.save-button {
-  background-color: #28a745;
+.delete-btn {
+  background-color: #e74c3c;
   color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-.save-button:hover {
-  background-color: #218838;
+.delete-btn:hover {
+  background-color: #c0392b;
 }
 
-
-/* Estilos do Modal */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Opacidade maior para o fundo */
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Garante que o modal ficará acima de outros elementos */
-  animation: fadeIn 0.3s ease-in-out; /* Animação de entrada */
+  z-index: 1000;
 }
 
 .modal-content {
   background: #fff;
-  padding: 30px;
+  padding: 40px;
   border-radius: 10px;
-  max-width: 600px;
+  width: 800px;
+  text-align: left;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+}
+
+.modal-content label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.modal-content input {
   width: 100%;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
-  position: relative;
-  animation: slideUp 0.5s ease-out; /* Animação de deslizamento */
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 }
 
-/* Animação para o fade-in */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Animação de deslizamento */
-@keyframes slideUp {
-  from {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modal-header {
+.modal-actions {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
 }
 
-.modal-header h2 {
-  margin: 0;
-  color: #008cba;
-  font-size: 1.5rem;
-}
-
-.modal-header button.close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #aaa;
-  cursor: pointer;
-}
-
-.modal-header button.close:hover {
-  color: #333;
-}
-
-/* Estilo do formulário dentro do modal */
-.modal form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.modal input[type="text"],
-.modal textarea {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  outline: none;
-  transition: border-color 0.3s ease;
-}
-
-.modal input[type="text"]:focus,
-.modal textarea:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-}
-
-.modal textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-.modal .save-button {
-  background-color: #28a745;
+.save-btn {
+  background-color: #4caf50;
   color: white;
-  padding: 10px 15px;
   border: none;
-  border-radius: 6px;
+  padding: 10px 15px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-.modal .save-button:hover {
-  background-color: #218838;
-}
-
-.modal .cancel-button {
-  background-color: #dc3545;
+.cancel-btn {
+  background-color: #e74c3c;
   color: white;
-  padding: 10px 15px;
   border: none;
-  border-radius: 6px;
+  padding: 10px 15px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-.modal .cancel-button:hover {
-  background-color: #c82333;
+.save-btn:hover {
+  background-color: #45a049;
 }
 
-.preview-image {
-  max-width: 100%;
-  max-height: 200px;
-  margin-top: 10px;
-  border-radius: 6px;
-}
-
-.file-upload-label {
-  display: inline-block;
-  padding: 10px 20px;
-  font-size: 14px;
-  color: #fff;
-  background-color: #007bff;
-  border-radius: 6px;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.3s ease;
-}
-
-.file-upload-label:hover {
-  background-color: #0056b3;
-}
-
-/* Adicionando opacidade no fundo quando o modal estiver aberto */
-.my-travels-page {
-  position: relative;
-}
-
-.my-travels-page.modal-open {
-  overflow: hidden;
-}
-
-.my-travels-page.modal-open:before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-}
-
-.modal .modal-content img {
-  max-width: 90%; /* A largura máxima será 90% do modal */
-  max-height: 400px; /* Altura máxima */
-  display: block; /* Garante que a imagem seja um bloco */
-  margin: 0 auto; /* Centraliza a imagem dentro do modal */
-  border-radius: 10px; /* Adiciona bordas arredondadas */
-  object-fit: contain; /* Ajusta o conteúdo da imagem para caber na área */
+.cancel-btn:hover {
+  background-color: #c0392b;
 }
