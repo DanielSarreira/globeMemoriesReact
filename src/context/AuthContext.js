@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
-    }, [user]);
+    },[]);
 
     return (
         <AuthContext.Provider value={{ user, setUser }}>

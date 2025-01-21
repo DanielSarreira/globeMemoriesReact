@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
+import { useAuth } from '../context/AuthContext'
 import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import '../styles/Register.css'; // Ficheiro CSS
 import logo from '../images/register.jpg';
@@ -19,6 +20,7 @@ const Register = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,6 +66,8 @@ const Register = () => {
         }).then(
         (response) => {
             setAuthHeader(response.data.token);
+            localStorage.setItem("user", JSON.stringify(response.data));
+            setUser(response.data);
             console.log(response);
             navigate("/");
         }).catch(
@@ -105,13 +109,13 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label>Nacionalidade</label>
+              <label>País</label>
               <input
                 type="text"
                 name="nationality"
                 value={formData.nationality}
                 onChange={handleChange}
-                placeholder="Insira a sua Nacionalidade "
+                placeholder="Insira o seu País"
                 required
               />
             </div>
