@@ -198,28 +198,9 @@
 
 
 button.tab-button {
-  padding: 50px;
+  padding: 30px;
   margin: 10px;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 .travel-details-container {
@@ -240,7 +221,7 @@ button.tab-button {
 .travel-info .highlight-image {
   flex: 0 1 40%;
   max-width: 100%;
-  padding-top: 80px;
+  
 }
 
 .highlight-image img {
@@ -301,12 +282,20 @@ button.tab-button {
   color: #555;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
+  font-weight: bold; /* Deixa o texto mais destacado */
 }
 
-.tab-button.active,
+
 .tab-button:hover {
-  background-color: #4CAF50;
+  background-color: var(--secondary-color) !important;
   color: #fff;
+}
+
+
+.tab-button.active {
+  background-color: var(--secondary-color) !important; /* Define o fundo laranja */
+  color: white; /* Deixa o texto branco para melhor contraste */
+  font-weight: bold; /* Deixa o texto mais destacado */
 }
 
 .tab-content {
@@ -320,6 +309,117 @@ button.tab-button {
   margin-bottom: 15px;
   color: #333;
 }
+
+
+
+.generalInfoLeft,
+.generalInfoRight {
+  display: inline-grid;
+}
+
+.generalInfoLeft {
+  text-align: center;
+  width: 30%;
+  border-right: var(--secondary-color) 1px solid;
+  
+}
+
+.generalInfoRight {
+  text-align: center;
+  width: 60%;
+  padding-left: 60px;
+  padding-right: 60px;
+}
+.travel-info {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+}
+
+
+
+.highlight-image img {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.info {
+  display: flex;
+  width: 50%;
+  gap: 10px;
+}
+
+.infoLeft, .infoRight {
+  position: relative;
+  width: 50%; /* Cada uma ocupa 50% dos 50% disponíveis → 25% do total */
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.infoLeft p, .infoRight p {
+  margin: 5px 0;
+}
+
+.stars {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+
+
+
+
+
+
+.tab-content h2 {
+  margin-bottom: 15px;
+  color: var(--primary-color) !important;
+}
+
+.info h1 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: var(--primary-color) !important;
+}
+
+.recommended-travels h2 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: var(--primary-color) !important;
+}
+
+
+
+
+
+
+
+
+.price-details {
+  margin-top: 10px;
+  background-color: #f8f8f8;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.price-details p {
+  font-size: 16px;
+  margin: 5px 0;
+}
+
+
+
+
+
+
+
+
+
 
 .gallery {
   margin-top: 30px;
@@ -341,6 +441,8 @@ button.tab-button {
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease;
+  height: 250px;
+  object-fit: cover;
 }
 
 .gallery-images img:hover {

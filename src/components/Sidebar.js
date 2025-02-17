@@ -17,6 +17,7 @@ import {
   FaBars,
 } from 'react-icons/fa';
 import './Sidebar.css';
+import logo from '../images/Globe-Memories.png'; // Atualize o caminho conforme necessário
 
 const Sidebar = () => {
   const [showCategories, setShowCategories] = useState(false);
@@ -42,7 +43,11 @@ const Sidebar = () => {
       </button>
 
       <div className="user-info">
-        {!isCollapsed && <h2>Globe Memories</h2>}
+      {!isCollapsed && (
+          <div className="logo-container">
+            <img src={logo} alt="Globe Memories Logo" className="logo" />
+          </div>
+        )}
         <div className="profile-avatar">
           <img
             src="/static/media/avatar.55c3eb5641681d05db07.jpg"
@@ -51,15 +56,7 @@ const Sidebar = () => {
           />
         </div>
         {!isCollapsed && <p>Bem-vindo(a) Tiago!</p>}
-        <nav>
-          <ul>
-            <li>
-              <Link onClick={logout} to="/login">
-                <FaSignOutAlt className="icon" /> {!isCollapsed && 'Logout'}
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        
       </div>
 
       <nav>
@@ -89,35 +86,27 @@ const Sidebar = () => {
               <FaCog className="icon" /> {!isCollapsed && 'Ajuda e Suporte'}
             </Link>
           </li>
+          
+      
+            <li>
+              <Link onClick={logout} to="/login">
+                <FaSignOutAlt className="icon" /> {!isCollapsed && 'Logout'}
+              </Link>
+            </li>
+     
+        
           <div className="top">
             <li>
               <Link to="/my-travels">
                 <FaAd className="icon" /> {!isCollapsed && 'Adicionar Viagem'}
               </Link>
             </li>
+
+            
           </div>
         </ul>
       </nav>
 
-      <div className="social-media">
-        <ul>
-          <li>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <FaFacebook />
-            </a>
-          </li>
-          <li>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <FaTwitter />
-            </a>
-          </li>
-          <li>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-              <FaInstagram />
-            </a>
-          </li>
-        </ul>
-      </div>
     </div>
   );
 };

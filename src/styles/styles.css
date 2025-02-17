@@ -7,8 +7,8 @@ body {
 
 h1, h2, h3, h4, h5 {
   font-family: Zilla Slab;
-    font-weight: 600;
-    color: #2575fc;
+  font-weight: 600;
+  color: var(--primary-color);
 }
 
 p {
@@ -16,15 +16,10 @@ p {
 }
 
 
-  
-  header {
-    background-color: #2575fc;
-    
-  }
-  
+ 
   nav a {
     text-decoration: none;
-    color: #2575fc;
+    color: var(--primary-color);
   }
   
   .travel-card {
@@ -38,9 +33,39 @@ p {
   }
   
 
+
+  a.button {
+    display: inline-block; /* Melhora o alinhamento */
+    margin-top: 15px;
+    padding: 12px 20px; /* Ajuste proporcional */
+    background-color: var(--primary-color); /* Cor de fundo */
+    color: #fff; /* Texto branco */
+    text-align: center; /* Alinhamento central */
+    text-decoration: none; /* Remove sublinhado */
+    border-radius: 8px; /* Bordas arredondadas */
+    font-size: 16px; /* Tamanho do texto */
+    font-weight: 400; /* Texto destacado */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Animação suave */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra discreta */
+  }
+  
+  a.button:hover {
+    background-color: var(--secondary-color); /* Cor alterada ao passar o mouse */
+    transform: translateY(-2px); /* Efeito de elevação */
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15); /* Sombra mais intensa */
+  }
+  
+  a.button:active {
+    transform: translateY(0); /* Remove elevação ao clicar */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Retorna sombra original */
+  }
+
+
+
+
   :root {
-    --primary-color: #2575fc;
-    --secondary-color: #2980b9;
+    --primary-color: #0066cc;
+    --secondary-color: #ff9900;
     --accent-color: #e67e22;
     --error-color: #e74c3c;
     --text-color: #2c3e50;
@@ -74,7 +99,6 @@ body {
 .travel-item p {
   font-family: 'Poppins', sans-serif;
 }
-
 
 
 

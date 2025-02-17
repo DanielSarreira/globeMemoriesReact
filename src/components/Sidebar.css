@@ -5,7 +5,7 @@
   height: 100%;
   width: 270px;
   text-align: center;
-  background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+  background: linear-gradient(190deg, rgba(0,102,204,0.7959558823529411) 0%, rgba(255,153,0,0.804359243697479) 100%);
   color: #fff;
   transition: all 0.3s linear;
   z-index: 999;
@@ -22,6 +22,7 @@
 
 .sidebar .user-info p{
   color: #000;
+  display: none;
 }
 
 .sidebar .user-info h2{
@@ -100,7 +101,6 @@ nav ul li a {
   display: block;
   border-radius: 5px;
   transition: all 0.3s ease;
-  
 }
 
 .sidebar nav ul li a:hover {
@@ -166,6 +166,7 @@ nav ul li a {
 
 .profile-avatar {
   margin: 10px 0;
+  display: none;
 }
 
 .avatar {
@@ -184,7 +185,7 @@ nav ul li a {
     height: 100%;
     width: 100px !important;
     text-align: center;
-    background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
+    background: #ff9900;
     color: #fff;
     transition: all 0.3s linear;
     z-index: 999;
@@ -208,6 +209,40 @@ nav ul li a {
  }
 
 
+ button.toggle-button {
+  background-color: transparent;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 15px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button.toggle-button:hover {
+  background-color: transparent;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 15px 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-top: 20px;
+}
+
+.logo {
+  width: 200px; /* Ajuste o tamanho conforme necessário */
+  height: auto;
+}
 
 
 

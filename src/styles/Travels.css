@@ -11,7 +11,12 @@ p{
 }
 label{
   color: #000;
+  font-weight: 100;
 }
+label.checkbox-label {
+  font-weight: 100;
+}
+
 h1{
   color: #000;
 }
@@ -68,7 +73,7 @@ h2{
 }
 
 .selected-category {
-  background: #4CAF50;
+  background-color: var(--secondary-color);
   color: #fff;
   padding: 5px 10px;
   border-radius: 4px;
@@ -141,7 +146,7 @@ h2{
 
 .see-all-button {
   padding: 10px;
-  background-color: #2575fc;
+  background-color: var(--primary-color);
   color: #fff;
   font-size: 16px;
   border: none;
@@ -151,7 +156,7 @@ h2{
 }
 
 .see-all-button:hover {
-  background-color: #2575fc;
+  background-color: var(--secondary-color);
 }
 
 /* Travels List */
@@ -206,7 +211,7 @@ h2{
 .details-button {
   text-align: center;
   padding: 8px 15px;
-  background-color: #2575fc;
+  background-color: var(--primary-color);
   color: #fff;
   font-size: 14px;
   text-decoration: none;
@@ -215,7 +220,7 @@ h2{
 }
 
 .details-button:hover {
-  background-color: #2575fc;
+  background-color: var(--primary-color);
 }
 
 /* Stars */
@@ -260,6 +265,11 @@ h2{
 /* Estilos dos botões */
 button.filters-button {
   width: 15%;
+  background-color: var(--primary-color);
+}
+
+button.filters-button:hover {
+  background-color: var(--secondary-color);
 }
 
 button.see-all-button {
@@ -268,7 +278,7 @@ button.see-all-button {
 
 /* Estilo do grupo de filtros */
 .sort-group {
-  width: 60%;
+  width: 15%;
 }
 
 
@@ -327,7 +337,7 @@ button.see-all-button {
 }
 
 .checkbox-label.active {
-  background-color: #4CAF50; /* Cor de fundo quando ativo */
+  background-color: var(--secondary-color); /* Cor de fundo quando ativo */
   color: white;
 }
 
@@ -335,10 +345,70 @@ button.see-all-button {
   font-size: 20px; /* Tamanho do ícone */
 }
 
+
+
+img.highlight-image {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+
 /* Adiciona um efeito quando o checkbox é marcado */
 input[type="checkbox"]:checked + .category-icon {
   color: #4CAF50; /* Muda a cor do ícone quando o checkbox está marcado */
 }
+
+
+
+.search-bar{
+  width: 30%;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+
+
+
+button.see-more-categories-button {
+  background-color: var(--secondary-color);
+  font-weight: 400;
+  padding: 20px;
+}
+button.see-less-categories-button{
+  background-color: var(--secondary-color);
+  font-weight: 400;
+  padding: 20px;
+}
+
+
+
+
+.css-13vpke-MuiSlider-root {
+  border-radius: 12px;
+  box-sizing: content-box;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--secondary-color) !important;
+  height: 4px;
+  width: 100%;
+  padding: 13px 0;
+}
+
+
+
+
+
+
+
+
 
 /* Ajuste de responsividade */
 @media (max-width: 600px) {

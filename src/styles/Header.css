@@ -1,12 +1,11 @@
 .header {
     display: flex;
-    display: none;
-    width: 100%;
+    max-width: 100% !important;
     justify-content: space-between;
     align-items: center;
-    padding: 1.8rem 0;
+    padding-top: 16px;
     background: #fff;
-    height: 26px;
+    height: 30px;
     border-bottom: 1.5px solid #ddd; /* Borda fina e cinza */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
   }
@@ -47,7 +46,8 @@
   .social-icons {
     display: flex;
     gap: 1rem;
-    padding-right: 20px;
+    padding-right: 15px;
+    padding-top: 10px;
   }
   
   .social-icons a {

@@ -72,8 +72,12 @@ const Profile = () => {
         <>
           <form className="profile-form" onSubmit={handleSave}>
             {/* Foto de perfil */}
-            <h2>O meu Perfil</h2>
-            <div className="profile-picture-container">
+                       
+            <div className="form-section">
+              {/* Informações Complementares (lado esquerdo) */}
+              <div className="form-left">
+
+              <div className="profile-picture-container">
               <img
                 src={formData.profilePicture || defaultAvatar} // Verifica se a foto de perfil existe
                 alt="Foto de perfil"
@@ -94,13 +98,10 @@ const Profile = () => {
               />
             </div>
 
-            {/* Seção de Informações Obrigatórias e Complementares */}
-            <div className="form-section">
-              {/* Informações Obrigatórias (lado esquerdo) */}
-              <div className="form-left">
-                <h3>Informações Obrigatórias</h3>
+                
                 <div className="form-group">
-                  <label>Primeiro Nome</label>
+                <div className="form-group-LeftPosition">
+                  <label>Primeiro Nome:</label>
                   {editing ? (
                     <input
                       type="text"
@@ -113,8 +114,8 @@ const Profile = () => {
                   )}
                 </div>
 
-                <div className="form-group">
-                  <label>Último Nome</label>
+                <div className="form-group-RightPosition">
+                  <label>Último Nome:</label>
                   {editing ? (
                     <input
                       type="text"
@@ -125,56 +126,14 @@ const Profile = () => {
                   ) : (
                     <p>{user.lastName}</p>
                   )}
+                  </div>
+
                 </div>
 
-                <div className="form-group">
-                  <label>Username</label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    <p>{user.username}</p>
-                  )}
-                </div>
+               
 
                 <div className="form-group">
-                  <label>Email</label>
-                  {editing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    <p>{user.email}</p>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Palavra-Passe</label>
-                  {editing ? (
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    <p>********</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Informações Complementares (lado direito) */}
-              <div className="form-right">
-                <h3>Informações Complementares</h3>
-                <div className="form-group">
-                  <label>Sobre Mim</label>
+                  <label>Sobre Mim:</label>
                   {editing ? (
                     <textarea
                       name="bio"
@@ -187,7 +146,8 @@ const Profile = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>País</label>
+                <div className="form-group-LeftPosition">
+                  <label>País:</label>
                   {editing ? (
                     <input
                       type="text"
@@ -198,10 +158,9 @@ const Profile = () => {
                   ) : (
                     <p>{user.nationality}</p>
                   )}
-                </div>
-
-                <div className="form-group">
-                  <label>Cidade</label>
+                  </div>
+                  <div className="form-group-RightPosition">
+                  <label>Cidade:</label>
                   {editing ? (
                     <input
                       type="text"
@@ -212,10 +171,14 @@ const Profile = () => {
                   ) : (
                     <p>{user.city}</p>
                   )}
+</div>
                 </div>
 
+               
+
                 <div className="form-group">
-                  <label>Sexo</label>
+                <div className="form-group-LeftPosition">
+                  <label>Sexo:</label>
                   {editing ? (
                     <select
                       name="gender"
@@ -230,10 +193,10 @@ const Profile = () => {
                   ) : (
                     <p>{user.gender}</p>
                   )}
-                </div>
+                  </div>
 
-                <div className="form-group">
-                  <label>Aniversário</label>
+                  <div className="form-group-RightPosition">
+                  <label>Aniversário:</label>
                   {editing ? (
                     <input
                       type="date"
@@ -244,8 +207,71 @@ const Profile = () => {
                   ) : (
                     <p>{user.birthDate}</p>
                   )}
+                  </div>
+
                 </div>
+                
               </div>
+
+              {/* Informações Obrigatórias (lado direito) */}
+              <div className="form-right">
+  <h3>Informações Obrigatórias</h3>
+
+  <div className="form-group">
+    <label>Username:</label>
+    {editing ? (
+      <input
+        type="text"
+        name="username"
+        value={formData.username}
+        onChange={handleInputChange}
+      />
+    ) : (
+      <p>{user.username}</p>
+    )}
+  </div>
+
+  <div className="form-group">
+    <label>Email:</label>
+    {editing ? (
+      <input
+        type="email"
+        name="email"
+        value={formData.email}
+        onChange={handleInputChange}
+      />
+    ) : (
+      <p>{user.email}</p>
+    )}
+  </div>
+
+  <div className="form-group">
+    <label>Palavra-Passe:</label>
+    {editing ? (
+      <input
+        type="password"
+        name="password"
+        value={formData.password}
+        onChange={handleInputChange}
+      />
+    ) : (
+      <p>********</p>
+    )}
+  </div>
+
+  {editing && (
+    <div className="form-group">
+      <label>Confirmar Palavra-Passe</label>
+      <input
+        type="password"
+        name="confirmPassword"
+        value={formData.confirmPassword}
+        onChange={handleInputChange}
+      />
+    </div>
+  )}
+</div>
+
             </div>
 
             {/* Botões de ação */}
