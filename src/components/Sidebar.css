@@ -110,12 +110,6 @@ nav ul li a {
   color: #000;
 }
 
-.sidebar nav ul li.active a {
-  background-color: #fff;
-  color: #000;
-  font-weight: bold;
-}
-
 
 .sidebar .top a {
   background-color: #fff;

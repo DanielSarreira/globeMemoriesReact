@@ -122,7 +122,7 @@ const Travels = () => {
     { name: 'Safari', icon: '🦁' },
     { name: 'Road Trips', icon: '🚗' },
     { name: 'Ilhas', icon: '🏝️' },
-    { name: 'Família', icon: '👩' },
+    { name: 'Família', icon: '👨‍👩‍👧‍👦' },
     { name: 'Viagens de Luxo', icon: '💎' },
     { name: 'Viagens de Negócios', icon: '💼' },
     { name: 'Viagens a Solo', icon: '🧳' },
@@ -151,7 +151,7 @@ const Travels = () => {
     { name: 'Românticas', icon: '💖' },  
     { name: 'Mobilidade Reduzida', icon: '♿' },  
     { name: 'Viagens a dois', icon: '💑' },  
-    { name: 'Viagens em Grupo', icon: '👨‍👩‍👧‍👦' },  
+    { name: 'Viagens em Grupo', icon: '🧑‍🤝‍🧑' },  
     { name: 'Turismo Rural', icon: '🌾' }, 
     { name: 'Turismo Subaquático', icon: '🤿' }, 
   ];
@@ -314,12 +314,13 @@ const Travels = () => {
                 <div className="travel-text">
                   <h3>{travel.name}</h3>
                   <p><b>Utilizador:</b> {travel.user}</p>
-                  <p><b>Categoria:</b> {travel.category.join(', ')}</p>
-                  <p><b>Preço Total da Viagem:</b> {travel.price}€</p>
-                  <p><b>Duração da Viagem:</b> {travel.days} dias</p>
                   <p><b>Localização:</b> {travel.country}, {travel.city}</p>
+                  <p><b>Preço Total da Viagem:</b> {travel.price}€</p>
+                  <p><b>Categoria:</b> {travel.category.join(', ')}</p>
+                  <p><b>Duração da Viagem:</b> {travel.days} dias</p>
+                  
                   <div className="travel-stars">
-                    {renderStars(travel.stars)}
+                  <p><b>Avaliação Geral:</b> {renderStars(travel.stars)}</p>
                   </div>
                   <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
                 </div>

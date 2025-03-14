@@ -252,6 +252,11 @@ button.tab-button {
   color: #333;
 }
 
+span {
+  color: #000;
+  font-family: 'Poppins', sans-serif;
+}
+
 .info button {
   margin-top: 15px;
   padding: 10px 20px;

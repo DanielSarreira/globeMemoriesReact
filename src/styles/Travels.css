@@ -347,6 +347,52 @@ button.see-all-button {
 
 
 
+svg {
+  height: 16px !important;
+  width: 20px !important;
+  padding: 0px;
+}
+
+
+input[type="checkbox"] {
+  appearance: none; /* Remove o estilo padrão do navegador */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
+
+  border: 2px solid #333; /* Cor da borda */
+  border-radius: 50%; /* Transforma em círculo */
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #333; /* Cor quando marcada */
+  border-color: #333;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 10px; /* Tamanho fixo do ponto interno */
+  height: 10px;
+  background-color: white;
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.2s;
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1); /* Aparece ao marcar */
+}
+
+
+
+
+
 img.highlight-image {
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -370,7 +416,6 @@ input[type="checkbox"]:checked + .category-icon {
   border-radius: 5px;
   border: 1px solid #ccc;
 }
-
 
 
 

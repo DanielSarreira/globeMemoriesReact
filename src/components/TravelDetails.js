@@ -86,8 +86,10 @@ const TravelDetails = () => {
       {showPriceDetails && (
   <div className="price-details">
     <p><strong>Preço da Estadia:</strong> {travel.priceDetails.hotel}€</p>
-    <p><strong>Preço Método de Transporte:</strong> {travel.priceDetails.flight}€</p>
     <p><strong>Preço da Alimentação:</strong> {travel.priceDetails.food}€</p>
+    <p><strong>Preço Métodos de Transporte:</strong> {travel.priceDetails.transport}€</p>
+    <p><strong>Extras</strong> {travel.priceDetails.extras}€</p>
+    
   </div>
 )}
 
@@ -97,7 +99,7 @@ const TravelDetails = () => {
 </button>
       
       <p><strong>📅 Datas:</strong> {travel.startDate} a {travel.endDate}</p>
-      <p><strong></strong> {renderStars(travel.stars)}</p>
+      <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
       
       
     </div>
@@ -138,6 +140,13 @@ const TravelDetails = () => {
           Alimentação
         </button>
 
+        <button 
+          className={`tab-button ${activeTab === 'transport' ? 'active' : ''}`}
+          onClick={() => setActiveTab('transport')}
+        >
+          Métodos de Transporte
+        </button>
+
 
         <button 
           className={`tab-button ${activeTab === 'referencePoints' ? 'active' : ''}`}
@@ -172,12 +181,11 @@ const TravelDetails = () => {
       {/* Div original (generalInfoLeft) */}
       <div className="generalInfoLeft">
         <h2><strong>{travel.name}</strong></h2>
-        <p><strong>✈️ Método de Transporte:<br></br></strong> {travel.transport}</p>
-        <p><strong>Clima:<br></br></strong> Média de {travel.climate.averageTemperature}
-            , melhor época para visitar: {travel.climate.bestTimeToVisit}</p>   
-            <p><strong>Línguas Utilizadas:<br></br></strong> {travel.languageAndCulture.language}<br></br>
-            <br></br><strong>Frases úteis:<br></br></strong> {travel.languageAndCulture.usefulPhrases}</p>    
-        
+       
+          
+            <p><strong>Clima:<br></br></strong> {travel.climate}</p>
+            <p><strong>Línguas Utilizadas:<br></br></strong> {travel.language}<br></br></p>
+            
         
       </div>
 
@@ -214,24 +222,48 @@ const TravelDetails = () => {
           
         )}
 
-
-
         {activeTab === 'accommodations' && (
           <div>
-            <h2>Estadias</h2>
-            <p>
-            <strong>🏨 Acomodações:</strong>
-            {travel.accommodations.map((acc, index) => (
+
+{/* Div original (generalInfoLeft) */}
+<div className="generalInfoLeft">
+        <h2><strong>{travel.name} | Estadia</strong></h2>
+       <br></br>
+      
+        {travel.accommodations.map((acc, index) => (
               <span key={index}>
-                {acc.name} ({acc.type} - {acc.priceRange}) -{' '}
-                <a href={acc.link} target="_blank" rel="noopener noreferrer">
-                  Link
-                </a>
-              </span>
+               <strong>🏨 Nome: </strong> {acc.name}<br></br>
+               <br></br><strong>🏨 Tipo de Estadia: </strong> <br></br>{acc.type}  <br></br>
+               <br></br><strong>📖 Regime: </strong> <br></br>{acc.regime}  <br></br>
+               <br></br><strong>📅 Check-in: </strong> <br></br>{acc.checkInDate}  <br></br>
+               <br></br><strong>📅 Check-out: </strong> <br></br>{acc.checkInDate}  <br></br>
+               
+              </span>   
             ))}
-          </p>
-          <br></br>
-          <br></br>
+            
+            
+        
+      </div>
+
+      {/* Nova div (generalInfoRight) */}
+      <div className="generalInfoRight">
+      {travel.accommodations.map((acc, index) => (
+              <span key={index}>
+               
+               <br></br><strong>📖 Descrição da Estadia: </strong> <br></br>{acc.description}  <br></br>
+             
+              </span>
+              
+            ))}
+        
+        
+        
+      </div>
+
+
+
+
+
         <div className="gallery">
         <h2>Galeria de Fotos da Estadia</h2>
         <div className="gallery-images">
@@ -256,13 +288,11 @@ const TravelDetails = () => {
           <div>
             <h2>Alimentação</h2>
             <p>
-            <strong>🍽️ Recomendações de Comida:</strong>
+            <strong>🍽️ Recomendações de Comida:</strong><br></br>
             {travel.foodRecommendations.map((food, index) => (
               <span key={index}>
-                {food.dish} -{' '}
-                <a href={food.link} target="_blank" rel="noopener noreferrer">
-                  {food.restaurant}
-                </a>
+                {food.name} -{' '}
+                {food.description} {' '}
               </span>
             ))}
           </p>
@@ -286,6 +316,19 @@ const TravelDetails = () => {
       </div>
           </div>
         )}
+
+
+
+
+
+{activeTab === 'transport' && (
+          <div>
+            <h2>Métodos de Transporte</h2>
+            <p><strong>✈️ Método de Transporte:<br></br></strong> {travel.transport}</p>       
+          </div>
+        )}
+
+
 
 
 
@@ -386,7 +429,7 @@ const TravelDetails = () => {
                   <p><strong>{travel.name}</strong></p>
                   <p><strong>Preço:</strong> {travel.price}€</p>
                   <p>
-                    <strong>Avaliação:</strong> {renderStars(travel.stars)}
+                    <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
                   </p>
                 </div>
               </Link>
