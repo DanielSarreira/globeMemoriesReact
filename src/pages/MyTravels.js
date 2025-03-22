@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import TravelsData from '../data/travelsData.js';
 import { Link } from 'react-router-dom';
-import '../styles/MyTravels.css';
+import { FaStar } from 'react-icons/fa';
+import '../styles/styles.css';
+
+// Componente de Toast para feedback
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className={`toast ${type}`}>
+      {message}
+    </div>
+  );
+};
 
 const MyTravels = () => {
   const [travels, setTravels] = useState(TravelsData);
@@ -16,6 +34,7 @@ const MyTravels = () => {
     transport: '',
     startDate: '',
     endDate: '',
+    BookingTripPaymentDate: '',
     highlightImage: '',
     views: 0,
     priceDetails: { hotel: '', flight: '', food: '', extras: '' },
@@ -46,7 +65,8 @@ const MyTravels = () => {
     localTransport: [],
     language: '',
     reviews: [],
-    negativePoints: ''
+    negativePoints: '',
+    privacy: 'public'
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -66,7 +86,16 @@ const MyTravels = () => {
   const [newPointOfInterest, setNewPointOfInterest] = useState({ name: '', type: '', link: '' });
   const [editingItineraryDay, setEditingItineraryDay] = useState(null);
   const [newItineraryDay, setNewItineraryDay] = useState({ day: '', activities: [''] });
-  const [itineraryError, setItineraryError] = useState(''); // Novo estado para mensagem de erro
+  const [itineraryError, setItineraryError] = useState('');
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
+
+  const renderStars = (stars) => (
+    [...Array(5)].map((_, index) => (
+      <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={20} />
+    ))
+  );
+
+  const location = useLocation();
 
   const transportOptions = [
     'Carro', 'Comboio', 'Autocarro', 'Avião', 'Bicicleta', 'A Pé', 'Barco', 'Táxi'
@@ -78,15 +107,36 @@ const MyTravels = () => {
     'Solo Travel', 'Family', 'Romantic'
   ];
 
+  // Abrir modal automaticamente ao redirecionar com estado
   useEffect(() => {
-    console.log('isModalOpen atualizado:', isModalOpen);
-  }, [isModalOpen]);
+    if (location.state?.openModal) {
+      openModal();
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location.state]);
 
-  useEffect(() => {
-    console.log('newFoodRecommendation atualizado:', newFoodRecommendation);
-    console.log('editingFoodIndex atualizado:', editingFoodIndex);
-  }, [newFoodRecommendation, editingFoodIndex]);
+  // Função para validar campos obrigatórios
+  const validateForm = () => {
+    if (!newTravel.name.trim()) {
+      setToast({ message: 'O nome da viagem é obrigatório!', type: 'error', show: true });
+      return false;
+    }
+    if (!newTravel.country) {
+      setToast({ message: 'Selecione um país!', type: 'error', show: true });
+      return false;
+    }
+    if (!newTravel.city.trim()) {
+      setToast({ message: 'A cidade é obrigatória!', type: 'error', show: true });
+      return false;
+    }
+    if (!newTravel.startDate || !newTravel.endDate) {
+      setToast({ message: 'As datas de início e fim são obrigatórias!', type: 'error', show: true });
+      return false;
+    }
+    return true;
+  };
 
+  // Funções de manipulação de estado
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     if (type === 'checkbox') {
@@ -110,25 +160,6 @@ const MyTravels = () => {
           }
           return { ...prevState, localTransport: updatedTransport };
         });
-      } else if (name.startsWith('accommodations')) {
-        const [indexStr, field] = name.split('.');
-        const index = parseInt(indexStr.replace('accommodations', ''), 10);
-        if (field === 'amenities') {
-          setNewTravel((prevState) => {
-            const updatedAccommodations = [...prevState.accommodations];
-            let updatedAmenities = [...(updatedAccommodations[index]?.amenities || [])];
-            if (checked) {
-              updatedAmenities.push(value);
-            } else {
-              updatedAmenities = updatedAmenities.filter((amenity) => amenity !== value);
-            }
-            updatedAccommodations[index] = {
-              ...updatedAccommodations[index],
-              amenities: updatedAmenities
-            };
-            return { ...prevState, accommodations: updatedAccommodations };
-          });
-        }
       }
     } else if (type === 'file') {
       if (name === 'highlightImage') {
@@ -136,9 +167,15 @@ const MyTravels = () => {
         if (file) {
           setNewTravel((prevState) => ({
             ...prevState,
-            [name]: file,
+            highlightImage: file,
           }));
           setImagePreview(URL.createObjectURL(file));
+        } else {
+          setNewTravel((prevState) => ({
+            ...prevState,
+            highlightImage: '',
+          }));
+          setImagePreview(null);
         }
       } else if (name === 'images_generalInformation') {
         const newFiles = Array.from(files);
@@ -202,12 +239,6 @@ const MyTravels = () => {
         ...prevState,
         priceDetails: { ...prevState.priceDetails, [field]: value },
       }));
-    } else if (name.includes('climate.')) {
-      const field = name.split('.')[1];
-      setNewTravel((prevState) => ({
-        ...prevState,
-        climate: { ...prevState.climate, [field]: value },
-      }));
     } else {
       setNewTravel((prevState) => ({
         ...prevState,
@@ -223,6 +254,10 @@ const MyTravels = () => {
 
   const handleAddOrEditFoodRecommendation = (e) => {
     e.stopPropagation();
+    if (!newFoodRecommendation.name.trim()) {
+      setToast({ message: 'O nome da recomendação alimentar é obrigatório!', type: 'error', show: true });
+      return;
+    }
     setNewTravel((prev) => {
       const updatedRecommendations = [...prev.foodRecommendations];
       if (editingFoodIndex !== null) {
@@ -240,6 +275,7 @@ const MyTravels = () => {
     });
     setNewFoodRecommendation({ name: '', description: '' });
     setEditingFoodIndex(null);
+    setToast({ message: 'Recomendação alimentar adicionada/editada com sucesso!', type: 'success', show: true });
   };
 
   const handleDeleteFoodRecommendation = (e, index) => {
@@ -250,22 +286,25 @@ const MyTravels = () => {
     });
     setEditingFoodIndex(null);
     setNewFoodRecommendation({ name: '', description: '' });
+    setToast({ message: 'Recomendação alimentar removida com sucesso!', type: 'success', show: true });
   };
 
   const handleEditFoodRecommendation = (e, index) => {
     e.stopPropagation();
-    console.log('Editando recomendação no índice:', index);
     const recommendation = newTravel.foodRecommendations[index];
-    console.log('Recomendação selecionada:', recommendation);
     if (recommendation) {
       setNewFoodRecommendation({
         name: recommendation.name || '',
         description: recommendation.description || ''
       });
       setEditingFoodIndex(index);
-    } else {
-      console.error('Recomendação não encontrada no índice:', index);
     }
+  };
+
+  const handleCancelEditFood = (e) => {
+    e.stopPropagation();
+    setNewFoodRecommendation({ name: '', description: '' });
+    setEditingFoodIndex(null);
   };
 
   const handlePointChange = (e) => {
@@ -275,6 +314,10 @@ const MyTravels = () => {
 
   const handleAddOrEditPointOfInterest = (e) => {
     e.stopPropagation();
+    if (!newPointOfInterest.name.trim()) {
+      setToast({ message: 'O nome do ponto de referência é obrigatório!', type: 'error', show: true });
+      return;
+    }
     setNewTravel((prev) => {
       const updatedPoints = [...prev.pointsOfInterest];
       if (editingPointIndex !== null) {
@@ -294,6 +337,7 @@ const MyTravels = () => {
     });
     setNewPointOfInterest({ name: '', type: '', link: '' });
     setEditingPointIndex(null);
+    setToast({ message: 'Ponto de referência adicionado/editado com sucesso!', type: 'success', show: true });
   };
 
   const handleDeletePointOfInterest = (e, index) => {
@@ -304,13 +348,12 @@ const MyTravels = () => {
     });
     setEditingPointIndex(null);
     setNewPointOfInterest({ name: '', type: '', link: '' });
+    setToast({ message: 'Ponto de referência removido com sucesso!', type: 'success', show: true });
   };
 
   const handleEditPointOfInterest = (e, index) => {
     e.stopPropagation();
-    console.log('Editando ponto de referência no índice:', index);
     const point = newTravel.pointsOfInterest[index];
-    console.log('Ponto selecionado:', point);
     if (point) {
       setNewPointOfInterest({
         name: point.name || '',
@@ -318,8 +361,6 @@ const MyTravels = () => {
         link: point.link || ''
       });
       setEditingPointIndex(index);
-    } else {
-      console.error('Ponto não encontrado no índice:', index);
     }
   };
 
@@ -329,26 +370,19 @@ const MyTravels = () => {
     setEditingPointIndex(null);
   };
 
-  const handleCancelEditFood = (e) => {
-    e.stopPropagation();
-    setNewFoodRecommendation({ name: '', description: '' });
-    setEditingFoodIndex(null);
-  };
-
-  // Funções para o Itinerário
   const calculateTripDays = () => {
     if (!newTravel.startDate || !newTravel.endDate) return 0;
     const start = new Date(newTravel.startDate);
     const end = new Date(newTravel.endDate);
     const diffTime = Math.abs(end - start);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 para incluir o dia inicial
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   };
 
   const handleItineraryChange = (e, index) => {
     const { name, value } = e.target;
     if (name === 'day') {
       setNewItineraryDay((prev) => ({ ...prev, day: value }));
-      setItineraryError(''); // Limpar erro ao alterar o valor
+      setItineraryError('');
     } else if (name.startsWith('activity')) {
       const activityIndex = parseInt(name.split('-')[1], 10);
       const updatedActivities = [...newItineraryDay.activities];
@@ -378,13 +412,11 @@ const MyTravels = () => {
     const totalDays = calculateTripDays();
     const dayToAdd = parseInt(newItineraryDay.day, 10);
 
-    // Validação do dia
     if (isNaN(dayToAdd) || dayToAdd < 1 || dayToAdd > totalDays) {
       setItineraryError(`Por favor, insira um dia entre 1 e ${totalDays}.`);
       return;
     }
 
-    // Verificar se o dia já existe (apenas ao adicionar, não ao editar)
     const dayExists = newTravel.itinerary.some(
       (item) => item.day === dayToAdd && editingItineraryDay === null
     );
@@ -395,7 +427,6 @@ const MyTravels = () => {
       return;
     }
 
-    // Se passar nas validações, prosseguir com a adição/edição
     setNewTravel((prev) => {
       const updatedItinerary = [...prev.itinerary];
       const filteredActivities = newItineraryDay.activities.filter(
@@ -416,7 +447,8 @@ const MyTravels = () => {
     });
     setNewItineraryDay({ day: '', activities: [''] });
     setEditingItineraryDay(null);
-    setItineraryError(''); // Limpar mensagem de erro após sucesso
+    setItineraryError('');
+    setToast({ message: 'Dia do itinerário adicionado/editado com sucesso!', type: 'success', show: true });
   };
 
   const handleEditItineraryDay = (e, index) => {
@@ -427,7 +459,7 @@ const MyTravels = () => {
       activities: day.activities.length > 0 ? [...day.activities] : ['']
     });
     setEditingItineraryDay(index);
-    setItineraryError(''); // Limpar erro ao editar
+    setItineraryError('');
   };
 
   const handleDeleteItineraryDay = (e, index) => {
@@ -438,35 +470,27 @@ const MyTravels = () => {
     }));
     setEditingItineraryDay(null);
     setNewItineraryDay({ day: '', activities: [''] });
-    setItineraryError(''); // Limpar erro ao deletar
+    setItineraryError('');
+    setToast({ message: 'Dia do itinerário removido com sucesso!', type: 'success', show: true });
   };
 
   const handleCancelEditItinerary = (e) => {
     e.stopPropagation();
     setNewItineraryDay({ day: '', activities: [''] });
     setEditingItineraryDay(null);
-    setItineraryError(''); // Limpar erro ao cancelar
+    setItineraryError('');
   };
 
   const handleEdit = (id) => {
     const travelToEdit = travels.find((travel) => travel.id === id);
     if (!travelToEdit) {
-      console.error(`Viagem com id ${id} não encontrada.`);
+      setToast({ message: `Viagem com ID ${id} não encontrada!`, type: 'error', show: true });
       return;
     }
 
-    const transportArray = travelToEdit.transport ? [travelToEdit.transport] : [];
-
-    // Resetar as pré-visualizações antes de carregar novas imagens
-    setGeneralInfoImagePreviews([]);
-    setAccommodationImagePreviews([]);
-    setFoodRecommendationImagePreviews([]);
-    setTransportImagePreviews([]);
-    setReferencePointImagePreviews([]);
-
     setNewTravel({
       ...travelToEdit,
-      highlightImage: travelToEdit.highlightImage,
+      highlightImage: travelToEdit.highlightImage || '',
       category: travelToEdit.category || [],
       priceDetails: travelToEdit.priceDetails || { hotel: '', flight: '', food: '', extras: '' },
       accommodations: Array.isArray(travelToEdit.accommodations) && travelToEdit.accommodations.length > 0
@@ -502,7 +526,8 @@ const MyTravels = () => {
         : [],
       images_referencePoints: travelToEdit.images_referencePoints || [],
       itinerary: Array.isArray(travelToEdit.itinerary) ? travelToEdit.itinerary : [],
-      localTransport: Array.isArray(travelToEdit.localTransport) ? travelToEdit.localTransport : transportArray,
+      localTransport: Array.isArray(travelToEdit.localTransport) ? travelToEdit.localTransport : [],
+      privacy: travelToEdit.privacy || 'public'
     });
 
     setEditTravelId(id);
@@ -515,11 +540,11 @@ const MyTravels = () => {
     setEditingPointIndex(null);
     setNewItineraryDay({ day: '', activities: [''] });
     setEditingItineraryDay(null);
-    setItineraryError(''); // Limpar erro ao abrir o modal de edição
+    setItineraryError('');
 
-    // Carregar a pré-visualização da imagem de destaque
+    // Corrigir a pré-visualização da imagem de destaque
     if (travelToEdit.highlightImage) {
-      if (travelToEdit.highlightImage instanceof File || travelToEdit.highlightImage instanceof Blob) {
+      if (travelToEdit.highlightImage instanceof File) {
         setImagePreview(URL.createObjectURL(travelToEdit.highlightImage));
       } else if (typeof travelToEdit.highlightImage === 'string') {
         setImagePreview(travelToEdit.highlightImage);
@@ -530,80 +555,47 @@ const MyTravels = () => {
       setImagePreview(null);
     }
 
-    // Carregar as imagens das informações gerais
-    if (travelToEdit.images_generalInformation && Array.isArray(travelToEdit.images_generalInformation) && travelToEdit.images_generalInformation.length > 0) {
-      const previews = travelToEdit.images_generalInformation.map((image) => {
-        if (image instanceof File || image instanceof Blob) {
-          return URL.createObjectURL(image);
-        } else if (typeof image === 'string') {
-          return image;
-        }
-        return null;
-      }).filter(preview => preview !== null);
+    if (travelToEdit.images_generalInformation && Array.isArray(travelToEdit.images_generalInformation)) {
+      const previews = travelToEdit.images_generalInformation.map((image) =>
+        image instanceof File ? URL.createObjectURL(image) : image
+      );
       setGeneralInfoImagePreviews(previews);
     } else {
       setGeneralInfoImagePreviews([]);
     }
 
-    // Carregar as imagens da estadia (com depuração)
-    console.log('Imagens da estadia antes de processar:', travelToEdit.accommodations[0]?.images);
-    if (travelToEdit.accommodations && Array.isArray(travelToEdit.accommodations) && travelToEdit.accommodations.length > 0) {
+    if (travelToEdit.accommodations && Array.isArray(travelToEdit.accommodations)) {
       const accommodationImages = travelToEdit.accommodations[0]?.images || [];
-      console.log('Imagens da estadia processadas:', accommodationImages);
-      const previews = accommodationImages.map((image) => {
-        if (image instanceof File || image instanceof Blob) {
-          return URL.createObjectURL(image);
-        } else if (typeof image === 'string') {
-          return image;
-        }
-        return null;
-      }).filter(preview => preview !== null);
-      console.log('Pré-visualizações geradas para estadia:', previews);
+      const previews = accommodationImages.map((image) =>
+        image instanceof File ? URL.createObjectURL(image) : image
+      );
       setAccommodationImagePreviews(previews);
     } else {
       setAccommodationImagePreviews([]);
     }
 
-    // Carregar as imagens das recomendações alimentares
-    if (travelToEdit.images_foodRecommendations && Array.isArray(travelToEdit.images_foodRecommendations) && travelToEdit.images_foodRecommendations.length > 0) {
-      const previews = travelToEdit.images_foodRecommendations.map((image) => {
-        if (image instanceof File || image instanceof Blob) {
-          return URL.createObjectURL(image);
-        } else if (typeof image === 'string') {
-          return image;
-        }
-        return null;
-      }).filter(preview => preview !== null);
+    if (travelToEdit.images_foodRecommendations && Array.isArray(travelToEdit.images_foodRecommendations)) {
+      const previews = travelToEdit.images_foodRecommendations.map((image) =>
+        image instanceof File ? URL.createObjectURL(image) : image
+      );
       setFoodRecommendationImagePreviews(previews);
     } else {
       setFoodRecommendationImagePreviews([]);
     }
 
-    // Carregar as imagens dos métodos de transporte
-    if (travelToEdit.images_localTransport && Array.isArray(travelToEdit.images_localTransport) && travelToEdit.images_localTransport.length > 0) {
-      const previews = travelToEdit.images_localTransport.map((image) => {
-        if (image instanceof File || image instanceof Blob) {
-          return URL.createObjectURL(image);
-        } else if (typeof image === 'string') {
-          return image;
-        }
-        return null;
-      }).filter(preview => preview !== null);
+    if (travelToEdit.images_localTransport && Array.isArray(travelToEdit.images_localTransport)) {
+      const previews = travelToEdit.images_localTransport.map((image) =>
+        image instanceof File ? URL.createObjectURL(image) : image
+      );
       setTransportImagePreviews(previews);
     } else {
       setTransportImagePreviews([]);
     }
 
-    // Carregar as imagens dos pontos de referência
-    if (travelToEdit.images_referencePoints && Array.isArray(travelToEdit.images_referencePoints) && travelToEdit.images_referencePoints.length > 0) {
-      const previews = travelToEdit.images_referencePoints.map((image) => {
-        if (image instanceof File || image instanceof Blob) {
-          return URL.createObjectURL(image);
-        } else if (typeof image === 'string') {
-          return image;
-        }
-        return null;
-      }).filter(preview => preview !== null);
+    if (travelToEdit.images_referencePoints && Array.isArray(travelToEdit.images_referencePoints)) {
+      const previews = travelToEdit.images_referencePoints.map((image) =>
+        image instanceof File ? URL.createObjectURL(image) : image
+      );
       setReferencePointImagePreviews(previews);
     } else {
       setReferencePointImagePreviews([]);
@@ -611,11 +603,13 @@ const MyTravels = () => {
   };
 
   const handleDelete = (id) => {
-    console.log(`Delete travel with ID: ${id}`);
     setTravels(travels.filter((travel) => travel.id !== id));
+    setToast({ message: 'Viagem excluída com sucesso!', type: 'success', show: true });
   };
 
   const handleAddTravel = () => {
+    if (!validateForm()) return;
+
     if (isEditing) {
       setTravels((prevTravels) =>
         prevTravels.map((travel) =>
@@ -623,9 +617,7 @@ const MyTravels = () => {
             ? {
                 ...newTravel,
                 id: editTravelId,
-                highlightImage: newTravel.highlightImage instanceof File
-                  ? newTravel.highlightImage
-                  : newTravel.highlightImage,
+                highlightImage: newTravel.highlightImage, // Manter o valor existente, seja File ou string
                 images_generalInformation: newTravel.images_generalInformation || [],
                 accommodations: Array.isArray(newTravel.accommodations)
                   ? newTravel.accommodations.map(acc => ({
@@ -657,18 +649,18 @@ const MyTravels = () => {
                 ),
                 localTransport: newTravel.localTransport || [],
                 images_localTransport: newTravel.images_localTransport || [],
+                privacy: newTravel.privacy
               }
             : travel
         )
       );
+      setToast({ message: 'Viagem editada com sucesso!', type: 'success', show: true });
     } else {
       const newId = travels.length + 1;
       const addedTravel = {
         ...newTravel,
         id: newId,
-        highlightImage: newTravel.highlightImage instanceof File
-          ? newTravel.highlightImage
-          : newTravel.highlightImage,
+        highlightImage: newTravel.highlightImage, // Salvar como File ou string
         images_generalInformation: newTravel.images_generalInformation || [],
         accommodations: Array.isArray(newTravel.accommodations)
           ? newTravel.accommodations.map(acc => ({
@@ -700,10 +692,18 @@ const MyTravels = () => {
         ),
         localTransport: newTravel.localTransport || [],
         images_localTransport: newTravel.images_localTransport || [],
+        privacy: newTravel.privacy
       };
       setTravels((prevTravels) => [...prevTravels, addedTravel]);
+      setToast({ message: 'Viagem adicionada com sucesso!', type: 'success', show: true });
     }
     resetForm();
+  };
+
+  // Nova função para adicionar ou editar apenas os pontos negativos
+  const handleAddOrEditNegativePoints = (e) => {
+    e.stopPropagation();
+    setToast({ message: 'Pontos negativos atualizados com sucesso!', type: 'success', show: true });
   };
 
   const resetForm = () => {
@@ -718,6 +718,7 @@ const MyTravels = () => {
       transport: '',
       startDate: '',
       endDate: '',
+      BookingTripPaymentDate: '',
       highlightImage: '',
       views: 0,
       priceDetails: { hotel: '', flight: '', food: '', extras: '' },
@@ -748,7 +749,8 @@ const MyTravels = () => {
       localTransport: [],
       language: '',
       reviews: [],
-      negativePoints: ''
+      negativePoints: '',
+      privacy: 'public'
     });
     setIsModalOpen(false);
     setIsEditing(false);
@@ -767,7 +769,7 @@ const MyTravels = () => {
     setNewPointOfInterest({ name: '', type: '', link: '' });
     setEditingItineraryDay(null);
     setNewItineraryDay({ day: '', activities: [''] });
-    setItineraryError(''); // Limpar erro ao resetar o formulário
+    setItineraryError('');
   };
 
   const openModal = () => {
@@ -783,18 +785,38 @@ const MyTravels = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setItineraryError(''); // Limpar erro ao mudar de aba
+    setItineraryError('');
   };
 
   return (
     <div className="my-travels-container">
-      <button onClick={openModal}>Adicionar Viagem</button>
+      {/* Exibir Toast */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+
+      <button className='primary-action-button' onClick={openModal}>Adicionar Viagem</button><br></br><br></br>
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-actions">
-              <h2>{isEditing ? 'Editar Viagem' : 'Adicionar Viagem'}</h2>
+              <label>🔒 Privacidade da Viagem:</label>
+              <select
+                name="privacy"
+                value={newTravel.privacy}
+                onChange={handleChange}
+                style={{ width: '15%', padding: '5px' }}
+              >
+                <option value="public">Pública</option>
+                <option value="followers">Somente para Seguidores</option>
+                <option value="private">Privada</option>
+              </select>
+
               <button type="button" onClick={handleAddTravel} className="primary-action-button">
                 {isEditing ? 'Guardar Alterações' : 'Adicionar Viagem'}
               </button>
@@ -850,7 +872,12 @@ const MyTravels = () => {
                       </label>
                       {imagePreview ? (
                         <div className="image-preview-container">
-                          <img src={imagePreview} alt="Preview da imagem" className="image-preview" />
+                          <img
+                            src={imagePreview}
+                            alt="Preview da imagem"
+                            className="image-preview"
+                            onError={() => setImagePreview(null)}
+                          />
                           <button
                             type="button"
                             onClick={() => {
@@ -919,6 +946,8 @@ const MyTravels = () => {
                       name="name"
                       value={newTravel.name}
                       onChange={handleChange}
+                      required
+                      placeholder="Ex.: Viagem à cidade de Coimbra "
                     />
 
                     <br /><br />
@@ -926,7 +955,7 @@ const MyTravels = () => {
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%' }}>
                       <div style={{ flex: 1, minWidth: '200px' }}>
                         <label>🌍 País:</label>
-                        <select name="country" value={newTravel.country} onChange={handleChange}>
+                        <select name="country" value={newTravel.country} onChange={handleChange} required>
                           <option value="">Selecione um país</option>
                           <option value="Portugal">Portugal</option>
                           <option value="Brazil">Brazil</option>
@@ -943,6 +972,7 @@ const MyTravels = () => {
                           name="city"
                           value={newTravel.city}
                           onChange={handleChange}
+                          required
                         />
                       </div>
                     </div>
@@ -957,6 +987,7 @@ const MyTravels = () => {
                           name="startDate"
                           value={newTravel.startDate}
                           onChange={handleChange}
+                          required
                         />
                       </div>
                       <div style={{ flex: 1, minWidth: '200px' }}>
@@ -966,6 +997,22 @@ const MyTravels = () => {
                           name="endDate"
                           value={newTravel.endDate}
                           onChange={handleChange}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <br /><br />
+
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%' }}>
+                      <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label>📅 Data de Marcação / Pagamento da Viagem:</label>
+                        <input
+                          type="date"
+                          name="BookingTripPaymentDate"
+                          value={newTravel.BookingTripPaymentDate}
+                          onChange={handleChange}
+                          required
                         />
                       </div>
                     </div>
@@ -1034,7 +1081,7 @@ const MyTravels = () => {
                       </div>
                     )}
 
-                    <br /><br /><br /><br />
+                    <br /><br />
 
                     <label>Temperatura (°C):</label>
                     <input
@@ -1174,7 +1221,7 @@ const MyTravels = () => {
                             <option value="Apenas Alojamento">Apenas Alojamento</option>
                           </select>
 
-                          <label>Descrição:</label>
+                          <label>A sua opinião da Estadia:</label>
                           <textarea
                             name={`accommodations${index}.description`}
                             value={accommodation.description}
@@ -1184,35 +1231,17 @@ const MyTravels = () => {
                             style={{ width: '100%', marginBottom: '10px' }}
                           />
 
-                          <label>Avaliação (1-5):</label>
+                          <label>Avaliação da Estadia (1 a 5):</label>
                           <input
                             type="number"
                             name={`accommodations${index}.rating`}
-                            value={accommodation.rating}
+                            value={accommodation.rating || ''}
                             min="1"
                             max="5"
-                            step="0.1"
-                            onChange={handleChange}
-                            placeholder="Ex.: 4.5"
-                            style={{ width: '100%', marginBottom: '10px' }}
-                          />
-
-                          <label>Data de Check-in:</label>
-                          <input
-                            type="date"
-                            name={`accommodations${index}.checkInDate`}
-                            value={accommodation.checkInDate}
-                            onChange={handleChange}
-                            style={{ width: '100%', marginBottom: '10px' }}
-                          />
-
-                          <label>Data de Check-out:</label>
-                          <input
-                            type="date"
-                            name={`accommodations${index}.checkOutDate`}
-                            value={accommodation.checkOutDate}
-                            onChange={handleChange}
-                            style={{ width: '100%', marginBottom: '10px' }}
+                            onChange={(e) => {
+                              const value = Math.max(1, Math.min(5, Number(e.target.value)));
+                              handleChange({ ...e, target: { ...e.target, name: `accommodations${index}.rating`, value } });
+                            }}
                           />
                         </div>
                       ))
@@ -1222,7 +1251,7 @@ const MyTravels = () => {
                   </div>
 
                   <div className="RightPosition">
-                    <label>Fotografias do Alojamento:</label>
+                    <label>Fotografias da Estadia:</label>
                     <div className="image-upload-container">
                       <input
                         type="file"
@@ -1235,7 +1264,7 @@ const MyTravels = () => {
                         style={{ display: 'none' }}
                       />
                       <label htmlFor="accommodationImagesInput" className="upload-button">
-                        <span role="img" aria-label="câmera">📸</span> Adicionar Fotos do Alojamento
+                        <span role="img" aria-label="câmera">📸</span> Adicionar Fotos da Estadia
                       </label>
                       {accommodationImagePreviews.length > 0 ? (
                         <div className="general-info-image-previews">
@@ -1737,10 +1766,7 @@ const MyTravels = () => {
                         style={{ width: '100%', marginBottom: '10px', padding: '5px' }}
                       />
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddTravel();
-                        }}
+                        onClick={(e) => handleAddOrEditNegativePoints(e)}
                         style={{
                           padding: '8px 16px',
                           backgroundColor: '#007bff',
@@ -1749,7 +1775,6 @@ const MyTravels = () => {
                           borderRadius: '4px',
                           marginRight: '10px'
                         }}
-                        disabled={!newTravel.negativePoints.trim()}
                       >
                         {isEditing ? 'Guardar Alterações' : 'Adicionar'}
                       </button>
@@ -1758,17 +1783,17 @@ const MyTravels = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             setNewTravel((prev) => ({ ...prev, negativePoints: '' }));
-                            handleAddTravel();
+                            setToast({ message: 'Pontos negativos removidos com sucesso!', type: 'success', show: true });
                           }}
                           style={{
                             padding: '8px 16px',
-                            backgroundColor: '#6c757d',
+                            backgroundColor: '#dc3545',
                             color: '#fff',
                             border: 'none',
                             borderRadius: '4px'
                           }}
                         >
-                          Cancelar
+                          Remover Pontos Negativos
                         </button>
                       )}
                     </div>
@@ -1780,44 +1805,47 @@ const MyTravels = () => {
         </div>
       )}
 
-      <div className="travels-listMy">
-        {travels.length > 0 ? (
+      <div className="travels-list">
+        {travels.length === 0 ? (
+          <p>Nenhuma viagem adicionada ainda. Comece adicionando uma nova viagem!</p>
+        ) : (
           travels.map((travel) => (
-            <div key={travel.id} className="travel-itemMy">
-              {travel.highlightImage instanceof File ? (
-                <img
-                  src={URL.createObjectURL(travel.highlightImage)}
-                  alt={`Highlight image of the travel ${travel.name}`}
-                  className="travel-imageMy"
-                  onLoad={() => URL.revokeObjectURL(travel.highlightImage)}
-                />
-              ) : typeof travel.highlightImage === 'string' ? (
-                <img
-                  src={travel.highlightImage}
-                  alt={`Highlight image of the travel ${travel.name}`}
-                  className="travel-imageMy"
-                />
-              ) : (
-                <div className="no-image">Sem imagem disponível</div>
-              )}
-              <h2>{travel.name}</h2>
-              <p><strong>Utilizador:</strong> Tiago Miranda</p>
-              <p><strong>Localização:</strong> {travel.country}, {travel.city}</p>
-              <p><strong>Preço Total da Viagem:</strong> €{travel.price}</p>
-              <p><strong>Categoria:</strong> {Array.isArray(travel.category) ? travel.category.join(', ') : 'Categoria não disponível'}</p>
-              <p><strong>Datas:</strong> {travel.startDate} a {travel.endDate}</p>
-              <p><strong>Avaliação Geral:</strong> {travel.stars || 'Não especificada'}</p>
-              <p><strong>Métodos de Transporte:</strong> {Array.isArray(travel.localTransport) ? travel.localTransport.join(', ') : travel.transport || 'Não especificado'}</p>
-              <p><strong>Pontos Negativos:</strong> {travel.negativePoints || 'Nenhum ponto negativo'}</p>
+            <div key={travel.id} className="travel-card">
+              <Link to={`/travel/${travel.id}`}>
+                <div className="travel-content">
+                  {travel.highlightImage ? (
+                    <img
+                      src={
+                        travel.highlightImage instanceof File
+                          ? URL.createObjectURL(travel.highlightImage)
+                          : travel.highlightImage
+                      }
+                      alt={travel.name}
+                      className="highlight-image"
+                      onError={(e) => (e.target.src = '/default-image.jpg')} // Imagem padrão em caso de erro
+                    />
+                  ) : 
+                    <div className="no-image-placeholder"></div>
+                  }
+                  <div className="travel-text">
+                    <h2>{travel.name}</h2>
+                    <p><b>👤 Utilizador:</b> {travel.user}</p>
+                    <p><b>🌍 País:</b> {travel.country}</p>
+                    <p><b>🏙️ Cidade:</b> {travel.city}</p>
+                    <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p>
+                    <p><b>📅 Duração da Viagem:</b> {travel.days} dias</p>
+                    <p><b>💰 Preço Total da Viagem:</b> {travel.price}€</p>
+                    <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+                    <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
+                  </div>
+                </div>
+              </Link>
               <div className="travel-actions">
                 <button onClick={() => handleEdit(travel.id)}>Editar</button>
-                <button onClick={() => handleDelete(travel.id)}>Apagar</button>
-                <button><Link to={`/travel/${travel.id}`}>Ver Detalhes</Link></button>
+                <button onClick={() => handleDelete(travel.id)}>Excluir</button>
               </div>
             </div>
           ))
-        ) : (
-          <p>Sem viagens para mostrar.</p>
         )}
       </div>
     </div>

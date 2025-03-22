@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext'
 import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
-import '../styles/Register.css'; // Ficheiro CSS
+import '../styles/styles.css';
 import logo from '../images/register.jpg';
 
 const Register = () => {

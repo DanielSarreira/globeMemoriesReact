@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { request, setAuthHeader } from '../axios_helper';
 import {
   FaHome,
@@ -16,12 +17,19 @@ import {
   FaInstagram,
   FaBars,
 } from 'react-icons/fa';
-import './Sidebar.css';
-import logo from '../images/Globe-Memories.png'; // Atualize o caminho conforme necessário
+import '../styles/styles.css';
+import logo from '../images/Globe-Memories.png';
 
 const Sidebar = () => {
+  const { user } = useAuth();
   const [showCategories, setShowCategories] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
+  const [activePage, setActivePage] = useState('/');
+
+  useEffect(() => {
+    setActivePage(location.pathname);
+  }, [location]);
 
   const toggleCategories = () => {
     setShowCategories(!showCategories);
@@ -32,9 +40,12 @@ const Sidebar = () => {
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem('user');
     setAuthHeader(null);
   };
+
+  const profileLink = user ? `/profile/${user.username || 'guest'}` : '/profile/guest';
+  const editProfileLink = user ? `/profile/edit/${user.username || 'guest'}` : '/profile/edit/guest';
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -43,70 +54,88 @@ const Sidebar = () => {
       </button>
 
       <div className="user-info">
-      {!isCollapsed && (
+        {!isCollapsed && (
           <div className="logo-container">
-            <img src={logo} alt="Globe Memories Logo" className="logo" />
+            {/* Envolver o logotipo em um Link para redirecionar para a página inicial */}
+            <Link to="/">
+              <img src={logo} alt="Globe Memories Logo" className="logo" />
+            </Link>
           </div>
         )}
         <div className="profile-avatar">
           <img
-            src="/static/media/avatar.55c3eb5641681d05db07.jpg"
+            src={user?.profilePicture || '/static/media/avatar.55c3eb5641681d05db07.jpg'}
             alt="Avatar do usuário"
             className="avatar"
           />
         </div>
-        {!isCollapsed && <p>Bem-vindo(a) Tiago!</p>}
-        
+        {!isCollapsed && <p>Bem-vindo(a) {user?.username || 'Convidado'}!</p>}
       </div>
 
       <nav>
         <ul>
           <li>
-            <Link to="/">
-              <FaHome className="icon" /> {!isCollapsed && 'Home'}
+            <Link
+              to="/"
+              className={activePage === '/' ? 'active' : ''}
+              onClick={() => setActivePage('/')}
+            >
+              <FaHome className="icon" /> {!isCollapsed && 'Página Inicial'}
             </Link>
           </li>
           <li>
-            <Link to="/travels">
-              <FaPlane className="icon" /> {!isCollapsed && 'Viagens'}
+            <Link
+              to="/travels"
+              className={activePage === '/travels' ? 'active' : ''}
+              onClick={() => setActivePage('/travels')}
+            >
+              <FaPlane className="icon" /> {!isCollapsed && 'Descobrir Viagens'}
             </Link>
           </li>
+
           <li>
-            <Link to="/my-travels">
+            <Link
+              to="/my-travels"
+              className={activePage === '/my-travels' ? 'active' : ''}
+              onClick={() => setActivePage('/my-travels')}
+            >
               <FaList className="icon" /> {!isCollapsed && 'As Minhas Viagens'}
             </Link>
           </li>
+
           <li>
-            <Link to="/profile">
-              <FaUser className="icon" /> {!isCollapsed && 'O Meu Perfil'}
+            <Link
+              to="/users"
+              className={activePage === '/users' ? 'active' : ''}
+              onClick={() => setActivePage('/users')}
+            >
+              <FaCog className="icon" /> {!isCollapsed && 'Descobrir Viajantes'}
             </Link>
           </li>
           <li>
-            <Link to="/HelpSupport">
-              <FaCog className="icon" /> {!isCollapsed && 'Ajuda e Suporte'}
+            <Link
+              to="/qanda"
+              className={activePage === '/qanda' ? 'active' : ''}
+              onClick={() => setActivePage('/qanda')}
+            >
+              <FaCog className="icon" /> {!isCollapsed && 'Forum'}
             </Link>
           </li>
-          
-      
-            <li>
-              <Link onClick={logout} to="/login">
-                <FaSignOutAlt className="icon" /> {!isCollapsed && 'Logout'}
-              </Link>
-            </li>
-     
-        
+
           <div className="top">
             <li>
-              <Link to="/my-travels">
+              <Link
+                to="/my-travels"
+                state={{ openModal: true }}
+                className={activePage === '/my-travels' ? 'active' : ''}
+                onClick={() => setActivePage('/my-travels')}
+              >
                 <FaAd className="icon" /> {!isCollapsed && 'Adicionar Viagem'}
               </Link>
             </li>
-
-            
           </div>
         </ul>
       </nav>
-
     </div>
   );
 };

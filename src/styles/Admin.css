@@ -1,0 +1,308 @@
+/* src/styles/Admin.css */
+.admin-login-admin {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.admin-login-admin h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.admin-layout{
+  min-height: 94vh;
+}
+
+.admin-dashboard-admin {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar-admin {
+  width: 250px;
+  background: #0066cc;
+  color: #fff;
+  padding: 10px;
+  position: fixed;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  width: 100%; /* Ocupa a largura total do sidebar */
+  max-width: 400px; /* Limita o tamanho máximo */
+  height: auto; /* Mantém a proporção */
+  background-color: #fff;
+  margin: 0 auto 30px auto; /* Centraliza e adiciona margem inferior */
+  display: block; /* Garante que a imagem seja um bloco para centralização */
+}
+
+.sidebar-logo-login {
+  width: 100%; /* Ocupa a largura total do sidebar */
+  max-width: 300px; /* Limita o tamanho máximo */
+  height: auto; /* Mantém a proporção */
+  background-color: #fff;
+  margin: 0 auto 30px auto; /* Centraliza e adiciona margem inferior */
+  display: block; /* Garante que a imagem seja um bloco para centralização */
+}
+
+.sidebar-admin h2 {
+  margin-bottom: 30px;
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.sidebar-admin ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar-admin ul li {
+  margin-bottom: 15px;
+}
+
+.sidebar-admin ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.sidebar-admin ul li a:hover {
+  background: #ff9900;
+}
+
+.content-admin {
+  margin-left: 271px;
+  padding: 20px;
+  flex: 1;
+  background: #f5f5f5;
+}
+
+.admin-section-admin {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-section-admin h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.form-group-admin {
+  margin-bottom: 20px;
+}
+
+.form-group-admin label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.form-group-admin input,
+.form-group-admin textarea,
+.form-group-admin select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.admin-table-admin {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.admin-table-admin th,
+.admin-table-admin td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.admin-table-admin th {
+  background: #0066cc;
+  color: #fff;
+}
+
+.admin-table-admin td {
+  background: #fff;
+  color: #000;
+}
+
+.btn-primary-admin {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 5px;
+  background: #007bff;
+  color: #fff;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.btn-primary-admin:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+.btn-success-admin {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 5px;
+  background: #28a745;
+  color: #fff;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.btn-success-admin:hover {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+.btn-warning-admin {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 5px;
+  background: #ffc107;
+  color: #333;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.btn-warning-admin:hover {
+  background: #e0a800;
+  transform: translateY(-2px);
+}
+
+.btn-danger-admin {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 5px;
+  background: #dc3545;
+  color: #fff;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.btn-danger-admin:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+}
+
+/* Estilos para a seção de estatísticas */
+.stats-grid-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-card-admin {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.stat-card-admin h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.stat-card-admin p {
+  font-size: 1.5rem;
+  color: #0066cc;
+}
+
+/* Estilos para a página inicial do dashboard */
+.welcome-admin {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.welcome-admin h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.welcome-admin p {
+  color: #666;
+}
+
+
+
+/* src/styles/Admin.css */
+
+/* ... (outras classes já existentes) ... */
+
+/* Container para a seção de estatísticas */
+.stats-container {
+  margin-top: 40px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 10px;
+}
+
+/* Título da seção */
+.stats-container h2 {
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+/* Grade de cartões de estatísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+/* Estilo de cada cartão de estatística */
+.stat-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+/* Efeito de hover no cartão */
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Título do cartão */
+.stat-card h3 {
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+/* Valor da estatística */
+.stat-card p {
+  font-size: 1.5rem;
+  color: #ff9900;
+  font-weight: bold;
+}

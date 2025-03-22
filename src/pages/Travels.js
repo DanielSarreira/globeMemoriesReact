@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import travels from '../data/travelsData.js';
-import '../styles/Travels.css';
+import '../styles/styles.css';
 import { FaStar } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import Slider from '@mui/material/Slider';
@@ -15,8 +15,10 @@ const Travels = () => {
   const [daysRange, setDaysRange] = useState([1, 90]);
   const [transportFilter, setTransportFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showAllCategories, setShowAllCategories] = useState(false); // Novo estado
-  
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
 
   const uniqueCountries = [...new Set(travels.map(travel => travel.country))];
   const uniqueCities = selectedCountry
@@ -58,13 +60,30 @@ const Travels = () => {
     setPriceRange([0, 5000]);
     setDaysRange([1, 90]);
     setTransportFilter('');
+    setStartDate('');
+    setEndDate('');
+    setSelectedMonth('');
   };
 
+  const months = [
+    { value: '', label: 'Selecionar Mês' },
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
+  ];
 
-  
   const renderStars = (stars) => (
     [...Array(5)].map((_, index) => (
-      <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={20} />
+      <FaStar key={index} color={index < stars ? '#ffc107' : '#e4e5e9'} size={20} />
     ))
   );
 
@@ -78,11 +97,21 @@ const Travels = () => {
     const matchesDays = travel.days >= daysRange[0] && travel.days <= daysRange[1];
     const matchesTransport = transportFilter === '' || travel.transport === transportFilter;
 
+    // Filtro de data ajustado para verificar se a viagem está completamente contida no intervalo
+    const travelStart = new Date(travel.startDate);
+    const travelEnd = new Date(travel.endDate);
+    let matchesDate = true;
 
+    if (startDate && endDate) {
+      const filterStart = new Date(startDate);
+      const filterEnd = new Date(endDate);
+      matchesDate = travelStart >= filterStart && travelEnd <= filterEnd;
+    } else if (selectedMonth) {
+      const travelMonth = String(travelStart.getMonth() + 1).padStart(2, '0');
+      matchesDate = travelMonth === selectedMonth;
+    }
 
-    
-
-    return matchesSearch && matchesCategory && matchesCountry && matchesCity && matchesPrice && matchesDays && matchesTransport;
+    return matchesSearch && matchesCategory && matchesCountry && matchesCity && matchesPrice && matchesDays && matchesTransport && matchesDate;
   })
     .sort((a, b) => {
       if (sortOption === 'recent') {
@@ -101,10 +130,6 @@ const Travels = () => {
 
   const toggleModal = () => setIsModalOpen(!isModalOpen);
 
-
-
-
-  // Lista de categorias
   const categories = [
     { name: 'Natureza', icon: '🌿' },
     { name: 'Praia', icon: '🏖️' },
@@ -145,26 +170,24 @@ const Travels = () => {
     { name: 'Fotografia', icon: '📸' },
     { name: 'Zona Rural', icon: '🚜' },
     { name: 'Voluntariado', icon: '🤝' },
-    { name: 'Turismo de Aventura Extrema', icon: '⚡' },
+    { name: 'Aventura Extrema', icon: '⚡' },
     { name: 'Experiências Gastronômicas', icon: '🍕' },
     { name: 'Desportos', icon: '⚽' },
-    { name: 'Românticas', icon: '💖' },  
-    { name: 'Mobilidade Reduzida', icon: '♿' },  
-    { name: 'Viagens a dois', icon: '💑' },  
-    { name: 'Viagens em Grupo', icon: '🧑‍🤝‍🧑' },  
-    { name: 'Turismo Rural', icon: '🌾' }, 
-    { name: 'Turismo Subaquático', icon: '🤿' }, 
+    { name: 'Românticas', icon: '💖' },
+    { name: 'Mobilidade Reduzida', icon: '♿' },
+    { name: 'Viagens a dois', icon: '💑' },
+    { name: 'Viagens em Grupo', icon: '🧑‍🤝‍🧑' },
+    { name: 'Turismo Rural', icon: '🌾' },
+    { name: 'Turismo Subaquático', icon: '🤿' },
   ];
 
-  
-  // Categorias visíveis inicialmente (até "Viagens de Luxo")
-  const visibleCategories = showAllCategories ? categories : categories.slice(0, categories.findIndex(cat => cat.name === 'Viagens de Luxo') + 1);
+  const visibleCategories = showAllCategories
+    ? categories
+    : categories.slice(0, categories.findIndex(cat => cat.name === 'Viagens de Luxo') + 1);
 
   return (
     <div className="travels-container">
       <div className="filters">
-        
-
         <div className="checkbox-group">
           {visibleCategories.map(({ name, icon }) => (
             <label key={name} className={`checkbox-label ${categoryFilter.includes(name) ? 'active' : ''}`}>
@@ -177,28 +200,23 @@ const Travels = () => {
               <span className="category-icon">{icon}</span> {name}
             </label>
           ))}
-
-          {/* Botões "Ver mais categorias" e "Ver menos categorias" */}
-        {!showAllCategories ? (
-          <button
-            onClick={() => setShowAllCategories(true)}
-            className="see-more-categories-button"
-          >
-            Ver mais categorias
-          </button>
-        ) : (
-          <button
-            onClick={() => setShowAllCategories(false)}
-            className="see-less-categories-button"
-          >
-            Ver menos categorias
-          </button>
-        )}
+          <div className="checkbox-group">
+            {!showAllCategories ? (
+              <button onClick={() => setShowAllCategories(true)} className="button">
+                Ver mais categorias
+              </button>
+            ) : (
+              <button onClick={() => setShowAllCategories(false)} className="button">
+                Ver menos categorias
+              </button>
+            )}
+            <button onClick={handleSeeAll} className="button">Limpar filtros</button>
+          </div>
         </div>
 
         {categoryFilter.length > 0 && (
           <div className="selected-categories">
-            <h4>Categorias Selecionadas:</h4>
+            <h3>Categorias Selecionadas:</h3>
             {categoryFilter.map((category) => (
               <span key={category} className="selected-category">
                 {category} <button onClick={() => handleCategoryRemove(category)}>X</button>
@@ -207,132 +225,130 @@ const Travels = () => {
           </div>
         )}
 
-<div className="filters-container">
-<div className="search-bar">
-  <input
-    type="text"
-    placeholder="Pesquisar viagens..."
-    value={searchTerm}
-    onChange={handleSearch}
-  />
-</div>
+        <div className="filters-container">
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Pesquisar viagens..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
 
-        <div className="sort-group"> 
-          <select onChange={handleSortChange} value={sortOption}>
-            <option value="recent">Mais recente</option>
-            <option value="name">Nome (A-Z)</option>
-            <option value="name-desc">Nome (Z-A)</option>
-            <option value="price-asc">Preço (Crescente)</option>
-            <option value="price-desc">Preço (Decrescente)</option>
-          </select>
-        </div>
-        
-
-
-    
-      
-
-
-
-
-
-        <button onClick={toggleModal} className="filters-button">FILTROS</button>
-        
-        <button onClick={handleSeeAll} className="filters-button">VER TUDO</button>
-      </div>
-
-     
-
-
-
-      {/* Modal de Filtros */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={toggleModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Filtros</h3>
-            <div className="filter-group">
-              <label>Preço Total da Viagem:</label>
-              <Slider
-                value={priceRange}
-                onChange={handlePriceChange}
-                valueLabelDisplay="auto"
-                min={0}
-                max={5000}
-              />
-              <p>De: {priceRange[0]}€ até {priceRange[1]}€</p>
-            </div>
-
-            <div className="filter-group">
-              <label>Número de Dias da Viagem:</label>
-              <Slider
-                value={daysRange}
-                onChange={handleDaysChange}
-                valueLabelDisplay="auto"
-                min={1}
-                max={90}
-              />
-              <p>De {daysRange[0]} a {daysRange[1]} dias</p>
-            </div>
-
-         
-<div className="filter-group">
-            <label>País</label>
-            <div className="country-city-filters">
-          <select value={selectedCountry} onChange={handleCountryChange}>
-            <option value="">Selecionar País</option>
-            {uniqueCountries.map((country) => (
-              <option key={country} value={country}>{country}</option>
-            ))}
-          </select>
-
-          {selectedCountry && (
-            <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
-              <option value="">Selecionar Cidade</option>
-              {uniqueCities.map((city) => (
-                <option key={city} value={city}>{city}</option>
+          <div className="country-city-filters">
+            <select value={selectedCountry} onChange={handleCountryChange}>
+              <option value="">Selecionar País</option>
+              {uniqueCountries.map((country) => (
+                <option key={country} value={country}>{country}</option>
               ))}
             </select>
-          )}
-        </div>
-        </div>
 
-         
-
-            <button onClick={toggleModal} className="close-modal-button">Fechar</button>
+            {selectedCountry && (
+              <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
+                <option value="">Selecionar Cidade</option>
+                {uniqueCities.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+            )}
           </div>
-        </div>
-      )}
 
-</div>
+          {/* Filtro de data */}
+          <div className="date-filters" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            
+            <select
+              value={selectedMonth}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value);
+                if (e.target.value) {
+                  setStartDate('');
+                  setEndDate('');
+                }
+              }}
+            >
+              {months.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sort-group">
+            <select onChange={handleSortChange} value={sortOption}>
+              <option value="recent">Mais recente</option>
+              <option value="name">Nome (A-Z)</option>
+              <option value="name-desc">Nome (Z-A)</option>
+              <option value="price-asc">Preço (Crescente)</option>
+              <option value="price-desc">Preço (Decrescente)</option>
+            </select>
+          </div>
+
+          <button onClick={toggleModal} className="button">FILTROS</button>
+        </div>
+
+        {/* Modal de Filtros */}
+        {isModalOpen && (
+          <div className="modal-overlay" onClick={toggleModal}>
+            <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
+              <h3>Filtros</h3>
+              <div className="filter-group">
+                <label>Preço Total da Viagem:</label>
+                <Slider
+                  value={priceRange}
+                  onChange={handlePriceChange}
+                  valueLabelDisplay="auto"
+                  min={0}
+                  max={5000}
+                />
+                <p>De: {priceRange[0]}€ até {priceRange[1]}€</p>
+              </div>
+
+              <div className="filter-group">
+                <label>Número de Dias da Viagem:</label>
+                <Slider
+                  value={daysRange}
+                  onChange={handleDaysChange}
+                  valueLabelDisplay="auto"
+                  min={1}
+                  max={90}
+                />
+                <p>De {daysRange[0]} a {daysRange[1]} dias</p>
+              </div>
+
+              <button onClick={toggleModal} className="close-modal-button">Fechar</button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="travels-list">
         {filteredTravels.length > 0 ? (
           filteredTravels.map((travel) => (
-            <div key={travel.id} className="travel-item">
-              <div className="travel-content">
-                <img src={travel.highlightImage} alt={travel.name} className="highlight-image" />
-                <div className="travel-text">
-                  <h3>{travel.name}</h3>
-                  <p><b>Utilizador:</b> {travel.user}</p>
-                  <p><b>Localização:</b> {travel.country}, {travel.city}</p>
-                  <p><b>Preço Total da Viagem:</b> {travel.price}€</p>
-                  <p><b>Categoria:</b> {travel.category.join(', ')}</p>
-                  <p><b>Duração da Viagem:</b> {travel.days} dias</p>
-                  
-                  <div className="travel-stars">
-                  <p><b>Avaliação Geral:</b> {renderStars(travel.stars)}</p>
+            <div key={travel.id} className="travel-card">
+              <Link to={`/travel/${travel.id}`}>
+                <div className="travel-content">
+                  <img src={travel.highlightImage} alt={travel.name} className="highlight-image" />
+                  <div className="travel-text">
+                    <h2>{travel.name}</h2>
+                    <p><b>👤 Utilizador:</b> {travel.user}</p>
+                    <p><b>🌍 País:</b> {travel.country}</p>
+                    <p><b>🏙️ Cidade:</b> {travel.city}</p>
+                    <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p>
+                    <p><b>📅 Data de Início:</b> {travel.startDate}</p>
+                    <p><b>📅 Data do Fim:</b> {travel.endDate}</p>
+                    <p><b>💰 Preço Total da Viagem:</b> {travel.price}€</p>
+                    <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+                    <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
                   </div>
-                  <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
                 </div>
-              </div>
+              </Link>
             </div>
           ))
         ) : (
-          <p>Não há viagens para mostrar com esses filtros.</p>
+          <p>Nenhuma viagem encontrada com os filtros selecionados.</p>
         )}
-
-        </div>
-      
+      </div>
     </div>
   );
 };
