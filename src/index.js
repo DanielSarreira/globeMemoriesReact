@@ -1,16 +1,29 @@
-// src/index.js (ou main.js, dependendo da estrutura do seu projeto)
-
+// src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App'; // Import App component
-import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
+import AppWrapper from './App'; // Ajuste o nome para AppWrapper, conforme definido no App.js
+import { AuthProvider } from './context/AuthContext';
 
-// Correct usage: first the DOM element, then the content to render
-const root = ReactDOM.createRoot(document.getElementById('root')); // Get the root container
+// Registrar o service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((registration) => {
+        console.log('Service Worker registrado com sucesso:', registration);
+      })
+      .catch((error) => {
+        console.log('Falha ao registrar o Service Worker:', error);
+      });
+  });
+}
+
+// Renderizar a aplicação
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AuthProvider> {/* Wrap App with AuthProvider */}
-      <App />
+    <AuthProvider>
+      <AppWrapper />
     </AuthProvider>
   </React.StrictMode>
 );

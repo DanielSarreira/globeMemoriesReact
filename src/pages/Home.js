@@ -25,6 +25,25 @@ const Home = () => {
   const [currentImageIndices, setCurrentImageIndices] = useState({});
   const [isPaused, setIsPaused] = useState({});
 
+  // Estados para o pull-to-refresh
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const feedContainerRef = useRef(null);
+
+  // Detectar se é um dispositivo móvel
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     setTimeout(() => {
       try {
@@ -67,12 +86,11 @@ const Home = () => {
     }, 1000);
   }, [user]);
 
-
-   const renderStars = (stars) => (
-      [...Array(5)].map((_, index) => (
-        <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={20} />
-      ))
-    );
+  const renderStars = (stars) => (
+    [...Array(5)].map((_, index) => (
+      <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={20} />
+    ))
+  );
 
   // Transição automática a cada 8 segundos, com controle de pausa
   useEffect(() => {
@@ -121,10 +139,14 @@ const Home = () => {
 
   const handleRefreshFeed = () => {
     setLoading(true);
+    setIsRefreshing(true);
     setTimeout(() => {
       setFeedTravels(TravelsData);
       setCurrentPage(1);
       setLoading(false);
+      setIsRefreshing(false);
+      setPullDistance(0);
+      setIsPulling(false);
     }, 1000);
   };
 
@@ -212,6 +234,34 @@ const Home = () => {
     document.addEventListener('touchend', handleDragEnd);
   };
 
+  // Funções para o pull-to-refresh
+  const handleTouchStart = (e) => {
+    if (window.scrollY === 0) { // Só ativa se o usuário estiver no topo da página
+      touchStartY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPulling) return;
+
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - touchStartY.current;
+
+    if (distance > 0) {
+      setPullDistance(Math.min(distance, 150)); // Limita a distância máxima para 150px
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 100) { // Se a distância for maior que 100px, dispara a atualização
+      handleRefreshFeed();
+    } else {
+      setPullDistance(0); // Reseta a distância se não atingir o limite
+    }
+    setIsPulling(false);
+  };
+
   const renderTravelItem = (travel) => {
     const currentIndex = currentImageIndices[travel.id] || 0;
     const images = travel.images_generalInformation || [];
@@ -256,7 +306,6 @@ const Home = () => {
                 <FaShareAlt /> Compartilhar
               </button>
             </div>
-            {/* Pré-visualização de comentários */}
             {travel.comments.length > 0 && (
               <div className="comments-preview">
                 {travel.comments.slice(0, 2).map((comment) => (
@@ -416,12 +465,37 @@ const Home = () => {
             <option value="likes">Popularidade (Likes)</option>
           </select>
         </div>
-        <button onClick={handleRefreshFeed} className="refresh-button">
-          <FaSync /> Atualizar Feed
-        </button>
+        {!isMobile && ( // Mostra o botão apenas no desktop
+          <button onClick={handleRefreshFeed} className="refresh-button">
+            <FaSync /> Atualizar Feed
+          </button>
+        )}
       </div>
 
-      <div className="feed-container">
+      <div
+        className="feed-container"
+        ref={feedContainerRef}
+        onTouchStart={isMobile ? handleTouchStart : undefined}
+        onTouchMove={isMobile ? handleTouchMove : undefined}
+        onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      >
+        {isMobile && ( // Mostra o indicador de pull-to-refresh apenas no mobile
+          <div
+            className="pull-to-refresh-indicator"
+            style={{
+              height: `${pullDistance}px`,
+              opacity: pullDistance > 0 ? 1 : 0,
+            }}
+          >
+            {isRefreshing ? (
+              <div className="loading-spinner"></div>
+            ) : pullDistance > 100 ? (
+              <p>Solte para atualizar</p>
+            ) : (
+              <p>Arraste para baixo para atualizar</p>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="loading-spinner"></div>
         ) : error ? (

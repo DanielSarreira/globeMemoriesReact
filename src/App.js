@@ -1,5 +1,5 @@
 // src/App.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -11,13 +11,14 @@ import Home from './pages/Home';
 import Travels from './pages/Travels';
 import TravelDetails from './components/TravelDetails';
 import MyTravels from './pages/MyTravels';
-import ViewProfile from './pages/ViewProfile'; // Edição de perfil
+import ViewProfile from './pages/ViewProfile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import SplashScreen from './components/SplashScreen';
 import HelpSupport from './pages/HelpSupport';
 import NotFound from './pages/NotFound';
 import Users from './pages/Users';
-import UserProfile from './pages/UserProfile'; // Visualização de perfil público
+import UserProfile from './pages/UserProfile';
 import QandA from './pages/QandA';
 import './styles/styles.css';
 
@@ -118,13 +119,26 @@ const App = () => {
   );
 };
 
-const AppWrapper = () => (
-  <AuthProvider>
-    <Router>
-      <ScrollToTop />
-      <App />
-    </Router>
-  </AuthProvider>
-);
+const AppWrapper = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simula o tempo de carregamento (mínimo de 2 segundos para a splash screen)
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <AuthProvider>
+      <Router>
+        <ScrollToTop />
+        {isLoading ? <SplashScreen /> : <App />}
+      </Router>
+    </AuthProvider>
+  );
+};
 
 export default AppWrapper;

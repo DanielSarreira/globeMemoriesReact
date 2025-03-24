@@ -24,6 +24,24 @@
   --button-action-hover: #e68a00;
   --button-liked: #ff4d4d;
   --link-hover: #e0e0e0;
+  width: 100%;
+  height: 100vh;
+  overflow: auto; /* Permite rolagem dentro do app, mas não no body */
+  -webkit-overflow-scrolling: touch; /* Melhora a rolagem no iOS */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilos gerais */
+html, body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
+  
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +59,16 @@
     --button-liked: #ff6666;
     --error-color: #ff5555;
     --link-hover: #333;
+  }
+}
+
+/* src/styles/styles.css */
+@supports (padding: env(safe-area-inset-top)) {
+  .login-container {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 
@@ -119,6 +147,86 @@ tr {
   border: solid 1px #000;
   width: 100%;
 }
+
+
+
+
+/* src/styles/styles.css */
+.install-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.install-prompt {
+  position: relative;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 300px;
+  width: 90%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.install-prompt-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.install-prompt-close:hover {
+  color: #333;
+}
+
+.install-prompt-icon {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.install-prompt h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.install-prompt p {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.install-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #0066cc;
+  color: #fff;
+  transition: background 0.3s ease;
+}
+
+.install-button:hover {
+  background: #005bb5;
+}
+
+
+
 
 /* Estilo para links e botões genéricos */
 a.button {
@@ -1461,87 +1569,47 @@ input.search-input {
   margin: 20px auto;
 }
 
-/* Responsividade para Home */
-@media (max-width: 768px) {
-  .feed-list,
-  .featured-list {
-    grid-template-columns: 1fr;
-  }
 
-  .featured-item {
-    flex-direction: column;
-    text-align: center;
-  }
+/* Estilo para o indicador de pull-to-refresh */
+.pull-to-refresh-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  background-color: #f9f9f9;
+  color: #555;
+  font-size: 0.9rem;
+  transition: height 0.2s ease, opacity 0.2s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
 
-  .featured-image {
-    width: 100%;
-    max-width: 200px;
-    height: 200px;
-    object-fit: cover;
-  }
+.pull-to-refresh-indicator p {
+  margin: 0;
+}
 
-  .feed-controls {
-    flex-direction: column;
-    align-items: center;
-  }
+/* Estilo para o spinner (reutilizando o existente, se já tiver) */
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
 
-  .search-container,
-  .filter-container,
-  .sort-container {
-    width: 100%;
-  }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-  .search-input {
-    width: 100%;
-  }
-
-  .feed-content {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .travel-info-feed {
-    padding: 10px;
-  }
-
-  .travel-gallery {
-    align-items: center;
-    width: 100%;
-  }
-
-  .gallery-container {
-    max-width: 100%;
-  }
-
-  .feed-image {
-    width: 100%;
-    height: 200px;
-  }
-
-  .gallery-arrow.left {
-    left: 5px;
-  }
-
-  .gallery-arrow.right {
-    right: 5px;
-  }
-
-  .feed-content h2 {
-    font-size: 1.5rem;
-  }
-
-  .feed-content p {
-    font-size: 14px;
-  }
-
-  .travel-description {
-    font-size: 14px;
-  }
-
-  .preview-image {
-    width: 50px;
-    height: 50px;
-  }
+/* Ajuste para o feed-container para evitar sobreposição */
+.feed-container {
+  position: relative;
+  padding-top: 20px; /* Espaço para o indicador de pull-to-refresh */
 }
 
 /* --------------------------------------- UserProfile.css --------------------------------------- */
@@ -1799,46 +1867,6 @@ input.search-input {
   line-height: 1.5;
 }
 
-/* Responsividade */
-@media (max-width: 480px) {
-  .follow-modal-content,
-  .stats-modal-content,
-  .request-modal-content {
-    width: 95%;
-    max-width: 350px;
-    padding: 20px;
-  }
-
-  .follow-modal-content h2,
-  .stats-modal-content h2,
-  .request-modal-content h2 {
-    font-size: 20px;
-  }
-
-  .follow-user-link span {
-    font-size: 14px;
-  }
-
-  .follow-user-avatar {
-    width: 35px;
-    height: 35px;
-  }
-
-  .follow-modal-close-button,
-  .stats-modal-close-button {
-    padding: 10px 20px;
-    font-size: 14px;
-  }
-
-  .stats-modal-content h3 {
-    font-size: 16px;
-  }
-
-  .stats-modal-content li,
-  .request-modal-content p {
-    font-size: 14px;
-  }
-}
 
 .follow-modal-overlay {
   position: fixed;
@@ -1882,10 +1910,6 @@ input.search-input {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-
-
-
-
 .user-profile-page {
   padding: 20px;
   margin: 0 auto;
@@ -1909,10 +1933,28 @@ input.search-input {
 
 .profile-picture-container {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   text-align: center;
   margin-bottom: 20px;
+}
+
+
+.profile-picture-containerEdit {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-content: stretch;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.profile-picture-containerEdit img {
+  width: 100px;
+  height: 100px;
 }
 
 .profile-picture {
@@ -1980,7 +2022,7 @@ input.search-input {
 .manage-travels-button {
   padding: 10px 25px;
   border: none;
-  border-radius: 20px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -2019,7 +2061,7 @@ input.search-input {
   cursor: not-allowed;
   padding: 10px 25px;
   border: none;
-  border-radius: 20px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -2150,11 +2192,10 @@ input.search-input {
 .traveler-stats-section h2,
 .engagement-stats-section h2,
 .top-destinations-section h2 {
-  font-size: 1.8rem;
-  color: #333;
   margin-bottom: 20px;
   font-weight: 700;
   text-align: center;
+  font-family: "Zilla Slab", serif !important;
 }
 
 .stats-grid {
@@ -2361,69 +2402,7 @@ input.search-input {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Responsividade para UserProfile */
-@media (max-width: 768px) {
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-    padding: 20px;
-  }
 
-  .profile-picture-container {
-    width: 120px;
-    height: 120px;
-  }
-
-  .profile-info h1 {
-    font-size: 2rem;
-  }
-
-  .travels-grid,
-  .stats-grid,
-  .destinations-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  }
-
-  .destinations-grid {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 480px) {
-  .profile-header {
-    padding: 15px;
-  }
-
-  .profile-picture-container {
-    width: 100px;
-    height: 100px;
-  }
-
-  .profile-info h1 {
-    font-size: 1.5rem;
-  }
-
-  .stats {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .travels-grid,
-  .stats-grid,
-  .destinations-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .travel-image {
-    height: 150px;
-  }
-
-  .destinations-grid {
-    flex-direction: column;
-  }
-}
-
-/* --------------------------------------- Profile Page (Segundo Documento) --------------------------------------- */
 .profile-page {
   display: flex;
   justify-content: center;
@@ -2441,6 +2420,7 @@ input.search-input {
   padding: 30px;
   width: 100%;
   margin-top: 30px;
+  padding-top: 10px;
 }
 
 .profile-container h2 {
@@ -2520,7 +2500,7 @@ form.profile-form {
 .button-group {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+ 
 }
 
 .save-button,
@@ -2567,23 +2547,11 @@ input[type="file"] {
   border-radius: 6px;
   background-color: #fff;
   transition: border-color 0.3s ease;
+  height: 20px;
 }
 
 .followers-section {
-  margin: 10px 0;
-  font-size: 16px;
-}
-
-/* Responsividade para Profile Page */
-@media (max-width: 768px) {
-  .form-section {
-    flex-direction: column;
-  }
-
-  .form-left,
-  .form-right {
-    width: 100%;
-  }
+  display: none;
 }
 
 /* --------------------------------------- Users.css --------------------------------------- */
@@ -2748,38 +2716,6 @@ input[type="file"] {
   margin-bottom: 10px;
 }
 
-
-/* Responsividade para Users */
-@media (max-width: 1200px) {
-  .users-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .users-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .users-header h1 {
-    font-size: 2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .users-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .user-card {
-    padding: 10px;
-  }
-
-  .user-avatar {
-    width: 70px;
-    height: 70px;
-  }
-}
 
 
 /* --------------------------------------- QandA.css --------------------------------------- */
@@ -3247,129 +3183,6 @@ input[type="file"] {
 
 
 
-
-
-
-
-/* --------------------------------------- MyProfilePage --------------------------------------- */
-.my-profile-page {
-  padding: 20px;
-  background-color: #f8f9fa;
-  min-height: 100vh;
-}
-
-.my-profile-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.profile-cover {
-  height: 300px;
-  background-size: cover;
-  background-position: center;
-  border-radius: 8px 8px 0 0;
-}
-
-.profile-stats span {
-  margin-right: 15px;
-}
-
-.social-links {
-  padding: 10px;
-}
-
-.social-links a {
-  margin-right: 15px;
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-.social-section {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin: 20px 0;
-}
-
-.user-list {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-}
-
-.user-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 0;
-}
-
-.recent-travels,
-.travel-stats-section,
-.travel-map,
-.favorite-photos,
-.achievements,
-.activity-feed {
-  margin: 20px 0;
-  padding: 10px;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-}
-
-.travel-preview-list {
-  display: flex;
-  gap: 20px;
-}
-
-.travel-preview img {
-  width: 150px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.filter-section {
-  margin: 10px 0;
-}
-
-.favorite-img {
-  width: 200px;
-  height: 150px;
-  object-fit: cover;
-  margin-right: 10px;
-  border-radius: 4px;
-}
-
-.achievements span {
-  display: block;
-  margin: 5px 0;
-}
-
-.view-travels-button {
-  padding: 10px 20px;
-  background-color: #28a745;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 4px;
-}
-
-/* Responsividade para MyProfilePage */
-@media (max-width: 768px) {
-  .social-section,
-  .travel-preview-list {
-    flex-direction: column;
-  }
-
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-  }
-}
 
 /* --------------------------------------- Travels.css --------------------------------------- */
 /* Container principal dos filtros */
@@ -4454,13 +4267,100 @@ span {
 }
 
 
+/* --------------------------------------- SplashScreen.css --------------------------------------- */
+
+/* src/styles/styles.css */
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #0066cc; /* Cor de fundo da tela de splash */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeOut 0.5s ease-in-out forwards;
+  animation-delay: 1.5s; /* Tempo que a tela de splash fica visível */
+}
+
+.splash-logo {
+  width: 430px;
+  height: 220px;
+  margin-bottom: 20px;
+  animation: pulse 1.5s infinite;
+}
+
+.splash-title {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-in-out forwards;
+  animation-delay: 0.5s;
+}
+
+.splash-spinner {
+  width: 30px;
+  height: 30px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-top: 20px;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+
+
+
 
 
 
 /* --------------------------------------- Register.css --------------------------------------- */
 .register-page {
   display: flex;
-  height: 100vh;
   font-family: 'Montserrat', sans-serif;
 }
 
@@ -4584,92 +4484,178 @@ span {
 }
 
 /* --------------------------------------- Login.css --------------------------------------- */
+/* src/styles/styles.css */
+
+/* Estilos gerais para a página de login */
 .login-page {
   display: flex;
-  height: 100vh;
   justify-content: center;
   align-items: center;
-  font-family: 'Montserrat', sans-serif;
+  padding: 20px;
 }
 
+/* Wrapper que contém as duas seções (formulário e boas-vindas) */
+.login-wrapper {
+  margin-top: 100px;
+  display: flex;
+  max-width: 65%;
+  height: 600px;
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Seção Esquerda: Formulário de Login */
 .login-container {
-  background-color: white;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  padding: 40px 30px;
-  border-radius: 12px;
-  max-width: 400px;
-  width: 100%;
+  background: #fff;
+  width: 50%;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* Cabeçalho do formulário (título e ícones de redes sociais) */
+.login-header {
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.login-header h2 {
+  margin-top: 80px !important;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
+  text-transform: uppercase;
   text-align: center;
-  transform: translateY(-20px);
-  animation: slideUp 0.8s ease-out forwards;
 }
 
-.login-container h2 {
-  font-size: 28px;
-  color: var(--primary-color); 
-  margin-bottom: 20px;
-  font-weight: bold;
-  background: var(--primary-color); 
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.social-icons {
+  display: flex;
+  gap: 10px;
 }
 
-.login-form .form-group {
-  margin-bottom: 20px;
-  text-align: left;
+
+
+/* Formulário de login */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.login-form .form-group label {
-  display: block;
-  margin-bottom: 5px;
-  color: #444;
-  font-weight: 500;
+
+
+.form-group input:focus {
+  background: #e8e8e8;
 }
 
-.login-form .form-group input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  transition: border-color 0.3s ease-in-out;
+/* Opções (Remember Me e Forgot Password) */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -10px;
 }
 
-.login-form .form-group input:focus {
-  border-color: var(--primary-color);
-  outline: none;
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  color: #666;
 }
 
+.remember-me input {
+  accent-color: var(--primary-color);
+}
+
+.remember-me span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.remember-me span::before {
+  content: "✈️";
+  font-size: 1rem;
+}
+
+.forgot-password {
+  font-size: 0.9rem;
+  color: #666;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: var(--primary-color);
+}
+
+/* Botão de login */
 .login-button {
-  width: 100%;
   padding: 12px;
-  background-color: var(--primary-color); 
-  color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 25px;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
   cursor: pointer;
-  font-weight: bold;
-  font-size: 16px;
   transition: background 0.3s ease;
 }
 
 .login-button:hover {
-  background-color: var(--secondary-color);
+  background: var(--secondary-color);
 }
 
-.login-container p {
-  margin-top: 20px;
-  color: #666;
+/* Seção Direita: Texto de Boas-Vindas */
+.welcome-section {
+  background-color: var(--primary-color);
+  width: 50%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  text-align: center;
 }
 
-.login-container a {
-  color: var(--primary-color);
+.welcome-section h3 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 100px;
+  color: #fff;
+}
+
+.welcome-section p {
+  font-size: 1rem;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+a.signup-button {
+  display: inline-block;
+  padding: 15px 20px;
+  border: 2px solid #fff !important;
+  border-radius: 50%;
+  color: #fff !important;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
   text-decoration: none;
-  font-weight: 500;
+  transition: background 0.3s ease, color 0.3s ease;
+  z-index: 1000;
 }
 
-.login-container a:hover {
-  text-decoration: underline;
+.signup-button:hover {
+
+  color: #fff;
 }
+
 
 /* --------------------------------------- MyTravels.css --------------------------------------- */
 
@@ -4814,7 +4800,7 @@ tr{
 }
 
 form select{
-  width: 102.5% !important;
+  width: 96% !important;
 }
 
 form textarea {
@@ -5477,13 +5463,7 @@ a:hover {
     color: var(--button-primary);
   }
 
-  .toast.success {
-    background-color: #2ecc71;
-  }
 
-  .toast.error {
-    background-color: #e74c3c;
-  }
 }
 
 /* End of styles.css */
@@ -5501,7 +5481,24 @@ a:hover {
 @media (max-width: 768px) {
   
 
+  
+    html, body {
+      overflow: hidden; /* Remove barras de rolagem no nível do body */
+    }
+  
+    #root {
+      overflow: hidden; /* Remove barras de rolagem no #root */
+    }
 
+    /* Ocultar a barra de rolagem, mas permitir rolagem */
+  html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Edge */
+  }
+
+  html::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
 /*------------------------------------------------------------- Geral ----------------------------------------------------------------*/
 
 p{
@@ -5744,7 +5741,9 @@ h1{
   margin-top: 15px;
 }
 
-
+a {
+  font-size: 14px;
+}
 
 .comments-section textarea {
   width: 93%;
@@ -5756,11 +5755,22 @@ h1{
 }
 
 
+.category-filter, .sort-filter {
+  font-size: 14px;
+}
+
+.sort-container label{
+  font-size: 14px;
+}
+
 .feed-user{
   margin-bottom: 0px;
 }
 
-
+.feed-container {
+  position: relative;
+  padding-top: 0px;
+}
 
 .feed-details-link{
   margin-top: 0px;
@@ -5783,6 +5793,92 @@ svg {
 .gallery-controls{
   display: none;
 }
+
+
+  .refresh-button {
+    display: none; /* Esconde o botão no mobile */
+  }
+
+
+  .feed-list,
+  .featured-list {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-item {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .featured-image {
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .feed-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .search-container,
+  .filter-container,
+  .sort-container {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .feed-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .travel-info-feed {
+    padding: 10px;
+  }
+
+  .travel-gallery {
+    align-items: center;
+    width: 100%;
+  }
+
+  .gallery-container {
+    max-width: 100%;
+  }
+
+  .feed-image {
+    width: 100%;
+    height: 200px;
+  }
+
+  .gallery-arrow.left {
+    left: 5px;
+  }
+
+  .gallery-arrow.right {
+    right: 5px;
+  }
+
+  .feed-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .feed-content p {
+    font-size: 14px;
+  }
+
+  .travel-description {
+    font-size: 14px;
+  }
+
+  .preview-image {
+    width: 50px;
+    height: 50px;
+  }
 
 
 
@@ -5955,10 +6051,17 @@ form select{
 
 .toast.error {
   font-size: 16px;
+  background-color: #8b0d1a;
+}
+
+.toast.success {
+  background-color: #28a745;
+  font-size: 16px;
 }
 
 
-/* ----------------------------------TRAVEL DETAILS-------------------------------- */
+
+/* ---------------------------------------------------------TRAVEL DETAILS----------------------------------------------------------------------- */
 
 
 
@@ -6008,8 +6111,6 @@ form select{
 
 
 
-  /* Estilos gerais para dispositivos móveis */
-@media (max-width: 768px) {
   /* Container principal */
   .travel-details-container {
     margin: 10px; /* Reduz a margem para economizar espaço */
@@ -6038,7 +6139,7 @@ form select{
 
   /* Seção de informações (info) */
   .info {
-    flex: 1 1 100%; /* Ocupa 100% da largura */
+    display: block; /* Ocupa 100% da largura */
     padding: 15px; /* Reduz o padding */
     width: 92%; /* Garante que ocupe toda a largura disponível */
   }
@@ -6049,21 +6150,21 @@ form select{
   }
 
   .info p {
-    font-size: 0.9rem; /* Reduz o tamanho da fonte do texto */
+    font-size: 14px !important; /* Reduz o tamanho da fonte do texto */
     line-height: 1.5; /* Ajusta a altura da linha para melhor legibilidade */
   }
 
   .info button {
     padding: 8px 16px; /* Reduz o padding do botão */
-    font-size: 0.9rem; /* Reduz o tamanho da fonte do botão */
+    font-size: 14px !important; /* Reduz o tamanho da fonte do botão */
   }
 
   /* Subseções infoLeft e infoRight */
   .infoLeft,
   .infoRight {
-    width: 100%; /* Empilha as seções verticalmente */
+    width: 94%; /* Empilha as seções verticalmente */
     padding: 15px; /* Reduz o padding */
-    margin-bottom: 10px; /* Adiciona espaço entre as seções */
+    margin-bottom: 30px; /* Adiciona espaço entre as seções */
   }
 
   .stars {
@@ -6076,10 +6177,18 @@ form select{
   .generalInfoLeft,
   .generalInfoRight {
     display: block; /* Remove o display inline-grid */
-    width: 100%; /* Ocupa toda a largura */
+    width: 95%; /* Ocupa toda a largura */
     padding: 10px; /* Reduz o padding */
     border-right: none; /* Remove a borda entre as seções */
-    text-align: left; /* Alinha o texto à esquerda para melhor legibilidade */
+    text-align: center; /* Alinha o texto à esquerda para melhor legibilidade */
+  }
+
+  strong {
+  font-size: 14px;
+  }
+
+  span{
+    font-size: 14px;
   }
 
   .generalInfoRight {
@@ -6099,9 +6208,11 @@ form select{
 
   /* Tabs */
   .tabs {
-    flex-wrap: wrap; /* Permite que os botões quebrem para a próxima linha */
-    gap: 8px; /* Reduz o espaço entre os botões */
-    margin: 15px 0; /* Reduz a margem */
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0px;
+    padding-top: 0px;
+    position: relative;
   }
 
   .tab-button {
@@ -6193,6 +6304,7 @@ form select{
   /* Viagens recomendadas */
   .recommended-travels {
     margin-bottom: 20px; /* Reduz a margem inferior */
+    display: none;
   }
 
   .recommended-travel-list {
@@ -6234,7 +6346,6 @@ form select{
     top: 5px; /* Ajusta a posição */
     right: 5px;
   }
-}
 
 
   /* Container principal */
@@ -6284,7 +6395,7 @@ form select{
   }
 
   .tab-content h2 {
-    font-size: 1rem; /* Reduz ainda mais o tamanho do título */
+    font-size: 22px; /* Reduz ainda mais o tamanho do título */
   }
 
   /* Galeria */
@@ -6357,11 +6468,185 @@ form select{
 
 
   .highlight-image img {
-    width: 70%;
+    width: 80%;
   }
 
 
+
+
+
+/* ---------------------------------------------------------Users----------------------------------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .users-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
+
+@media (max-width: 768px) {
+  .users-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .users-header h1 {
+    font-size: 2rem;
+  }
+
+  .user-card {
+    padding: 10px;
+  }
+
+  .user-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .user-info h3 {
+  font-size: 16px;
+  }
+
+  .following-text{
+    font-size: 14px;
+  }
+
+  svg.following-icon{
+    height: 15px !important;
+    width: 15px !important;
+  }
+
+  .follow-button {
+    font-size: 14px;
+  }
+}
+
+
+
+
+
+
+/* ---------------------------------------------------------UsersProfile----------------------------------------------------------------------- */
+
+
+
+.stats{
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.profile-picture-container{
+  margin-bottom: 0px;
+     width: 80px; 
+    height: 80px;
+}
+
+  .social-section,
+  .travel-preview-list {
+    flex-direction: column;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+
+
+.traveler-stats-section h2, .engagement-stats-section h2, .top-destinations-section h2{
+  font-size: 22px;
+}
+
+
+.stats-modal-content{
+  width: 80%;
+}
+
+.stats-modal-content h2{
+  font-size: 22px;
+}
+
+
+
+
+
+/* ---------------------------------------------------------EditProfile----------------------------------------------------------------------- */
+
+.form-section{
+  display: block;
+}
+
+.form-left{
+  width: 97% !important;
+  margin-left: -15px;
+}
+
+.form-right{
+  width: 97% !important;
+  margin-top: 30px;
+  margin-left: -15px;
+}
+
+
+
+/* ---------------------------------------------------------SplashScreen----------------------------------------------------------------------- */
+
+  .splash-logo {
+    width: 280px;
+    height: 150px;
+  }
+
+  .splash-title {
+    font-size: 24px;
+    font-family: 'Zilla Slab', serif;
+  }
+
+
+
+/* ---------------------------------------------------------LoginCss----------------------------------------------------------------------- */
+
+
+  .login-wrapper {
+    flex-direction: column;
+    margin-top: 20px;
+    max-width: 100%;
+    height: 100%;
+  }
+
+  .login-container,
+  .welcome-section {
+    width: 100%;
+  }
+
+  .welcome-section{
+    padding: 0px;
+    padding-bottom: 30px;
+    padding-top: 30px;
+  }
+  .welcome-section h3 {
+    font-size: 2.0rem;
+    margin-bottom: 50px;
+  }
+
+  .welcome-section p {
+    font-size: 0.9rem;
+  }
+
+  .signup-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+
+  .login-header h2{
+    margin-top: 0px !important;
+  }
+
+  
+
+}
+
+
+
 
 
 

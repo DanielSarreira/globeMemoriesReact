@@ -80,10 +80,35 @@ const Profile = () => {
         {user ? (
           <>
             <form className="profile-form" onSubmit={handleSave}>
+               {/* Botões de ação */}
+               <div className="button-group">
+                {editing ? (
+                  <>
+                    <button type="submit" className="save-button">
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      className="cancel-button"
+                      onClick={handleEditToggle}
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="edit-button"
+                    onClick={handleEditToggle}
+                  >
+                    Editar Perfil
+                  </button>
+                )}
+              </div>
               <div className="form-section">
                 {/* Informações Complementares (lado esquerdo) */}
                 <div className="form-left">
-                  <div className="profile-picture-container">
+                  <div className="profile-picture-containerEdit">
                     <img
                       src={formData.profilePicture || defaultAvatar}
                       alt="Foto de perfil"
@@ -103,7 +128,7 @@ const Profile = () => {
                       }}
                     />
                   </div>
-
+<br></br>
                   {/* Contadores de seguidores */}
                   <div className="followers-section">
                     <span>{followersCount} Seguidores</span> |{' '}
@@ -289,32 +314,6 @@ const Profile = () => {
                     )}
                   </div>
                 </div>
-              </div>
-
-              {/* Botões de ação */}
-              <div className="button-group">
-                {editing ? (
-                  <>
-                    <button type="submit" className="save-button">
-                      Salvar
-                    </button>
-                    <button
-                      type="button"
-                      className="cancel-button"
-                      onClick={handleEditToggle}
-                    >
-                      Cancelar
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="edit-button"
-                    onClick={handleEditToggle}
-                  >
-                    Editar Perfil
-                  </button>
-                )}
               </div>
             </form>
           </>
