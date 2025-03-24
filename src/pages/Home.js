@@ -413,7 +413,7 @@ const Home = () => {
             className="sort-filter"
           >
             <option value="date">Data (Mais Recente)</option>
-            <option value="likes">Popularidade (Curtidas)</option>
+            <option value="likes">Popularidade (Likes)</option>
           </select>
         </div>
         <button onClick={handleRefreshFeed} className="refresh-button">
