@@ -19,11 +19,14 @@ import HelpSupport from './pages/HelpSupport';
 import NotFound from './pages/NotFound';
 import Users from './pages/Users';
 import UserProfile from './pages/UserProfile';
+import Notifications from './components/Notifications';
+import InteractiveMap from './pages/InteractiveMap';
 import QandA from './pages/QandA';
 import './styles/styles.css';
 
 import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
+import Achievements from './pages/Achievements';
 
 // Layout para a aplicação principal (com Sidebar, Header e Footer)
 const MainLayout = () => {
@@ -104,6 +107,15 @@ const App = () => {
         </Route>
         <Route path="/qanda" element={<ProtectedRoute />}>
           <Route index element={<QandA />} />
+        </Route>
+        <Route path="/achievements" element={<ProtectedRoute />}>
+          <Route index element={<Achievements />} />
+        </Route>
+        <Route path="/interactivemap" element={<ProtectedRoute />}>
+          <Route index element={<InteractiveMap />} />
+        </Route>
+        <Route path="/notifications" element={<ProtectedRoute />}>
+          <Route index element={<Notifications />} />
         </Route>
         <Route path="*" element={<ProtectedRoute />}>
           <Route index element={<NotFound />} />

@@ -745,31 +745,253 @@ h1 {
   gap: 5px;
 }
 
-.notification-icon {
-  position: relative;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-color);
-  cursor: pointer;
+.notification-prompt {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  text-align: center;
 }
 
-.notification-icon:hover {
+.notification-prompt p {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #262626;
+}
+
+.enable-notifications-button,
+.dismiss-notifications-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  margin: 0 8px;
+}
+
+.enable-notifications-button {
+  background: #0095f6;
+  color: #fff;
+}
+
+.enable-notifications-button:hover {
+  background: #00376b;
+}
+
+.dismiss-notifications-button {
+  background: #dbdbdb;
+  color: #262626;
+}
+
+.dismiss-notifications-button:hover {
+  background: #b3b3b3;
+}
+
+/* Estilos para a seção de notificações */
+.notifications-page {
+  min-height: 100vh;
+  margin: 20px;
+  margin-top: 51px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.notifications-page h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #262626;
+}
+
+.notifications-page ul{
+  padding: 0px;
+}
+
+.notification-period {
+ 
+  margin: 16px 0 8px;
+  border-top: 1px solid #dbdbdb;
+  padding-top: 14px;
+}
+
+.notification-item {
+  padding: 12px;
+  border-bottom: 1px solid #dbdbdb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-menu .notification-item.unread{
+  background-color: #f0f8ff !important;
+  border-radius: 0;
+  margin: 0px;
+}
+
+.notification-menu .notification-item.read{
+  background-color: #fff !important;
+  border-radius: 0;
+  margin: 0px;
+}
+
+
+
+.notification-item.unread {
+  background: #f0f8ff !important;
+  font-weight: 600;
+  border-radius: 15px;
+  margin: 10px;
+}
+
+.notification-item.read {
+  background: #f2f2f2 !important;
+  font-weight: 400;
+  border-radius: 15px;
+  margin: 10px;
+}
+
+
+
+.notification-item a:hover {
+  color: var(--primary-color) !important;
+}
+
+button.notification-icon {
   background-color: transparent;
+}
+
+button.notification-icon:hover {
+  background-color: transparent;
+}
+
+/* Estilos para a seção de notificações no header */
+.notification-section {
+  position: relative;
+  margin-right: 16px;
+}
+
+.notification-icon {
+  background: none;
+  border: none;
+  color: #262626;
+  font-size: 24px;
+  cursor: pointer;
+  position: relative;
 }
 
 .notification-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  background-color: var(--error-color);
+  top: -3px;
+  right: 0px;
+  background: #ed4956;
   color: #fff;
   border-radius: 50%;
   padding: 2px 6px;
-  font-size: 0.7rem;
-  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
 }
 
+.notification-menu {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: #fff;
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.notification-item {
+  padding: 12px;
+  border-bottom: 1px solid #dbdbdb;
+}
+
+.notification-item.unread {
+  background: #f0f8ff;
+  font-weight: 600;
+}
+
+.notification-item.read {
+  background: #fff;
+  font-weight: 400;
+}
+
+.notification-item a {
+  color: #000;
+  text-decoration: none;
+  display: block;
+  font-size: 16px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.notification-item a:hover {
+  color: var(--primary-color-hover);
+}
+
+.view-more-notifications {
+  display: block;
+  padding: 12px;
+  text-align: center;
+  color: var(--secondary-color);
+  font-weight: 600;
+  text-decoration: none;
+  border-top: 1px solid #dbdbdb;
+}
+
+.view-more-notifications:hover {
+  background: #fafafa;
+  color: var(--secondary-color-hover);
+}
+
+.no-notifications {
+  padding: 12px;
+  text-align: center;
+  color: #8e8e8e;
+  font-size: 14px;
+}
+
+.mark-as-read-button {
+  background: none;
+  border: none;
+  color: #fff;
+  background-color: var(--secondary-color);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.mark-as-read-button:hover {
+  color: #fff;
+  background-color: var(--secondary-color-hover);
+}
+
+/* Estilos para o ícone de notificações com badge */
+.notifications-icon {
+  position: relative;
+  color: #262626;
+  font-size: 24px;
+  margin-left: auto;
+}
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ed4956;
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+}
 .social-icons {
   display: flex;
   gap: 15px;
@@ -817,7 +1039,7 @@ h1 {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 2px 5px var(--shadow-color);
-  min-width: 230px;
+  min-width: 250px;
   z-index: 1001;
 }
 
@@ -964,6 +1186,55 @@ h1 {
     font-size: 1.2rem;
   }
 }
+
+/* --------------------------------------- Componente Toast.css --------------------------------------- */
+
+/* Estilização do Toast como Modal */
+.toast {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border-radius: 8px;
+  color: #fff;
+  z-index: 1000200; /* Acima de outros elementos */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  min-width: 100%;
+  min-height: 0px;
+}
+
+/* Garantir que o header não sobreponha o Toast */
+.home-header {
+  position: relative;
+  z-index: 1000; /* Menor que o z-index do Toast */
+}
+
+.toast.info {
+  background-color: var(--primary-color-hover); /* Fundo azul para mensagens informativas */
+  padding-top: 100px;
+  padding-bottom: 20px;
+  font-size: 20px;
+  display: block;
+}
+
+
+
+/* Estilização para mensagens de sucesso e erro */
+.toast.success {
+  background-color: #28a745;
+  padding-top: 100px;
+  font-size: 20px;
+}
+
+.toast.error {
+  background-color: #8b0d1a;
+  padding-top: 100px;
+  font-size: 20px;
+}
+
+
 
 /* --------------------------------------- Home.css --------------------------------------- */
 .home-page {
@@ -1200,8 +1471,8 @@ input.search-input {
 }
 
 .feed-avatar {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--primary-color);
@@ -1287,7 +1558,7 @@ input.search-input {
   position: absolute;
   top: 55%;
   transform: translateY(-50%);
-  background-color: var(--secondary-color);
+  background-color: transparent;
   color: #fff;
   border: none;
   border-radius: 50%;
@@ -1310,7 +1581,7 @@ input.search-input {
 }
 
 .gallery-arrow:hover {
-  background-color: var(--secondary-color-hover);
+  background-color: transparent;
 }
 
 .gallery-controls {
@@ -1432,109 +1703,235 @@ input.search-input {
   color: #fff;
 }
 
+
+
+/* Estilos para a pré-visualização de comentários */
 .comments-preview {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 8px;
+  margin-top: 10px;
+  padding: 0 16px;
 }
 
 .comment-preview {
-  font-size: 0.9rem;
-  color: #555;
-  margin: 5px 0;
-  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  line-height: 18px;
+  color: #262626;
+  margin-bottom: 4px;
+  display: block; /* Garante que o texto quebre para baixo */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.comment-preview strong {
+  font-weight: 600;
+  color: #262626;
 }
 
 .view-more-comments {
   background: none;
   border: none;
-  color: var(--primary-color);
-  font-size: 0.9rem;
+  color: #fff;
+  background-color: var(--secondary-color);
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  padding: 15px;
+  
+  
 }
 
 .view-more-comments:hover {
-  text-decoration: underline;
+  color: #fff;
+  background-color: var(--secondary-color-hover);
 }
 
+
+
+
+/* Estilos para a seção de comentários completa */
 .comments-section {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  margin-top: 16px;
+  padding: 0 16px 60px; /* Espaço para o formulário fixo na parte inferior */
+  background: #fff;
+  width: 97.5%;
 }
 
-.comments-section h4 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  color: #333;
-  font-family: 'Poppins', sans-serif;
+.comments-list {
+  margin-bottom: 16px;
 }
 
-.comments-section ul {
+.comments-list ul {
   list-style: none;
   padding: 0;
 }
 
-.comments-section li {
-  margin-bottom: 8px;
-  color: #444;
-  font-family: 'Poppins', sans-serif;
-}
-
-.add-comment {
-  margin-top: 15px;
-}
-
-.comment-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  resize: none;
-  height: 80px;
+.comment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 30px 30px;
+  background-color: #f2f2f2;
+  border-radius: 10px;
   margin-bottom: 10px;
-  font-family: 'Poppins', sans-serif;
 }
 
-.submit-comment-button {
-  padding: 8px 16px;
-  background-color: var(--primary-color);
-  color: #fff;
+.comment-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-text {
+  font-size: 14px;
+  line-height: 18px;
+  color: #262626;
+  margin: 0;
+  display: block; /* Garante que o texto quebre para baixo */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.comment-text strong {
+  font-weight: 600;
+  color: #262626;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.comment-date {
+  font-size: 16px;
+  color: var(--primary-color);
+}
+
+.comment-likes-count {
+  font-size: 16px;
+  color: var(--primary-color);
+}
+
+.comment-like-button {
+  background: none;
   border: none;
-  border-radius: 5px;
+  color: #8e8e8e;
+  font-size: 12px;
   cursor: pointer;
-  font-family: 'Poppins', sans-serif;
-  transition: background-color 0.3s ease;
+  padding: 0;
 }
 
-.submit-comment-button:hover {
-  background-color: #0056b3;
+.comment-like-button.liked {
+  color: #ed4956; /* Cor do Instagram para curtidas */
+}
+
+.comment-like-button:disabled {
+  cursor: not-allowed;
+}
+
+.comment-like-button:hover:not(:disabled) {
+  color: #ed4956;
+}
+
+.no-comments {
+  font-size: 14px;
+  color: #8e8e8e;
+  text-align: center;
+  margin: 16px 0;
 }
 
 .close-comments-button {
-  padding: 8px 16px;
-  background-color: #dc3545;
-  color: #fff;
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
   border: none;
-  border-radius: 5px;
+  color: #0095f6;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
-  font-family: 'Poppins', sans-serif;
-  transition: background-color 0.3s ease;
+  text-align: center;
+  margin-bottom: 16px;
 }
 
 .close-comments-button:hover {
-  background-color: #c82333;
+  color: #fff;
 }
+
+.add-comment {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid #dbdbdb;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comment-input {
+  flex: 1;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid #dbdbdb;
+  border-radius: 18px;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  background: #fafafa;
+  color: #262626;
+  display: block; /* Garante que o texto quebre para baixo */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.comment-input:focus {
+  background: #fff;
+  border-color: #a0a0a0;
+}
+
+.submit-comment-button {
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.submit-comment-button:disabled {
+  color: #fff;
+  cursor: not-allowed;
+  background-color: var(--secondary-color);
+}
+
+.comment-success {
+  font-size: 14px;
+  color: #28a745;
+  text-align: center;
+  margin: 8px 0;
+}
+
+
+/* Garantir que não haja overflow horizontal no feed */
+.feed-item,
+.feed-content,
+.travel-info-feed {
+  overflow: hidden; /* Evita overflow horizontal */
+}
+
 
 .feed-container p {
   text-align: center;
   font-size: 1.1rem;
-  color: #666;
+  color: #000;
   font-family: 'Poppins', sans-serif;
 }
 
@@ -2786,6 +3183,8 @@ input[type="file"] {
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
 }
 
+
+
 .category-select {
   padding: 10px;
   border: 1px solid var(--border-color);
@@ -3845,6 +4244,12 @@ button.see-less-categories-button {
   transition: background-color 0.3s;
 }
 
+button.close-comments-button {
+  width: 25%;
+  margin-left: 40% !important;
+  background-color: var(--primary-color) !important;
+}
+
 .comments-section button:hover {
   background-color: #218838;
 }
@@ -4286,7 +4691,7 @@ span {
 }
 
 .splash-logo {
-  width: 430px;
+  width: 440px;
   height: 220px;
   margin-bottom: 20px;
   animation: pulse 1.5s infinite;
@@ -4713,35 +5118,7 @@ button:hover {
   color: #333;
 }
 
-/* Estilização do Toast como Modal */
-.toast {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 20px;
-  border-radius: 8px;
-  color: #fff;
-  z-index: 1000200; /* Acima de outros elementos */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  min-width: 100%;
-  min-height: 0px;
-}
 
-
-/* Estilização para mensagens de sucesso e erro */
-.toast.success {
-  background-color: #28a745;
-  padding-top: 100px;
-  font-size: 20px;
-}
-
-.toast.error {
-  background-color: #8b0d1a;
-  padding-top: 100px;
-  font-size: 20px;
-}
 /* Navegação de Abas */
 .tab-nav {
   display: flex;
@@ -5369,12 +5746,146 @@ form label{
 
 
 
+/* --------------------------------------- Achievements --------------------------------------- */
+
+/* Estilos para a página de conquistas */
+.achievements-page {
+  margin: 20px;
+  padding: 20px;
+  min-height: 100vh;
+  margin-top: 50px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.achievements-page h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: #262626;
+}
+
+.achievements-section {
+  margin-bottom: 24px;
+}
+
+.achievements-section h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #262626;
+  border-bottom: 1px solid #dbdbdb;
+  padding-bottom: 4px;
+}
+
+.achievements-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.achievement-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 350px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.achievement-item.unlocked {
+  background: #e6f4ea;
+  border: 1px solid #34c759;
+}
+
+.achievement-item.locked {
+  background: #f0f0f0;
+  border: 1px solid #dbdbdb;
+  opacity: 0.6;
+}
+
+.achievement-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  color: #262626;
+}
+
+.achievement-item.unlocked .achievement-icon {
+  color: #34c759;
+}
+
+.achievement-item.locked .achievement-icon {
+  color: #8e8e8e;
+}
+
+.achievement-details h4 {
+  font-size: 16px;
+  margin: 0 0 4px;
+  color: #262626;
+}
+
+.achievement-details p {
+  font-size: 14px;
+  color: #8e8e8e;
+  margin: 0;
+}
+
+
+
+/* Ajustes para dispositivos móveis */
+@media (max-width: 768px) {
+  .achievements-page {
+    padding: 12px;
+  }
+
+  .achievements-page h2 {
+    font-size: 20px;
+  }
+
+  .achievements-section h3 {
+    font-size: 16px;
+  }
+
+  .achievement-item {
+    max-width: 100%;
+  }
+
+  .achievement-icon {
+    font-size: 20px;
+    margin-right: 8px;
+  }
+
+  .achievement-details h4 {
+    font-size: 14px;
+  }
+
+  .achievement-details p {
+    font-size: 12px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* --------------------------------------- Final Touches and Overrides --------------------------------------- */
 /* Ensuring consistency across all sections */
 button:disabled {
-  background-color: #ccc;
+  background-color: var(--secondary-color);
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
 input:focus,
@@ -5880,7 +6391,60 @@ svg {
   }
 
 
+  .comments-preview,
+  .comments-section {
+    padding: 0 12px;
+    width: 100%;
+  }
 
+  .comments-section {
+    padding: 0px !important;
+  }
+
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .comment-text {
+    font-size: 13px;
+    line-height: 16px;
+  }
+
+  .comment-date,
+  .comment-likes-count {
+    font-size: 11px;
+  }
+
+  .add-comment {
+    padding: 6px 12px;
+  }
+
+  .comment-input {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .submit-comment-button {
+    font-size: 13px;
+  }
+
+
+  .feed-container p{
+    font-size: 14px;
+  }
+
+
+  .comments-list{
+    padding-top: 3px;
+  }
+
+
+.comment-item {
+margin: 10px;
+padding: 10px;
+}
 
 /* ----------------------------------TRAVELS-------------------------------- */
 
@@ -6295,6 +6859,8 @@ form select{
     font-size: 0.9rem; /* Reduz o tamanho da fonte */
   }
 
+
+
   .comment-list p {
     font-size: 0.9rem; /* Reduz o tamanho da fonte */
     padding: 8px; /* Reduz o padding */
@@ -6639,6 +7205,39 @@ form select{
   .login-header h2{
     margin-top: 0px !important;
   }
+
+
+
+
+/* ---------------------------------------------------------Notifications----------------------------------------------------------------------- */
+
+
+
+  .notifications-page {
+    padding: 12px;
+  }
+
+  .notification-item {
+    padding: 10px;
+  }
+
+  .notification-item a {
+    font-size: 14px;
+  }
+
+  .mark-as-read-button {
+    font-size: 11px;
+  }
+
+  .notifications-icon {
+    font-size: 20px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
 
   
 
