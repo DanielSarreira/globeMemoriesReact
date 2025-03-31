@@ -6,7 +6,7 @@ const urlsToCache = [
   '/static/js/main.chunk.js', // Ajuste conforme o nome do seu bundle JS gerado
   '/static/css/main.chunk.css', // Ajuste conforme o nome do seu CSS gerado
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -50,5 +50,42 @@ self.addEventListener('activate', (event) => {
         })
       );
     })
+  );
+});
+
+// Adicionar suporte a notificações push
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'Globe Memories';
+  const options = {
+    body: data.body || 'Você tem uma nova notificação!',
+    icon: '/icons/icon-192x192.png', // Ícone da notificação
+    badge: '/icons/icon-192x192.png', // Ícone pequeno para a notificação (opcional)
+    data: data.payload || {}, // Dados adicionais para redirecionamento
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
+
+// Lidar com cliques na notificação
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const { type, relatedId } = event.notification.data;
+
+  // Redirecionar com base no tipo de notificação
+  let url = '/';
+  if (type === 'like' || type === 'comment') {
+    url = `/travel/${relatedId}`;
+  } else if (type === 'follow') {
+    url = `/profile/${relatedId}`;
+  } else if (type === 'new_travel') {
+    url = `/travel/${relatedId}`;
+  }
+
+  event.waitUntil(
+    clients.openWindow(url)
   );
 });

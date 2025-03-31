@@ -1,14 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
-import { FaHeart, FaComment, FaSync, FaShareAlt, FaChevronDown, FaSearch, FaChevronLeft, FaChevronRight, FaPause, FaPlay } from 'react-icons/fa';
+import { FaHeart, FaComment, FaSync, FaShareAlt, FaChevronDown, FaSearch, FaChevronLeft, FaChevronRight, FaPause, FaPlay, FaBell } from 'react-icons/fa';
 import { FaStar } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import TravelsData from '../data/travelsData';
 import '../styles/styles.css';
 
+// Dados mockados para notificações (simulando o backend)
+const mockNotifications = [];
+
 const Home = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [feedTravels, setFeedTravels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,19 +26,24 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const travelsPerPage = 5;
 
-  // Estado para controlar o índice da imagem atual e o estado de pausa
   const [currentImageIndices, setCurrentImageIndices] = useState({});
   const [isPaused, setIsPaused] = useState({});
 
-  // Estados para o pull-to-refresh
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartY = useRef(0);
   const feedContainerRef = useRef(null);
 
-  // Detectar se é um dispositivo móvel
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentSuccess, setCommentSuccess] = useState(null);
+  const [likedComments, setLikedComments] = useState(new Set());
+
+  // Estado para notificações
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -86,13 +96,40 @@ const Home = () => {
     }, 1000);
   }, [user]);
 
+  // Função para solicitar permissão para notificações
+  const requestNotificationPermission = async () => {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      console.log('Permissão para notificações concedida!');
+      setShowNotificationPrompt(false);
+
+      // Simular uma notificação push de teste
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification('Globe Memories', {
+            body: 'Bem-vindo! Você ativou as notificações.',
+            icon: '/icons/icon-192x192.png',
+            data: { type: 'welcome', relatedId: '' },
+          });
+        });
+      }
+    } else {
+      console.log('Permissão para notificações negada.');
+      setShowNotificationPrompt(false);
+    }
+  };
+
+  // Função para dispensar o prompt de notificações
+  const dismissNotificationPrompt = () => {
+    setShowNotificationPrompt(false);
+  };
+
   const renderStars = (stars) => (
     [...Array(5)].map((_, index) => (
       <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={20} />
     ))
   );
 
-  // Transição automática a cada 8 segundos, com controle de pausa
   useEffect(() => {
     const intervals = feedTravels.map((travel) => {
       if (isPaused[travel.id]) return null;
@@ -160,25 +197,51 @@ const Home = () => {
       return;
     }
 
-    const updatedTravels = feedTravels.map((travel) => {
-      if (travel.id === travelId) {
-        return {
-          ...travel,
-          comments: [
-            ...travel.comments,
-            {
-              id: travel.comments.length + 1,
-              user: user.username,
-              text: newComment,
-            },
-          ],
-        };
-      }
-      return travel;
-    });
+    setCommentLoading(true);
+    setCommentSuccess(null);
 
-    setFeedTravels(updatedTravels);
-    setNewComment('');
+    setTimeout(() => {
+      const updatedTravels = feedTravels.map((travel) => {
+        if (travel.id === travelId) {
+          return {
+            ...travel,
+            comments: [
+              ...travel.comments,
+              {
+                id: travel.comments.length + 1,
+                user: user.username,
+                text: newComment,
+                date: new Date().toLocaleString('pt-PT'),
+              },
+            ],
+          };
+        }
+        return travel;
+      });
+
+      setFeedTravels(updatedTravels);
+      setNewComment('');
+      setCommentLoading(false);
+      setCommentSuccess('Comentário publicado!');
+    }, 1000);
+  };
+
+  const handleCommentLike = (travelId, commentId) => {
+    if (!user) {
+      alert('Faça login para curtir comentários!');
+      return;
+    }
+
+    const commentKey = `${travelId}-${commentId}`;
+    setLikedComments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentKey)) {
+        newSet.delete(commentKey);
+      } else {
+        newSet.add(commentKey);
+      }
+      return newSet;
+    });
   };
 
   const handleShare = (travelId) => {
@@ -234,9 +297,8 @@ const Home = () => {
     document.addEventListener('touchend', handleDragEnd);
   };
 
-  // Funções para o pull-to-refresh
   const handleTouchStart = (e) => {
-    if (window.scrollY === 0) { // Só ativa se o usuário estiver no topo da página
+    if (window.scrollY === 0) {
       touchStartY.current = e.touches[0].clientY;
       setIsPulling(true);
     }
@@ -249,32 +311,43 @@ const Home = () => {
     const distance = currentY - touchStartY.current;
 
     if (distance > 0) {
-      setPullDistance(Math.min(distance, 150)); // Limita a distância máxima para 150px
+      setPullDistance(Math.min(distance, 150));
     }
   };
 
   const handleTouchEnd = () => {
-    if (pullDistance > 100) { // Se a distância for maior que 100px, dispara a atualização
+    if (pullDistance > 100) {
       handleRefreshFeed();
     } else {
-      setPullDistance(0); // Reseta a distância se não atingir o limite
+      setPullDistance(0);
     }
     setIsPulling(false);
+  };
+
+  const toggleComments = (travelId) => {
+    if (showComments === travelId) {
+      setShowComments(null);
+    } else {
+      setShowComments(travelId);
+    }
   };
 
   const renderTravelItem = (travel) => {
     const currentIndex = currentImageIndices[travel.id] || 0;
     const images = travel.images_generalInformation || [];
     const totalImages = images.length;
+    const maxCommentLength = 250;
 
     return (
       <div key={travel.id} className="feed-item fade-in">
         <div className="feed-user">
-          <img
-            src={travel.userProfilePicture || defaultAvatar}
-            alt={`${travel.user}'s avatar`}
-            className="feed-avatar"
-          />
+          <Link to={`/profile/${travel.user}`}>
+            <img
+              src={travel.userProfilePicture || defaultAvatar}
+              alt={`${travel.user}'s avatar`}
+              className="feed-avatar"
+            />
+          </Link>
           <Link to={`/profile/${travel.user}`}>{travel.user}</Link>
           <span className="travel-date">Publicado em: {travel.createdAt || 'Data não disponível'}</span>
         </div>
@@ -282,13 +355,13 @@ const Home = () => {
           <div className="travel-info-feed">
             <h1>{travel.name}</h1>
             <p className="travel-description">{travel.description || 'Descrição não disponível.'}</p>
-            <br></br>
+            <br />
             <p><strong>🌍 País:</strong> {travel.country} <strong>🏙️ Cidade:</strong> {travel.city}</p>
             <p><strong>🏷️ Categoria:</strong> {travel.category.join(', ')}</p>
             <p><strong>📅 Data de Início:</strong> {travel.startDate}  <strong>📅 Data de Fim:</strong> {travel.endDate}</p>
-            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.price}€ </p> 
+            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.price}€ </p>
             <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
-            <br></br>
+            <br />
             <Link to={`/travel/${travel.id}`} className="feed-details-link">
               Ver mais detalhes
             </Link>
@@ -299,7 +372,7 @@ const Home = () => {
               >
                 <FaHeart /> {travel.likes}
               </button>
-              <button className="comment-button" onClick={() => setShowComments(travel.id)}>
+              <button className="comment-button" onClick={() => toggleComments(travel.id)}>
                 <FaComment /> {travel.comments.length}
               </button>
               <button className="share-button" onClick={() => handleShare(travel.id)}>
@@ -310,12 +383,12 @@ const Home = () => {
               <div className="comments-preview">
                 {travel.comments.slice(0, 2).map((comment) => (
                   <p key={comment.id} className="comment-preview">
-                    <strong>{comment.user}:</strong> {comment.text}
+                    <strong>{comment.user}</strong> {comment.text}
                   </p>
                 ))}
                 {travel.comments.length > 2 && (
                   <button className="view-more-comments" onClick={() => setShowComments(travel.id)}>
-                    Ver mais comentários ({travel.comments.length - 2})
+                    Ver todos os {travel.comments.length} comentários
                   </button>
                 )}
               </div>
@@ -346,32 +419,93 @@ const Home = () => {
         </div>
         {showComments === travel.id && (
           <div className="comments-section">
-            <h4>Comentários</h4>
-            {travel.comments.length > 0 ? (
-              <ul>
-                {travel.comments.map((comment) => (
-                  <li key={comment.id}>
-                    <strong>{comment.user}:</strong> {comment.text}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Nenhum comentário ainda.</p>
-            )}
-            <div className="add-comment">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Escreva seu comentário..."
-                className="comment-input"
-              />
-              <button onClick={() => handleAddComment(travel.id)} className="submit-comment-button">
-                Enviar
-              </button>
+            <div className="comments-list">
+              {travel.comments.length > 0 ? (
+                <ul>
+                  <AnimatePresence>
+                    {travel.comments.map((comment) => {
+                      const commentKey = `${travel.id}-${comment.id}`;
+                      const isLiked = likedComments.has(commentKey);
+                      return (
+                        <motion.li
+                          key={comment.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                          className="comment-item"
+                        >
+                          <img
+                            src={defaultAvatar}
+                            alt={`${comment.user}'s avatar`}
+                            className="comment-avatar"
+                          />
+                          <div className="comment-content">
+                            <p className="comment-text">
+                              <strong>{comment.user}</strong> {comment.text}
+                            </p>
+                            <div className="comment-meta">
+                              <span className="comment-date">Agora</span>
+                              {isLiked && (
+                                <span className="comment-likes-count">
+                                  1 Like
+                                </span>
+                              )}
+                              <button
+                                className={`comment-like-button ${isLiked ? 'liked' : ''}`}
+                                onClick={() => handleCommentLike(travel.id, comment.id)}
+                              >
+                                <FaHeart />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.li>
+                      );
+                    })}
+                  </AnimatePresence>
+                </ul>
+              ) : (
+                <p className="no-comments">Nenhum comentário publicado ainda.</p>
+              )}
             </div>
             <button onClick={() => setShowComments(null)} className="close-comments-button">
               Fechar
             </button>
+            <div className="add-comment">
+              <img
+                src={defaultAvatar}
+                alt={`${user?.username}'s avatar`}
+                className="comment-avatar"
+              />
+              <textarea
+                value={newComment}
+                onChange={(e) => {
+                  if (e.target.value.length <= maxCommentLength) {
+                    setNewComment(e.target.value);
+                  }
+                }}
+                placeholder="Adicione um comentário..."
+                className="comment-input"
+                maxLength={maxCommentLength}
+              />
+              <button
+                onClick={() => handleAddComment(travel.id)}
+                className="submit-comment-button"
+                disabled={commentLoading || !newComment.trim()}
+              >
+                {commentLoading ? 'A Publicar...' : 'Publicar'}
+              </button>
+            </div>
+            {commentSuccess && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="comment-success"
+              >
+                {commentSuccess}
+              </motion.p>
+            )}
           </div>
         )}
       </div>
@@ -401,6 +535,9 @@ const Home = () => {
   const paginatedTravels = sortedTravels.slice(0, currentPage * travelsPerPage);
   const hasMoreTravels = paginatedTravels.length < sortedTravels.length;
 
+  // Contar notificações não lidas
+  const unreadCount = notifications.filter((notif) => !notif.isRead).length;
+
   return (
     <div className="home-page">
       <header className="home-header">
@@ -409,6 +546,13 @@ const Home = () => {
           <p>Olá, {user.username}! Veja as viagens dos seus amigos e as viagens públicas.</p>
         ) : (
           <p>Explore as viagens públicas ou faça login para um feed personalizado!</p>
+        )}
+        {/* Ícone de notificações com badge */}
+        {user && (
+          <Link to="/notifications" className="notifications-icon">
+            <FaBell />
+            {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+          </Link>
         )}
       </header>
 
@@ -465,7 +609,7 @@ const Home = () => {
             <option value="likes">Popularidade (Likes)</option>
           </select>
         </div>
-        {!isMobile && ( // Mostra o botão apenas no desktop
+        {!isMobile && (
           <button onClick={handleRefreshFeed} className="refresh-button">
             <FaSync /> Atualizar Feed
           </button>
@@ -479,7 +623,7 @@ const Home = () => {
         onTouchMove={isMobile ? handleTouchMove : undefined}
         onTouchEnd={isMobile ? handleTouchEnd : undefined}
       >
-        {isMobile && ( // Mostra o indicador de pull-to-refresh apenas no mobile
+        {isMobile && (
           <div
             className="pull-to-refresh-indicator"
             style={{
