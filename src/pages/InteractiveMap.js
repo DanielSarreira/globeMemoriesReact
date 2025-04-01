@@ -139,7 +139,7 @@ const InteractiveMap = () => {
 
   return (
     <div style={{ height: "100%", width: "100%", overflow: "hidden" }}>
-      <div style={{ height: "870px", width: "100%", position: "relative" }}>
+      <div style={{ height: "875px", width: "100%", position: "relative" }}>
         <MapContainer
           center={[20, 0]}
           zoom={3}
