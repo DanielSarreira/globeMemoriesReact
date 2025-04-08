@@ -96,14 +96,12 @@ const Home = () => {
     }, 1000);
   }, [user]);
 
-  // Função para solicitar permissão para notificações
   const requestNotificationPermission = async () => {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       console.log('Permissão para notificações concedida!');
       setShowNotificationPrompt(false);
 
-      // Simular uma notificação push de teste
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification('Globe Memories', {
@@ -119,7 +117,6 @@ const Home = () => {
     }
   };
 
-  // Função para dispensar o prompt de notificações
   const dismissNotificationPrompt = () => {
     setShowNotificationPrompt(false);
   };
@@ -141,7 +138,7 @@ const Home = () => {
       }, 8000);
     });
 
-    return () => intervals.forEach(interval => interval && clearInterval(interval));
+    return () => intervals.forEach((interval) => interval && clearInterval(interval));
   }, [feedTravels, isPaused]);
 
   const togglePause = (travelId) => {
@@ -151,7 +148,9 @@ const Home = () => {
     }));
   };
 
-  const handleLike = (travelId) => {
+  const handleLike = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!user) {
       alert('Faça login para curtir!');
       return;
@@ -187,7 +186,9 @@ const Home = () => {
     }, 1000);
   };
 
-  const handleAddComment = (travelId) => {
+  const handleAddComment = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!user) {
       alert('Faça login para comentar!');
       return;
@@ -226,7 +227,9 @@ const Home = () => {
     }, 1000);
   };
 
-  const handleCommentLike = (travelId, commentId) => {
+  const handleCommentLike = (travelId, commentId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!user) {
       alert('Faça login para curtir comentários!');
       return;
@@ -244,7 +247,9 @@ const Home = () => {
     });
   };
 
-  const handleShare = (travelId) => {
+  const handleShare = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const travelUrl = `http://localhost:3000/travel/${travelId}`;
     navigator.clipboard.writeText(travelUrl).then(() => {
       alert('Link da viagem copiado!');
@@ -255,17 +260,21 @@ const Home = () => {
     setCurrentPage((prevPage) => prevPage + 1);
   };
 
-  const handleNextImage = (travelId) => {
+  const handleNextImage = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setCurrentImageIndices((prev) => ({
       ...prev,
-      [travelId]: (prev[travelId] + 1) % (feedTravels.find(t => t.id === travelId)?.images_generalInformation?.length || 1),
+      [travelId]: (prev[travelId] + 1) % (feedTravels.find((t) => t.id === travelId)?.images_generalInformation?.length || 1),
     }));
   };
 
-  const handlePrevImage = (travelId) => {
+  const handlePrevImage = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setCurrentImageIndices((prev) => ({
       ...prev,
-      [travelId]: (prev[travelId] - 1 + (feedTravels.find(t => t.id === travelId)?.images_generalInformation?.length || 1)) % (feedTravels.find(t => t.id === travelId)?.images_generalInformation?.length || 1),
+      [travelId]: (prev[travelId] - 1 + (feedTravels.find((t) => t.id === travelId)?.images_generalInformation?.length || 1)) % (feedTravels.find((t) => t.id === travelId)?.images_generalInformation?.length || 1),
     }));
   };
 
@@ -278,9 +287,9 @@ const Home = () => {
       const diffX = startX - currentX;
 
       if (diffX > 50) {
-        handleNextImage(travelId);
+        handleNextImage(travelId, moveEvent);
       } else if (diffX < -50) {
-        handlePrevImage(travelId);
+        handlePrevImage(travelId, moveEvent);
       }
     };
 
@@ -324,12 +333,24 @@ const Home = () => {
     setIsPulling(false);
   };
 
-  const toggleComments = (travelId) => {
+  const toggleComments = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (showComments === travelId) {
       setShowComments(null);
     } else {
       setShowComments(travelId);
     }
+  };
+
+  const handleCloseComments = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowComments(null);
+  };
+
+  const stopPropagation = (e) => {
+    e.stopPropagation();
   };
 
   const renderTravelItem = (travel) => {
@@ -340,85 +361,87 @@ const Home = () => {
 
     return (
       <div key={travel.id} className="feed-item fade-in">
-        <div className="feed-user">
-          <Link to={`/profile/${travel.user}`}>
-            <img
-              src={travel.userProfilePicture || defaultAvatar}
-              alt={`${travel.user}'s avatar`}
-              className="feed-avatar"
-            />
-          </Link>
-          <Link to={`/profile/${travel.user}`}>{travel.user}</Link>
-          <span className="travel-date">Publicado em: {travel.createdAt || 'Data não disponível'}</span>
-        </div>
-        <div className="feed-content">
-          <div className="travel-info-feed">
-            <h1>{travel.name}</h1>
-            <p className="travel-description">{travel.description || 'Descrição não disponível.'}</p>
-            <br />
-            <p><strong>🌍 País:</strong> {travel.country} <strong>🏙️ Cidade:</strong> {travel.city}</p>
-            <p><strong>🏷️ Categoria:</strong> {travel.category.join(', ')}</p>
-            <p><strong>📅 Data de Início:</strong> {travel.startDate}  <strong>📅 Data de Fim:</strong> {travel.endDate}</p>
-            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.price}€ </p>
-            <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
-            <br />
-            <Link to={`/travel/${travel.id}`} className="feed-details-link">
-              Ver mais detalhes
-            </Link>
-            <div className="feed-actions">
-              <button
-                className={`like-button ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
-                onClick={() => handleLike(travel.id)}
-              >
-                <FaHeart /> {travel.likes}
-              </button>
-              <button className="comment-button" onClick={() => toggleComments(travel.id)}>
-                <FaComment /> {travel.comments.length}
-              </button>
-              <button className="share-button" onClick={() => handleShare(travel.id)}>
-                <FaShareAlt /> Compartilhar
-              </button>
-            </div>
-            {travel.comments.length > 0 && (
-              <div className="comments-preview">
-                {travel.comments.slice(0, 2).map((comment) => (
-                  <p key={comment.id} className="comment-preview">
-                    <strong>{comment.user}</strong> {comment.text}
-                  </p>
-                ))}
-                {travel.comments.length > 2 && (
-                  <button className="view-more-comments" onClick={() => setShowComments(travel.id)}>
-                    Ver todos os {travel.comments.length} comentários
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="travel-gallery">
-            <div className="gallery-container">
-              <button className="gallery-arrow left" onClick={() => handlePrevImage(travel.id)}>
-                <FaChevronLeft />
-              </button>
+        <Link to={`/travel/${travel.id}`} className="feed-link">
+          <div className="feed-user" onClick={(e) => e.preventDefault()}>
+            <Link to={`/profile/${travel.user}`} onClick={(e) => e.stopPropagation()}>
               <img
-                src={images[currentIndex] || 'https://via.placeholder.com/300'}
-                alt={`${travel.name} - Imagem ${currentIndex + 1}`}
-                className="feed-image"
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
+                src={travel.userProfilePicture || defaultAvatar}
+                alt={`${travel.user}'s avatar`}
+                className="feed-avatar"
               />
-              <button className="gallery-arrow right" onClick={() => handleNextImage(travel.id)}>
-                <FaChevronRight />
-              </button>
-              <div className="gallery-controls">
-                <button className="pause-play-button" onClick={() => togglePause(travel.id)}>
-                  {isPaused[travel.id] ? <FaPlay /> : <FaPause />}
+            </Link>
+            <Link to={`/profile/${travel.user}`} onClick={(e) => e.stopPropagation()}>{travel.user}</Link>
+            <span className="travel-date">Publicado em: {travel.createdAt || 'Data não disponível'}</span>
+          </div>
+          <div className="feed-content">
+            <div className="travel-info-feed">
+              <h1>{travel.name}</h1>
+              <p className="travel-description">{travel.description || 'Descrição não disponível.'}</p>
+              <br />
+              <p><strong>🌍 País:</strong> {travel.country} <strong>🏙️ Cidade:</strong> {travel.city}</p>
+              <p><strong>🏷️ Categoria:</strong> {travel.category.join(', ')}</p>
+              <p><strong>📅 Data de Início:</strong> {travel.startDate} <strong>📅 Data de Fim:</strong> {travel.endDate}</p>
+              <p><strong>💰 Preço Total Da Viagem:</strong> {travel.price}€ </p>
+              <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+              <br />
+              <Link to={`/travel/${travel.id}`} className="feed-details-link" onClick={(e) => e.stopPropagation()}>
+                Ver mais detalhes
+              </Link>
+              <div className="feed-actions">
+                <button
+                  className={`like-button ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
+                  onClick={(e) => handleLike(travel.id, e)}
+                >
+                  <FaHeart /> {travel.likes}
                 </button>
-                <span className="image-counter">{`${currentIndex + 1}/${totalImages}`}</span>
+                <button className="comment-button" onClick={(e) => toggleComments(travel.id, e)}>
+                  <FaComment /> {travel.comments.length}
+                </button>
+                <button className="share-button" onClick={(e) => handleShare(travel.id, e)}>
+                  <FaShareAlt /> Compartilhar
+                </button>
+              </div>
+              {travel.comments.length > 0 && (
+                <div className="comments-preview">
+                  {travel.comments.slice(0, 2).map((comment) => (
+                    <p key={comment.id} className="comment-preview">
+                      <strong>{comment.user}</strong> {comment.text}
+                    </p>
+                  ))}
+                  {travel.comments.length > 2 && (
+                    <button className="view-more-comments" onClick={(e) => toggleComments(travel.id, e)}>
+                      Ver todos os {travel.comments.length} comentários
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="travel-gallery">
+              <div className="gallery-container">
+                <button className="gallery-arrow left" onClick={(e) => handlePrevImage(travel.id, e)}>
+                  <FaChevronLeft />
+                </button>
+                <img
+                  src={images[currentIndex] || 'https://via.placeholder.com/300'}
+                  alt={`${travel.name} - Imagem ${currentIndex + 1}`}
+                  className="feed-image"
+                  onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
+                />
+                <button className="gallery-arrow right" onClick={(e) => handleNextImage(travel.id, e)}>
+                  <FaChevronRight />
+                </button>
+                <div className="gallery-controls">
+                  <button className="pause-play-button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePause(travel.id); }}>
+                    {isPaused[travel.id] ? <FaPlay /> : <FaPause />}
+                  </button>
+                  <span className="image-counter">{`${currentIndex + 1}/${totalImages}`}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Link>
         {showComments === travel.id && (
-          <div className="comments-section">
+          <div className="comments-section" onClick={(e) => e.stopPropagation()}>
             <div className="comments-list">
               {travel.comments.length > 0 ? (
                 <ul>
@@ -453,7 +476,7 @@ const Home = () => {
                               )}
                               <button
                                 className={`comment-like-button ${isLiked ? 'liked' : ''}`}
-                                onClick={() => handleCommentLike(travel.id, comment.id)}
+                                onClick={(e) => handleCommentLike(travel.id, comment.id, e)}
                               >
                                 <FaHeart />
                               </button>
@@ -468,7 +491,7 @@ const Home = () => {
                 <p className="no-comments">Nenhum comentário publicado ainda.</p>
               )}
             </div>
-            <button onClick={() => setShowComments(null)} className="close-comments-button">
+            <button onClick={handleCloseComments} className="close-comments-button">
               Fechar
             </button>
             <div className="add-comment">
@@ -484,12 +507,15 @@ const Home = () => {
                     setNewComment(e.target.value);
                   }
                 }}
+                onClick={stopPropagation}
+                onMouseDown={stopPropagation}
+                onFocus={stopPropagation}
                 placeholder="Adicione um comentário..."
                 className="comment-input"
                 maxLength={maxCommentLength}
               />
               <button
-                onClick={() => handleAddComment(travel.id)}
+                onClick={(e) => handleAddComment(travel.id, e)}
                 className="submit-comment-button"
                 disabled={commentLoading || !newComment.trim()}
               >
@@ -513,9 +539,7 @@ const Home = () => {
   };
 
   const filteredTravels = feedTravels
-    .filter((travel) =>
-      travel.country === filterCountry || filterCountry === ''
-    )
+    .filter((travel) => travel.country === filterCountry || filterCountry === '')
     .filter((travel) =>
       travel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       travel.city?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -535,7 +559,6 @@ const Home = () => {
   const paginatedTravels = sortedTravels.slice(0, currentPage * travelsPerPage);
   const hasMoreTravels = paginatedTravels.length < sortedTravels.length;
 
-  // Contar notificações não lidas
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
 
   return (
@@ -547,7 +570,6 @@ const Home = () => {
         ) : (
           <p>Explore as viagens públicas ou faça login para um feed personalizado!</p>
         )}
-        {/* Ícone de notificações com badge */}
         {user && (
           <Link to="/notifications" className="notifications-icon">
             <FaBell />
@@ -596,7 +618,6 @@ const Home = () => {
           />
           <FaSearch className="search-icon" />
         </div>
-      
         <div className="sort-container">
           <label htmlFor="sortOption">Ordenar por: </label>
           <select

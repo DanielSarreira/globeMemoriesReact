@@ -18,18 +18,23 @@ import {
   FaMapMarkedAlt,
   FaThumbsUp,
   FaCrown,
+  FaPlane,
+  FaMountain,
+  FaClock,
+  FaGem,
+  FaCompass,
 } from 'react-icons/fa';
 import '../styles/styles.css';
 
-// Dados mockados para visualizações e likes dados pelo usuário (simulando o backend)
+// Dados simulados para visualizações e gostos dados pelo utilizador (simulando o backend)
 const mockUserActions = {
   AnaSilva: {
     viewedTravels: ['3', '3', '3', '3', '3'], // Visualizou a viagem de ID '3' 5 vezes (para "Explorador Curioso")
-    likedTravels: ['3'], // Deu like na viagem de ID '3' (para "Primeiro Like")
+    likedTravels: ['3'], // Deu gosto na viagem de ID '3' (para "Primeiro Gosto")
   },
   TiagoMiranda: {
     viewedTravels: ['1'], // Visualizou apenas 1 viagem
-    likedTravels: [], // Não deu like em nenhuma viagem
+    likedTravels: [], // Não deu gosto em nenhuma viagem
   },
 };
 
@@ -38,13 +43,13 @@ const achievements = [
   {
     id: 'explorer-1',
     name: 'Explorador Iniciante',
-    description: 'Compartilhe sua primeira viagem',
+    description: 'Partilhe a sua primeira viagem',
     icon: <FaTrophy />,
     condition: (travelsCount) => travelsCount >= 1,
   },
   {
     id: 'globe-trotter',
-    name: 'Globe Trotter',
+    name: 'Trotador do Globo',
     description: 'Visite 3 países diferentes',
     icon: <FaGlobe />,
     condition: (userTravels) => {
@@ -62,8 +67,8 @@ const achievements = [
   },
   {
     id: 'budget-traveler',
-    name: 'Viajante Econômico',
-    description: 'Gastar menos de €500 em uma viagem',
+    name: 'Viajante Económico',
+    description: 'Gastar menos de 500 € numa viagem',
     icon: <FaMoneyBillWave />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
@@ -97,7 +102,7 @@ const achievements = [
   {
     id: 'storyteller',
     name: 'Contador de Histórias',
-    description: 'Escrever uma descrição com mais de 100 palavras em uma viagem',
+    description: 'Escrever uma descrição com mais de 100 palavras numa viagem',
     icon: <FaBook />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
@@ -121,7 +126,7 @@ const achievements = [
   {
     id: 'star-traveler',
     name: 'Viajante Estelar',
-    description: 'Receber 5 estrelas em uma viagem publicada',
+    description: 'Receber 5 estrelas numa viagem publicada',
     icon: <FaStar />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
@@ -131,30 +136,28 @@ const achievements = [
   {
     id: 'social-explorer',
     name: 'Explorador Social',
-    description: 'Comentar em 3 viagens de outros usuários',
+    description: 'Comentar em 3 viagens de outros utilizadores',
     icon: <FaComment />,
     condition: (userComments) => userComments.length >= 3,
   },
-
-  // Novas Conquistas Fáceis
   {
     id: 'first-like',
-    name: 'Primeiro Like',
-    description: 'Dê like em uma viagem de outro usuário',
+    name: 'Primeiro Gosto',
+    description: 'Dar gosto numa viagem de outro utilizador',
     icon: <FaHeart />,
     condition: (likedTravels) => likedTravels.length >= 1,
   },
   {
     id: 'curious-explorer',
     name: 'Explorador Curioso',
-    description: 'Visualize 5 viagens de outros usuários',
+    description: 'Visualizar 5 viagens de outros utilizadores',
     icon: <FaEye />,
     condition: (viewedTravels) => viewedTravels.length >= 5,
   },
   {
     id: 'organized-traveler',
     name: 'Viajante Organizado',
-    description: 'Publique uma viagem com todas as informações preenchidas',
+    description: 'Publicar uma viagem com todas as informações preenchidas',
     icon: <FaCheckCircle />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
@@ -173,23 +176,21 @@ const achievements = [
   {
     id: 'travel-friend',
     name: 'Amigo de Viagem',
-    description: 'Siga 1 pessoa',
+    description: 'Seguir 1 pessoa',
     icon: <FaUserFriends />,
     condition: (followingCount) => followingCount >= 1,
   },
-
-  // Novas Conquistas Difíceis
   {
     id: 'travel-master',
     name: 'Mestre das Viagens',
-    description: 'Publique 20 viagens',
+    description: 'Publicar 20 viagens',
     icon: <FaMapMarkedAlt />,
     condition: (travelsCount) => travelsCount >= 20,
   },
   {
     id: 'globe-master',
-    name: 'Globe Master',
-    description: 'Visite 10 países diferentes',
+    name: 'Mestre do Globo',
+    description: 'Visitar 10 países diferentes',
     icon: <FaGlobe />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
@@ -200,7 +201,7 @@ const achievements = [
   {
     id: 'travel-influencer',
     name: 'Influenciador de Viagens',
-    description: 'Receba 50 likes no total em suas viagens',
+    description: 'Receber 50 gostos no total nas suas viagens',
     icon: <FaThumbsUp />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
@@ -211,18 +212,95 @@ const achievements = [
   {
     id: 'travel-critic',
     name: 'Crítico de Viagens',
-    description: 'Comente em 10 viagens de outros usuários',
+    description: 'Comentar em 10 viagens de outros utilizadores',
     icon: <FaComment />,
     condition: (userComments) => userComments.length >= 10,
   },
   {
     id: 'legendary-traveler',
     name: 'Viajante Lendário',
-    description: 'Tenha uma viagem com 5 estrelas e pelo menos 20 likes',
+    description: 'Ter uma viagem com 5 estrelas e pelo menos 20 gostos',
     icon: <FaCrown />,
     condition: (userTravels) => {
       if (!Array.isArray(userTravels)) return false;
       return userTravels.some((travel) => travel.stars === 5 && travel.likes >= 20);
+    },
+  },
+
+  // Novas Conquistas Médias
+  {
+    id: 'weekend-warrior',
+    name: 'Guerreiro de Fim de Semana',
+    description: 'Publicar uma viagem com duração de 2 a 3 dias',
+    icon: <FaClock />,
+    condition: (userTravels) => {
+      if (!Array.isArray(userTravels)) return false;
+      return userTravels.some((travel) => {
+        const start = new Date(travel.startDate);
+        const end = new Date(travel.endDate);
+        const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+        return diffDays >= 2 && diffDays <= 3;
+      });
+    },
+  },
+  {
+    id: 'mountain-explorer',
+    name: 'Explorador de Montanhas',
+    description: 'Visitar 3 cidades com altitude superior a 1000 metros',
+    icon: <FaMountain />,
+    condition: (userTravels) => {
+      if (!Array.isArray(userTravels)) return false;
+      // Simulação: assume que algumas cidades têm altitude > 1000m (necessita de dados reais)
+      const highAltitudeCities = userTravels.filter((travel) => travel.city === 'La Paz' || travel.city === 'Cusco' || travel.city === 'Quito');
+      return highAltitudeCities.length >= 3;
+    },
+  },
+  {
+    id: 'frequent-flyer',
+    name: 'Viajante Frequente',
+    description: 'Fazer 5 viagens de avião',
+    icon: <FaPlane />,
+    condition: (userTravels) => {
+      if (!Array.isArray(userTravels)) return false;
+      return userTravels.filter((travel) => travel.transport === 'plane').length >= 5;
+    },
+  },
+
+  // Novas Conquistas Difíceis
+  {
+    id: 'world-conqueror',
+    name: 'Conquistador do Mundo',
+    description: 'Visitar 25 países diferentes',
+    icon: <FaGlobe />,
+    condition: (userTravels) => {
+      if (!Array.isArray(userTravels)) return false;
+      const uniqueCountries = new Set(userTravels.map((travel) => travel.country));
+      return uniqueCountries.size >= 25;
+    },
+  },
+  {
+    id: 'marathon-traveler',
+    name: 'Viajante Maratonista',
+    description: 'Fazer uma viagem com mais de 30 dias de duração',
+    icon: <FaCompass />,
+    condition: (userTravels) => {
+      if (!Array.isArray(userTravels)) return false;
+      return userTravels.some((travel) => {
+        const start = new Date(travel.startDate);
+        const end = new Date(travel.endDate);
+        const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+        return diffDays > 30;
+      });
+    },
+  },
+  {
+    id: 'treasure-hunter',
+    name: 'Caçador de Tesouros',
+    description: 'Receber 100 gostos numa única viagem',
+    icon: <FaGem />,
+    condition: (userTravels) => {
+      if (!Array.isArray(userTravels)) return false;
+      return userTravels.some((travel) => travel.likes >= 100);
     },
   },
 ];
@@ -234,7 +312,7 @@ const Achievements = () => {
     return (
       <div className="achievements-page">
         <h2>Conquistas</h2>
-        <p>Carregando...</p>
+        <p>A carregar...</p>
       </div>
     );
   }
@@ -243,28 +321,28 @@ const Achievements = () => {
     return (
       <div className="achievements-page">
         <h2>Conquistas</h2>
-        <p>Faça login para ver suas conquistas!</p>
+        <p>Inicie sessão para ver as suas conquistas!</p>
       </div>
     );
   }
 
-  // Calcular as viagens do usuário com base em TravelsData
+  // Calcular as viagens do utilizador com base em TravelsData
   const userTravels = TravelsData.filter((travel) => travel.user === user.username);
   const travelsCount = userTravels.length;
 
-  // Número de pessoas que o usuário segue e seguidores
+  // Número de pessoas que o utilizador segue e seguidores
   const followingCount = user.followingCount || 0;
   const followersCount = user.followersCount || 0;
 
-  // Usuários que o usuário segue (para a conquista "Amigo Global")
+  // Utilizadores que o utilizador segue (para a conquista "Amigo Global")
   const followingUsers = user.followingUsers || [];
 
-  // Comentários do usuário em viagens de outros usuários
+  // Comentários do utilizador em viagens de outros utilizadores
   const userComments = TravelsData.filter((travel) => travel.user !== user.username)
     .flatMap((travel) => travel.comments || [])
     .filter((comment) => comment.user === user.username);
 
-  // Ações do usuário (visualizações e likes)
+  // Ações do utilizador (visualizações e gostos)
   const userActions = mockUserActions[user.username] || { viewedTravels: [], likedTravels: [] };
   const viewedTravels = userActions.viewedTravels || [];
   const likedTravels = userActions.likedTravels || [];
@@ -287,7 +365,13 @@ const Achievements = () => {
       achievement.id === 'star-traveler' ||
       achievement.id === 'travel-influencer' ||
       achievement.id === 'legendary-traveler' ||
-      achievement.id === 'organized-traveler'
+      achievement.id === 'organized-traveler' ||
+      achievement.id === 'weekend-warrior' ||
+      achievement.id === 'mountain-explorer' ||
+      achievement.id === 'frequent-flyer' ||
+      achievement.id === 'world-conqueror' ||
+      achievement.id === 'marathon-traveler' ||
+      achievement.id === 'treasure-hunter'
     ) {
       return achievement.condition(userTravels);
     }
@@ -317,8 +401,17 @@ const Achievements = () => {
     (achievement) => !userAchievements.includes(achievement)
   );
 
+  // Calcular progresso (percentagem de conquistas desbloqueadas)
+  const progressPercentage = (userAchievements.length / achievements.length) * 100;
+
   return (
     <div className="achievements-page">
+      <div className="progress-bar-container">
+        <div
+          className="progress-bar"
+          style={{ width: `${progressPercentage}%` }}
+        ></div>
+      </div>
       <h2>Conquistas</h2>
 
       {/* Conquistas Desbloqueadas */}
@@ -338,13 +431,13 @@ const Achievements = () => {
           </div>
         </div>
       ) : (
-        <p>Você ainda não desbloqueou nenhuma conquista. Continue explorando!</p>
+        <p>Ainda não desbloqueou nenhuma conquista. Continue a explorar!</p>
       )}
 
       {/* Conquistas Bloqueadas */}
       {lockedAchievements.length > 0 && (
         <div className="achievements-section">
-          <h3>Conquistas Bloqueadas ({lockedAchievements.length}/{achievements.length})</h3>
+          <h3>Conquistas Bloqueadas</h3>
           <div className="achievements-list">
             {lockedAchievements.map((achievement) => (
               <div key={achievement.id} className="achievement-item locked">

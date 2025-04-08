@@ -1,11 +1,7 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Sidebar from './components/Sidebar';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Travels from './pages/Travels';
@@ -22,47 +18,13 @@ import UserProfile from './pages/UserProfile';
 import Notifications from './components/Notifications';
 import InteractiveMap from './pages/InteractiveMap';
 import QandA from './pages/QandA';
-import './styles/styles.css';
-
 import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Achievements from './pages/Achievements';
-
-// Layout para a aplicação principal (com Sidebar, Header e Footer)
-const MainLayout = () => {
-  const location = useLocation();
-  const isLoginOrRegister = location.pathname === '/login' || location.pathname === '/register';
-
-  return (
-    <div className="app-container">
-      {/* Renderiza o Sidebar apenas se não estiver nas páginas de Login ou Register */}
-      {!isLoginOrRegister && <Sidebar />}
-      <div
-        className="content"
-        style={{
-          width: isLoginOrRegister ? '100%' : 'calc(100% - 270px)',
-          backgroundColor: isLoginOrRegister ? '#F4F7FA' : 'transparent',
-          minHeight: '100vh',
-        }}
-      >
-        <Header />
-        <main>
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
-    </div>
-  );
-};
-
-// Layout para o backoffice (sem Sidebar, Header ou Footer da aplicação principal)
-const AdminLayout = () => {
-  return (
-    <div className="admin-layout">
-      <Outlet />
-    </div>
-  );
-};
+import FutureTravels from './pages/FutureTravels';
+import MainLayout from './components/MainLayout';
+import AdminLayout from './components/AdminLayout';
+import './styles/styles.css';
 
 // Função para verificar autenticação
 const isAuthenticated = () => {
@@ -81,6 +43,7 @@ const App = () => {
       <Route element={<MainLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        
         <Route path="/" element={<ProtectedRoute />}>
           <Route index element={<Home />} />
         </Route>
@@ -114,6 +77,9 @@ const App = () => {
         <Route path="/interactivemap" element={<ProtectedRoute />}>
           <Route index element={<InteractiveMap />} />
         </Route>
+        <Route path="/futuretravels" element={<ProtectedRoute />}>
+          <Route index element={<FutureTravels />} />
+        </Route>
         <Route path="/notifications" element={<ProtectedRoute />}>
           <Route index element={<Notifications />} />
         </Route>
@@ -135,7 +101,6 @@ const AppWrapper = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simula o tempo de carregamento (mínimo de 2 segundos para a splash screen)
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2000);

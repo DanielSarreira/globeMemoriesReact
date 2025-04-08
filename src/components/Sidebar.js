@@ -16,9 +16,12 @@ import {
   FaTwitter,
   FaInstagram,
   FaBars,
+  FaMapMarker,
+  FaMapMarked,
+  FaMapMarkedAlt,
 } from 'react-icons/fa';
 import '../styles/styles.css';
-import logo from '../images/Globe-Memories.png';
+import logo from '../images/logo_white.png';
 
 const Sidebar = () => {
   const { user } = useAuth();
@@ -105,13 +108,25 @@ const Sidebar = () => {
 
           <li>
             <Link
+              to="/futuretravels"
+              className={activePage === '/futuretravels' ? 'active' : ''}
+              onClick={() => setActivePage('/futuretravels')}
+            >
+              <FaCog className="icon" /> {!isCollapsed && 'Planear Viagem'}
+            </Link>
+          </li>
+
+          <li>
+            <Link
               to="/users"
               className={activePage === '/users' ? 'active' : ''}
               onClick={() => setActivePage('/users')}
             >
-              <FaCog className="icon" /> {!isCollapsed && 'Descobrir Viajantes'}
+              <FaUser className="icon" /> {!isCollapsed && 'Seguir Viajantes'}
             </Link>
           </li>
+
+      
           <li>
             <Link
               to="/qanda"

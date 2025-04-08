@@ -1,7 +1,8 @@
+// src/components/Header.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaSearch, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBars, FaBell, FaGlobe, FaUserEdit, FaMap, FaTrophy } from 'react-icons/fa';
+import { FaSearch, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBars, FaBell, FaGlobe, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown } from 'react-icons/fa'; // Adicionei FaCaretDown
 import defaultAvatar from '../images/assets/avatar1.jpg';
 import TravelsData from '../data/travelsData';
 import '../styles/styles.css';
@@ -156,12 +157,15 @@ const Header = () => {
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               aria-label="Abrir menu de perfil"
             >
-              <img
-                src={user.profilePicture || defaultAvatar}
-                alt="Foto de perfil"
-                className="profile-image"
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/30'; }}
-              />
+              <div className="profile-icon-wrapper">
+                <img
+                  src={user.profilePicture || defaultAvatar}
+                  alt="Foto de perfil"
+                  className="profile-image"
+                  onError={(e) => { e.target.src = 'https://via.placeholder.com/30'; }}
+                />
+                <FaCaretDown className="profile-dropdown-arrow" />
+              </div>
             </button>
             {isProfileMenuOpen && (
               <div className="profile-menu">
@@ -175,12 +179,11 @@ const Header = () => {
                   <FaMap /> As Minhas Viagens
                 </Link>
                 <Link to={`/interactivemap`} onClick={() => setIsProfileMenuOpen(false)}>
-                  <FaTrophy />Mapa Mundo
+                  <FaMapMarkedAlt /> Mapa Mundo
                 </Link>
                 <Link to={`/achievements`} onClick={() => setIsProfileMenuOpen(false)}>
-                  <FaTrophy />As Minhas Conquistas
+                  <FaTrophy /> As Minhas Conquistas
                 </Link>
-
                 <Link
                   to="/login"
                   className={activePage === '/login' ? 'active' : ''}
@@ -191,7 +194,6 @@ const Header = () => {
                 >
                   <FaSignOutAlt className="icon" /> {!isCollapsed && 'Logout'}
                 </Link>
-
               </div>
             )}
           </div>

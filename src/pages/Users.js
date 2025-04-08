@@ -41,7 +41,8 @@ const Users = () => {
       if (!user) {
         setUsersList(updatedUsers.filter((u) => u.privacy === 'public'));
       } else {
-        setUsersList(updatedUsers);
+        // Filtra o usuário logado da lista
+        setUsersList(updatedUsers.filter((u) => u.username !== user.username));
         setFollowing(['AnaSilva', 'PedroCosta']);
       }
       setLoading(false);
@@ -119,7 +120,7 @@ const Users = () => {
                 </Link>
                 <p><strong>{listedUser.travelCount}</strong> Viagens</p>
               </div>
-              {user && listedUser.username !== user.username && (
+              {user && (
                 <div className="user-actions">
                   {following.includes(listedUser.username) ? (
                     <button

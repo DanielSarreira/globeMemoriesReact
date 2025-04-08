@@ -288,7 +288,7 @@ a.button:active {
   height: 100%;
   width: 270px;
   text-align: center;
-  background: linear-gradient(190deg, rgba(0, 102, 204, 0.7959558823529411) 0%, rgba(255, 153, 0, 0.804359243697479) 100%);
+  background: linear-gradient(190deg, rgb(0 127 255 / 80%) 0%, rgba(255, 153, 0, 0.804359243697479) 100%);
   color: #fff;
   transition: all 0.3s linear;
   z-index: 999;
@@ -296,7 +296,6 @@ a.button:active {
 }
 
 .sidebar .user-info {
-  background: #fff;
   padding: 10px;
   margin-bottom: 0px;
 }
@@ -355,7 +354,6 @@ nav ul li a {
 .sidebar nav ul {
   list-style-type: none;
   padding: 15px;
-  padding-top: 20px;
   margin: 0;
 }
 
@@ -534,7 +532,7 @@ button.toggle-button:hover {
 }
 
 .logo {
-  width: 200px;
+  width: 220px;
   height: auto;
 }
 
@@ -637,6 +635,46 @@ h1 {
 }
 
 /* --------------------------------------- Header.css --------------------------------------- */
+
+
+/* styles.css */
+
+/* Wrapper para a imagem do perfil e a seta */
+.profile-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Estilização da imagem do perfil */
+.profile-image {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Estilização da seta */
+.profile-dropdown-arrow {
+  position: absolute;
+  bottom: -4px; /* Ajuste para posicionar a seta abaixo da imagem */
+  right: -11px; /* Ajuste para alinhar à direita da imagem */
+  font-size: 12px; /* Tamanho da seta */
+  color: var(--primary-color); /* Cor da seta (ajuste conforme o tema) */
+  background-color: #f2f2f2; /* Cor de fundo para destacar a seta */
+  border-radius: 50%; /* Para deixar a seta dentro de um círculo */
+  padding: 2px; /* Espaçamento interno */
+}
+
+/* Estilização do botão para remover bordas ou padding indesejados */
+.profile-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -904,7 +942,7 @@ button.notification-icon:hover {
   border: 1px solid #dbdbdb;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  width: 400px;
   max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
@@ -1236,6 +1274,35 @@ button.notification-icon:hover {
 
 
 
+
+/* --------------------------------------- Scrool.css --------------------------------------- */
+
+/* Estilo para o botão Scroll to Top */
+.scroll-to-top {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.scroll-to-top:hover {
+  background-color: var(--primary-color-hover);
+  opacity: 0.9;
+}
+
+
 /* --------------------------------------- Home.css --------------------------------------- */
 .home-page {
   margin: 0 auto;
@@ -1467,7 +1534,7 @@ input.search-input {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 0px;
 }
 
 .feed-avatar {
@@ -1506,6 +1573,7 @@ input.search-input {
   flex: 1;
   padding: 15px;
   border-radius: 8px;
+  padding-top: 0px !important;
 }
 
 .travel-info-feed p strong {
@@ -4234,7 +4302,7 @@ button.see-less-categories-button {
 }
 
 .comments-section button {
-  background-color: #28a745;
+  background-color: var(--secondary-color);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -4251,7 +4319,7 @@ button.close-comments-button {
 }
 
 .comments-section button:hover {
-  background-color: #218838;
+  background-color: var(--secondary-color);
 }
 
 .comment-list p {
@@ -4315,6 +4383,7 @@ button.tab-button {
   border-radius: 15px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin-top: 50px;
 }
 
 .travel-info {
@@ -4372,6 +4441,7 @@ span {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-weight: 700;
 }
 
 .info button:hover {
@@ -4560,7 +4630,7 @@ span {
 
 .comments-section button {
   padding: 10px 20px;
-  background-color: #4CAF50;
+  background-color: var(--secondary-color);
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -4569,7 +4639,7 @@ span {
 }
 
 .comments-section button:hover {
-  background-color: #45A049;
+  background-color: var(--secondary-color-hover);
 }
 
 
@@ -5175,8 +5245,8 @@ tr{
   width: 100%;
 }
 
-form select{
-  width: 96% !important;
+.LeftPosition.form select{
+  width: 104% !important;
 }
 
 form textarea {
@@ -5336,10 +5406,14 @@ form input[type="checkbox"] {
 
 .travel-actions button:nth-child(2) {
   background-color: #dc3545; /* Delete */
+  font-weight: 700;
+  color: #fff;
 }
 
 .travel-actions button:nth-child(2):hover {
   background-color: #c82333;
+  font-weight: 700;
+  color: #fff;
 }
 
 .travel-actions button:nth-child(3) {
@@ -5831,6 +5905,22 @@ form label{
 }
 
 
+/* src/styles/styles.css */
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #4caf50; /* Verde para progresso */
+  transition: width 0.3s ease-in-out;
+}
+
 
 /* Ajustes para dispositivos móveis */
 @media (max-width: 768px) {
@@ -5866,10 +5956,7 @@ form label{
 
 
 
-
-
-
-
+/* --------------------------------------- interactivemap --------------------------------------- */
 
 
 
@@ -6048,7 +6135,7 @@ h1{
     left: 0;
     width: 100%;
     height: 60px !important;
-    background: linear-gradient(190deg, rgba(0, 102, 204, 0.8) 0%, rgba(255, 153, 0, 0.8) 100%);
+    background: linear-gradient(190deg, rgba(0, 102, 204, 0.8) 0%, rgba(255, 153, 0, 0.9) 100%);
     display: flex;
     justify-content: space-around;
     z-index: 1000;
@@ -6087,8 +6174,8 @@ h1{
     transition: color 0.3s ease;
     text-decoration: none;
     font-size: 0; /* Oculta qualquer texto direto dentro do <a> */
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   /* Garante que a regra se aplique mesmo dentro de .top */
