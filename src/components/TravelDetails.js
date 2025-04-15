@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useParams, Link } from 'react-router-dom';
 import travels from '../data/travelsData'; // Verifique se o caminho está correto
 import '../styles/styles.css'; // Certifique-se de que o caminho está correto
 import { FaStar } from 'react-icons/fa';
 
 const TravelDetails = () => {
+  const { user, userTravels } = useAuth();
   const { id } = useParams();
-  const travel = travels.find((t) => t.id === parseInt(id, 10));
+  const travel = userTravels.find((t) => t.id === parseInt(id, 10));
   const [activeTab, setActiveTab] = useState('generalInformation');
   const [isFavorite, setIsFavorite] = useState(false);
   const [comments, setComments] = useState('');
@@ -20,12 +22,12 @@ const TravelDetails = () => {
 
   // Filtrar viagens recomendadas que tenham EXATAMENTE as mesmas categorias da viagem atual
   // e limitar a 5 viagens
-  const recommendedTravels = travels
+  const recommendedTravels = userTravels
     .filter((t) => {
       // Excluir a viagem atual
       if (t.id === travel.id) return false;
       // Verificar se a viagem tem TODAS as categorias da viagem atual
-      return travel.category.every((category) => t.category.includes(category));
+      return travel.categoryNames.every((category) => t.categoryNames.includes(category));
     })
     .slice(0, 5); // Limitar a 5 viagens
 
@@ -117,20 +119,20 @@ const TravelDetails = () => {
         <div className="info">
           <div className="infoLeft">
             <h1>{travel.name}</h1>
-            <p><strong>👤 Utilizador:</strong> {travel.user}</p>
+            <p><strong>👤 Utilizador:</strong> {user.firstName} {user.lastName}</p>
             <p>
-              <strong>🌍 País:</strong> {travel.country}
+              <strong>🌍 País:</strong> {travel.countryName}
               <strong> 🏙️ Cidade:</strong> {travel.city}
             </p>
-            <p><strong>🗂️ Categoria:</strong> {travel.category.join(', ')}</p>
-            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.price}€</p>
+            <p><strong>🗂️ Categoria:</strong> {travel.categoryNames.join(', ')}</p>
+            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.cost.total}€</p>
 
             {showPriceDetails && (
               <div className="price-details">
-                <p><strong>Preço da Estadia:</strong> {travel.priceDetails.hotel}€</p>
-                <p><strong>Preço da Alimentação:</strong> {travel.priceDetails.food}€</p>
-                <p><strong>Preço Métodos de Transporte:</strong> {travel.priceDetails.transport}€</p>
-                <p><strong>Extras:</strong> {travel.priceDetails.extras}€</p>
+                <p><strong>Preço da Estadia:</strong> {travel.cost.accommodation}€</p>
+                <p><strong>Preço da Alimentação:</strong> {travel.cost.food}€</p>
+                <p><strong>Preço Métodos de Transporte:</strong> {travel.cost.transport}€</p>
+                <p><strong>Extras:</strong> {travel.cost.extra}€</p>
               </div>
             )}
 
@@ -140,12 +142,12 @@ const TravelDetails = () => {
             <br />
             <br />
             <p><strong>📅 Datas:</strong> {travel.startDate} a {travel.endDate}</p>
-            <p><strong>📅 Data de Marcação:</strong> {travel.BookingTripPaymentDate}</p>
-            <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+            <p><strong>📅 Data de Marcação:</strong> {travel.bookingDate}</p>
+            <p><strong>Avaliação Geral:</strong> {renderStars(travel.tripRating)}</p>
           </div>
 
           <div className="infoRight">
-            <p><strong>📖 Descrição da Viagem:</strong> <br />{travel.description}</p>
+            <p><strong>📖 Descrição da Viagem:</strong> <br />{travel.tripDescription}</p>
           </div>
         </div>
       </div>
@@ -201,12 +203,12 @@ const TravelDetails = () => {
             <>
               <div className="generalInfoLeft">
                 <h2>{travel.name}</h2>
-                <p><strong>Clima:<br /></strong> {travel.climate}</p>
-                <p><strong>Línguas Utilizadas:<br /></strong> {travel.language}<br /></p>
+                <p><strong>Clima:<br /></strong> {travel.climateDescription}</p>
+                <p><strong>Línguas Utilizadas:<br /></strong> {travel.languageSpokenNames}<br /></p>
               </div>
 
               <div className="generalInfoRight">
-                <p><strong>📖 Descrição da Viagem:<br /></strong> {travel.longDescription}</p>
+                <p><strong>📖 Descrição da Viagem:<br /></strong> {travel.tripDescription}</p>
               </div>
               <br />
               <br />
@@ -276,16 +278,16 @@ const TravelDetails = () => {
                     <strong>🏨 Nome: </strong> {acc.name}<br />
                     <br />
                     <strong>🏨 Tipo de Estadia: </strong> <br />
-                    {acc.type} <br />
+                    {acc.accommodationTypeId} <br />
                     <br />
                     <strong>📖 Regime: </strong> <br />
-                    {acc.regime} <br />
+                    {acc.accommodationBoardId} <br />
                     <br />
                     <strong>📅 Check-in: </strong> <br />
-                    {acc.checkInDate} <br />
+                    {acc.checkIn} <br />
                     <br />
                     <strong>📅 Check-out: </strong> <br />
-                    {acc.checkOutDate} <br />
+                    {acc.checkOut} <br />
                   </span>
                 ))}
               </div>
@@ -422,7 +424,7 @@ const TravelDetails = () => {
           {activeTab === 'transport' && (
             <div>
               <h2>Métodos de Transporte</h2>
-              <p><strong>✈️ Método de Transporte:<br /></strong> {travel.transport}</p>
+              <p><strong>✈️ Método de Transporte:<br /></strong> {travel.tripTransports[0].description}</p>
             
 
 
@@ -485,10 +487,10 @@ const TravelDetails = () => {
               <h2>Pontos de Referência</h2>
               <p>
                 <strong>Pontos de Referência: </strong>
-                {travel.pointsOfInterest.map((poi, index) => (
+                {travel.referencePoints.map((referencePoint, index) => (
                   <span key={index}>
-                    {poi.name} ({poi.type}) -{' '}
-                    <a href={poi.link} target="_blank" rel="noopener noreferrer">
+                    {referencePoint.name} ({referencePoint.description}) -{' '}
+                    <a href={referencePoint.link} target="_blank" rel="noopener noreferrer">
                       Link
                     </a>
                     <br />

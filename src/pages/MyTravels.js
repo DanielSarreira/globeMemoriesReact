@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import TravelsData from '../data/travelsData.js';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext'; 
+import { request, setAuthHeader } from '../axios_helper';
 import '../styles/styles.css';
 
 // Componente de Toast para feedback
@@ -22,7 +23,7 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 const MyTravels = () => {
-  const [travels, setTravels] = useState(TravelsData);
+  const [travels, setTravels] = useState([]);
   const [newTravel, setNewTravel] = useState({
     name: '',
     user: 'Tiago',
@@ -68,6 +69,7 @@ const MyTravels = () => {
     negativePoints: '',
     privacy: 'public'
   });
+  const { user } = useAuth(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isTransportModalOpen, setIsTransportModalOpen] = useState(false);
@@ -109,9 +111,23 @@ const MyTravels = () => {
 
   // Abrir modal automaticamente ao redirecionar com estado
   useEffect(() => {
-    if (location.state?.openModal) {
-      openModal();
-      window.history.replaceState({}, document.title, location.pathname);
+    const cachedTravels = localStorage.getItem("user-travels");
+    if (cachedTravels) {
+      setTravels(JSON.parse(cachedTravels));
+    } else {
+      // Make the GET request using .then()
+      request("GET", "/trips/user/" + user.id)
+        .then((response) => {
+          // Save the fetched data to localStorage
+          localStorage.setItem("user-travels", JSON.stringify(response.data));
+  
+          // Update the state with the fetched data
+          setTravels(response.data);
+          console.log("Fetched travels:", response.data);
+        })
+        .catch((error) => {
+          console.error("Error fetching travels:", error);
+        });
     }
   }, [location.state]);
 
@@ -610,6 +626,56 @@ const MyTravels = () => {
   const handleAddTravel = () => {
     if (!validateForm()) return;
 
+  // Map newTravel to TripDto structure
+  const tripData = {
+    userId: 1, // Hardcoded for now; replace with actual user ID from auth state
+    countryId: newTravel.country === 'Portugal' ? 1 : newTravel.country === 'Brazil' ? 2 : 3, // Map country to an ID
+    title: newTravel.name,
+    startDate: newTravel.startDate, // Assumes "yyyy-MM-dd"
+    endDate: newTravel.endDate, // Assumes "yyyy-MM-dd"
+    bookingDate: newTravel.BookingTripPaymentDate, // Assumes "yyyy-MM-dd"
+    tripDurationDays: parseInt(newTravel.days) || calculateTripDays(),
+    tripSummary: newTravel.description,
+    tripDescription: newTravel.longDescription,
+    tripRating: parseInt(newTravel.stars) || 0, // Add stars to newTravel if not present
+    cost: {
+      total: parseFloat(newTravel.price) || 0,
+      accommodation: parseFloat(newTravel.priceDetails.hotel) || 0,
+      transport: parseFloat(newTravel.priceDetails.transport) || 0,
+      food: parseFloat(newTravel.priceDetails.food) || 0,
+      extra: parseFloat(newTravel.priceDetails.extras) || 0,
+    },
+    categoryIds: newTravel.category.map(cat => {
+      const categoryMap = {
+        'Natureza': 1, 'Cidade': 2, 'Cultural': 3, 'Nature': 4, 'Foodie': 5, // Example mapping
+      };
+      return categoryMap[cat] || 0;
+    }).filter(id => id !== 0),
+    languageSpokenIds: newTravel.language.split(',').map(lang => {
+      const languageMap = { 'Português': 1, 'Inglês': 2, 'Espanhol': 3 };
+      return languageMap[lang.trim()] || 0;
+    }).filter(id => id !== 0),
+    referencePoints: newTravel.pointsOfInterest.map(point => ({
+      name: point.name,
+      description: point.type,
+      photos: point.link || null,
+    })),
+    tripTransports: newTravel.localTransport.map(transport => ({
+      transportId: 1,
+      cost: 30,
+      photos: ["foto1", "foto2"]
+    })),
+    accommodations: newTravel.accommodations.map(acc => ({
+      name: acc.name,
+      accommodationTypeId: 1,
+      description: acc.description,
+      price: 150,
+      nrNights: 10,
+      rating: parseInt(acc.rating) || 0,
+      accommodationBoardId: 1,
+    })),
+  };
+
     if (isEditing) {
       setTravels((prevTravels) =>
         prevTravels.map((travel) =>
@@ -656,46 +722,21 @@ const MyTravels = () => {
       );
       setToast({ message: 'Viagem editada com sucesso!', type: 'success', show: true });
     } else {
-      const newId = travels.length + 1;
-      const addedTravel = {
-        ...newTravel,
-        id: newId,
-        highlightImage: newTravel.highlightImage, // Salvar como File ou string
-        images_generalInformation: newTravel.images_generalInformation || [],
-        accommodations: Array.isArray(newTravel.accommodations)
-          ? newTravel.accommodations.map(acc => ({
-              ...acc,
-              images: acc.images || []
-            }))
-          : [
-              {
-                name: '',
-                type: '',
-                description: '',
-                rating: '',
-                checkInDate: '',
-                checkOutDate: '',
-                regime: '',
-                images: []
+      request(
+              "POST",
+              "/trips",
+              tripData
+            ).then(
+              (response) => {
+                console.log(response)
+                setToast({ message: 'Viagem adicionada com sucesso!', type: 'success', show: true });
+              }).catch(
+              (error) => {
+                console.log(error)
               }
-            ],
-        foodRecommendations: newTravel.foodRecommendations.filter(
-          (rec) => rec.name.trim() !== '' || rec.description.trim() !== ''
-        ),
-        images_foodRecommendations: newTravel.images_foodRecommendations || [],
-        pointsOfInterest: newTravel.pointsOfInterest.filter(
-          (point) => point.name.trim() !== '' || point.type.trim() !== '' || point.link.trim() !== ''
-        ),
-        images_referencePoints: newTravel.images_referencePoints || [],
-        itinerary: newTravel.itinerary.filter(
-          (item) => item.day && item.activities.length > 0
-        ),
-        localTransport: newTravel.localTransport || [],
-        images_localTransport: newTravel.images_localTransport || [],
-        privacy: newTravel.privacy
-      };
-      setTravels((prevTravels) => [...prevTravels, addedTravel]);
-      setToast({ message: 'Viagem adicionada com sucesso!', type: 'success', show: true });
+            );
+      //setTravels((prevTravels) => [...prevTravels, addedTravel]);
+      
     }
     resetForm();
   };
@@ -1049,7 +1090,7 @@ const MyTravels = () => {
                     <br /><br />
 
                     <label>🗂️ Categorias Selecionadas:</label>
-                    <p>{newTravel.category.length > 0 ? newTravel.category.join(', ') : 'Nenhuma categoria selecionada'}</p>
+                    /* <p>{newTravel.category.length > 0 ? newTravel.category.join(', ') : 'Nenhuma categoria selecionada'}</p> */
                     <button type="button" onClick={() => setIsCategoryModalOpen(true)}>
                       Selecionar Categorias
                     </button>
@@ -1829,13 +1870,13 @@ const MyTravels = () => {
                   }
                   <div className="travel-text">
                     <h2>{travel.name}</h2>
-                    <p><b>👤 Utilizador:</b> {travel.user}</p>
-                    <p><b>🌍 País:</b> {travel.country}</p>
+                    <p><b>👤 Utilizador:</b> {user.firstName}</p>
+                    <p><b>🌍 País:</b> {travel.countryName}</p>
                     <p><b>🏙️ Cidade:</b> {travel.city}</p>
-                    <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p>
-                    <p><b>📅 Duração da Viagem:</b> {travel.days} dias</p>
-                    <p><b>💰 Preço Total da Viagem:</b> {travel.price}€</p>
-                    <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+                    {/* <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p> */}
+                    <p><b>📅 Duração da Viagem:</b> {travel.tripDurationDays} dias</p>
+                    <p><b>💰 Preço Total da Viagem:</b> {travel.cost.total}€</p>
+                    <p><strong>Avaliação Geral:</strong> {renderStars(travel.tripRating)}</p>
                     <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
                   </div>
                 </div>
