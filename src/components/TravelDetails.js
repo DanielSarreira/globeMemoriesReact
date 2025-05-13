@@ -278,10 +278,10 @@ const TravelDetails = () => {
                     <strong>🏨 Nome: </strong> {acc.name}<br />
                     <br />
                     <strong>🏨 Tipo de Estadia: </strong> <br />
-                    {acc.accommodationTypeId} <br />
+                    {acc.accommodationTypeName} <br />
                     <br />
                     <strong>📖 Regime: </strong> <br />
-                    {acc.accommodationBoardId} <br />
+                    {acc.accommodationBoardName} <br />
                     <br />
                     <strong>📅 Check-in: </strong> <br />
                     {acc.checkIn} <br />
@@ -360,7 +360,7 @@ const TravelDetails = () => {
               <h2>Alimentação</h2>
               <p>
                 <strong>🍽️ Recomendações de Comida:</strong><br />
-                {travel.foodRecommendations.map((food, index) => (
+                {travel.recommendedFoods.map((food, index) => (
                   <span key={index}>
                     {food.name} - {food.description} <br />
                   </span>
@@ -424,30 +424,36 @@ const TravelDetails = () => {
           {activeTab === 'transport' && (
             <div>
               <h2>Métodos de Transporte</h2>
-              <p><strong>✈️ Método de Transporte:<br /></strong> {travel.tripTransports[0].description}</p>
-            
+              {travel.tripTransports && travel.tripTransports.length > 0 ? (
+                travel.tripTransports.map((transport, index) => (
+                  <div key={index} className="transport-details">
+                    <p><strong>✈️ Nome do Transporte:</strong> {transport.name}</p>
+                    <p><strong>Descrição:</strong> {transport.description}</p>
+                    <p><strong>Custo:</strong> {transport.cost}€</p>
 
-
-                  <div className="masonry-gallery">
-                    <h2>Galeria de Fotos Métodos de Transporte</h2>
-                    <div className="masonry-grid">
-                     {travel.images_localTransport ? (
-                     travel.images_localTransport.map((image, index) => (
-                     <div className="masonry-item" key={index} onClick={() => openModal(image)}>
-                       <img
-                        src={image instanceof File ? URL.createObjectURL(image) : image}
-                       alt={`Imagem da alimentação ${index + 1}`}
-                        onError={(e) => (e.target.src = '/default-image.jpg')}
-                    />
+                    <div className="masonry-gallery">
+                      <h3>Galeria de Fotos do Transporte</h3>
+                      <div className="masonry-grid">
+                        {transport.images && transport.images.length > 0 ? (
+                          transport.images.map((image, imgIndex) => (
+                            <div className="masonry-item" key={imgIndex} onClick={() => openModal(image)}>
+                              <img
+                                src={image instanceof File ? URL.createObjectURL(image) : image}
+                                alt={`Imagem do transporte ${imgIndex + 1}`}
+                                onError={(e) => (e.target.src = '/default-image.jpg')}
+                              />
+                            </div>
+                          ))
+                        ) : (
+                          <p>Sem imagens disponíveis.</p>
+                        )}
+                      </div>
                     </div>
-                 ))
-                   ) : (
-                       <p>Sem imagens disponíveis.</p>
-                         )}
-                </div>
                   </div>
-
-
+                ))
+              ) : (
+                <p>Nenhum método de transporte disponível.</p>
+              )}
 
                 <div className="recommended-travels">
                   <h2>Viagens Recomendadas</h2>
