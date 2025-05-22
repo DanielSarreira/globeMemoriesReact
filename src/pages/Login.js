@@ -3,12 +3,15 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
+import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import '../styles/styles.css';
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false); // Estado para "Remember Me"
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const { setUser } = useAuth();
   const navigate = useNavigate();
 
@@ -120,6 +123,21 @@ const Login = () => {
   };
 
   const onSubmitLogin = (e) => {
+    e.preventDefault();
+    
+    // Validação de campos vazios
+    if (!username.trim()) {
+      setErrorMessage('Por favor, insira o seu nome de utilizador.');
+      setSuccessMessage('');
+      return;
+    }
+
+    if (!password.trim()) {
+      setErrorMessage('Por favor, insira a sua palavra-passe.');
+      setSuccessMessage('');
+      return;
+    }
+
     onLogin(e, username, password);
   };
 
@@ -137,12 +155,16 @@ const Login = () => {
         setAuthHeader(response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data));
         setUser(response.data);
+        setSuccessMessage('Login realizado com sucesso!');
+        setErrorMessage('');
         console.log(response);
         navigate("/");
       }
     ).catch(
       (error) => {
         setAuthHeader(null);
+        setErrorMessage('Credenciais inválidas. Por favor, verifique o seu nome de utilizador e palavra-passe.');
+        setSuccessMessage('');
         console.log(error);
       }
     );
@@ -165,7 +187,7 @@ const Login = () => {
             </div>
           </div>
           <form onSubmit={onSubmitLogin} className="login-form">
-            <div className="form-group">
+            <div className="form-groupLR">
               <label>Utilizador</label>
               <input
                 type="text"
@@ -178,7 +200,7 @@ const Login = () => {
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-groupLR">
               <label>Password</label>
               <input
                 type="password"
@@ -191,10 +213,11 @@ const Login = () => {
               />
             </div>
 
-            <div className="form-options">
+            <div className="form-groupLR">
               <label className="remember-me">
                 <input
                   type="checkbox"
+                  className='remember-me-checkbox'
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
@@ -205,13 +228,28 @@ const Login = () => {
               </Link>
             </div>
 
+            {errorMessage && (
+              <div className="error-message">
+                <FaExclamationCircle /> {errorMessage}
+              </div>
+            )}
+            {successMessage && (
+              <div className="success-message">
+                <FaCheckCircle /> {successMessage}
+              </div>
+            )}
+
             <button type="submit" className="login-button">Entrar</button>
           </form>
         </div>
 
         {/* Seção Direita: Texto de Boas-Vindas e Botão de Registro */}
         <div className="welcome-section">
-          <h3>Bem-vindo(a) à<br></br> Globe Memories!</h3>
+          <h3>Bem-vindo (a) à<br></br> Globe Memories!</h3>
+          <p className="app-description">
+            A Globe Memories é a sua plataforma para guardar e partilhar as suas memórias de viagem. 
+            Registe-se para começar a criar o seu mapa de memórias pessoal e conectar-se com outros viajantes.
+          </p>
           <p>Não tem uma conta?</p>
           <Link to="/register" className="signup-button">Resgistar</Link>
         </div>

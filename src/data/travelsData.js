@@ -58,7 +58,7 @@ const travels = [
       require('../images/travels/aveiro13.jpg'),
     ],
     stars: 1,
-    description: "Aveiro é uma cidade portuguesa e capital da sub-região da Região de Aveiro, pertencendo à região do Centro e ao distrito de Aveiro e ainda à antiga província da Beira Litoral. A cidade possui 62.653 habitantes (2021) e é sede do Município de Aveiro que tem uma área total de 197,58 km2, 80 978 habitantes em 2021 e uma densidade populacional de 410 hab./km2, subdividido em 10 freguesias.",
+    description: "Aveiro é uma cidade portuguesa e capital da sub-região da Região de Aveiro, pertencendo à região do Centro e ao distrito de Aveiro e ainda à antiga província da Beira Litoral. A cidade possui 62.653 habitantes (2021) e é sede do Município de Aveiro que tem uma área total de 197,58 km2, 80 978 habitantes em 2021 e uma densidade populacional de 410 hab./km2, subdividido em 10 freguesias.total de 197,58 km2, 80 978 habitantes em 2021 e uma densidade populacional de 410 hab./km2, subdividido em 10 freguesias.total de 197,58 km2, 80 978 habitantes em 2021 e uma densidade populacional de 410 hab./km2, subdividido em 10 freguesias.",
     longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências única.Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências única.",
     activities: ["Caminhada nas montanhas", "Passeio de barco", "Visita ao Castelo de São Jorge"],
     accommodations: [

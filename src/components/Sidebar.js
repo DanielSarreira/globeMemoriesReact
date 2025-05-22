@@ -19,6 +19,11 @@ import {
   FaMapMarker,
   FaMapMarked,
   FaMapMarkedAlt,
+  FaSearch,
+  FaGlobe,
+  FaComments,
+  FaRoute,
+  FaPlus
 } from 'react-icons/fa';
 import '../styles/styles.css';
 import logo from '../images/logo_white.png';
@@ -29,10 +34,23 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const [activePage, setActivePage] = useState('/');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     setActivePage(location.pathname);
   }, [location]);
+
+  // Detectar se é mobile com base no tamanho da janela
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Chamar na inicialização
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleCategories = () => {
     setShowCategories(!showCategories);
@@ -50,6 +68,63 @@ const Sidebar = () => {
   const profileLink = user ? `/profile/${user.username || 'guest'}` : '/profile/guest';
   const editProfileLink = user ? `/profile/edit/${user.username || 'guest'}` : '/profile/edit/guest';
 
+  // Lista de itens da navegação sem o botão "Adicionar Viagem"
+  const navItems = [
+    {
+      to: '/',
+      label: 'Página Inicial',
+      icon: <FaHome className="icon" />,
+    },
+    {
+      to: '/travels',
+      label: 'Descobrir Viagens',
+      icon: <FaPlane className="icon" />,
+    },
+    {
+      to: '/users',
+      label: 'Seguir Viajantes',
+      icon: <FaSearch className="icon" />,
+    },
+    {
+      to: '/interactivemap',
+      label: 'Mapa Mundo',
+      icon: <FaGlobe className="icon" />,
+    },
+    {
+      to: '/qanda',
+      label: 'Forum',
+      icon: <FaComments className="icon" />,
+    },
+    {
+      to: '/futuretravels',
+      label: 'Planear Viagem',
+      icon: <FaRoute className="icon" />,
+    },
+  ];
+
+  // Determinar a posição do botão "Adicionar Viagem"
+  const navItemsWithAddButton = [...navItems];
+  if (isMobile) {
+    // No mobile, inserir o botão "Adicionar Viagem" no meio da lista (após o 3º item)
+    const middleIndex = Math.floor(navItems.length / 2); // Índice 3 (após "Seguir Viajantes")
+    navItemsWithAddButton.splice(middleIndex, 0, {
+      to: '/my-travels',
+      label: 'Adicionar Viagem',
+      icon: <FaPlus className="icon" />,
+      isAddButton: true,
+      className: 'top', // Adicionar a classe "top" para o estilo no mobile
+    });
+  } else {
+    // No desktop, manter o botão "Adicionar Viagem" como último item dentro de um div com classe "top"
+    navItemsWithAddButton.push({
+      to: '/my-travels',
+      label: 'Adicionar Viagem',
+      icon: <FaPlus className="icon" />,
+      isAddButton: true,
+      className: 'top', // Adicionar a classe "top" para o estilo no desktop
+    });
+  }
+
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <button className="toggle-button" onClick={toggleSidebar}>
@@ -59,7 +134,6 @@ const Sidebar = () => {
       <div className="user-info">
         {!isCollapsed && (
           <div className="logo-container">
-            {/* Envolver o logotipo em um Link para redirecionar para a página inicial */}
             <Link to="/">
               <img src={logo} alt="Globe Memories Logo" className="logo" />
             </Link>
@@ -77,78 +151,18 @@ const Sidebar = () => {
 
       <nav>
         <ul>
-          <li>
-            <Link
-              to="/"
-              className={activePage === '/' ? 'active' : ''}
-              onClick={() => setActivePage('/')}
-            >
-              <FaHome className="icon" /> {!isCollapsed && 'Página Inicial'}
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/travels"
-              className={activePage === '/travels' ? 'active' : ''}
-              onClick={() => setActivePage('/travels')}
-            >
-              <FaPlane className="icon" /> {!isCollapsed && 'Descobrir Viagens'}
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/my-travels"
-              className={activePage === '/my-travels' ? 'active' : ''}
-              onClick={() => setActivePage('/my-travels')}
-            >
-              <FaList className="icon" /> {!isCollapsed && 'As Minhas Viagens'}
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/futuretravels"
-              className={activePage === '/futuretravels' ? 'active' : ''}
-              onClick={() => setActivePage('/futuretravels')}
-            >
-              <FaCog className="icon" /> {!isCollapsed && 'Planear Viagem'}
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/users"
-              className={activePage === '/users' ? 'active' : ''}
-              onClick={() => setActivePage('/users')}
-            >
-              <FaUser className="icon" /> {!isCollapsed && 'Seguir Viajantes'}
-            </Link>
-          </li>
-
-      
-          <li>
-            <Link
-              to="/qanda"
-              className={activePage === '/qanda' ? 'active' : ''}
-              onClick={() => setActivePage('/qanda')}
-            >
-              <FaCog className="icon" /> {!isCollapsed && 'Forum'}
-            </Link>
-          </li>
-
-          <div className="top">
-            <li>
+          {navItemsWithAddButton.map((item, index) => (
+            <li key={index} className={item.className || ''}>
               <Link
-                to="/my-travels"
-                state={{ openModal: true }}
-                className={activePage === '/my-travels' ? 'active' : ''}
-                onClick={() => setActivePage('/my-travels')}
+                to={item.to}
+                className={activePage === item.to ? 'active' : ''}
+                onClick={() => setActivePage(item.to)}
+                state={item.isAddButton ? { openModal: true } : undefined}
               >
-                <FaAd className="icon" /> {!isCollapsed && 'Adicionar Viagem'}
+                {item.icon} {!isCollapsed && item.label}
               </Link>
             </li>
-          </div>
+          ))}
         </ul>
       </nav>
     </div>

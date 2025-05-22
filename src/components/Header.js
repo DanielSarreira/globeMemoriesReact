@@ -1,14 +1,14 @@
-// src/components/Header.js
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaSearch, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBars, FaBell, FaGlobe, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown } from 'react-icons/fa'; // Adicionei FaCaretDown
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBell, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown, FaGlobe, FaSun } from 'react-icons/fa';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 import TravelsData from '../data/travelsData';
 import '../styles/styles.css';
 import { request, setAuthHeader } from '../axios_helper';
+import axios from 'axios';
 
-// Dados mockados para notificações (simulando o backend)
+// Dados mockados para notificações
 const mockNotifications = [
   { id: 1, userId: 'user1', type: 'follow', message: 'AnaSilva começou a seguir-te!', relatedId: 'AnaSilva', isRead: false, createdAt: '2025-03-27T10:00:00' },
   { id: 2, userId: 'user1', type: 'follow', message: 'AnaSilva pediu para seguir!', relatedId: 'AnaSilva', isRead: false, createdAt: '2025-03-27T09:00:00' },
@@ -28,16 +28,108 @@ const Header = () => {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activePage, setActivePage] = useState('/');
-
-  // Estado para o dropdown de notificações
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
+  const [weatherData, setWeatherData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState({ city: 'Lisboa', lat: 38.7167, lon: -9.1333 });
+  const location = useLocation();
 
-  // Contar o número total de viagens ao montar o componente
+  // Contar o número total de viagens
   useEffect(() => {
     setTotalTravels(TravelsData.length);
   }, []);
 
+  // Carregar localização inicial
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+            city: 'Sua localização',
+          });
+        },
+        (error) => {
+          console.error('Erro de geolocalização:', error);
+        }
+      );
+    }
+  }, []);
+
+  // Mapear código de condição climática
+  const getWeatherDescription = (code) => {
+    const weatherCodes = {
+      0: { description: 'Céu limpo', emoji: '☀️' },
+      1: { description: 'Poucas nuvens', emoji: '🌤️' },
+      2: { description: 'Nuvens dispersas', emoji: '⛅' },
+      3: { description: 'Nublado', emoji: '☁️' },
+      45: { description: 'Nevoeiro', emoji: '🌫️' },
+      48: { description: 'Nevoeiro com geada', emoji: '🌫️' },
+      51: { description: 'Chuva fraca', emoji: '🌦️' },
+      53: { description: 'Chuva moderada', emoji: '🌧️' },
+      55: { description: 'Chuva forte', emoji: '🌧️' },
+      61: { description: 'Chuva', emoji: '🌧️' },
+      63: { description: 'Chuva moderada', emoji: '🌧️' },
+      65: { description: 'Chuva intensa', emoji: '⛈️' },
+      71: { description: 'Neve fraca', emoji: '❄️' },
+      73: { description: 'Neve moderada', emoji: '❄️' },
+      75: { description: 'Neve forte', emoji: '❄️' },
+      80: { description: 'Chuva esporádica', emoji: '🌦️' },
+      81: { description: 'Chuva moderada', emoji: '🌧️' },
+      82: { description: 'Chuva forte', emoji: '⛈️' },
+      95: { description: 'Trovoada', emoji: '⛈️' },
+      96: { description: 'Trovoada com granizo', emoji: '⛈️' },
+    };
+    return weatherCodes[code] || { description: 'Desconhecido', emoji: '❓' };
+  };
+
+  // Buscar dados meteorológicos simplificados
+  const fetchWeather = async (location) => {
+    setIsLoading(true);
+    try {
+      let lat, lon, cityName;
+      if (location.lat && location.lon) {
+        lat = location.lat;
+        lon = location.lon;
+        cityName = location.city || 'Sua localização';
+      } else {
+        const response = await axios.get(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location.city)}&count=1`);
+        const data = response.data;
+        if (!data.results || data.results.length === 0) throw new Error('Cidade não encontrada');
+        lat = data.results[0].latitude;
+        lon = data.results[0].longitude;
+        cityName = data.results[0].name;
+      }
+
+      const weatherResponse = await axios.get(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`
+      );
+      const current = weatherResponse.data.current;
+      const weatherInfo = getWeatherDescription(current.weather_code);
+
+      setWeatherData({
+        city: cityName,
+        temperature: Math.round(current.temperature_2m),
+        emoji: weatherInfo.emoji,
+      });
+    } catch (error) {
+      console.error('Erro ao buscar meteorologia no header:', error);
+      setWeatherData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Atualizar meteorologia ao mudar localização
+  useEffect(() => {
+    if (userLocation) {
+      fetchWeather(userLocation);
+    }
+  }, [userLocation]);
+
+  // Handlers existentes
   const handleUserSearch = (e) => {
     setUserSearch(e.target.value);
   };
@@ -71,12 +163,17 @@ const Header = () => {
   // Contar notificações não lidas
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
 
-  // Função para marcar uma notificação como lida
+  // Marcar notificação como lida
   const markAsRead = (notificationId) => {
     setNotifications(notifications.map((notif) =>
       notif.id === notificationId ? { ...notif, isRead: true } : notif
     ));
   };
+
+  // Não renderizar o conteúdo do Header nas páginas de Login e Register
+  if (location.pathname === '/login' || location.pathname === '/register') {
+    return null;
+  }
 
   return (
     <header className="header">
@@ -105,51 +202,69 @@ const Header = () => {
 
       <div className="header-right">
         {user && (
-          <div className="notification-section">
-            <button
-              className="notification-icon"
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              aria-label="Abrir menu de notificações"
-            >
-              <FaBell />
-              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
-            </button>
-            {isNotificationsOpen && (
-              <div className="notification-menu">
-                {notifications.length > 0 ? (
-                  <>
-                    {notifications.slice(0, 6).map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
-                      >
-                        <Link
-                          to={notif.type === 'like' || notif.type === 'comment' ? `/travel/${notif.relatedId}` : `/profile/${notif.relatedId}`}
-                          onClick={() => {
-                            markAsRead(notif.id);
-                            setIsNotificationsOpen(false);
-                          }}
+          <>
+            {/* Seção de Notificações */}
+            <div className="notification-section">
+              <button
+                className="notification-icon"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                aria-label="Abrir menu de notificações"
+              >
+                <FaBell />
+                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              </button>
+              {isNotificationsOpen && (
+                <div className="notification-menu">
+                  {notifications.length > 0 ? (
+                    <>
+                      {notifications.slice(0, 6).map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
                         >
-                          {notif.message}
-                        </Link>
-                      </div>
-                    ))}
-                    <Link
-                      to="/notifications"
-                      className="view-more-notifications"
-                      onClick={() => setIsNotificationsOpen(false)}
-                    >
-                      Ver mais notificações
-                    </Link>
-                  </>
+                          <Link
+                            to={notif.type === 'like' || notif.type === 'comment' ? `/travel/${notif.relatedId}` : `/profile/${notif.relatedId}`}
+                            onClick={() => {
+                              markAsRead(notif.id);
+                              setIsNotificationsOpen(false);
+                            }}
+                          >
+                            {notif.message}
+                          </Link>
+                        </div>
+                      ))}
+                      <Link
+                        to="/notifications"
+                        className="view-more-notifications"
+                        onClick={() => setIsNotificationsOpen(false)}
+                      >
+                        Ver mais notificações
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="no-notifications">Nenhuma notificação disponível.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Seção de Meteorologia Simplificada */}
+            <div className="weather-section">
+              <Link to="/weather" className="weather-icon" title={weatherData ? `${weatherData.temperature}°C em ${weatherData.city}` : 'Carregando...'}>
+                <FaSun />
+                {isLoading ? (
+                  <span className="weather-temp">...</span>
+                ) : weatherData ? (
+                  <span className="weather-temp">{weatherData.temperature}°C {weatherData.emoji}</span>
                 ) : (
-                  <p className="no-notifications">Nenhuma notificação disponível.</p>
+                  <span className="weather-temp">Tempo°C</span>
                 )}
-              </div>
-            )}
-          </div>
+              </Link>
+            </div>
+          </>
         )}
 
+        {/* Seção de Perfil */}
         {user ? (
           <div className="profile-section">
             <button
@@ -177,9 +292,6 @@ const Header = () => {
                 </Link>
                 <Link to="/my-travels" onClick={() => setIsProfileMenuOpen(false)}>
                   <FaMap /> As Minhas Viagens
-                </Link>
-                <Link to={`/interactivemap`} onClick={() => setIsProfileMenuOpen(false)}>
-                  <FaMapMarkedAlt /> Mapa Mundo
                 </Link>
                 <Link to={`/achievements`} onClick={() => setIsProfileMenuOpen(false)}>
                   <FaTrophy /> As Minhas Conquistas

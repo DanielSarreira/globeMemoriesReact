@@ -1,13 +1,15 @@
+// MainLayout.js
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
-import { FaChevronUp } from 'react-icons/fa';
+import { FaChevronUp, FaPlus } from 'react-icons/fa';
 import '../styles/styles.css';
 
 const MainLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isLoginOrRegister = location.pathname === '/login' || location.pathname === '/register';
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -31,6 +33,10 @@ const MainLayout = () => {
     });
   };
 
+  const handlePlanNewTravel = () => {
+    navigate('/my-travels', { state: { openModal: true } });
+  };
+
   return (
     <div className="app-container">
       {!isLoginOrRegister && <Sidebar />}
@@ -47,10 +53,15 @@ const MainLayout = () => {
           <Outlet />
         </main>
         <Footer />
-        {!isLoginOrRegister && showScrollTop && (
-          <button className="scroll-to-top" onClick={scrollToTop}>
-            <FaChevronUp />
-          </button>
+        {!isLoginOrRegister && (
+          <div className="fixed-buttons">
+            <button className="scroll-to-top" onClick={scrollToTop} style={{ display: showScrollTop ? 'flex' : 'none' }}>
+              <FaChevronUp />
+            </button>
+            <button className="plan-new-travel" onClick={handlePlanNewTravel}>
+              <FaPlus />
+            </button>
+          </div>
         )}
       </div>
     </div>

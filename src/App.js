@@ -21,6 +21,7 @@ import QandA from './pages/QandA';
 import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Achievements from './pages/Achievements';
+import Weather from './pages/weather';
 import FutureTravels from './pages/FutureTravels';
 import MainLayout from './components/MainLayout';
 import AdminLayout from './components/AdminLayout';
@@ -79,6 +80,9 @@ const App = () => {
         </Route>
         <Route path="/futuretravels" element={<ProtectedRoute />}>
           <Route index element={<FutureTravels />} />
+        </Route>
+        <Route path="/Weather" element={<ProtectedRoute />}>
+          <Route index element={<Weather />} />
         </Route>
         <Route path="/notifications" element={<ProtectedRoute />}>
           <Route index element={<Notifications />} />

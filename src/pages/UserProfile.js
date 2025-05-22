@@ -4,8 +4,54 @@ import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
 import TravelsData from '../data/travelsData';
 import '../styles/styles.css';
-import { FaCheck } from 'react-icons/fa';
-import { FaStar } from 'react-icons/fa';
+import { FaCheck, FaStar } from 'react-icons/fa';
+import { request } from '../axios_helper';
+
+// Dados mockados para perfis de usuário
+const mockProfiles = [
+  {
+    username: 'tiago',
+    name: 'Tiago',
+    profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
+    bio: 'Amante de viagens e fotografia!',
+    country: 'Portugal',
+    city: 'Lisboa',
+    travelCount: 8,
+    followersCount: 120,
+    followingCount: 50,
+    privacy: 'public',
+    followers: ['AnaSilva', 'PedroCosta', 'SofiaRamos'],
+    following: ['AnaSilva', 'JoaoPereira'],
+  },
+  {
+    username: 'AnaSilva',
+    name: 'Ana',
+    profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg',
+    bio: 'Exploradora de montanhas.',
+    country: 'Brasil',
+    city: 'Rio de Janeiro',
+    travelCount: 5,
+    followersCount: 200,
+    followingCount: 30,
+    privacy: 'private',
+    followers: ['TiagoMiranda', 'MariaOliveira'],
+    following: ['PedroCosta'],
+  },
+  {
+    username: 'PedroCosta',
+    name: 'Pedro',
+    profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg',
+    bio: 'Apaixonado por culturas.',
+    country: 'Espanha',
+    city: 'Madrid',
+    travelCount: 12,
+    followersCount: 80,
+    followingCount: 40,
+    privacy: 'public',
+    followers: ['TiagoMiranda', 'AnaSilva'],
+    following: ['SofiaRamos', 'JoaoPereira'],
+  }
+];
 
 const UserProfile = () => {
   const { user } = useAuth();
@@ -16,149 +62,46 @@ const UserProfile = () => {
   const [followers, setFollowers] = useState([]);
   const [travels, setTravels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showFollowModal, setShowFollowModal] = useState(false); // Modal para seguidores/seguindo
-  const [showStatsModal, setShowStatsModal] = useState(false); // Modal para estatísticas
-  const [showRequestModal, setShowRequestModal] = useState(false); // Modal para pedido de seguimento
+  const [showFollowModal, setShowFollowModal] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', list: [], type: '' });
 
-  const mockProfiles = [
-    {
-      id: 1,
-      username: 'tiago',
-      name: 'Tiago',
-      profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
-      bio: 'Amante de viagens e fotografia!',
-      country: 'Portugal',
-      city: 'Lisboa',
-      travelCount: 8,
-      privacy: 'public',
-      followers: ['AnaSilva', 'PedroCosta', 'SofiaRamos'],
-      following: ['AnaSilva', 'JoaoPereira'],
-    },
-    {
-      id: 2,
-      username: 'AnaSilva',
-      name: 'Ana',
-      profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg',
-      bio: 'Exploradora de montanhas.',
-      country: 'Brasil',
-      city: 'Rio de Janeiro',
-      travelCount: 5,
-      privacy: 'private',
-      followers: ['TiagoMiranda', 'MariaOliveira'],
-      following: ['PedroCosta'],
-    },
-    {
-      id: 3,
-      username: 'PedroCosta',
-      name: 'Pedro',
-      profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg',
-      bio: 'Apaixonado por culturas.',
-      country: 'Espanha',
-      city: 'Madrid',
-      travelCount: 12,
-      privacy: 'public',
-      followers: ['TiagoMiranda', 'AnaSilva'],
-      following: ['SofiaRamos', 'JoaoPereira'],
-    },
-    {
-      id: 4,
-      username: 'SofiaRamos',
-      name: 'Sofia',
-      profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg',
-      bio: 'Viajante urbana e foodie.',
-      country: 'Portugal',
-      city: 'Porto',
-      travelCount: 6,
-      privacy: 'private',
-      followers: ['TiagoMiranda'],
-      following: ['PedroCosta'],
-    },
-    {
-      id: 5,
-      username: 'JoaoPereira',
-      name: 'João',
-      profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg',
-      bio: 'Aventura é meu lema!',
-      country: 'Brasil',
-      city: 'São Paulo',
-      travelCount: 9,
-      privacy: 'public',
-      followers: ['TiagoMiranda', 'PedroCosta'],
-      following: ['AnaSilva'],
-    },
-    {
-      id: 6,
-      username: 'MariaOliveira',
-      name: 'Maria',
-      profilePicture: 'https://randomuser.me/api/portraits/women/6.jpg',
-      bio: 'História e arte em cada destino.',
-      country: 'Itália',
-      city: 'Roma',
-      travelCount: 4,
-      privacy: 'private',
-      followers: ['AnaSilva'],
-      following: ['TiagoMiranda'],
-    },
-    {
-      id: 7,
-      username: 'LucasSantos',
-      name: 'Lucas',
-      profilePicture: 'https://randomuser.me/api/portraits/men/7.jpg',
-      bio: 'Sempre em busca do próximo voo.',
-      country: 'EUA',
-      city: 'Nova York',
-      travelCount: 7,
-      privacy: 'public',
-      followers: ['SofiaRamos'],
-      following: ['JoaoPereira'],
-    },
-    {
-      id: 8,
-      username: 'BeatrizLima',
-      name: 'Beatriz',
-      profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg',
-      bio: 'Natureza é meu refúgio.',
-      country: 'Canadá',
-      city: 'Vancouver',
-      travelCount: 3,
-      privacy: 'private',
-      followers: ['MariaOliveira'],
-      following: ['AnaSilva'],
-    },
-    {
-      id: 9,
-      username: 'Teste',
-      name: 'Teste',
-      profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg',
-      bio: 'Natureza é meu refúgio.',
-      country: 'Canadá',
-      city: 'Vancouver',
-      travelCount: 3,
-      privacy: 'private',
-      followers: ['MariaOliveira'],
-      following: ['AnaSilva'],
-    },
-  ];
-
   useEffect(() => {
-    setTimeout(() => {
-      const foundProfile = mockProfiles.find((p) => p.username === username);
-      if (!foundProfile) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
+    const fetchUserProfile = async () => {
+      try {
+        // Dados temporários enquanto o backend não está pronto
+        const tempProfile = {
+          username: username,
+          name: username,
+          profilePicture: defaultAvatar,
+          bio: 'Viajante apaixonado',
+          country: 'Portugal',
+          city: 'Lisboa',
+          travelCount: 0,
+          followersCount: 0,
+          followingCount: 0,
+          privacy: 'public',
+          followers: [],
+          following: []
+        };
 
-      setProfile(foundProfile);
-      setFollowers(foundProfile.followers || []);
-      const userTravels = TravelsData.filter((travel) => travel.user === foundProfile.username);
-      setTravels(userTravels);
-      if (user) {
-        setFollowing(['AnaSilva', 'PedroCosta']);
+        setProfile(tempProfile);
+        setFollowers(tempProfile.followers);
+        const userTravels = TravelsData.filter((travel) => travel.user === username);
+        setTravels(userTravels);
+        if (user) {
+          setFollowing(tempProfile.following);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+        setProfile(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1000);
+    };
+
+    fetchUserProfile();
   }, [username, user]);
 
   const renderStars = (stars) => (
@@ -195,25 +138,25 @@ const UserProfile = () => {
   };
 
   const openFollowModal = (title, list) => {
-    console.log('Abrindo Follow Modal:', title, list); // Debug
+    console.log('Abrindo Follow Modal:', title, list);
     setModalContent({ title, list, type: 'follow' });
     setShowFollowModal(true);
   };
 
   const closeFollowModal = () => {
-    console.log('Fechando Follow Modal'); // Debug
+    console.log('Fechando Follow Modal');
     setShowFollowModal(false);
     setModalContent({ title: '', list: [], type: '' });
   };
 
   const openStatsModal = (title, list, type = '') => {
-    console.log('Abrindo Stats Modal:', title, list, type); // Debug
+    console.log('Abrindo Stats Modal:', title, list, type);
     setModalContent({ title, list, type });
     setShowStatsModal(true);
   };
 
   const closeStatsModal = () => {
-    console.log('Fechando Stats Modal'); // Debug
+    console.log('Fechando Stats Modal');
     setShowStatsModal(false);
     setModalContent({ title: '', list: [], type: '' });
   };
@@ -227,6 +170,7 @@ const UserProfile = () => {
   const visibleTravels = travels;
 
   const canViewDetails = isOwnProfile || profile.privacy === 'public' || (profile.privacy === 'private' && isFollowing);
+  const canViewFollowStats = isOwnProfile || isFollowing;
 
   const totalTravels = canViewDetails ? visibleTravels.length : 0;
   const uniqueCountries = canViewDetails ? [...new Set(visibleTravels.map((travel) => travel.country))] : [];
@@ -284,10 +228,16 @@ const UserProfile = () => {
           />
         </div>
         <div className="stats">
-          <span onClick={() => openFollowModal('Seguidores', followers)} className="stat-item">
+          <span
+            onClick={() => canViewFollowStats && openFollowModal('Seguidores', followers)}
+            className={`stat-item ${canViewFollowStats ? '' : 'non-clickable'}`}
+          >
             <strong>{followers.length}</strong> Seguidores
           </span>
-          <span onClick={() => openFollowModal('A Seguir', profile.following)} className="stat-item">
+          <span
+            onClick={() => canViewFollowStats && openFollowModal('A Seguir', profile.following)}
+            className={`stat-item ${canViewFollowStats ? '' : 'non-clickable'}`}
+          >
             <strong>{profile.following.length}</strong> A Seguir
           </span>
           <span className="stat-item">
@@ -295,37 +245,48 @@ const UserProfile = () => {
           </span>
         </div>
         <div className="profile-info">
-          {isOwnProfile && (
-            <Link to={`/profile/edit/${profile.username}`} className="edit-button">
-              Editar Perfil
-            </Link>
-          )}
-          {!isOwnProfile && user && (
-            <div className="user-actions">
-              {isFollowing ? (
-                <button
-                  className="unfollow-button"
-                  onClick={handleUnfollow}
-                >
-                  Não seguir
-                </button>
-              ) : isPending ? (
-                <button
-                  className="pending-button"
-                  onClick={handleCancelRequest}
-                >
-                  Pendente
-                </button>
-              ) : (
-                <button
-                  className="follow-button"
-                  onClick={handleFollow}
-                >
-                  {profile.privacy === 'public' ? 'Seguir' : 'Pedir para seguir'}
-                </button>
-              )}
-            </div>
-          )}
+          <div className="profile-actions">
+            {isOwnProfile && (
+              <Link to={`/profile/edit/${profile.username}`} className="edit-button">
+                Editar Perfil
+              </Link>
+            )}
+            {!isOwnProfile && user && (
+              <div className="user-actions">
+                {isFollowing ? (
+                  <button className="unfollow-button" onClick={handleUnfollow}>
+                    Não seguir
+                  </button>
+                ) : isPending ? (
+                  <button className="pending-button" onClick={handleCancelRequest}>
+                    Pendente
+                  </button>
+                ) : (
+                  <button className="follow-button" onClick={handleFollow}>
+                    {profile.privacy === 'public' ? 'Seguir' : 'Pedir para seguir'}
+                  </button>
+                )}
+              </div>
+            )}
+            {canViewDetails && (
+              <button
+                className="edit-button"
+                onClick={() => {
+                  console.log('Clicou em Ver Estatísticas');
+                  try {
+                    const statsSection = document.getElementById('traveler-stats');
+                    if (statsSection) {
+                      statsSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  } catch (error) {
+                    console.error('Erro ao rolar para estatísticas:', error);
+                  }
+                }}
+              >
+                Ver Estatísticas do Viajante
+              </button>
+            )}
+          </div>
         </div>
         <div className="profile-right">
           <h1>
@@ -369,7 +330,7 @@ const UserProfile = () => {
                             <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p>
                             <p><b>📅 Duração da Viagem:</b> {travel.days} dias</p>
                             <p><b>💰 Preço Total da Viagem:</b> {travel.price}€</p>
-                            <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+                            <p><strong>A Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
                             <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
                           </div>
                         </div>
@@ -382,7 +343,7 @@ const UserProfile = () => {
               )}
             </div>
 
-            <div className="traveler-stats-section">
+            <div className="traveler-stats-section" id="traveler-stats">
               <h2>Estatísticas do Viajante</h2>
               <div className="stats-grid">
                 <div className="stat-item-box">
@@ -416,44 +377,44 @@ const UserProfile = () => {
                   <p><strong>{averageDays}</strong></p>
                 </div>
               </div>
-            </div>
 
-            <div className="top-destinations-section">
-              <h2>Melhores Destinos</h2>
-              <div className="destinations-grid">
-                {topCountries.length > 0 && (
-                  <div className="destination-box">
-                    <h3>Top Países</h3>
-                    <ul>
-                      {topCountries.map((country, index) => (
-                        <li key={index}>{country} ({countryCounts[country]} visita(s))</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {topCities.length > 0 && (
-                  <div className="destination-box">
-                    <h3>Top Cidades</h3>
-                    <ul>
-                      {topCities.map((city, index) => (
-                        <li key={index}>{city} ({cityCounts[city]} visita(s))</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="engagement-stats-section">
-              <h2>Estatísticas do Perfil</h2>
-              <div className="stats-grid">
-                <div className="stat-item-box">
-                  <h3>Total de Likes</h3>
-                  <p><strong>{totalLikes}</strong></p>
+              <div className="top-destinations-section">
+                <h2>Melhores Destinos</h2>
+                <div className="destinations-grid">
+                  {topCountries.length > 0 && (
+                    <div className="destination-box">
+                      <h3>Top Países</h3>
+                      <ul>
+                        {topCountries.map((country, index) => (
+                          <li key={index}>{country} ({countryCounts[country]} visita(s))</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {topCities.length > 0 && (
+                    <div className="destination-box">
+                      <h3>Top Cidades</h3>
+                      <ul>
+                        {topCities.map((city, index) => (
+                          <li key={index}>{city} ({cityCounts[city]} visita(s))</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-                <div className="stat-item-box">
-                  <h3>Total de Comentários</h3>
-                  <p><strong>{totalComments}</strong></p>
+              </div>
+
+              <div className="engagement-stats-section">
+                <h2>Estatísticas do Perfil</h2>
+                <div className="stats-grid">
+                  <div className="stat-item-box">
+                    <h3>Total de Likes</h3>
+                    <p><strong>{totalLikes}</strong></p>
+                  </div>
+                  <div className="stat-item-box">
+                    <h3>Total de Comentários</h3>
+                    <p><strong>{totalComments}</strong></p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -469,7 +430,6 @@ const UserProfile = () => {
         )}
       </section>
 
-      {/* Modal para Seguidores/Seguindo */}
       {showFollowModal && (
         <div className="follow-modal-overlay" onClick={closeFollowModal}>
           <div className="follow-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -502,7 +462,6 @@ const UserProfile = () => {
         </div>
       )}
 
-      {/* Modal para Estatísticas */}
       {showStatsModal && (
         <div className="stats-modal-overlay" onClick={closeStatsModal}>
           <div className="stats-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -512,17 +471,21 @@ const UserProfile = () => {
                 <h3>Top 3 - Viagens Mais Caras</h3>
                 <ul>
                   {modalContent.list.slice(0, 3).map((travel) => (
-                    <li key={travel.id}>
-                      {travel.name} - {travel.price ? `${travel.price.toLocaleString()} €` : 'Preço não disponível'}
-                    </li>
+                    <Link to={`/travel/${travel.id}`} key={travel.id}>
+                      <li>
+                        {travel.name} - {travel.price ? `${travel.price.toLocaleString()} €` : 'Preço não disponível'}
+                      </li>
+                    </Link>
                   ))}
                 </ul>
                 <h3>Top 3 - Viagens Mais Baratas</h3>
                 <ul>
                   {modalContent.list.slice(-3).map((travel) => (
-                    <li key={travel.id}>
-                      {travel.name} - {travel.price ? `${travel.price.toLocaleString()} €` : 'Preço não disponível'}
-                    </li>
+                    <Link to={`/travel/${travel.id}`} key={travel.id}>
+                      <li>
+                        {travel.name} - {travel.price ? `${travel.price.toLocaleString()} €` : 'Preço não disponível'}
+                      </li>
+                    </Link>
                   ))}
                 </ul>
               </>
@@ -544,12 +507,11 @@ const UserProfile = () => {
         </div>
       )}
 
-      {/* Modal de sucesso para pedido de seguimento */}
       {showRequestModal && (
         <div className="request-modal-overlay" onClick={() => setShowRequestModal(false)}>
           <div className="request-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Sucesso!</h2>
-            <p>Pedido enviado com sucesso. <br />Aguarde até que o Viajante aceite o seu pedido!</p>
+            <p>Pedido enviado com sucesso.<br />Aguarde até que o Viajante aceite o seu pedido!</p>
           </div>
         </div>
       )}

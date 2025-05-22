@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import travels from "../data/travelsData";
 import L from "leaflet";
 import debounce from "lodash/debounce";
+import { useNavigate } from "react-router-dom";
 
 // Corrige o problema de ícones padrão no Leaflet com React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -57,7 +58,9 @@ const InteractiveMap = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [searchMarker, setSearchMarker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const MAPTILER_API_KEY = "G59o5q9sfWGLLQJsw3v7";
 
@@ -221,73 +224,122 @@ const InteractiveMap = () => {
   }, []);
 
   // Componente para gerenciar eventos do mapa
-  const MapEvents = () => {
-    const map = useMapEvents({
-      click: async (e) => {
-        const { lat, lng } = e.latlng;
-        const location = await getLocationFromCoordinates(lat, lng);
-        const newFutureTrip = {
-          coordinates: [lat, lng],
-          label: `Viagem Futura a ${location.city}`,
-          country: location.country,
-          city: location.city,
-        };
+const MapEvents = () => {
+  const map = useMapEvents({
+    click: async (e) => {
+      // Verifica se o clique foi em um marcador ou popup
+      const target = e.originalEvent.target;
+      if (target.closest('.leaflet-popup') || target.closest('.leaflet-marker-icon')) {
+        return;
+      }
 
-        // Adicionar ao futureTrips
-        setFutureTrips((prevTrips) => {
-          const updatedTrips = [...prevTrips, newFutureTrip];
-          localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
-          return updatedTrips;
-        });
+      // Verifica se o clique foi parte de um arrasto
+      if (e.originalEvent.type === 'mousedown' || e.originalEvent.type === 'mouseup') {
+        return;
+      }
 
-        // Adicionar ao futureTravels com valores padrão
-        const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
-        const newTravel = {
-          id: Date.now(), // Usar timestamp para IDs únicos
-          name: `Viagem Futura a ${location.city}`,
-          user: "Tiago",
-          category: [],
-          country: location.country,
-          city: location.city,
-          price: "",
-          startDate: new Date().toISOString().split("T")[0], // Data atual como padrão
-          endDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split("T")[0], // Uma semana depois como padrão
-          BookingTripPaymentDate: "",
-          priceDetails: { hotel: "", transport: "", food: "", extras: "" },
-          description: "",
-          accommodations: [{ name: "", type: "" }],
-          pointsOfInterest: [],
-          itinerary: [],
-          localTransport: [],
-          privacy: "public",
-          checklist: [],
-          coordinates: [lat, lng],
-        };
+      // Verifica se o clique foi em um botão ou elemento interativo
+      if (target.closest('button') || target.closest('a')) {
+        return;
+      }
 
-        futureTravels.push(newTravel);
-        localStorage.setItem("futureTravels", JSON.stringify(futureTravels));
-      },
-    });
+      // Verifica se o clique foi no mapa (não em elementos sobrepostos)
+      if (!target.closest('.leaflet-container')) {
+        return;
+      }
 
-    map.setMaxBounds([[-90, -180], [90, 180]]);
-    map.setMinZoom(3);
-    return null;
+      const { lat, lng } = e.latlng;
+      const location = await getLocationFromCoordinates(lat, lng);
+      const newFutureTrip = {
+        coordinates: [lat, lng],
+        label: `Viagem Futura a ${location.city}`,
+        country: location.country,
+        city: location.city,
+      };
+
+      // Adicionar ao futureTrips
+      setFutureTrips((prevTrips) => {
+        const updatedTrips = [...prevTrips, newFutureTrip];
+        localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
+        return updatedTrips;
+      });
+
+      // Adicionar ao futureTravels com valores padrão
+      const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
+      // Calcular a data de início como o dia seguinte
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      
+      // Define a data de fim como 6 dias após a data de início
+      const nextWeek = new Date(tomorrow);
+      nextWeek.setDate(tomorrow.getDate() + 6);
+
+      // Formata as datas para o formato YYYY-MM-DD
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const newTravel = {
+        id: Date.now(), // Usar timestamp para IDs únicos
+        name: `Viagem Futura a ${location.city}`,
+        user: "Tiago",
+        category: [],
+        country: location.country,
+        city: location.city,
+        price: "",
+        startDate: formatDate(tomorrow),
+        endDate: formatDate(nextWeek),
+        BookingTripPaymentDate: "",
+        priceDetails: { hotel: "", transport: "", food: "", extras: "" },
+        description: "",
+        accommodations: [{ name: "", type: "" }],
+        pointsOfInterest: [],
+        itinerary: [],
+        localTransport: [],
+        privacy: "public",
+        checklist: [],
+        coordinates: [lat, lng],
+      };
+
+      futureTravels.push(newTravel);
+      localStorage.setItem("futureTravels", JSON.stringify(futureTravels));
+    },
+  });
+
+  map.setMaxBounds([[-90, -180], [90, 180]]);
+  map.setMinZoom(3);
+  return null;
+};
+
+  // Função para verificar se o local já existe como viagem futura
+  const isLocationInFutureTrips = (coordinates) => {
+    return futureTrips.some(trip => 
+      trip.coordinates[0] === coordinates[0] && 
+      trip.coordinates[1] === coordinates[1]
+    );
   };
 
-  // Função para remover uma viagem futura
-  const removeFutureTrip = (index, e) => {
-    e.stopPropagation();
-    const tripToRemove = futureTrips[index];
+  // Função para remover viagem futura a partir do marcador de pesquisa
+  const removeFutureTripFromSearch = (marker) => {
+    // Remover do futureTrips
     setFutureTrips((prevTrips) => {
-      const updatedTrips = prevTrips.filter((_, i) => i !== index);
+      const updatedTrips = prevTrips.filter(trip => 
+        !(trip.coordinates[0] === marker.coordinates[0] && 
+          trip.coordinates[1] === marker.coordinates[1])
+      );
       localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
       return updatedTrips;
     });
 
-    // Remover do futureTravels também
+    // Remover do futureTravels
     const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
-    const updatedFutureTravels = futureTravels.filter(
-      (travel) => !(travel.city === tripToRemove.city && travel.country === tripToRemove.country && travel.name === tripToRemove.label)
+    const updatedFutureTravels = futureTravels.filter(travel => 
+      !(travel.coordinates[0] === marker.coordinates[0] && 
+        travel.coordinates[1] === marker.coordinates[1])
     );
     localStorage.setItem("futureTravels", JSON.stringify(updatedFutureTravels));
   };
@@ -309,6 +361,13 @@ const InteractiveMap = () => {
              result.type === "Cidade" ? 10000 : 
              result.type === "Região" ? 20000 : 5000
     });
+    
+    // Adicionar marcador para o local pesquisado
+    setSearchMarker({
+      coordinates,
+      name: result.display_name
+    });
+    
     setSearchQuery("");
     setSearchResults([]);
   };
@@ -318,6 +377,66 @@ const InteractiveMap = () => {
     const query = e.target.value;
     setSearchQuery(query);
     debouncedSearch(query);
+  };
+
+  // Função para adicionar viagem futura a partir do marcador de pesquisa
+  const addFutureTripFromSearch = (marker) => {
+    const newFutureTrip = {
+      coordinates: marker.coordinates,
+      label: `Viagem Futura a ${marker.name}`,
+      country: marker.name.split(',')[marker.name.split(',').length - 1]?.trim() || "Desconhecido",
+      city: marker.name.split(',')[0]?.trim() || "Desconhecido",
+    };
+
+    // Adicionar ao futureTrips
+    setFutureTrips((prevTrips) => {
+      const updatedTrips = [...prevTrips, newFutureTrip];
+      localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
+      return updatedTrips;
+    });
+
+    // Adicionar ao futureTravels com valores padrão
+    const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    // Define a data de fim como 6 dias após a data de início
+    const nextWeek = new Date(tomorrow);
+    nextWeek.setDate(tomorrow.getDate() + 6);
+
+    // Formata as datas para o formato YYYY-MM-DD
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const newTravel = {
+      id: Date.now(),
+      name: `Viagem Futura a ${marker.name}`,
+      user: "Tiago",
+      category: [],
+      country: newFutureTrip.country,
+      city: newFutureTrip.city,
+      price: "",
+      startDate: formatDate(tomorrow),
+      endDate: formatDate(nextWeek),
+      BookingTripPaymentDate: "",
+      priceDetails: { hotel: "", transport: "", food: "", extras: "" },
+      description: "",
+      accommodations: [{ name: "", type: "" }],
+      pointsOfInterest: [],
+      itinerary: [],
+      localTransport: [],
+      privacy: "public",
+      checklist: [],
+      coordinates: marker.coordinates,
+    };
+
+    futureTravels.push(newTravel);
+    localStorage.setItem("futureTravels", JSON.stringify(futureTravels));
   };
 
   return (
@@ -454,7 +573,7 @@ const InteractiveMap = () => {
           }}
         >
           <h2>Bem-vindo ao Mapa Interativo!</h2>
-          <p>Aqui pode explorar as suas aventuras! Veja como funciona:</p>
+          <p>Aqui pode explorar as suas aventuras! <br></br>Veja como funciona:</p>
           <ul style={{ textAlign: "left", margin: "10px 0" }}>
             <li><strong>Marcadores Verdes:</strong> Mostram as viagens que já realizou...</li>
             <li><strong>Marcadores Laranjas:</strong> Adicione futuras viagens clicando no mapa!</li>
@@ -477,7 +596,7 @@ const InteractiveMap = () => {
         </div>
       )}
 
-      <div style={{ height: "94vh", width: "200vh", position: "relative" }}>
+      <div style={{ height: "95vh", width: "200vh", position: "relative" }}>
         <MapContainer
           center={[20, 0]}
           zoom={3}
@@ -523,7 +642,43 @@ const InteractiveMap = () => {
                   <button style={{ marginTop: "5px", cursor: "pointer" }}>Ver no Google Maps</button>
                 </a>
                 <br />
-                <button onClick={(e) => removeFutureTrip(index, e)} style={{ marginTop: "5px", cursor: "pointer" }}>
+                <button 
+                  onClick={() => {
+                    navigate("/futuretravels", { 
+                      state: { 
+                        openModal: true,
+                        editCity: trip.city,
+                        editCountry: trip.country,
+                        editName: trip.label,
+                        fromMap: true
+                      } 
+                    });
+                  }} 
+                  style={{ 
+                    marginTop: "5px", 
+                    cursor: "pointer",
+                    backgroundColor: "#4CAF50",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "4px",
+                    marginRight: "5px"
+                  }}
+                >
+                  Editar Viagem Futura
+                </button>
+                <button 
+                  onClick={(e) => removeFutureTripFromSearch(trip)} 
+                  style={{ 
+                    marginTop: "5px", 
+                    cursor: "pointer",
+                    backgroundColor: "#f44336",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: "4px"
+                  }}
+                >
                   Remover
                 </button>
               </Popup>
@@ -552,6 +707,76 @@ const InteractiveMap = () => {
                 </div>
               </Popup>
             </Circle>
+          )}
+
+          {/* Marcador do local pesquisado */}
+          {searchMarker && (
+            <Marker 
+              position={searchMarker.coordinates} 
+              icon={new L.Icon({
+                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+                iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+                shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+              })}
+            >
+              <Popup>
+                <div style={{ textAlign: 'center' }}>
+                  <h3>{searchMarker.name}</h3>
+                  <p>Coordenadas: {searchMarker.coordinates[0].toFixed(4)}, {searchMarker.coordinates[1].toFixed(4)}</p>
+                  {isLocationInFutureTrips(searchMarker.coordinates) ? (
+                    <button 
+                      onClick={() => removeFutureTripFromSearch(searchMarker)}
+                      style={{ 
+                        marginTop: "5px", 
+                        cursor: "pointer",
+                        backgroundColor: "#f44336",
+                        color: "white",
+                        border: "none",
+                        padding: "8px 16px",
+                        borderRadius: "4px",
+                        marginRight: "5px"
+                      }}
+                    >
+                      Remover Viagem Futura
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => addFutureTripFromSearch(searchMarker)}
+                      style={{ 
+                        marginTop: "5px", 
+                        cursor: "pointer",
+                        backgroundColor: "#ff9800",
+                        color: "white",
+                        border: "none",
+                        padding: "8px 16px",
+                        borderRadius: "4px",
+                        marginRight: "5px"
+                      }}
+                    >
+                      Adicionar Viagem Futura
+                    </button>
+                  )}
+                  <br />
+                  <a href={getGoogleMapsLink(searchMarker.coordinates[0], searchMarker.coordinates[1])} target="_blank" rel="noopener noreferrer">
+                    <button style={{ 
+                      marginTop: "5px", 
+                      cursor: "pointer",
+                      backgroundColor: "#4CAF50",
+                      color: "white",
+                      border: "none",
+                      padding: "8px 16px",
+                      borderRadius: "4px"
+                    }}>
+                      Ver no Google Maps
+                    </button>
+                  </a>
+                </div>
+              </Popup>
+            </Marker>
           )}
 
           <MapEvents />
