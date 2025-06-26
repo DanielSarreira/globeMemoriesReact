@@ -27,7 +27,12 @@ const TravelDetails = () => {
       // Excluir a viagem atual
       if (t.id === travel.id) return false;
       // Verificar se a viagem tem TODAS as categorias da viagem atual
-      return travel.categoryNames.every((category) => t.categoryNames.includes(category));
+      // Adicionar verificações de segurança para categories
+      if (!travel.categories || !Array.isArray(travel.categories) || 
+          !t.categories || !Array.isArray(t.categories)) {
+        return false;
+      }
+      return travel.categories.every((category) => t.categories.some(tCat => tCat.name === category.name));
     })
     .slice(0, 5); // Limitar a 5 viagens
 
@@ -119,20 +124,20 @@ const TravelDetails = () => {
         <div className="info">
           <div className="infoLeft">
             <h1>{travel.name}</h1>
-            <p><strong>👤 Utilizador:</strong> {user.firstName} {user.lastName}</p>
+            <p><strong>👤 Utilizador:</strong> {user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Utilizador não disponível'}</p>
             <p>
               <strong>🌍 País:</strong> {travel.countryName}
               <strong> 🏙️ Cidade:</strong> {travel.city}
             </p>
-            <p><strong>🗂️ Categoria:</strong> {travel.categoryNames.join(', ')}</p>
-            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.cost.total}€</p>
+            <p><strong>🗂️ Categoria:</strong> {travel.categories && travel.categories.length > 0 ? travel.categories.map(cat => cat.name).join(', ') : 'Nenhuma categoria'}</p>
+            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.cost && travel.cost.total ? travel.cost.total : 'N/A'}€</p>
 
-            {showPriceDetails && (
+            {showPriceDetails && travel.cost && (
               <div className="price-details">
-                <p><strong>Preço da Estadia:</strong> {travel.cost.accommodation}€</p>
-                <p><strong>Preço da Alimentação:</strong> {travel.cost.food}€</p>
-                <p><strong>Preço Métodos de Transporte:</strong> {travel.cost.transport}€</p>
-                <p><strong>Extras:</strong> {travel.cost.extra}€</p>
+                <p><strong>Preço da Estadia:</strong> {travel.cost.accommodation || 'N/A'}€</p>
+                <p><strong>Preço da Alimentação:</strong> {travel.cost.food || 'N/A'}€</p>
+                <p><strong>Preço Métodos de Transporte:</strong> {travel.cost.transport || 'N/A'}€</p>
+                <p><strong>Extras:</strong> {travel.cost.extra || 'N/A'}€</p>
               </div>
             )}
 
@@ -204,7 +209,7 @@ const TravelDetails = () => {
               <div className="generalInfoLeft">
                 <h2>{travel.name}</h2>
                 <p><strong>Clima:<br /></strong> {travel.weather}</p>
-                <p><strong>Línguas Utilizadas:<br /></strong> {travel.languageSpokenNames}<br /></p>
+                <p><strong>Línguas Utilizadas:<br /></strong> {travel.languagesSpoken && travel.languagesSpoken.length > 0 ? travel.languagesSpoken.map(lang => lang.name).join(', ') : 'Nenhuma língua especificada'}<br /></p>
               </div>
 
               <div className="generalInfoRight">
@@ -252,9 +257,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -273,7 +278,7 @@ const TravelDetails = () => {
               <div className="generalInfoLeft">
                 <h2>{travel.name} | Estadia</h2>
                 <br />
-                {travel.accommodations.map((acc, index) => (
+                {travel.accommodations && travel.accommodations.length > 0 ? travel.accommodations.map((acc, index) => (
                   <span key={index}>
                     <strong>🏨 Nome: </strong> {acc.name}<br />
                     <br />
@@ -301,17 +306,17 @@ const TravelDetails = () => {
                     <strong>📅 Rating: </strong> <br />
                     {acc.rating} <br />
                   </span>
-                ))}
+                )) : <p>Nenhuma estadia disponível.</p>}
               </div>
 
               <div className="generalInfoRight">
-                {travel.accommodations.map((acc, index) => (
+                {travel.accommodations && travel.accommodations.length > 0 ? travel.accommodations.map((acc, index) => (
                   <span key={index}>
                     <br />
                     <strong>📖 Descrição da Estadia: </strong> <br />
                     {acc.description} <br />
                   </span>
-                ))}
+                )) : <p>Nenhuma descrição de estadia disponível.</p>}
               </div>
 
               <div className="masonry-gallery">
@@ -352,9 +357,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -372,11 +377,11 @@ const TravelDetails = () => {
               <h2>Alimentação</h2>
               <p>
                 <strong>🍽️ Recomendações de Comida:</strong><br />
-                {travel.recommendedFoods.map((food, index) => (
+                {travel.recommendedFoods && travel.recommendedFoods.length > 0 ? travel.recommendedFoods.map((food, index) => (
                   <span key={index}>
                     {food.name} - {food.description} <br />
                   </span>
-                ))}
+                )) : <span>Nenhuma recomendação de comida disponível.</span>}
               </p>
               <br />
               <br />
@@ -418,9 +423,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -485,9 +490,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -505,7 +510,7 @@ const TravelDetails = () => {
               <h2>Pontos de Referência</h2>
               <p>
                 <strong>Pontos de Referência: </strong>
-                {travel.referencePoints.map((referencePoint, index) => (
+                {travel.referencePoints && travel.referencePoints.length > 0 ? travel.referencePoints.map((referencePoint, index) => (
                   <span key={index}>
                     {referencePoint.name} ({referencePoint.description}) -{' '}
                     <a href={referencePoint.link} target="_blank" rel="noopener noreferrer">
@@ -513,7 +518,7 @@ const TravelDetails = () => {
                     </a>
                     <br />
                   </span>
-                ))}
+                )) : <span>Nenhum ponto de referência disponível.</span>}
               </p>
               <br />
               <br />
@@ -556,9 +561,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -575,7 +580,7 @@ const TravelDetails = () => {
           {activeTab === 'itinerary' && (
             <div>
               <h2>Itinerário da Viagem</h2>
-              {travel.tripItinerary.itineraryDays.map((item, index) => (
+              {travel.tripItinerary && travel.tripItinerary.itineraryDays && travel.tripItinerary.itineraryDays.length > 0 ? travel.tripItinerary.itineraryDays.map((item, index) => (
                 <div key={index}>
                   <h4>Dia {item.day}:</h4>
                   <p>
@@ -584,7 +589,7 @@ const TravelDetails = () => {
                     ))}
                   </p>
                 </div>
-              ))}
+              )) : <p>Nenhum itinerário disponível.</p>}
 
 <br></br><br></br>
 {recommendedTravels.length > 0 && (
@@ -607,9 +612,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -630,9 +635,9 @@ const TravelDetails = () => {
             <div>
               <h2>Pontos Negativos</h2>
               <p>
-                {travel.negativePoints.map((np, npIndex) => (
+                {travel.negativePoints && travel.negativePoints.length > 0 ? travel.negativePoints.map((np, npIndex) => (
                   <li key={npIndex}><b>{np.name}:</b> <br></br>{np.description}</li>
-                ))}
+                )) : <span>Nenhum ponto negativo registado.</span>}
               </p>
 <br></br><br></br>
               {recommendedTravels.length > 0 && (
@@ -655,9 +660,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
