@@ -203,7 +203,7 @@ const TravelDetails = () => {
             <>
               <div className="generalInfoLeft">
                 <h2>{travel.name}</h2>
-                <p><strong>Clima:<br /></strong> {travel.climateDescription}</p>
+                <p><strong>Clima:<br /></strong> {travel.weather}</p>
                 <p><strong>Línguas Utilizadas:<br /></strong> {travel.languageSpokenNames}<br /></p>
               </div>
 
@@ -288,6 +288,18 @@ const TravelDetails = () => {
                     <br />
                     <strong>📅 Check-out: </strong> <br />
                     {acc.checkOut} <br />
+                    <br />
+                    <strong>📅 Data de Marcação: </strong> <br />
+                    {acc.bookingDate} <br />
+                    <br />
+                    <strong>📅 Número de Noites: </strong> <br />
+                    {acc.nrNights} <br />
+                    <br />
+                    <strong>📅 Preço: </strong> <br />
+                    {acc.price} <br />
+                    <br />
+                    <strong>📅 Rating: </strong> <br />
+                    {acc.rating} <br />
                   </span>
                 ))}
               </div>
@@ -563,12 +575,12 @@ const TravelDetails = () => {
           {activeTab === 'itinerary' && (
             <div>
               <h2>Itinerário da Viagem</h2>
-              {travel.itinerary.map((item, index) => (
+              {travel.tripItinerary.itineraryDays.map((item, index) => (
                 <div key={index}>
                   <h4>Dia {item.day}:</h4>
                   <p>
-                    {item.activities.map((activity, activityIndex) => (
-                      <li key={activityIndex}>{activity}</li>
+                    {item.topics.map((topic, topicIndex) => (
+                      <li key={topicIndex}><b>{topic.name}:</b> <br></br>{topic.description}</li>
                     ))}
                   </p>
                 </div>
@@ -617,7 +629,11 @@ const TravelDetails = () => {
           {activeTab === 'negativePoints' && (
             <div>
               <h2>Pontos Negativos</h2>
-              <p><strong>Pontos Negativos:</strong> {travel.negativePoints}</p>
+              <p>
+                {travel.negativePoints.map((np, npIndex) => (
+                  <li key={npIndex}><b>{np.name}:</b> <br></br>{np.description}</li>
+                ))}
+              </p>
 <br></br><br></br>
               {recommendedTravels.length > 0 && (
                 <div className="recommended-travels">
