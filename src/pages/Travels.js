@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import travels from '../data/travelsData.js';
 import '../styles/styles.css';
 import { FaStar } from 'react-icons/fa';
@@ -19,6 +19,16 @@ const Travels = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const uniqueCountries = [...new Set(travels.map(travel => travel.country))];
   const uniqueCities = selectedCountry
@@ -88,7 +98,13 @@ const Travels = () => {
   );
 
   const filteredTravels = travels.filter((travel) => {
-    const matchesSearch = travel.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = (
+      travel.name.toLowerCase().includes(searchLower) ||
+      travel.country.toLowerCase().includes(searchLower) ||
+      travel.city.toLowerCase().includes(searchLower) ||
+      travel.user.toLowerCase().includes(searchLower)
+    );
     const matchesCategory = categoryFilter.length === 0 ||
       (Array.isArray(travel.category) && categoryFilter.every(category => travel.category.includes(category)));
     const matchesCountry = selectedCountry === '' || travel.country === selectedCountry;
@@ -97,19 +113,13 @@ const Travels = () => {
     const matchesDays = travel.days >= daysRange[0] && travel.days <= daysRange[1];
     const matchesTransport = transportFilter === '' || travel.transport === transportFilter;
 
-    // Filtro de data ajustado para verificar se a viagem está completamente contida no intervalo
     const travelStart = new Date(travel.startDate);
     const travelEnd = new Date(travel.endDate);
-    let matchesDate = true;
-
-    if (startDate && endDate) {
-      const filterStart = new Date(startDate);
-      const filterEnd = new Date(endDate);
-      matchesDate = travelStart >= filterStart && travelEnd <= filterEnd;
-    } else if (selectedMonth) {
-      const travelMonth = String(travelStart.getMonth() + 1).padStart(2, '0');
-      matchesDate = travelMonth === selectedMonth;
-    }
+    const matchesDate = startDate && endDate
+      ? new Date(startDate) <= travelStart && new Date(endDate) >= travelEnd
+      : selectedMonth
+        ? String(travelStart.getMonth() + 1).padStart(2, '0') === selectedMonth
+        : true;
 
     return matchesSearch && matchesCategory && matchesCountry && matchesCity && matchesPrice && matchesDays && matchesTransport && matchesDate;
   })
@@ -181,9 +191,10 @@ const Travels = () => {
     { name: 'Turismo Subaquático', icon: '🤿' },
   ];
 
+  const defaultCategoryLimit = isMobile ? 'Cultural' : 'Viagens de Luxo';
   const visibleCategories = showAllCategories
     ? categories
-    : categories.slice(0, categories.findIndex(cat => cat.name === 'Viagens de Luxo') + 1);
+    : categories.slice(0, categories.findIndex(cat => cat.name === defaultCategoryLimit) + 1);
 
   return (
     <div className="travels-container">
@@ -253,9 +264,7 @@ const Travels = () => {
             )}
           </div>
 
-          {/* Filtro de data */}
           <div className="date-filters" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            
             <select
               value={selectedMonth}
               onChange={(e) => {
@@ -287,7 +296,6 @@ const Travels = () => {
           <button onClick={toggleModal} className="button">FILTROS</button>
         </div>
 
-        {/* Modal de Filtros */}
         {isModalOpen && (
           <div className="modal-overlay" onClick={toggleModal}>
             <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
