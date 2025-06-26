@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useParams, Link } from 'react-router-dom';
 import travels from '../data/travelsData'; // Verifique se o caminho está correto
 import '../styles/styles.css'; // Certifique-se de que o caminho está correto
 import { FaStar } from 'react-icons/fa';
 
 const TravelDetails = () => {
+  const { user, userTravels } = useAuth();
   const { id } = useParams();
-  const travel = travels.find((t) => t.id === parseInt(id, 10));
+  const travel = userTravels.find((t) => t.id === parseInt(id, 10));
   const [activeTab, setActiveTab] = useState('generalInformation');
   const [isFavorite, setIsFavorite] = useState(false);
   const [comments, setComments] = useState('');
@@ -20,12 +22,17 @@ const TravelDetails = () => {
 
   // Filtrar viagens recomendadas que tenham EXATAMENTE as mesmas categorias da viagem atual
   // e limitar a 5 viagens
-  const recommendedTravels = travels
+  const recommendedTravels = userTravels
     .filter((t) => {
       // Excluir a viagem atual
       if (t.id === travel.id) return false;
       // Verificar se a viagem tem TODAS as categorias da viagem atual
-      return travel.category.every((category) => t.category.includes(category));
+      // Adicionar verificações de segurança para categories
+      if (!travel.categories || !Array.isArray(travel.categories) || 
+          !t.categories || !Array.isArray(t.categories)) {
+        return false;
+      }
+      return travel.categories.every((category) => t.categories.some(tCat => tCat.name === category.name));
     })
     .slice(0, 5); // Limitar a 5 viagens
 
@@ -117,20 +124,20 @@ const TravelDetails = () => {
         <div className="info">
           <div className="infoLeft">
             <h1>{travel.name}</h1>
-            <p><strong>👤 Utilizador:</strong> {travel.user}</p>
+            <p><strong>👤 Utilizador:</strong> {user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Utilizador não disponível'}</p>
             <p>
-              <strong>🌍 País:</strong> {travel.country}
+              <strong>🌍 País:</strong> {travel.countryName}
               <strong> 🏙️ Cidade:</strong> {travel.city}
             </p>
-            <p><strong>🗂️ Categoria:</strong> {travel.category.join(', ')}</p>
-            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.price}€</p>
+            <p><strong>🗂️ Categoria:</strong> {travel.categories && travel.categories.length > 0 ? travel.categories.map(cat => cat.name).join(', ') : 'Nenhuma categoria'}</p>
+            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.cost && travel.cost.total ? travel.cost.total : 'N/A'}€</p>
 
-            {showPriceDetails && (
+            {showPriceDetails && travel.cost && (
               <div className="price-details">
-                <p><strong>Preço da Estadia:</strong> {travel.priceDetails.hotel}€</p>
-                <p><strong>Preço da Alimentação:</strong> {travel.priceDetails.food}€</p>
-                <p><strong>Preço Métodos de Transporte:</strong> {travel.priceDetails.transport}€</p>
-                <p><strong>Extras:</strong> {travel.priceDetails.extras}€</p>
+                <p><strong>Preço da Estadia:</strong> {travel.cost.accommodation || 'N/A'}€</p>
+                <p><strong>Preço da Alimentação:</strong> {travel.cost.food || 'N/A'}€</p>
+                <p><strong>Preço Métodos de Transporte:</strong> {travel.cost.transport || 'N/A'}€</p>
+                <p><strong>Extras:</strong> {travel.cost.extra || 'N/A'}€</p>
               </div>
             )}
 
@@ -140,12 +147,12 @@ const TravelDetails = () => {
             <br />
             <br />
             <p><strong>📅 Datas:</strong> {travel.startDate} a {travel.endDate}</p>
-            <p><strong>📅 Data de Marcação:</strong> {travel.BookingTripPaymentDate}</p>
-            <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+            <p><strong>📅 Data de Marcação:</strong> {travel.bookingDate}</p>
+            <p><strong>Avaliação Geral:</strong> {renderStars(travel.tripRating)}</p>
           </div>
 
           <div className="infoRight">
-            <p><strong>📖 Descrição da Viagem:</strong> <br />{travel.description}</p>
+            <p><strong>📖 Descrição da Viagem:</strong> <br />{travel.tripDescription}</p>
           </div>
         </div>
       </div>
@@ -201,12 +208,12 @@ const TravelDetails = () => {
             <>
               <div className="generalInfoLeft">
                 <h2>{travel.name}</h2>
-                <p><strong>Clima:<br /></strong> {travel.climate}</p>
-                <p><strong>Línguas Utilizadas:<br /></strong> {travel.language}<br /></p>
+                <p><strong>Clima:<br /></strong> {travel.weather}</p>
+                <p><strong>Línguas Utilizadas:<br /></strong> {travel.languagesSpoken && travel.languagesSpoken.length > 0 ? travel.languagesSpoken.map(lang => lang.name).join(', ') : 'Nenhuma língua especificada'}<br /></p>
               </div>
 
               <div className="generalInfoRight">
-                <p><strong>📖 Descrição da Viagem:<br /></strong> {travel.longDescription}</p>
+                <p><strong>📖 Descrição da Viagem:<br /></strong> {travel.tripDescription}</p>
               </div>
               <br />
               <br />
@@ -250,9 +257,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -271,33 +278,45 @@ const TravelDetails = () => {
               <div className="generalInfoLeft">
                 <h2>{travel.name} | Estadia</h2>
                 <br />
-                {travel.accommodations.map((acc, index) => (
+                {travel.accommodations && travel.accommodations.length > 0 ? travel.accommodations.map((acc, index) => (
                   <span key={index}>
                     <strong>🏨 Nome: </strong> {acc.name}<br />
                     <br />
                     <strong>🏨 Tipo de Estadia: </strong> <br />
-                    {acc.type} <br />
+                    {acc.accommodationTypeName} <br />
                     <br />
                     <strong>📖 Regime: </strong> <br />
-                    {acc.regime} <br />
+                    {acc.accommodationBoardName} <br />
                     <br />
                     <strong>📅 Check-in: </strong> <br />
-                    {acc.checkInDate} <br />
+                    {acc.checkIn} <br />
                     <br />
                     <strong>📅 Check-out: </strong> <br />
-                    {acc.checkOutDate} <br />
+                    {acc.checkOut} <br />
+                    <br />
+                    <strong>📅 Data de Marcação: </strong> <br />
+                    {acc.bookingDate} <br />
+                    <br />
+                    <strong>📅 Número de Noites: </strong> <br />
+                    {acc.nrNights} <br />
+                    <br />
+                    <strong>📅 Preço: </strong> <br />
+                    {acc.price} <br />
+                    <br />
+                    <strong>📅 Rating: </strong> <br />
+                    {acc.rating} <br />
                   </span>
-                ))}
+                )) : <p>Nenhuma estadia disponível.</p>}
               </div>
 
               <div className="generalInfoRight">
-                {travel.accommodations.map((acc, index) => (
+                {travel.accommodations && travel.accommodations.length > 0 ? travel.accommodations.map((acc, index) => (
                   <span key={index}>
                     <br />
                     <strong>📖 Descrição da Estadia: </strong> <br />
                     {acc.description} <br />
                   </span>
-                ))}
+                )) : <p>Nenhuma descrição de estadia disponível.</p>}
               </div>
 
               <div className="masonry-gallery">
@@ -338,9 +357,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -358,11 +377,11 @@ const TravelDetails = () => {
               <h2>Alimentação</h2>
               <p>
                 <strong>🍽️ Recomendações de Comida:</strong><br />
-                {travel.foodRecommendations.map((food, index) => (
+                {travel.recommendedFoods && travel.recommendedFoods.length > 0 ? travel.recommendedFoods.map((food, index) => (
                   <span key={index}>
                     {food.name} - {food.description} <br />
                   </span>
-                ))}
+                )) : <span>Nenhuma recomendação de comida disponível.</span>}
               </p>
               <br />
               <br />
@@ -404,9 +423,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -422,30 +441,36 @@ const TravelDetails = () => {
           {activeTab === 'transport' && (
             <div>
               <h2>Métodos de Transporte</h2>
-              <p><strong>✈️ Método de Transporte:<br /></strong> {travel.transport}</p>
-            
+              {travel.tripTransports && travel.tripTransports.length > 0 ? (
+                travel.tripTransports.map((transport, index) => (
+                  <div key={index} className="transport-details">
+                    <p><strong>✈️ Nome do Transporte:</strong> {transport.name}</p>
+                    <p><strong>Descrição:</strong> {transport.description}</p>
+                    <p><strong>Custo:</strong> {transport.cost}€</p>
 
-
-                  <div className="masonry-gallery">
-                    <h2>Galeria de Fotos Métodos de Transporte</h2>
-                    <div className="masonry-grid">
-                     {travel.images_localTransport ? (
-                     travel.images_localTransport.map((image, index) => (
-                     <div className="masonry-item" key={index} onClick={() => openModal(image)}>
-                       <img
-                        src={image instanceof File ? URL.createObjectURL(image) : image}
-                       alt={`Imagem da alimentação ${index + 1}`}
-                        onError={(e) => (e.target.src = '/default-image.jpg')}
-                    />
+                    <div className="masonry-gallery">
+                      <h3>Galeria de Fotos do Transporte</h3>
+                      <div className="masonry-grid">
+                        {transport.images && transport.images.length > 0 ? (
+                          transport.images.map((image, imgIndex) => (
+                            <div className="masonry-item" key={imgIndex} onClick={() => openModal(image)}>
+                              <img
+                                src={image instanceof File ? URL.createObjectURL(image) : image}
+                                alt={`Imagem do transporte ${imgIndex + 1}`}
+                                onError={(e) => (e.target.src = '/default-image.jpg')}
+                              />
+                            </div>
+                          ))
+                        ) : (
+                          <p>Sem imagens disponíveis.</p>
+                        )}
+                      </div>
                     </div>
-                 ))
-                   ) : (
-                       <p>Sem imagens disponíveis.</p>
-                         )}
-                </div>
                   </div>
-
-
+                ))
+              ) : (
+                <p>Nenhum método de transporte disponível.</p>
+              )}
 
                 <div className="recommended-travels">
                   <h2>Viagens Recomendadas</h2>
@@ -465,9 +490,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -485,15 +510,15 @@ const TravelDetails = () => {
               <h2>Pontos de Referência</h2>
               <p>
                 <strong>Pontos de Referência: </strong>
-                {travel.pointsOfInterest.map((poi, index) => (
+                {travel.referencePoints && travel.referencePoints.length > 0 ? travel.referencePoints.map((referencePoint, index) => (
                   <span key={index}>
-                    {poi.name} ({poi.type}) -{' '}
-                    <a href={poi.link} target="_blank" rel="noopener noreferrer">
+                    {referencePoint.name} ({referencePoint.description}) -{' '}
+                    <a href={referencePoint.link} target="_blank" rel="noopener noreferrer">
                       Link
                     </a>
                     <br />
                   </span>
-                ))}
+                )) : <span>Nenhum ponto de referência disponível.</span>}
               </p>
               <br />
               <br />
@@ -536,9 +561,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -555,16 +580,16 @@ const TravelDetails = () => {
           {activeTab === 'itinerary' && (
             <div>
               <h2>Itinerário da Viagem</h2>
-              {travel.itinerary.map((item, index) => (
+              {travel.tripItinerary && travel.tripItinerary.itineraryDays && travel.tripItinerary.itineraryDays.length > 0 ? travel.tripItinerary.itineraryDays.map((item, index) => (
                 <div key={index}>
                   <h4>Dia {item.day}:</h4>
                   <p>
-                    {item.activities.map((activity, activityIndex) => (
-                      <li key={activityIndex}>{activity}</li>
+                    {item.topics.map((topic, topicIndex) => (
+                      <li key={topicIndex}><b>{topic.name}:</b> <br></br>{topic.description}</li>
                     ))}
                   </p>
                 </div>
-              ))}
+              )) : <p>Nenhum itinerário disponível.</p>}
 
 <br></br><br></br>
 {recommendedTravels.length > 0 && (
@@ -587,9 +612,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>
@@ -609,7 +634,11 @@ const TravelDetails = () => {
           {activeTab === 'negativePoints' && (
             <div>
               <h2>Pontos Negativos</h2>
-              <p><strong>Pontos Negativos:</strong> {travel.negativePoints}</p>
+              <p>
+                {travel.negativePoints && travel.negativePoints.length > 0 ? travel.negativePoints.map((np, npIndex) => (
+                  <li key={npIndex}><b>{np.name}:</b> <br></br>{np.description}</li>
+                )) : <span>Nenhum ponto negativo registado.</span>}
+              </p>
 <br></br><br></br>
               {recommendedTravels.length > 0 && (
                 <div className="recommended-travels">
@@ -631,9 +660,9 @@ const TravelDetails = () => {
                           <div className="card">
                             <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
                             <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price}€</p>
+                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
                             <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars)}
+                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
                             </p>
                           </div>
                         </Link>

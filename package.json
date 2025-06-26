@@ -18,7 +18,7 @@
     "axios": "^1.8.3",
     "chart.js": "^4.4.9",
     "font-awesome": "^4.7.0",
-    "framer-motion": "^12.6.0",
+    "framer-motion": "^12.6.2",
     "globe-memories": "file:",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.10.0",

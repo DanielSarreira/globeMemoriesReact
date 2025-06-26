@@ -71,6 +71,7 @@ const Header = () => {
 
   const logout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('user-travels');
     setAuthHeader(null);
   };
 
