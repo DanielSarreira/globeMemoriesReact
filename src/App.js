@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { WeatherProvider } from './context/WeatherContext';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Travels from './pages/Travels';
@@ -114,10 +115,12 @@ const AppWrapper = () => {
 
   return (
     <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        {isLoading ? <SplashScreen /> : <App />}
-      </Router>
+      <WeatherProvider>
+        <Router>
+          <ScrollToTop />
+          {isLoading ? <SplashScreen /> : <App />}
+        </Router>
+      </WeatherProvider>
     </AuthProvider>
   );
 };

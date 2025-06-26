@@ -308,6 +308,9 @@ const Home = () => {
   };
 
   const handleTouchStart = (e) => {
+    if (window.scrollY === 0 && isMobile && displayedTravels.length === sortedTravels.length) {
+      return;
+    }
     if (window.scrollY === 0) {
       touchStartY.current = e.touches[0].clientY;
       setIsPulling(true);
@@ -315,6 +318,10 @@ const Home = () => {
   };
 
   const handleTouchMove = (e) => {
+    if (isMobile && displayedTravels.length === sortedTravels.length) {
+      e.preventDefault();
+      return;
+    }
     if (!isPulling) return;
 
     const currentY = e.touches[0].clientY;
@@ -326,6 +333,11 @@ const Home = () => {
   };
 
   const handleTouchEnd = () => {
+    if (isMobile && displayedTravels.length === sortedTravels.length) {
+      setPullDistance(0);
+      setIsPulling(false);
+      return;
+    }
     if (pullDistance > 100) {
       handleRefreshFeed();
     } else {
@@ -379,6 +391,161 @@ const Home = () => {
       return text.substring(0, maxDescriptionLength) + '...';
     };
 
+    // Layout especial para grelha desktop
+    const isGridDesktop = viewMode === 'grid' && !isMobile;
+
+    if (isGridDesktop) {
+      return (
+        <div key={travel.id} className="feed-item feed-item-grid">
+          <Link to={`/travel/${travel.id}`} className="feed-link" style={{ textDecoration: 'none', color: 'inherit', display: 'block', flex: 1 }}>
+            <div className="feed-user feed-user-grid" onClick={(e) => e.preventDefault()}>
+              <Link to={`/profile/${travel.user}`} onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={travel.userProfilePicture || defaultAvatar}
+                  alt={`${travel.user}'s avatar`}
+                  className="feed-avatar"
+                />
+              </Link>
+              <Link to={`/profile/${travel.user}`} onClick={(e) => e.stopPropagation()}>
+                {travel.user}
+              </Link>
+              <span className="travel-date">Publicado em: {travel.createdAt || 'Data não disponível'}</span>
+            </div>
+            <div className="travel-info-grid">
+              <h1>{travel.name}</h1>
+              <p className="travel-description">{isDescriptionExpanded ? travel.description : truncateDescription(travel.description)}</p>
+              <div className="travel-details-infoadditional">
+                <p><strong>🌍</strong> {travel.country} <strong>🏙️</strong> {travel.city}</p>
+                <p><strong>🏷️</strong> {travel.category.join(', ')}</p>
+                <p><strong>📅</strong> {travel.startDate} <strong>📅</strong> {travel.endDate}</p>
+                <p><strong>💰</strong> {travel.price}€</p>
+                <p><strong></strong> {renderStars(travel.stars)}</p>
+                <span className="feed-details-link" style={{ color: '#1976d2', textDecoration: 'underline', fontWeight: 500, fontSize: '0.98rem' }}>
+                  Ver mais detalhes
+                </span>
+              </div>
+            </div>
+            <div className="travel-gallery-grid">
+              <img
+                src={backgroundImage}
+                alt={`${travel.name} - Imagem ${currentIndex + 1}`}
+                className="feed-image"
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
+              />
+            </div>
+          </Link>
+          <div className="feed-actions-grid">
+            <button
+              className={`like-button ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
+              onClick={(e) => handleLike(travel.id, e)}
+            >
+              <FaHeart /> {travel.likes}
+            </button>
+            <button className="comment-button" onClick={(e) => toggleComments(travel.id, e)}>
+              <FaComment /> {travel.comments.length}
+            </button>
+            <button className="share-button" onClick={(e) => handleShare(travel.id, e)}>
+              <FaShareAlt /> Partilhar
+            </button>
+          </div>
+          {showComments === travel.id && (
+            <div className={`comments-section`} onClick={(e) => e.stopPropagation()}>
+              <div className="comments-list">
+                {travel.comments.length > 0 ? (
+                  <ul>
+                    <AnimatePresence>
+                      {travel.comments.map((comment) => {
+                        const commentKey = `${travel.id}-${comment.id}`;
+                        const isLiked = likedComments.has(commentKey);
+                        return (
+                          <motion.li
+                            key={comment.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="comment-item"
+                          >
+                            <img
+                              src={defaultAvatar}
+                              alt={`${comment.user}'s avatar`}
+                              className="comment-avatar"
+                            />
+                            <div className="comment-content">
+                              <p className="comment-text">
+                                <strong>{comment.user}</strong> {comment.text}
+                              </p>
+                              <div className="comment-meta">
+                                <span className="comment-date">Agora</span>
+                                {isLiked && (
+                                  <span className="comment-likes-count">
+                                    1 Like
+                                  </span>
+                                )}
+                                <button
+                                  className={`comment-like-button ${isLiked ? 'liked' : ''}`}
+                                  onClick={(e) => handleCommentLike(travel.id, comment.id, e)}
+                                >
+                                  <FaHeart />
+                                </button>
+                              </div>
+                            </div>
+                          </motion.li>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </ul>
+                ) : (
+                  <p className="no-comments">Nenhum comentário publicado.</p>
+                )}
+              </div>
+              <div className="add-comment">
+                <img
+                  src={defaultAvatar}
+                  alt={`${user?.username}'s avatar`}
+                  className="comment-avatar"
+                />
+                <textarea
+                  value={newComment}
+                  onChange={(e) => {
+                    if (e.target.value.length <= maxCommentLength) {
+                      setNewComment(e.target.value);
+                    }
+                  }}
+                  onClick={stopPropagation}
+                  onMouseDown={stopPropagation}
+                  onFocus={stopPropagation}
+                  placeholder="Adicione um comentário..."
+                  className="comment-input"
+                  maxLength={maxCommentLength}
+                />
+                <button
+                  onClick={(e) => handleAddComment(travel.id, e)}
+                  className="submit-comment-button"
+                  disabled={commentLoading || !newComment.trim()}
+                >
+                  {commentLoading ? 'A Publicar...' : 'Publicar'}
+                </button>
+              </div>
+              <button onClick={handleCloseComments} className="close-comments-button">
+                Fechar
+              </button>
+              {commentSuccess && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="comment-success"
+                >
+                  {commentSuccess}
+                </motion.p>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div key={travel.id} className={`feed-item ${isMobile ? 'feed-item-mobile' : viewMode === 'grid' ? 'feed-item-grid' : ''}`}>
            <div className="feed-user" onClick={(e) => e.preventDefault()}>
@@ -423,7 +590,7 @@ const Home = () => {
                   <FaComment /> {travel.comments.length}
                 </button>
                 <button className="share-button" onClick={(e) => handleShare(travel.id, e)}>
-                  <FaShareAlt /> Compartilhar
+                  <FaShareAlt /> Partilhar
                 </button>
               </div>
             )}
@@ -649,6 +816,22 @@ const Home = () => {
             <button onClick={handleRefreshFeed} className="refresh-button">
               <FaSync /> Atualizar Feed
             </button>
+            <div className="view-mode-toggle">
+              <button
+                className={`view-mode-btn${viewMode === 'list' ? ' active' : ''}`}
+                title="Ver em Lista"
+                onClick={() => setViewMode('list')}
+              >
+                <FaList size={20} />
+              </button>
+              <button
+                className={`view-mode-btn${viewMode === 'grid' ? ' active' : ''}`}
+                title="Ver em Grelha"
+                onClick={() => setViewMode('grid')}
+              >
+                <FaTh size={20} />
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -6,6 +6,7 @@ import { Chart as ChartJS, LineElement, PointElement, LinearScale, Title, Toolti
 import axios from 'axios';
 import TravelsData from '../data/travelsData';
 import '../styles/styles.css';
+import { useWeather } from '../context/WeatherContext';
 
 
 // Registrar componentes do Chart.js
@@ -251,6 +252,7 @@ const clearOldData = () => {
 };
 
 const WeatherPage = () => {
+  const { weather, setWeather, isLoading, setIsLoading } = useWeather();
   const [weatherData, setWeatherData] = useState(null);
   const [hourlyData, setHourlyData] = useState([]);
   const [forecastData, setForecastData] = useState([]);
@@ -263,7 +265,6 @@ const WeatherPage = () => {
   const [searchHistory, setSearchHistory] = useState(() => {
     return getFromLocalStorage(STORAGE_KEYS.WEATHER_HISTORY);
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedTravel, setSelectedTravel] = useState(null);
   const [showInitialModal, setShowInitialModal] = useState(true);
@@ -516,6 +517,7 @@ const WeatherPage = () => {
           ...cachedData.weatherData,
           icon: iconMap[cachedData.weatherData.icon] || WiCloudy,
         });
+        setWeather({ ...cachedData.weatherData });
         setHourlyData(
           cachedData.hourlyData.map((item) => ({
             ...item,
@@ -596,6 +598,7 @@ const WeatherPage = () => {
             ...weatherData,
             icon: iconMap[weatherInfo.icon] || WiCloudy,
           });
+          setWeather({ ...weatherData });
 
           // Processar dados horários
           const hourlySlice = hourly.time.map((time, index) => {
@@ -671,6 +674,7 @@ const WeatherPage = () => {
             condition: climate.condition,
             icon: iconMap[climate.icon] || WiCloudy,
           });
+          setWeather({ ...weatherData });
           setWeatherError('Usando dados climatológicos estimados devido a erro na API.');
         }
       } else {
@@ -686,6 +690,7 @@ const WeatherPage = () => {
           condition: climate.condition,
           icon: iconMap[climate.icon] || WiCloudy,
         });
+        setWeather({ ...weatherData });
         setWeatherError(`Usando dados climatológicos estimados para ${cityName} (${targetMonth}º mês).`);
       }
 

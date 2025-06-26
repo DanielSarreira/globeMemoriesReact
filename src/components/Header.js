@@ -7,6 +7,7 @@ import TravelsData from '../data/travelsData';
 import '../styles/styles.css';
 import { request, setAuthHeader } from '../axios_helper';
 import axios from 'axios';
+import { useWeather } from '../context/WeatherContext';
 
 // Dados mockados para notificações
 const mockNotifications = [
@@ -30,104 +31,34 @@ const Header = () => {
   const [activePage, setActivePage] = useState('/');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
-  const [weatherData, setWeatherData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [userLocation, setUserLocation] = useState({ city: 'Lisboa', lat: 38.7167, lon: -9.1333 });
+  const { weather, isLoading } = useWeather();
   const location = useLocation();
+  const [isMobile, setIsMobile] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  // Contar o número total de viagens
   useEffect(() => {
     setTotalTravels(TravelsData.length);
   }, []);
 
-  // Carregar localização inicial
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-            city: 'Sua localização',
-          });
-        },
-        (error) => {
-          console.error('Erro de geolocalização:', error);
-        }
-      );
-    }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Mapear código de condição climática
-  const getWeatherDescription = (code) => {
-    const weatherCodes = {
-      0: { description: 'Céu limpo', emoji: '☀️' },
-      1: { description: 'Poucas nuvens', emoji: '🌤️' },
-      2: { description: 'Nuvens dispersas', emoji: '⛅' },
-      3: { description: 'Nublado', emoji: '☁️' },
-      45: { description: 'Nevoeiro', emoji: '🌫️' },
-      48: { description: 'Nevoeiro com geada', emoji: '🌫️' },
-      51: { description: 'Chuva fraca', emoji: '🌦️' },
-      53: { description: 'Chuva moderada', emoji: '🌧️' },
-      55: { description: 'Chuva forte', emoji: '🌧️' },
-      61: { description: 'Chuva', emoji: '🌧️' },
-      63: { description: 'Chuva moderada', emoji: '🌧️' },
-      65: { description: 'Chuva intensa', emoji: '⛈️' },
-      71: { description: 'Neve fraca', emoji: '❄️' },
-      73: { description: 'Neve moderada', emoji: '❄️' },
-      75: { description: 'Neve forte', emoji: '❄️' },
-      80: { description: 'Chuva esporádica', emoji: '🌦️' },
-      81: { description: 'Chuva moderada', emoji: '🌧️' },
-      82: { description: 'Chuva forte', emoji: '⛈️' },
-      95: { description: 'Trovoada', emoji: '⛈️' },
-      96: { description: 'Trovoada com granizo', emoji: '⛈️' },
-    };
-    return weatherCodes[code] || { description: 'Desconhecido', emoji: '❓' };
-  };
-
-  // Buscar dados meteorológicos simplificados
-  const fetchWeather = async (location) => {
-    setIsLoading(true);
-    try {
-      let lat, lon, cityName;
-      if (location.lat && location.lon) {
-        lat = location.lat;
-        lon = location.lon;
-        cityName = location.city || 'Sua localização';
-      } else {
-        const response = await axios.get(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location.city)}&count=1`);
-        const data = response.data;
-        if (!data.results || data.results.length === 0) throw new Error('Cidade não encontrada');
-        lat = data.results[0].latitude;
-        lon = data.results[0].longitude;
-        cityName = data.results[0].name;
-      }
-
-      const weatherResponse = await axios.get(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`
-      );
-      const current = weatherResponse.data.current;
-      const weatherInfo = getWeatherDescription(current.weather_code);
-
-      setWeatherData({
-        city: cityName,
-        temperature: Math.round(current.temperature_2m),
-        emoji: weatherInfo.emoji,
-      });
-    } catch (error) {
-      console.error('Erro ao buscar meteorologia no header:', error);
-      setWeatherData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Atualizar meteorologia ao mudar localização
   useEffect(() => {
-    if (userLocation) {
-      fetchWeather(userLocation);
-    }
-  }, [userLocation]);
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   // Handlers existentes
   const handleUserSearch = (e) => {
@@ -170,28 +101,44 @@ const Header = () => {
     ));
   };
 
-  // Não renderizar o conteúdo do Header nas páginas de Login e Register
   if (location.pathname === '/login' || location.pathname === '/register') {
     return null;
   }
 
+  const handleInstallClick = () => {
+    // Implemente a lógica para instalar o aplicativo
+  };
+
   return (
     <header className="header">
       <div className="header-left">
-        <div className="social-icons">
-          <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-            <FaFacebook />
-          </a>
-          <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-            <FaTwitter />
-          </a>
-          <a href="https://www.instagram.com/globememories" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <FaInstagram />
-          </a>
-          <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-            <FaLinkedin />
-          </a>
-        </div>
+        {isMobile ? (
+          <div className="install-app-container">
+            <button
+              className="install-app-btn"
+              onClick={handleInstallClick}
+              disabled={!deferredPrompt}
+              style={{ opacity: deferredPrompt ? 1 : 0.5, cursor: deferredPrompt ? 'pointer' : 'not-allowed' }}
+            >
+              Instalar App
+            </button>
+          </div>
+        ) : (
+          <div className="social-icons">
+            <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <FaFacebook />
+            </a>
+            <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+              <FaTwitter />
+            </a>
+            <a href="https://www.instagram.com/globememories" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <FaInstagram />
+            </a>
+            <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <FaLinkedin />
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="header-center">
@@ -250,12 +197,12 @@ const Header = () => {
 
             {/* Seção de Meteorologia Simplificada */}
             <div className="weather-section">
-              <Link to="/weather" className="weather-icon" title={weatherData ? `${weatherData.temperature}°C em ${weatherData.city}` : 'Carregando...'}>
+              <Link to="/weather" className="weather-icon" title={weather ? `${weather.temperature}°C` : 'Carregando...'}>
                 <FaSun />
                 {isLoading ? (
                   <span className="weather-temp">...</span>
-                ) : weatherData ? (
-                  <span className="weather-temp">{weatherData.temperature}°C {weatherData.emoji}</span>
+                ) : weather ? (
+                  <span className="weather-temp">{weather.temperature}°C</span>
                 ) : (
                   <span className="weather-temp">Tempo°C</span>
                 )}
