@@ -1,0 +1,75 @@
+/* install-app.css - Estilos para modal de instalação PWA */
+
+/* --------------------------------------- Install App Modal --------------------------------------- */
+.install-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.install-prompt {
+  position: relative;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 300px;
+  width: 90%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.install-prompt-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.install-prompt-close:hover {
+  color: #333;
+}
+
+.install-prompt-icon {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.install-prompt h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.install-prompt p {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.install-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #0066cc;
+  color: #fff;
+  transition: background 0.3s ease;
+}
+
+.install-button:hover {
+  background: #005bb5;
+}

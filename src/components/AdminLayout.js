@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
-import '../styles/styles.css';
+// ...existing code...
 
 const AdminLayout = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);

@@ -1,0 +1,297 @@
+/* pages/user-profile.css */
+
+/* --------------------------------------- User Profile Modal Styles --------------------------------------- */
+
+/* Estilo base para todos os modais */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(37, 36, 36, 0.122);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Estilo para o modal de Seguidores/Seguindo */
+.follow-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.follow-modal-content {
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
+  position: relative;
+}
+
+.follow-modal-content h2 {
+  margin: 0 0 20px;
+  font-size: 24px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  font-weight: 600;
+}
+
+.follow-user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.follow-user-list-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.follow-user-list-item:last-child {
+  border-bottom: none;
+}
+
+.follow-user-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
+  justify-content: center;
+  background: #f5f7fa;
+}
+
+.follow-user-link:hover {
+  background: #f5f7fa;
+  color: #007bff;
+}
+
+.follow-user-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+.follow-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+  transition: border-color 0.3s ease;
+}
+
+.follow-user-link:hover .follow-user-avatar {
+  border-color: #007bff;
+}
+
+.follow-user-link span {
+  font-size: 16px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+}
+
+.follow-modal-close-button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.follow-modal-close-button:hover {
+  background: #e63946;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.follow-modal-close-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.3);
+}
+
+/* Estilo para o modal de Estatísticas */
+.stats-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.stats-modal-content {
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+.stats-modal-content h2 {
+  margin: 0 0 20px;
+  font-size: 24px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  font-weight: 600;
+}
+
+.stats-modal-content h3 {
+  font-size: 18px;
+  color: #555;
+  margin: 15px 0 10px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+}
+
+.stats-modal-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.stats-modal-content li {
+  padding: 8px 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  color: #333;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stats-modal-content li:last-child {
+  border-bottom: none;
+}
+
+.stats-modal-close-button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.stats-modal-close-button:hover {
+  background: #e63946;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats-modal-close-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.3);
+}
+
+/* Estilo para o modal de Pedido de Seguimento */
+.request-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.request-modal-content {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+.request-modal-content h2 {
+  margin: 0 0 15px;
+  font-size: 24px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  font-weight: 600;
+}
+
+.request-modal-content p {
+  font-size: 16px;
+  font-family: 'Poppins', sans-serif;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Profile icon wrapper */
+.profile-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.profile-image {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-dropdown-arrow {
+  position: absolute;
+  bottom: -4px;
+  right: -11px;
+  font-size: 12px;
+  color: var(--primary-color);
+  background-color: #f2f2f2;
+  border-radius: 50%;
+  padding: 2px;
+}
+
+.profile-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}

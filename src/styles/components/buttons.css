@@ -1,0 +1,585 @@
+/* buttons.css - Sistema completo de botões modernos */
+
+/* --------------------------------------- Botões Base --------------------------------------- */
+.button,
+a.button,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%);
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.button::before,
+a.button::before,
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.button:hover,
+a.button:hover,
+button:hover {
+  background: linear-gradient(135deg, var(--primary-color-hover) 0%, var(--primary-dark) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  color: white;
+}
+
+.button:hover::before,
+a.button:hover::before,
+button:hover::before {
+  left: 100%;
+}
+
+.button:active,
+a.button:active,
+button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow);
+}
+
+.button:focus,
+a.button:focus,
+button:focus {
+  outline: none;
+  box-shadow: var(--shadow), 0 0 0 3px var(--primary-light);
+}
+
+.button:disabled,
+button:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* --------------------------------------- Variações de Tamanho --------------------------------------- */
+.button-sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  gap: var(--spacing-xs);
+}
+
+.button-lg {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: 1.125rem;
+  gap: var(--spacing-md);
+}
+
+.button-xl {
+  padding: var(--spacing-xl) calc(var(--spacing-xl) * 1.5);
+  font-size: 1.25rem;
+  gap: var(--spacing-md);
+}
+
+/* --------------------------------------- Variações de Cores --------------------------------------- */
+.button-secondary {
+  background: linear-gradient(135deg, var(--button-secondary) 0%, var(--button-secondary-hover) 100%);
+}
+
+.button-secondary:hover {
+  background: linear-gradient(135deg, var(--button-secondary-hover) 0%, #495057 100%);
+}
+
+.button-success {
+  background: linear-gradient(135deg, var(--button-success) 0%, var(--button-success-hover) 100%);
+}
+
+.button-success:hover {
+  background: linear-gradient(135deg, var(--button-success-hover) 0%, #1e7e34 100%);
+}
+
+.button-danger {
+  background: linear-gradient(135deg, var(--button-danger) 0%, var(--button-danger-hover) 100%);
+}
+
+.button-danger:hover {
+  background: linear-gradient(135deg, var(--button-danger-hover) 0%, #bd2130 100%);
+}
+
+.button-warning {
+  background: linear-gradient(135deg, var(--button-warning) 0%, var(--button-warning-hover) 100%);
+  color: var(--text-dark);
+}
+
+.button-warning:hover {
+  background: linear-gradient(135deg, var(--button-warning-hover) 0%, #d39e00 100%);
+  color: var(--text-dark);
+}
+
+/* --------------------------------------- Variante Laranja (Secundária) --------------------------------------- */
+.button-orange,
+a.button-orange,
+button.button-orange {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-color-hover) 100%);
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.button-orange::before,
+a.button-orange::before,
+button-orange::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.button-orange:hover,
+a.button-orange:hover,
+button-orange:hover {
+  background: linear-gradient(135deg, var(--secondary-color-hover) 0%, var(--secondary-color) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  color: white;
+}
+
+.button-orange:hover::before,
+a.button-orange:hover::before,
+button-orange:hover::before {
+  left: 100%;
+}
+
+.button-orange:active,
+a.button-orange:active,
+button-orange:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow);
+}
+
+.button-orange:focus,
+a.button-orange:focus,
+button-orange:focus {
+  outline: none;
+  box-shadow: var(--shadow), 0 0 0 3px var(--primary-light);
+}
+
+.button-orange:disabled,
+button-orange:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+
+
+
+
+
+/* --------------------------------------- Variações de Tamanho --------------------------------------- */
+.button-sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  gap: var(--spacing-xs);
+}
+
+.button-lg {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: 1.125rem;
+  gap: var(--spacing-md);
+}
+
+.button-xl {
+  padding: var(--spacing-xl) calc(var(--spacing-xl) * 1.5);
+  font-size: 1.25rem;
+  gap: var(--spacing-md);
+}
+
+/* --------------------------------------- Estilos de Botão --------------------------------------- */
+.button-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  box-shadow: none;
+}
+
+.button-outline:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.button-outline.button-secondary {
+  color: var(--button-secondary);
+  border-color: var(--button-secondary);
+}
+
+.button-outline.button-secondary:hover {
+  background: var(--button-secondary);
+  color: white;
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--primary-color);
+  box-shadow: none;
+  border: none;
+}
+
+.button-ghost:hover {
+  background: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.button-link {
+  background: transparent;
+  color: var(--primary-color);
+  box-shadow: none;
+  border: none;
+  text-decoration: underline;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.button-link:hover {
+  background: transparent;
+  color: var(--primary-color-hover);
+  transform: none;
+  box-shadow: none;
+}
+
+/* --------------------------------------- Botões Especiais --------------------------------------- */
+.button-gradient {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.button-gradient:hover {
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 102, 204, 0.3);
+}
+
+.button-rounded {
+  border-radius: var(--border-radius-full);
+}
+
+.button-square {
+  border-radius: 0;
+}
+
+.button-circle {
+  border-radius: var(--border-radius-full);
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  min-width: auto;
+}
+
+.button-circle.button-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.button-circle.button-lg {
+  width: 56px;
+  height: 56px;
+}
+
+/* --------------------------------------- Botões de Feed Interativos --------------------------------------- */
+.feed-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+.like-button,
+.comment-button,
+.share-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-color-hover) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-full);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.like-button::before,
+.comment-button::before,
+.share-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+}
+
+.like-button:hover::before,
+.comment-button:hover::before,
+.share-button:hover::before {
+  width: 100px;
+  height: 100px;
+}
+
+.like-button.liked {
+  background: linear-gradient(135deg, #ff4757 0%, #ff3742 100%);
+  animation: pulse 0.6s ease-in-out;
+}
+
+.like-button:hover,
+.comment-button:hover,
+.share-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.like-button:active,
+.comment-button:active,
+.share-button:active {
+  transform: scale(0.95);
+}
+
+.like-count,
+.comment-count,
+.share-count {
+  font-weight: 600;
+  margin-left: var(--spacing-xs);
+}
+
+/* Botão de comentário específico */
+.comment-button {
+  background: linear-gradient(135deg, var(--info-color) 0%, var(--button-info-hover) 100%);
+}
+
+/* Botão de compartilhar específico */
+.share-button {
+  background: linear-gradient(135deg, var(--success-color) 0%, var(--button-success-hover) 100%);
+}
+
+/* --------------------------------------- Botão Ver Detalhes --------------------------------------- */
+.feed-details-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%);
+  color: white !important;
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  margin-top: var(--spacing-md);
+}
+
+.feed-details-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.feed-details-link:hover {
+  background: linear-gradient(135deg, var(--primary-color-hover) 0%, var(--primary-dark) 100%);
+  transform: translateY(-2px);
+  color: white !important;
+  box-shadow: var(--shadow-lg);
+}
+
+.feed-details-link:hover::before {
+  left: 100%;
+}
+
+/* --------------------------------------- Botão Carregar Mais --------------------------------------- */
+.load-more-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%);
+  color: white !important;
+  border: none;
+  border-radius: var(--border-radius-full);
+  cursor: pointer;
+  margin: var(--spacing-xl) auto;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  min-width: 160px;
+}
+
+.load-more-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.load-more-button:hover {
+  background: linear-gradient(135deg, var(--primary-color-hover) 0%, var(--primary-dark) 100%);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.load-more-button:hover::before {
+  left: 100%;
+}
+
+.load-more-button:active {
+  transform: translateY(-1px);
+}
+
+.load-more-button:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.load-more-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* --------------------------------------- Grupos de Botões --------------------------------------- */
+.button-group {
+  display: flex;
+  gap: 0;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.button-group .button {
+  border-radius: 0;
+  margin: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.button-group .button:first-child {
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+}
+
+.button-group .button:last-child {
+  border-top-right-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+  border-right: none;
+}
+
+/* --------------------------------------- Responsividade --------------------------------------- */
+@media (max-width: 768px) {
+  .button,
+  a.button,
+  button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+  }
+  
+  .button-lg {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 1rem;
+  }
+  
+  .feed-actions {
+    justify-content: center;
+  }
+  
+  .like-button,
+  .comment-button,
+  .share-button {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .button-group .button {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .button-group .button:first-child {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+  }
+  
+  .button-group .button:last-child {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    border-bottom: none;
+  }
+}

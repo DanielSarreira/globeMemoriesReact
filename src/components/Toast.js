@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import '../styles/styles.css';
 
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {

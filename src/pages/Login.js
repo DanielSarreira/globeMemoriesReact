@@ -3,15 +3,33 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
-import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
-import '../styles/styles.css';
+import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
+
+import bgLoginImage from '../images/banners/bg_login.jpg';
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false); // Estado para "Remember Me"
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
+  const [rememberMe, setRememberMe] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetPasswordData, setResetPasswordData] = useState({
+    token: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetPasswordMessage, setResetPasswordMessage] = useState('');
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const { setUser } = useAuth();
   const navigate = useNavigate();
 
@@ -24,6 +42,15 @@ const Login = () => {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    // Carregar dados salvos se "Remember Me" estava ativo
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    const wasRemembered = localStorage.getItem('rememberMe') === 'true';
+    
+    if (savedUsername && wasRemembered) {
+      setFormData(prev => ({ ...prev, username: savedUsername }));
+      setRememberMe(true);
+    }
+
     // Detectar se é iOS
     const userAgent = window.navigator.userAgent;
     const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
@@ -116,116 +143,356 @@ const Login = () => {
     setShowInstallPrompt(false);
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "username") setUsername(value);
-    if (name === "password") setPassword(value);
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
 
-  const onSubmitLogin = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    
+    setErrorMessage('');
+    setSuccessMessage('');
+
     // Validação de campos vazios
-    if (!username.trim()) {
+    if (!formData.username.trim()) {
       setErrorMessage('Por favor, insira o seu nome de utilizador.');
       setSuccessMessage('');
       return;
     }
 
-    if (!password.trim()) {
+    if (!formData.password.trim()) {
       setErrorMessage('Por favor, insira a sua palavra-passe.');
       setSuccessMessage('');
       return;
     }
 
-    onLogin(e, username, password);
+    onLogin(e, formData.username, formData.password);
   };
 
-  const onLogin = (e, username, password) => {
-    e.preventDefault();
+  const onLogin = (event, username, password) => {
+    event.preventDefault();
     request(
       "POST",
       "/login",
       {
         username: username,
-        password: password
+        password: password,
       }
-    ).then(
-      (response) => {
+    )
+      .then((response) => {
         setAuthHeader(response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data));
+        
+        // Implementar funcionalidade "Remember Me"
+        if (rememberMe) {
+          localStorage.setItem('rememberedUsername', username);
+          localStorage.setItem('rememberMe', 'true');
+          // Definir token com expiração mais longa se "Remember Me" estiver ativo
+          localStorage.setItem('rememberMeToken', response.data.token);
+        } else {
+          localStorage.removeItem('rememberedUsername');
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('rememberMeToken');
+        }
+        
         setUser(response.data);
-        setSuccessMessage('Login realizado com sucesso!');
-        setErrorMessage('');
         console.log(response);
         navigate("/");
-      }
-    ).catch(
-      (error) => {
+      })
+      .catch((error) => {
         setAuthHeader(null);
-        setErrorMessage('Credenciais inválidas. Por favor, verifique o seu nome de utilizador e palavra-passe.');
-        setSuccessMessage('');
+        setErrorMessage('Credenciais inválidas. Tente novamente.');
         console.log(error);
-      }
-    );
+      });
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail.trim()) {
+      setForgotPasswordMessage('Por favor, insira o seu nome de utilizador ou email.');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    setForgotPasswordMessage('');
+
+    try {
+      // Simular chamada para o backend (será implementado posteriormente)
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simular delay de rede
+      
+      // Por enquanto, apenas simular sucesso
+      setForgotPasswordMessage('✅ Email de recuperação enviado! Verifique a sua caixa de entrada.');
+      
+      // Em produção, aqui seria feita a chamada real:
+      // const response = await request('POST', '/forgot-password', { email: forgotPasswordEmail });
+      
+      // Após 2 segundos, fechar o modal de forgot password e abrir o modal de reset
+      setTimeout(() => {
+        setShowForgotPasswordModal(false);
+        setForgotPasswordEmail('');
+        setForgotPasswordMessage('');
+        setShowResetPasswordModal(true);
+      }, 2000);
+      
+    } catch (error) {
+      setForgotPasswordMessage('❌ Erro ao enviar email. Tente novamente.');
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
+  const handleResetPasswordChange = (e) => {
+    const { name, value } = e.target;
+    setResetPasswordData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const validatePassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < minLength) {
+      return 'A palavra-passe deve ter pelo menos 8 caracteres.';
+    }
+    if (!hasUpperCase) {
+      return 'A palavra-passe deve conter pelo menos uma letra maiúscula.';
+    }
+    if (!hasLowerCase) {
+      return 'A palavra-passe deve conter pelo menos uma letra minúscula.';
+    }
+    if (!hasNumbers) {
+      return 'A palavra-passe deve conter pelo menos um número.';
+    }
+    if (!hasSpecialChar) {
+      return 'A palavra-passe deve conter pelo menos um carácter especial.';
+    }
+    return null;
+  };
+
+  const handleResetPassword = async () => {
+    setResetPasswordMessage('');
+
+    // Validações
+    if (!resetPasswordData.token.trim()) {
+      setResetPasswordMessage('Código de recuperação é obrigatório.');
+      return;
+    }
+
+    if (!resetPasswordData.newPassword.trim()) {
+      setResetPasswordMessage('Nova palavra-passe é obrigatória.');
+      return;
+    }
+
+    if (!resetPasswordData.confirmPassword.trim()) {
+      setResetPasswordMessage('Confirmação da palavra-passe é obrigatória.');
+      return;
+    }
+
+    // Validar força da palavra-passe
+    const passwordError = validatePassword(resetPasswordData.newPassword);
+    if (passwordError) {
+      setResetPasswordMessage(passwordError);
+      return;
+    }
+
+    // Verificar se as palavras-passe coincidem
+    if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
+      setResetPasswordMessage('As palavras-passe não coincidem.');
+      return;
+    }
+
+    setResetPasswordLoading(true);
+
+    try {
+      // Simular chamada para o backend
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simular sucesso
+      setResetPasswordMessage('✅ Palavra-passe alterada com sucesso!');
+      
+      // Em produção, seria algo como:
+      // await request('POST', '/reset-password', {
+      //   token: resetPasswordData.token,
+      //   newPassword: resetPasswordData.newPassword
+      // });
+      
+      // Fechar modal após 2 segundos e mostrar mensagem de sucesso no login
+      setTimeout(() => {
+        setShowResetPasswordModal(false);
+        setResetPasswordData({ token: '', newPassword: '', confirmPassword: '' });
+        setResetPasswordMessage('');
+        setSuccessMessage('Palavra-passe alterada com sucesso! Faça login com a sua nova palavra-passe.');
+      }, 2000);
+      
+    } catch (error) {
+      setResetPasswordMessage('❌ Erro ao alterar palavra-passe. Tente novamente.');
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
+  const closeForgotPasswordModal = () => {
+    setShowForgotPasswordModal(false);
+    setForgotPasswordEmail('');
+    setForgotPasswordMessage('');
+    setForgotPasswordLoading(false);
+  };
+
+  const closeResetPasswordModal = () => {
+    setShowResetPasswordModal(false);
+    setResetPasswordData({ token: '', newPassword: '', confirmPassword: '' });
+    setResetPasswordMessage('');
+    setResetPasswordLoading(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
   };
 
   return (
-    <div className="login-page">
-      <div className="login-wrapper">
+    <div className="register-page" style={{
+      minHeight: '100vh',
+      width: '',
+      background: `url('${bgLoginImage}') center center/cover no-repeat, linear-gradient(180deg, #004a94 0%, #e68a00 100%)`,
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <div className="register-wrapper">
         {/* Seção Esquerda: Formulário de Login */}
-        <div className="login-container">
+        <div className="register-container">
           <div className="login-header">
-            <h2>Entrar na sua conta</h2>
-            <div className="social-icons">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-                <i className="fab fa-twitter"></i>
-              </a>
-            </div>
+            <h2>Iniciar Sessão:</h2>
           </div>
-          <form onSubmit={onSubmitLogin} className="login-form">
-            <div className="form-groupLR">
-              <label>Utilizador</label>
+          <form onSubmit={handleSubmit} className="register-form">
+            <div className="form-groupRegister">
+              <label>Nome de Utilizador:</label>
               <input
                 type="text"
-                id="username"
                 name="username"
-                placeholder="Username"
-                value={username}
-                onChange={handleInputChange}
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Insira o seu nome de utilizador"
                 required
               />
             </div>
 
-            <div className="form-groupLR">
-              <label>Password</label>
-              <input
-                type="password"
-                id="loginPassword"
-                name="password"
-                placeholder="Password"
-                value={password}
-                onChange={handleInputChange}
-                required
-              />
+            <div className="form-groupRegister">
+              <label>Palavra-passe:</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Insira a sua palavra-passe"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#9ca3af',
+                    fontSize: '1.1rem',
+                    padding: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
 
-            <div className="form-groupLR">
-              <label className="remember-me">
+            <div className="login-options" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              margin: '20px 0',
+              fontSize: '0.95rem'
+            }}>
+              <label style={{
+                color: '#fff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: '500',
+                transition: 'all 0.3s ease',
+                padding: '8px 12px',
+                borderRadius: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(5px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.15)';
+                e.target.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.1)';
+                e.target.style.transform = 'translateY(0)';
+              }}>
                 <input
                   type="checkbox"
-                  className='remember-me-checkbox'
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={e => setRememberMe(e.target.checked)}
+                  style={{ 
+                    accentColor: '#fff', 
+                    width: '16px', 
+                    height: '16px',
+                    cursor: 'pointer'
+                  }}
                 />
-                <span>Lembrar-me</span>
+                <span style={{
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                  fontFamily: 'inherit'
+                }}>💾 Lembrar-me</span>
               </label>
-              <Link to="/forgot-password" className="forgot-password">
-                Esqueceu-se da Password?
-              </Link>
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(true)}
+                style={{
+                  color: '#fff',
+                  background: '#000',
+                  border: '2px solid rgba(0, 0, 0, 0.2)',
+                  borderRadius: '15px',
+                  padding: '5px 10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  fontWeight: '500',
+                  backdropFilter: 'blur(5px)',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                  fontSize: '0.9rem',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#000';
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#000';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                ✨ Esqueceu a palavra-passe?
+              </button>
             </div>
 
             {errorMessage && (
@@ -239,21 +506,515 @@ const Login = () => {
               </div>
             )}
 
-            <button type="submit" className="login-button">Entrar</button>
+            <button type="submit" className="login1-button">Entrar</button>
           </form>
         </div>
 
-        {/* Seção Direita: Texto de Boas-Vindas e Botão de Registro */}
-        <div className="welcome-section">
-          <h3>Bem-vindo (a) à<br></br> Globe Memories!</h3>
+        {/* Seção Direita: Texto de Boas-Vindas */}
+        <div className="welcome-section-login">
+          <h3>Bem-vindo (a) de volta à<br /> Globe Memories!</h3>
           <p className="app-description">
-            A Globe Memories é a sua plataforma para guardar e partilhar as suas memórias de viagem. 
-            Registe-se para começar a criar o seu mapa de memórias pessoal e conectar-se com outros viajantes.
+            Capture e partilhe as suas memórias pelo mundo. Explore destinos únicos,
+            documente as suas aventuras e conecte-se com outros viajantes numa experiência
+            verdadeiramente global.
           </p>
-          <p>Não tem uma conta?</p>
-          <Link to="/register" className="signup-button">Resgistar</Link>
+          <div style={{
+            marginTop: '30px',
+            textAlign: 'center'
+          }}>
+            <p style={{
+              color: '#fff',
+              fontSize: '1.1rem',
+              marginBottom: '15px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            }}>Não tem uma conta?</p>
+            <Link 
+              to="/register" 
+              className="signup-button"
+              style={{
+                display: 'inline-block',
+                padding: '12px 25px',
+                background: 'transparent',
+                color: '#333',
+                textDecoration: 'none',
+                borderRadius: '25px',
+                fontWeight: 'bold',
+                fontSize: '1.05rem',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                border: '2px solid rgba(255,255,255,0.3)',
+                textShadow: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+                e.target.style.background = 'transparent';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+                e.target.style.background = 'transparent';
+              }}
+            >
+              🌍 Registar Agora
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Modal de Redefinir Palavra-passe */}
+      {showResetPasswordModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          backdropFilter: 'blur(5px)'
+        }} onClick={closeResetPasswordModal}>
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            borderRadius: '20px',
+            padding: '40px',
+            width: '90%',
+            maxWidth: '500px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            position: 'relative',
+            textAlign: 'center',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={closeResetPasswordModal}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '20px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#666',
+                transition: 'color 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#333'}
+              onMouseLeave={(e) => e.target.style.color = '#666'}
+            >
+              ✕
+            </button>
+            
+            <div style={{ marginBottom: '30px' }}>
+              <h2 style={{
+                color: '#333',
+                fontSize: '1.8rem',
+                marginBottom: '10px',
+                fontWeight: 'bold'
+              }}>🔐 Redefinir Palavra-passe</h2>
+              <p style={{
+                color: '#666',
+                fontSize: '1rem',
+                lineHeight: '1.5'
+              }}>
+                Insira o código recebido por email e defina a sua nova palavra-passe.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                color: '#333',
+                fontWeight: '500'
+              }}>Código de Recuperação:</label>
+              <input
+                type="text"
+                name="token"
+                value={resetPasswordData.token}
+                onChange={handleResetPasswordChange}
+                placeholder="Insira o código recebido por email"
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  borderRadius: '10px',
+                  border: '2px solid #e0e0e0',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'border-color 0.3s ease',
+                  fontFamily: 'inherit',
+                  textAlign: 'center',
+                  letterSpacing: '2px',
+                  fontWeight: 'bold'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#007bff'}
+                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                color: '#333',
+                fontWeight: '500'
+              }}>Nova Palavra-passe:</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  name="newPassword"
+                  value={resetPasswordData.newPassword}
+                  onChange={handleResetPasswordChange}
+                  placeholder="Insira a sua nova palavra-passe"
+                  style={{
+                    width: '100%',
+                    padding: '15px 45px 15px 15px',
+                    borderRadius: '10px',
+                    border: '2px solid #e0e0e0',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    transition: 'border-color 0.3s ease',
+                    fontFamily: 'inherit'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#007bff'}
+                  onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}
+                >
+                  {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                color: '#333',
+                fontWeight: '500'
+              }}>Confirmar Nova Palavra-passe:</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={resetPasswordData.confirmPassword}
+                  onChange={handleResetPasswordChange}
+                  placeholder="Confirme a sua nova palavra-passe"
+                  style={{
+                    width: '100%',
+                    padding: '15px 45px 15px 15px',
+                    borderRadius: '10px',
+                    border: '2px solid #e0e0e0',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    transition: 'border-color 0.3s ease',
+                    fontFamily: 'inherit'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#007bff'}
+                  onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+            </div>
+
+            {/* Requisitos da palavra-passe */}
+            <div style={{
+              background: '#f8f9fa',
+              borderRadius: '10px',
+              padding: '15px',
+              margin: '15px 0',
+              border: '1px solid #e9ecef',
+              textAlign: 'left'
+            }}>
+              <h4 style={{ 
+                color: '#333', 
+                fontSize: '0.9rem', 
+                marginBottom: '10px'
+              }}>
+                🛡️ Requisitos da Palavra-passe:
+              </h4>
+              <ul style={{ 
+                color: '#666', 
+                fontSize: '0.8rem', 
+                paddingLeft: '20px',
+                margin: 0
+              }}>
+                <li>Pelo menos 8 caracteres</li>
+                <li>Uma letra maiúscula</li>
+                <li>Uma letra minúscula</li>
+                <li>Um número</li>
+                <li>Um carácter especial (!@#$%^&*)</li>
+              </ul>
+            </div>
+
+            {resetPasswordMessage && (
+              <div style={{
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                backgroundColor: resetPasswordMessage.includes('✅') ? '#d4edda' : '#f8d7da',
+                color: resetPasswordMessage.includes('✅') ? '#155724' : '#721c24',
+                border: `1px solid ${resetPasswordMessage.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
+                fontSize: '0.9rem'
+              }}>
+                {resetPasswordMessage}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button
+                onClick={closeResetPasswordModal}
+                style={{
+                  padding: '12px 25px',
+                  borderRadius: '25px',
+                  border: '2px solid #ddd',
+                  background: 'transparent',
+                  color: '#666',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#999';
+                  e.target.style.color = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = '#ddd';
+                  e.target.style.color = '#666';
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={resetPasswordLoading}
+                style={{
+                  padding: '12px 25px',
+                  borderRadius: '25px',
+                  border: 'none',
+                  background: resetPasswordLoading ? '#ccc' : 'linear-gradient(135deg, #007bff, #0056b3)',
+                  color: '#fff',
+                  cursor: resetPasswordLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  if (!resetPasswordLoading) {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(0,123,255,0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!resetPasswordLoading) {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(0,123,255,0.3)';
+                  }
+                }}
+              >
+                {resetPasswordLoading ? '🔄 Alterando...' : '🔐 Alterar Palavra-passe'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Esqueceu a Palavra-passe */}
+      {showForgotPasswordModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(5px)'
+        }} onClick={closeForgotPasswordModal}>
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            borderRadius: '20px',
+            padding: '40px',
+            width: '90%',
+            maxWidth: '450px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            position: 'relative',
+            textAlign: 'center'
+          }} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={closeForgotPasswordModal}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '20px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#666',
+                transition: 'color 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#333'}
+              onMouseLeave={(e) => e.target.style.color = '#666'}
+            >
+              ✕
+            </button>
+            
+            <div style={{ marginBottom: '30px' }}>
+              <h2 style={{
+                color: '#333',
+                fontSize: '1.8rem',
+                marginBottom: '10px',
+                fontWeight: 'bold'
+              }}>🔐 Recuperar Palavra-passe</h2>
+              <p style={{
+                color: '#666',
+                fontSize: '1rem',
+                lineHeight: '1.5'
+              }}>
+                Insira o seu nome de utilizador ou email para receber as instruções de recuperação.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '25px' }}>
+              <input
+                type="text"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                placeholder="Nome de utilizador ou email"
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  borderRadius: '10px',
+                  border: '2px solid #e0e0e0',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'border-color 0.3s ease',
+                  fontFamily: 'inherit'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#007bff'}
+                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              />
+            </div>
+
+            {forgotPasswordMessage && (
+              <div style={{
+                padding: '12px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                backgroundColor: forgotPasswordMessage.includes('✅') ? '#d4edda' : '#f8d7da',
+                color: forgotPasswordMessage.includes('✅') ? '#155724' : '#721c24',
+                border: `1px solid ${forgotPasswordMessage.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
+                fontSize: '0.9rem'
+              }}>
+                {forgotPasswordMessage}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button
+                onClick={closeForgotPasswordModal}
+                style={{
+                  padding: '12px 25px',
+                  borderRadius: '25px',
+                  border: '2px solid #ddd',
+                  background: 'transparent',
+                  color: '#666',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#999';
+                  e.target.style.color = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = '#ddd';
+                  e.target.style.color = '#666';
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleForgotPassword}
+                disabled={forgotPasswordLoading}
+                style={{
+                  padding: '12px 25px',
+                  borderRadius: '25px',
+                  border: 'none',
+                  background: forgotPasswordLoading ? '#ccc' : 'linear-gradient(135deg, #007bff, #0056b3)',
+                  color: '#fff',
+                  cursor: forgotPasswordLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  if (!forgotPasswordLoading) {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(0,123,255,0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!forgotPasswordLoading) {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(0,123,255,0.3)';
+                  }
+                }}
+              >
+                {forgotPasswordLoading ? '📧 Enviando...' : '📧 Enviar Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pop-up de instalação */}
       {showInstallPrompt && (

@@ -5,7 +5,7 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale } from 'chart.js';
 import axios from 'axios';
 import TravelsData from '../data/travelsData';
-import '../styles/styles.css';
+// ...existing code...
 import { useWeather } from '../context/WeatherContext';
 
 

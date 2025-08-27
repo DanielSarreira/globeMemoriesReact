@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../styles/styles.css";
+import "../styles/components/modal.css";
+import "../styles/pages/future-travels.css";
+import "../styles/pages/future-travels-modal.css";
+// ...existing code...
 
 // Componente de Toast para feedback
 const Toast = ({ message, type, onClose }) => {
@@ -20,8 +23,6 @@ const FutureTravels = () => {
     name: "",
     user: "Tiago",
     category: [],
-    country: "",
-    city: "",
     price: "",
     startDate: "",
     endDate: "",
@@ -41,6 +42,7 @@ const FutureTravels = () => {
   const [isTransportModalOpen, setIsTransportModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isTravelTypeModalOpen, setIsTravelTypeModalOpen] = useState(false);
   const [travelToAdd, setTravelToAdd] = useState(null);
   const [previewTravel, setPreviewTravel] = useState(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
@@ -54,9 +56,31 @@ const FutureTravels = () => {
   const [itineraryError, setItineraryError] = useState("");
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [editingChecklistIndex, setEditingChecklistIndex] = useState(null);
+  const [tooltipModal, setTooltipModal] = useState({ show: false, title: "", content: "", position: { x: 0, y: 0 } });
   const [toast, setToast] = useState({ message: "", type: "", show: false });
   const [cities, setCities] = useState([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [aiPreferences, setAiPreferences] = useState({
+    categories: [],
+    budget: '',
+    country: '',
+    city: '',
+    duration: 7,
+    travelStyle: 'balanced'
+  });
+  const [selectedTravelType, setSelectedTravelType] = useState({
+    main: '', // 'single', 'multi'
+    isGroup: false
+  });
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [sentInvites, setSentInvites] = useState([]);
+  const [multiDestinations, setMultiDestinations] = useState([]);
+  const [newDestination, setNewDestination] = useState({ country: "", city: "" });
+  const [selectedDestinationIndex, setSelectedDestinationIndex] = useState(0);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -97,6 +121,7 @@ const FutureTravels = () => {
     { id: "pointsOfInterest", label: "5 - Pontos de Referência" },
     { id: "itinerary", label: "6 - Itinerário" },
     { id: "checklist", label: "7 - Checklist de Viagem" },
+    ...(newTravel.travelType?.isGroup ? [{ id: "group", label: "8 - Grupo de Viagem" }] : [])
   ];
 
   // Lista de cidades por país
@@ -251,6 +276,277 @@ const FutureTravels = () => {
     ]
   };
 
+  // Funções para gerenciar múltiplos destinos
+  const addDestination = () => {
+    if (!newDestination.country || !newDestination.city.trim()) {
+      setToast({ 
+        message: "Por favor, selecione um país e uma cidade!", 
+        type: "error", 
+        show: true 
+      });
+      return;
+    }
+
+    // Verificar se o destino já existe
+    const destinationExists = multiDestinations.some(dest => 
+      dest.country === newDestination.country && dest.city === newDestination.city
+    );
+
+    if (destinationExists) {
+      setToast({ 
+        message: "Este destino já foi adicionado!", 
+        type: "error", 
+        show: true 
+      });
+      return;
+    }
+
+    const destination = {
+      id: Date.now(),
+      country: newDestination.country,
+      city: newDestination.city,
+      accommodations: [{ name: "", type: "" }],
+      pointsOfInterest: [],
+      localTransport: [],
+      coordinates: null,
+      priceDetails: { hotel: "", transport: "", food: "", extras: "" },
+      price: ""
+    };
+
+    setMultiDestinations(prev => [...prev, destination]);
+    setNewDestination({ country: "", city: "" });
+    setToast({ 
+      message: `Destino ${newDestination.city}, ${newDestination.country} adicionado!`, 
+      type: "success", 
+      show: true 
+    });
+  };
+
+  const removeDestination = (destinationId) => {
+    setMultiDestinations(prev => prev.filter(dest => dest.id !== destinationId));
+    // Se removeu o destino selecionado, selecionar o primeiro
+    if (selectedDestinationIndex >= multiDestinations.length - 1) {
+      setSelectedDestinationIndex(0);
+    }
+    setToast({ 
+      message: "Destino removido!", 
+      type: "success", 
+      show: true 
+    });
+  };
+
+  // Função para calcular o preço total de uma viagem de destino único
+  const calculateSingleDestinationTotal = () => {
+    const hotel = parseFloat(newTravel.priceDetails.hotel || 0);
+    const food = parseFloat(newTravel.priceDetails.food || 0);
+    const transport = parseFloat(newTravel.priceDetails.transport || 0);
+    const extras = parseFloat(newTravel.priceDetails.extras || 0);
+    
+    return hotel + food + transport + extras;
+  };
+
+  // Função para atualizar preços de viagem única com cálculo automático do total
+  const updateSingleDestinationPrices = (field, value) => {
+    const updatedPrices = { ...newTravel.priceDetails, [field]: value };
+    const hotel = parseFloat(updatedPrices.hotel || 0);
+    const food = parseFloat(updatedPrices.food || 0);
+    const transport = parseFloat(updatedPrices.transport || 0);
+    const extras = parseFloat(updatedPrices.extras || 0);
+    const total = hotel + food + transport + extras;
+    
+    setNewTravel(prev => ({
+      ...prev,
+      priceDetails: updatedPrices,
+      price: total > 0 ? total.toString() : ""
+    }));
+  };
+
+  // Função para calcular o preço total de um destino
+  const calculateDestinationTotal = (destIndex) => {
+    if (destIndex === "" || !multiDestinations[destIndex]) return 0;
+    
+    const destPrices = multiDestinations[destIndex]?.priceDetails || {};
+    const hotel = parseFloat(destPrices.hotel || 0);
+    const food = parseFloat(destPrices.food || 0);
+    const transport = parseFloat(destPrices.transport || 0);
+    const extras = parseFloat(destPrices.extras || 0);
+    
+    return hotel + food + transport + extras;
+  };
+
+  // Função para atualizar preços de destino com cálculo automático do total
+  const updateDestinationPrices = (destinationId, field, value) => {
+    setMultiDestinations(prev => prev.map(dest => {
+      if (dest.id === destinationId) {
+        const updatedPrices = { ...dest.priceDetails, [field]: value };
+        const hotel = parseFloat(updatedPrices.hotel || 0);
+        const food = parseFloat(updatedPrices.food || 0);
+        const transport = parseFloat(updatedPrices.transport || 0);
+        const extras = parseFloat(updatedPrices.extras || 0);
+        const total = hotel + food + transport + extras;
+        
+        return {
+          ...dest,
+          priceDetails: updatedPrices,
+          price: total > 0 ? total.toString() : ""
+        };
+      }
+      return dest;
+    }));
+  };
+
+  const updateDestinationData = (destinationId, field, value) => {
+    setMultiDestinations(prev => prev.map(dest => 
+      dest.id === destinationId 
+        ? { ...dest, [field]: value }
+        : dest
+    ));
+  };
+
+  const handleDestinationChange = (e) => {
+    const { name, value } = e.target;
+    setNewDestination(prev => ({
+      ...prev,
+      [name]: value,
+      ...(name === 'country' ? { city: '' } : {})
+    }));
+
+    if (name === 'country') {
+      fetchCities(value);
+    }
+  };
+
+  // Funções para gerenciar grupo de viagem
+  const searchUsers = async (searchTerm) => {
+    if (!searchTerm.trim()) {
+      setAvailableUsers([]);
+      return;
+    }
+
+    setIsLoadingUsers(true);
+    try {
+      // Simular busca de utilizadores na app
+      // Em uma implementação real, isso seria uma chamada para a API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Lista fictícia de utilizadores para demonstração
+      const mockUsers = [
+        { id: 1, name: "Ana Silva", email: "ana.silva@email.com", avatar: "/images/avatar1.jpg" },
+        { id: 2, name: "João Santos", email: "joao.santos@email.com", avatar: "/images/avatar2.jpg" },
+        { id: 3, name: "Maria Costa", email: "maria.costa@email.com", avatar: "/images/avatar3.jpg" },
+        { id: 4, name: "Pedro Oliveira", email: "pedro.oliveira@email.com", avatar: "/images/avatar4.jpg" },
+        { id: 5, name: "Sofia Rodrigues", email: "sofia.rodrigues@email.com", avatar: "/images/avatar5.jpg" }
+      ];
+
+      // Filtrar utilizadores baseado no termo de busca
+      const filteredUsers = mockUsers.filter(user => 
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      setAvailableUsers(filteredUsers);
+    } catch (error) {
+      console.error("Erro ao buscar utilizadores:", error);
+      setToast({ 
+        message: "Erro ao buscar utilizadores. Tente novamente.", 
+        type: "error", 
+        show: true 
+      });
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const addMemberToGroup = (user) => {
+    // Verificar se o utilizador já está no grupo
+    if (groupMembers.find(member => member.id === user.id)) {
+      setToast({ 
+        message: "Este utilizador já está no grupo!", 
+        type: "error", 
+        show: true 
+      });
+      return;
+    }
+
+    // Adicionar membro ao grupo com status pendente
+    const newMember = {
+      ...user,
+      status: 'pending', // pending, accepted, rejected
+      invitedAt: new Date().toISOString(),
+      role: 'member' // member, admin
+    };
+
+    setGroupMembers(prev => [...prev, newMember]);
+    setNewMemberEmail("");
+    setAvailableUsers([]);
+    
+    setToast({ 
+      message: `Convite enviado para ${user.name}!`, 
+      type: "success", 
+      show: true 
+    });
+  };
+
+  const removeMemberFromGroup = (memberId) => {
+    setGroupMembers(prev => prev.filter(member => member.id !== memberId));
+    setToast({ 
+      message: "Membro removido do grupo!", 
+      type: "success", 
+      show: true 
+    });
+  };
+
+  const sendGroupInvites = async () => {
+    if (groupMembers.length === 0) {
+      setToast({ 
+        message: "Adicione pelo menos um membro ao grupo antes de enviar convites!", 
+        type: "error", 
+        show: true 
+      });
+      return;
+    }
+
+    try {
+      // Simular envio de convites
+      // Em uma implementação real, isso seria uma chamada para a API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Marcar todos os convites como enviados
+      const invites = groupMembers.map(member => ({
+        ...member,
+        status: 'sent',
+        sentAt: new Date().toISOString()
+      }));
+
+      setSentInvites(invites);
+      
+      setToast({ 
+        message: `${groupMembers.length} convites enviados com sucesso!`, 
+        type: "success", 
+        show: true 
+      });
+    } catch (error) {
+      console.error("Erro ao enviar convites:", error);
+      setToast({ 
+        message: "Erro ao enviar convites. Tente novamente.", 
+        type: "error", 
+        show: true 
+      });
+    }
+  };
+
+  const handleMemberEmailChange = (e) => {
+    const value = e.target.value;
+    setNewMemberEmail(value);
+    
+    // Buscar utilizadores conforme o utilizador digita
+    if (value.length >= 2) {
+      searchUsers(value);
+    } else {
+      setAvailableUsers([]);
+    }
+  };
+
   // Função para obter coordenadas usando Nominatim
   const getCoordinates = async (country, city) => {
     try {
@@ -265,6 +561,24 @@ const FutureTravels = () => {
       console.error(`Erro ao obter coordenadas para ${city}, ${country}:`, error);
     }
     return null;
+  };
+
+  // Funções para o modal de tooltip
+  const showTooltip = (e, title, content) => {
+    const rect = e.target.getBoundingClientRect();
+    setTooltipModal({
+      show: true,
+      title,
+      content,
+      position: {
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10
+      }
+    });
+  };
+
+  const hideTooltip = () => {
+    setTooltipModal({ show: false, title: "", content: "", position: { x: 0, y: 0 } });
   };
 
   useEffect(() => {
@@ -378,7 +692,7 @@ const FutureTravels = () => {
       });
       return false;
     }
-    if (!newTravel.country) {
+    if (newTravel.travelType?.main !== 'multi' && !newTravel.country) {
       setToast({ 
         message: "Por favor, preencha todos os campos marcados com *!", 
         type: "error", 
@@ -386,7 +700,7 @@ const FutureTravels = () => {
       });
       return false;
     }
-    if (!newTravel.city.trim()) {
+    if (newTravel.travelType?.main !== 'multi' && !newTravel.city.trim()) {
       setToast({ 
         message: "Por favor, preencha todos os campos marcados com *!", 
         type: "error", 
@@ -454,150 +768,431 @@ const FutureTravels = () => {
     }
   };
 
-  // Função da IA para planear uma viagem completa
-  const planTripWithAI = async () => {
+  // Função para abrir modal de preferências de IA
+  const planTripWithAI = () => {
+    setIsAIModalOpen(true);
+    setAiPreferences({
+      categories: [],
+      budget: '',
+      country: '',
+      city: '',
+      duration: 7,
+      travelStyle: 'balanced'
+    });
+  };
+
+  // Função para lidar com mudanças nas preferências de IA
+  const handleAIPreferenceChange = (e) => {
+    const { name, value } = e.target;
+    setAiPreferences(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Atualizar cidades quando o país muda
+    if (name === 'country') {
+      fetchCitiesForAI(value);
+      setAiPreferences(prev => ({ ...prev, city: '' }));
+    }
+  };
+
+  // Função para lidar com seleção de categorias na IA
+  const handleAICategoryToggle = (category) => {
+    setAiPreferences(prev => ({
+      ...prev,
+      categories: prev.categories.includes(category)
+        ? prev.categories.filter(c => c !== category)
+        : [...prev.categories, category]
+    }));
+  };
+
+  // Função para buscar cidades para IA
+  const fetchCitiesForAI = async (country) => {
+    if (!country) {
+      setCities([]);
+      return;
+    }
+
+    setIsLoadingCities(true);
+    try {
+      const cityList = citiesByCountry[country] || [];
+      const sortedCities = cityList.sort((a, b) => a.localeCompare(b, 'pt-PT'));
+      setCities(sortedCities);
+    } catch (error) {
+      console.error("Erro ao buscar cidades:", error);
+      setToast({ 
+        message: "Erro ao carregar lista de cidades. Por favor, tente novamente.", 
+        type: "error", 
+        show: true 
+      });
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
+
+  // Função principal para gerar viagem com IA
+  const generateAITrip = async () => {
     setIsLoadingAI(true);
     try {
-      const destinations = [
-        {
-          country: "Portugal",
-          city: "Lisboa",
-          coordinates: [38.7223, -9.1393],
-          hotel: { name: "Pestana Palace Lisboa", pricePerNight: 250, type: "Hotel 5*", link: "https://www.pestanapalacelisboa.com" },
-          food: [
-            { name: "Belcanto", type: "Restaurante 2* Michelin", price: "150€", link: "https://www.belcanto.pt" },
-            { name: "Ramiro", type: "Marisqueira", price: "50€", link: "https://www.cervejariaramiro.pt" },
-            { name: "Time Out Market", type: "Mercado Gastronómico", price: "30€", link: "https://www.timeoutmarket.com/lisboa" }
-          ],
-          transport: [
-            { name: "Metro", price: "1.50€", type: "Transporte Público" },
-            { name: "Elétrico 28", price: "3.00€", type: "Transporte Turístico" },
-            { name: "Táxi", price: "10-20€", type: "Transporte Privado" }
-          ],
-          attractions: [
-            { name: "Torre de Belém", type: "Monumento histórico", price: "6€", link: "https://www.torrebelem.pt" },
-            { name: "Mosteiro dos Jerónimos", type: "Monumento histórico", price: "10€", link: "https://www.mosteirojeronimos.pt" },
-            { name: "Castelo de São Jorge", type: "Castelo", price: "8.50€", link: "https://castelodesaojorge.pt" }
-          ],
-          categories: ["Cidade", "História", "Foodie", "Cultural"]
-        },
-        {
-          country: "França",
-          city: "Paris",
-          coordinates: [48.8566, 2.3522],
-          hotel: { name: "Le Bristol Paris", pricePerNight: 800, type: "Hotel 5*", link: "https://www.oetkercollection.com" },
-          food: [
-            { name: "Le Jules Verne", type: "Restaurante 1* Michelin", price: "200€", link: "https://www.lejulesverne-paris.com" },
-            { name: "L'Ami Louis", type: "Bistrô tradicional", price: "100€", link: "https://www.amilouis.paris" },
-            { name: "Le Marais", type: "Bairro gastronómico", price: "40€", link: "" }
-          ],
-          transport: [
-            { name: "Metro", price: "1.90€", type: "Transporte Público" },
-            { name: "Vélib'", price: "5€/dia", type: "Bicicleta" },
-            { name: "Táxi", price: "15-30€", type: "Transporte Privado" }
-          ],
-          attractions: [
-            { name: "Torre Eiffel", type: "Monumento", price: "26€", link: "https://www.toureiffel.paris" },
-            { name: "Museu do Louvre", type: "Museu", price: "17€", link: "https://www.louvre.fr" },
-            { name: "Palácio de Versalhes", type: "Palácio", price: "20€", link: "https://www.chateauversailles.fr" }
-          ],
-          categories: ["Cidade", "Romântico", "Cultural", "Luxo"]
-        }
-      ];
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const destination = destinations[Math.floor(Math.random() * destinations.length)];
+      const { country, city, categories, budget, duration, travelStyle } = aiPreferences;
+      
+      // Se não há país selecionado, escolher um aleatório
+      const selectedCountry = country || getRandomCountry();
+      const selectedCity = city || getRandomCity(selectedCountry);
+      const selectedCategories = categories.length > 0 ? categories : getRandomCategories();
+      const selectedBudget = budget || 'medio';
+      const selectedDuration = duration || Math.floor(Math.random() * 7) + 3; // 3-10 dias
+      
+      // Gerar datas automáticas
       const today = new Date();
-      const startDate = new Date(today.setDate(today.getDate() + 30)).toISOString().split("T")[0];
-      const tripDuration = Math.floor(Math.random() * 4) + 3; // 3-6 dias
-      const endDate = new Date(today.setDate(today.getDate() + tripDuration)).toISOString().split("T")[0];
-      const bookingDate = new Date(today.setDate(today.getDate() - 15)).toISOString().split("T")[0];
+      const startDate = new Date();
+      startDate.setDate(today.getDate() + 30); // Começar em 30 dias
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + selectedDuration);
 
-      const hotelPrice = destination.hotel.pricePerNight * tripDuration;
-      const transportPrice = Math.floor(tripDuration * 50);
-      const foodPrice = Math.floor(tripDuration * 100);
-      const attractionsPrice = Math.floor(tripDuration * 50);
-      const totalPrice = hotelPrice + transportPrice + foodPrice + attractionsPrice;
-
-      const itinerary = Array.from({ length: tripDuration }, (_, i) => {
-        const day = i + 1;
-        const activities = [];
-        
-        // Manhã
-        const morningAttraction = destination.attractions[Math.floor(Math.random() * destination.attractions.length)];
-        activities.push(`Manhã: Visita a ${morningAttraction.name} (${morningAttraction.price})`);
-        
-        // Almoço
-        const lunchRestaurant = destination.food[Math.floor(Math.random() * destination.food.length)];
-        activities.push(`Almoço: ${lunchRestaurant.name} - ${lunchRestaurant.type} (${lunchRestaurant.price})`);
-        
-        // Tarde
-        const afternoonAttraction = destination.attractions[Math.floor(Math.random() * destination.attractions.length)];
-        activities.push(`Tarde: ${afternoonAttraction.name} (${afternoonAttraction.price})`);
-        
-        // Jantar
-        const dinnerRestaurant = destination.food[Math.floor(Math.random() * destination.food.length)];
-        activities.push(`Jantar: ${dinnerRestaurant.name} - ${dinnerRestaurant.type} (${dinnerRestaurant.price})`);
-
-        return { day, activities };
-      });
-
-      const checklist = [
-        { name: "Passaporte/Visto", checked: false },
-        { name: `Reservar ${destination.hotel.name}`, checked: false },
-        { name: "Comprar seguro de viagem", checked: false },
-        { name: "Reservar voos", checked: false },
-        { name: "Fazer câmbio de moeda", checked: false },
-        { name: "Baixar mapas offline", checked: false },
-        { name: "Verificar adaptadores de tomada", checked: false }
-      ];
-
-      const aiTravel = {
-        name: `Viagem a ${destination.city}`,
-        user: "Tiago",
-        category: destination.categories,
-        country: destination.country,
-        city: destination.city,
-        price: totalPrice.toString(),
-        startDate,
-        endDate,
-        BookingTripPaymentDate: bookingDate,
-        priceDetails: {
-          hotel: hotelPrice.toString(),
-          transport: transportPrice.toString(),
-          food: foodPrice.toString(),
-          extras: attractionsPrice.toString(),
-        },
-        description: `Uma experiência única em ${destination.city}, explorando sua rica cultura, gastronomia local e pontos turísticos imperdíveis! Inclui estadia no ${destination.hotel.name}, visitas aos principais pontos turísticos e experiências gastronômicas exclusivas.`,
-        accommodations: [{ 
-          name: destination.hotel.name, 
-          type: destination.hotel.type,
-          link: destination.hotel.link
-        }],
-        pointsOfInterest: destination.attractions.map(attr => ({
-          name: attr.name,
-          type: attr.type,
-          price: attr.price,
-          link: attr.link
-        })),
-        itinerary,
-        localTransport: destination.transport.map(t => ({
-          name: t.name,
-          type: t.type,
-          price: t.price
-        })),
-        privacy: "public",
-        checklist,
-        coordinates: destination.coordinates,
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       };
 
-      setPreviewTravel(aiTravel);
+      // Gerar pontos de interesse baseados no destino e categorias
+      const pointsOfInterest = generatePointsOfInterest(selectedCity, selectedCountry, selectedCategories);
+      
+      // Gerar acomodações
+      const accommodations = generateAccommodations(selectedCity, selectedCountry, selectedBudget, travelStyle);
+      
+      // Gerar itinerário
+      const itinerary = generateItinerary(selectedDuration, pointsOfInterest, selectedCategories);
+      
+      // Gerar transporte local
+      const localTransport = generateLocalTransport(selectedCity, selectedCountry, travelStyle);
+      
+      // Gerar checklist
+      const checklist = generateTravelChecklist(selectedCountry, selectedCategories, selectedDuration);
+      
+      // Calcular preço estimado
+      const estimatedPrice = calculateEstimatedPrice(selectedBudget, selectedDuration, selectedCountry);
+      
+      // Gerar descrição
+      const description = generateTripDescription(selectedCity, selectedCountry, selectedCategories, selectedDuration);
+
+      // Obter coordenadas
+      const coordinates = await getCoordinates(selectedCountry, selectedCity);
+
+      const generatedTrip = {
+        id: Date.now(),
+        name: `Viagem a ${selectedCity} - Planeada pela Globe Memories`,
+        user: "Tiago",
+        category: selectedCategories,
+        country: selectedCountry,
+        city: selectedCity,
+        price: estimatedPrice.toString(),
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate),
+        BookingTripPaymentDate: "",
+        priceDetails: {
+          hotel: Math.round(estimatedPrice * 0.4).toString(),
+          transport: Math.round(estimatedPrice * 0.3).toString(),
+          food: Math.round(estimatedPrice * 0.2).toString(),
+          extras: Math.round(estimatedPrice * 0.1).toString()
+        },
+        description,
+        accommodations,
+        pointsOfInterest,
+        itinerary,
+        localTransport,
+        privacy: "public",
+        checklist,
+        coordinates,
+        aiGenerated: true
+      };
+      
+      // Definir a viagem gerada para preview
+      setPreviewTravel(generatedTrip);
+      setIsAIModalOpen(false);
       setIsPreviewModalOpen(true);
+      
+      setToast({ 
+        message: "Viagem gerada com sucesso pela IA!", 
+        type: "success", 
+        show: true 
+      });
     } catch (error) {
-      console.error("Erro ao planear viagem:", error);
-      setToast({ message: "Erro ao planear viagem!", type: "error", show: true });
+      console.error("Erro ao gerar viagem com IA:", error);
+      setToast({ 
+        message: "Erro ao gerar viagem. Tente novamente.", 
+        type: "error", 
+        show: true 
+      });
     } finally {
       setIsLoadingAI(false);
     }
+  };
+
+  // Funções auxiliares para seleção aleatória
+  const getRandomCountry = () => {
+    const countries = ["Portugal", "Espanha", "França", "Itália", "Brasil", "United States"];
+    return countries[Math.floor(Math.random() * countries.length)];
+  };
+
+  const getRandomCity = (country) => {
+    const cityList = citiesByCountry[country] || [];
+    if (cityList.length === 0) return "Lisboa";
+    return cityList[Math.floor(Math.random() * Math.min(cityList.length, 10))];
+  };
+
+  const getRandomCategories = () => {
+    const availableCategories = ["Cidade", "Cultural", "História", "Foodie", "Natureza"];
+    const numCategories = Math.floor(Math.random() * 3) + 1; // 1-3 categorias
+    const shuffled = availableCategories.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, numCategories);
+  };
+
+  // Função para gerar pontos de interesse
+  const generatePointsOfInterest = (city, country, categories) => {
+    const pointsDatabase = {
+      "Lisboa": [
+        { name: "Torre de Belém", type: "História", link: "https://www.torrebelem.gov.pt" },
+        { name: "Mosteiro dos Jerónimos", type: "História", link: "https://www.mosteirojeronimos.gov.pt" },
+        { name: "Castelo de São Jorge", type: "História", link: "https://www.castelodesaojorge.pt" },
+        { name: "Bairro Alto", type: "Cidade", link: "" },
+        { name: "Miradouro da Senhora do Monte", type: "Cidade", link: "" },
+        { name: "Oceanário de Lisboa", type: "Família", link: "https://www.oceanario.pt" },
+        { name: "Museu Nacional de Arte Antiga", type: "Cultural", link: "https://www.museudearteantiga.pt" },
+        { name: "Pastéis de Belém", type: "Foodie", link: "https://pasteisdebelem.pt" }
+      ],
+      "Porto": [
+        { name: "Torre dos Clérigos", type: "História", link: "https://www.torredosclerigos.pt" },
+        { name: "Livraria Lello", type: "Cultural", link: "https://www.livrarialello.pt" },
+        { name: "Ribeira do Porto", type: "Cidade", link: "" },
+        { name: "Caves do Vinho do Porto", type: "Foodie", link: "" },
+        { name: "Casa da Música", type: "Cultural", link: "https://www.casadamusica.com" },
+        { name: "Mercado do Bolhão", type: "Foodie", link: "" },
+        { name: "Jardins do Palácio de Cristal", type: "Natureza", link: "" }
+      ],
+      "Paris": [
+        { name: "Torre Eiffel", type: "História", link: "https://www.toureiffel.paris" },
+        { name: "Museu do Louvre", type: "Cultural", link: "https://www.louvre.fr" },
+        { name: "Notre-Dame", type: "História", link: "" },
+        { name: "Champs-Élysées", type: "Cidade", link: "" },
+        { name: "Montmartre", type: "Cultural", link: "" },
+        { name: "Versalhes", type: "História", link: "https://www.chateauversailles.fr" }
+      ],
+      "Roma": [
+        { name: "Coliseu", type: "História", link: "https://www.coopculture.it" },
+        { name: "Vaticano", type: "História", link: "https://www.vatican.va" },
+        { name: "Fontana di Trevi", type: "História", link: "" },
+        { name: "Panteão", type: "História", link: "" },
+        { name: "Fórum Romano", type: "História", link: "" }
+      ],
+      "Barcelona": [
+        { name: "Sagrada Família", type: "História", link: "https://sagradafamilia.org" },
+        { name: "Park Güell", type: "Cultural", link: "https://www.parkguell.cat" },
+        { name: "Las Ramblas", type: "Cidade", link: "" },
+        { name: "Bairro Gótico", type: "História", link: "" },
+        { name: "Casa Batlló", type: "Cultural", link: "https://www.casabatllo.es" }
+      ]
+    };
+
+    let points = pointsDatabase[city] || [
+      { name: `Centro Histórico de ${city}`, type: "História", link: "" },
+      { name: `Museu Principal de ${city}`, type: "Cultural", link: "" },
+      { name: `Mercado Local de ${city}`, type: "Foodie", link: "" },
+      { name: `Parque Central de ${city}`, type: "Natureza", link: "" }
+    ];
+
+    // Filtrar pontos baseados nas categorias selecionadas se houver
+    if (categories.length > 0) {
+      points = points.filter(point =>
+        categories.some(category =>
+          point.type.toLowerCase().includes(category.toLowerCase()) ||
+          category.toLowerCase().includes(point.type.toLowerCase())
+        )
+      );
+      
+      // Se não há pontos após filtrar, usar pontos genéricos
+      if (points.length === 0) {
+        points = [
+          { name: `Atração Principal de ${city}`, type: categories[0], link: "" },
+          { name: `Local ${categories[0]} em ${city}`, type: categories[0], link: "" }
+        ];
+      }
+    }
+
+    return points.slice(0, 6); // Máximo 6 pontos
+  };
+
+  // Função para gerar acomodações
+  const generateAccommodations = (city, country, budget, travelStyle) => {
+    const budgetRanges = {
+      'baixo': { min: 30, max: 80, type: 'Hostel/Pensão' },
+      'medio': { min: 80, max: 150, type: 'Hotel 3-4 estrelas' },
+      'alto': { min: 150, max: 300, type: 'Hotel 4-5 estrelas' },
+      'luxo': { min: 300, max: 600, type: 'Hotel de Luxo' }
+    };
+
+    const range = budgetRanges[budget] || budgetRanges['medio'];
+    const hotelNames = {
+      "Lisboa": "Hotel Tivoli Oriente",
+      "Porto": "Hotel Infante Sagres",
+      "Paris": "Hotel Le Marais",
+      "Roma": "Hotel Artemide",
+      "Barcelona": "Hotel Casa Fuster",
+      "Madrid": "Hotel Villa Real"
+    };
+
+    return [{
+      name: hotelNames[city] || `Hotel ${city} ${range.type}`,
+      type: range.type,
+      link: `https://www.booking.com/searchresults.pt.html?ss=${encodeURIComponent(city)}`
+    }];
+  };
+
+  // Função para gerar itinerário
+  const generateItinerary = (duration, pointsOfInterest, categories) => {
+    const itinerary = [];
+    const activitiesPerDay = Math.max(1, Math.ceil(pointsOfInterest.length / duration));
+    
+    for (let day = 1; day <= duration; day++) {
+      const dayActivities = [];
+      const startIndex = (day - 1) * activitiesPerDay;
+      const endIndex = Math.min(startIndex + activitiesPerDay, pointsOfInterest.length);
+      
+      // Adicionar atividades baseadas nos pontos de interesse
+      for (let i = startIndex; i < endIndex; i++) {
+        if (pointsOfInterest[i]) {
+          dayActivities.push(`Visitar ${pointsOfInterest[i].name}`);
+        }
+      }
+      
+      // Adicionar atividades padrão se necessário
+      if (dayActivities.length === 0) {
+        dayActivities.push("Explorar a cidade");
+        dayActivities.push("Experimentar culinária local");
+      }
+      
+      // Adicionar atividade de descanso/refeição
+      if (day === 1) {
+        dayActivities.unshift("Check-in no hotel");
+      }
+      if (day === duration) {
+        dayActivities.push("Check-out e partida");
+      } else {
+        dayActivities.push("Jantar em restaurante local");
+      }
+      
+      itinerary.push({
+        day: day,
+        activities: dayActivities
+      });
+    }
+    
+    return itinerary;
+  };
+
+  // Função para gerar transporte local
+  const generateLocalTransport = (city, country, travelStyle) => {
+    const transportOptions = {
+      "Lisboa": ["Metro de Lisboa", "Elétrico 28", "Autocarro Carris", "Táxi/Uber"],
+      "Porto": ["Metro do Porto", "Autocarro STCP", "Elétrico histórico", "Táxi/Uber"],
+      "Paris": ["Metro de Paris", "RER", "Autocarro", "Vélib' (bicicletas)"],
+      "Roma": ["Metro de Roma", "Autocarro ATAC", "Elétrico", "Táxi"],
+      "Barcelona": ["Metro de Barcelona", "Autocarro TMB", "Bicicleta Bicing", "Táxi"],
+      "Madrid": ["Metro de Madrid", "Autocarro EMT", "Cercanías", "Táxi"]
+    };
+
+    return transportOptions[city] || ["Transporte público local", "Táxi/Uber", "A pé"];
+  };
+
+  // Função para gerar checklist de viagem
+  const generateTravelChecklist = (country, categories, duration) => {
+    const baseChecklist = [
+      { name: "Passaporte/Documento de identificação", checked: false },
+      { name: "Reservas de hotel confirmadas", checked: false },
+      { name: "Seguro de viagem", checked: false },
+      { name: "Medicamentos pessoais", checked: false },
+      { name: "Carregadores de dispositivos", checked: false },
+      { name: "Roupa adequada ao clima", checked: false },
+      { name: "Dinheiro/Cartões de crédito", checked: false }
+    ];
+
+    // Adicionar itens específicos baseados no país
+    if (country !== "Portugal") {
+      baseChecklist.push({ name: "Adaptador de tomada", checked: false });
+      baseChecklist.push({ name: "Tradutor/App de idiomas", checked: false });
+    }
+
+    // Adicionar itens baseados nas categorias
+    if (categories.includes("Praia")) {
+      baseChecklist.push({ name: "Protetor solar", checked: false });
+      baseChecklist.push({ name: "Fato de banho", checked: false });
+    }
+    
+    if (categories.includes("Montanhas") || categories.includes("Natureza")) {
+      baseChecklist.push({ name: "Calçado de caminhada", checked: false });
+      baseChecklist.push({ name: "Casaco impermeável", checked: false });
+    }
+
+    if (categories.includes("Cultural")) {
+      baseChecklist.push({ name: "Câmara fotográfica", checked: false });
+      baseChecklist.push({ name: "Guia turístico", checked: false });
+    }
+
+    return baseChecklist;
+  };
+
+  // Função para calcular preço estimado
+  const calculateEstimatedPrice = (budget, duration, country) => {
+    const budgetMultipliers = {
+      'baixo': 50,
+      'medio': 100,
+      'alto': 200,
+      'luxo': 400
+    };
+
+    const countryMultipliers = {
+      "Portugal": 1,
+      "Espanha": 1.1,
+      "França": 1.3,
+      "Itália": 1.2,
+      "United States": 1.5,
+      "Brasil": 0.8
+    };
+
+    const basePrice = budgetMultipliers[budget] || 100;
+    const countryMultiplier = countryMultipliers[country] || 1;
+    
+    return Math.round(basePrice * duration * countryMultiplier);
+  };
+
+  // Função para gerar descrição da viagem
+  const generateTripDescription = (city, country, categories, duration) => {
+    const categoryDescriptions = {
+      "História": "explorando monumentos históricos e locais emblemáticos",
+      "Cultural": "descobrindo museus, galerias e tradições locais",
+      "Foodie": "saboreando a deliciosa gastronomia local",
+      "Natureza": "desfrutando de paisagens naturais deslumbrantes",
+      "Praia": "relaxando em praias paradisíacas",
+      "Cidade": "explorando a vida urbana vibrante",
+      "Romântico": "criando momentos especiais e românticos",
+      "Família": "aproveitando atividades para toda a família"
+    };
+
+    const selectedDescriptions = categories
+      .map(cat => categoryDescriptions[cat])
+      .filter(desc => desc)
+      .join(", ");
+
+    return `Descubra ${city}, ${country} numa viagem de ${duration} dias cuidadosamente planeada pela Globe Memories. ` +
+           `Esta experiência única combina ${selectedDescriptions || "as melhores atrações locais"}. ` +
+           `Prepare-se para uma aventura inesquecível com itinerário personalizado, acomodações selecionadas e ` +
+           `recomendações locais autênticas. A Globe Memories criou este plano especialmente para si, ` +
+           `garantindo que cada momento da sua viagem seja memorável.`;
   };
 
   // Função para limpar o localStorage quando necessário
@@ -738,8 +1333,13 @@ const FutureTravels = () => {
       setToast({ message: "O nome do ponto de referência é obrigatório!", type: "error", show: true });
       return;
     }
-    setNewTravel((prev) => {
-      const updatedPoints = [...prev.pointsOfInterest];
+
+    if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+      // Adicionar/editar ponto no destino específico
+      const destIndex = selectedDestinationIndex;
+      const currentPoints = multiDestinations[destIndex]?.pointsOfInterest || [];
+      const updatedPoints = [...currentPoints];
+      
       if (editingPointIndex !== null) {
         updatedPoints[editingPointIndex] = {
           name: newPointOfInterest.name,
@@ -753,8 +1353,29 @@ const FutureTravels = () => {
           link: newPointOfInterest.link,
         });
       }
-      return { ...prev, pointsOfInterest: updatedPoints };
-    });
+      
+      updateDestinationData(multiDestinations[destIndex].id, 'pointsOfInterest', updatedPoints);
+    } else {
+      // Adicionar/editar ponto no destino principal
+      setNewTravel((prev) => {
+        const updatedPoints = [...prev.pointsOfInterest];
+        if (editingPointIndex !== null) {
+          updatedPoints[editingPointIndex] = {
+            name: newPointOfInterest.name,
+            type: newPointOfInterest.type,
+            link: newPointOfInterest.link,
+          };
+        } else {
+          updatedPoints.push({
+            name: newPointOfInterest.name,
+            type: newPointOfInterest.type,
+            link: newPointOfInterest.link,
+          });
+        }
+        return { ...prev, pointsOfInterest: updatedPoints };
+      });
+    }
+
     setNewPointOfInterest({ name: "", type: "", link: "" });
     setEditingPointIndex(null);
     setToast({ message: "Ponto de referência adicionado/editado com sucesso!", type: "success", show: true });
@@ -762,10 +1383,21 @@ const FutureTravels = () => {
 
   const handleDeletePointOfInterest = (e, index) => {
     e.stopPropagation();
-    setNewTravel((prev) => {
-      const updatedPoints = prev.pointsOfInterest.filter((_, i) => i !== index);
-      return { ...prev, pointsOfInterest: updatedPoints };
-    });
+    
+    if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+      // Remover ponto do destino específico
+      const destIndex = selectedDestinationIndex;
+      const currentPoints = multiDestinations[destIndex]?.pointsOfInterest || [];
+      const updatedPoints = currentPoints.filter((_, i) => i !== index);
+      updateDestinationData(multiDestinations[destIndex].id, 'pointsOfInterest', updatedPoints);
+    } else {
+      // Remover ponto do destino principal
+      setNewTravel((prev) => {
+        const updatedPoints = prev.pointsOfInterest.filter((_, i) => i !== index);
+        return { ...prev, pointsOfInterest: updatedPoints };
+      });
+    }
+
     setEditingPointIndex(null);
     setNewPointOfInterest({ name: "", type: "", link: "" });
     setToast({ message: "Ponto de referência removido com sucesso!", type: "success", show: true });
@@ -773,7 +1405,18 @@ const FutureTravels = () => {
 
   const handleEditPointOfInterest = (e, index) => {
     e.stopPropagation();
-    const point = newTravel.pointsOfInterest[index];
+    let point;
+    
+    if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+      // Editar ponto do destino específico
+      const destIndex = selectedDestinationIndex;
+      const currentPoints = multiDestinations[destIndex]?.pointsOfInterest || [];
+      point = currentPoints[index];
+    } else {
+      // Editar ponto do destino principal
+      point = newTravel.pointsOfInterest[index];
+    }
+
     setNewPointOfInterest({
       name: point.name || "",
       type: point.type || "",
@@ -831,7 +1474,7 @@ const FutureTravels = () => {
     const dayToAdd = parseInt(newItineraryDay.day, 10);
 
     if (isNaN(dayToAdd) || dayToAdd < 1 || dayToAdd > totalDays) {
-      setItineraryError(`Por favor, insira um dia entre 1 e ${totalDays}.`);
+      setItineraryError(`Por favor, introduza um dia entre 1 e ${totalDays}.`);
       return;
     }
 
@@ -979,7 +1622,30 @@ const FutureTravels = () => {
     });
 
     // Carregar as cidades do país selecionado
-    fetchCities(travelToEdit.country);
+    if (travelToEdit.country) {
+      fetchCities(travelToEdit.country);
+    }
+
+    // Carregar dados de múltiplos destinos se existirem
+    if (travelToEdit.multiDestinations && Array.isArray(travelToEdit.multiDestinations)) {
+      const updatedDestinations = travelToEdit.multiDestinations.map(dest => ({
+        ...dest,
+        priceDetails: dest.priceDetails || { hotel: "", transport: "", food: "", extras: "" },
+        price: dest.price || ""
+      }));
+      setMultiDestinations(updatedDestinations);
+    }
+
+    // Carregar dados do grupo se existirem
+    if (travelToEdit.groupData) {
+      setGroupMembers(travelToEdit.groupData.members || []);
+      setSentInvites(travelToEdit.groupData.invitesSent || []);
+    }
+
+    // Carregar tipo de viagem
+    if (travelToEdit.travelType) {
+      setSelectedTravelType(travelToEdit.travelType);
+    }
 
     setEditTravelId(id);
     setIsEditing(true);
@@ -1064,11 +1730,11 @@ const FutureTravels = () => {
       setToast({ message: "O nome da viagem é obrigatório!", type: "error", show: true });
       return;
     }
-    if (!newTravel.country) {
+    if (newTravel.travelType?.main !== 'multi' && !newTravel.country) {
       setToast({ message: "O país é obrigatório!", type: "error", show: true });
       return;
     }
-    if (!newTravel.city.trim()) {
+    if (newTravel.travelType?.main !== 'multi' && !newTravel.city.trim()) {
       setToast({ message: "A cidade é obrigatória!", type: "error", show: true });
       return;
     }
@@ -1106,10 +1772,15 @@ const FutureTravels = () => {
     }
 
     try {
-      const coordinates = await getCoordinates(newTravel.country, newTravel.city);
-      if (!coordinates) {
-        setToast({ message: "Não foi possível obter coordenadas para a localização!", type: "error", show: true });
-        return;
+      let coordinates = null;
+      
+      // Só obter coordenadas se for viagem de destino único
+      if (newTravel.travelType?.main !== 'multi') {
+        coordinates = await getCoordinates(newTravel.country, newTravel.city);
+        if (!coordinates) {
+          setToast({ message: "Não foi possível obter coordenadas para a localização!", type: "error", show: true });
+          return;
+        }
       }
 
       const updatedTravel = {
@@ -1124,6 +1795,15 @@ const FutureTravels = () => {
         checklist: newTravel.checklist || [],
         coordinates,
         category: newTravel.category || [],
+        // Adicionar dados do grupo se for viagem em grupo
+        groupData: newTravel.travelType?.isGroup ? {
+          members: groupMembers,
+          admin: "Tiago",
+          invitesSent: sentInvites,
+          createdAt: new Date().toISOString()
+        } : null,
+        // Adicionar dados de múltiplos destinos se for viagem multidestino
+        multiDestinations: newTravel.travelType?.main === 'multi' ? multiDestinations : null
       };
 
       // Primeiro, atualizar o estado local
@@ -1138,28 +1818,30 @@ const FutureTravels = () => {
       // Depois, salvar no localStorage
       localStorage.setItem("futureTravels", JSON.stringify(updatedFutureTravels));
 
-      // Atualizar futureTrips
-      const futureTrips = JSON.parse(localStorage.getItem("futureTrips")) || [];
-      const newFutureTrip = {
-        coordinates,
-        label: newTravel.name,
-        country: newTravel.country,
-        city: newTravel.city,
-      };
+      // Atualizar futureTrips apenas para viagens de destino único
+      if (newTravel.travelType?.main !== 'multi') {
+        const futureTrips = JSON.parse(localStorage.getItem("futureTrips")) || [];
+        const newFutureTrip = {
+          coordinates,
+          label: newTravel.name,
+          country: newTravel.country,
+          city: newTravel.city,
+        };
 
-      if (isEditing) {
-        const tripIndex = futureTrips.findIndex(
-          (trip) => trip.city === newTravel.city && trip.country === newTravel.country
-        );
-        if (tripIndex !== -1) {
-          futureTrips[tripIndex] = newFutureTrip;
+        if (isEditing) {
+          const tripIndex = futureTrips.findIndex(
+            (trip) => trip.city === newTravel.city && trip.country === newTravel.country
+          );
+          if (tripIndex !== -1) {
+            futureTrips[tripIndex] = newFutureTrip;
+          } else {
+            futureTrips.push(newFutureTrip);
+          }
         } else {
           futureTrips.push(newFutureTrip);
         }
-      } else {
-        futureTrips.push(newFutureTrip);
+        localStorage.setItem("futureTrips", JSON.stringify(futureTrips));
       }
-      localStorage.setItem("futureTrips", JSON.stringify(futureTrips));
 
       // Mostrar mensagem de sucesso
       setToast({ 
@@ -1214,6 +1896,7 @@ const FutureTravels = () => {
     setEditTravelId(null);
     setIsCategoryModalOpen(false);
     setIsTransportModalOpen(false);
+    setIsTravelTypeModalOpen(false);
     setNewPointOfInterest({ name: "", type: "", link: "" });
     setEditingPointIndex(null);
     setNewItineraryDay({ day: "", activities: [""] });
@@ -1222,13 +1905,58 @@ const FutureTravels = () => {
     setEditingChecklistIndex(null);
     setItineraryError("");
     setActiveTab("generalInfo");
+    // Limpar dados do grupo
+    setGroupMembers([]);
+    setNewMemberEmail("");
+    setAvailableUsers([]);
+    setSentInvites([]);
+    setSelectedTravelType({ main: '', isGroup: false });
+    // Limpar dados de múltiplos destinos
+    setMultiDestinations([]);
+    setNewDestination({ country: "", city: "" });
+    setSelectedDestinationIndex(0);
   };
 
   const openModal = () => {
-    // Obtém a data atual
-    const today = new Date();
+    // Abrir primeiro o modal de seleção de tipo de viagem
+    setSelectedTravelType({ main: '', isGroup: false });
+    setIsTravelTypeModalOpen(true);
+  };
+
+  // Função para lidar com seleção de tipo de viagem
+  const handleTravelTypeSelection = (type) => {
+    if (type === 'group') {
+      // Se é viagem em grupo, toggle o estado mas mantém a seleção principal
+      setSelectedTravelType(prev => ({
+        ...prev,
+        isGroup: !prev.isGroup
+      }));
+    } else {
+      // Se é tipo principal (single ou multi), atualiza o tipo principal
+      setSelectedTravelType(prev => ({
+        ...prev,
+        main: prev.main === type ? '' : type // Toggle se for o mesmo tipo
+      }));
+    }
+  };
+
+  // Função para confirmar seleção de tipo e abrir modal principal
+  const confirmTravelType = () => {
+    if (!selectedTravelType.main) {
+      setToast({ 
+        message: "Por favor, selecione pelo menos um tipo de viagem (Destino Único ou Multidestino)!", 
+        type: "error", 
+        show: true 
+      });
+      return;
+    }
+    openMainModal();
+  };
+
+  const openMainModal = () => {
     
     // Define a data de início como amanhã
+    const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(today.getDate() + 1);
     
@@ -1265,7 +1993,9 @@ const FutureTravels = () => {
       privacy: "public",
       checklist: [],
       coordinates: null,
+      travelType: selectedTravelType // Adicionar o tipo de viagem selecionado
     });
+    setIsTravelTypeModalOpen(false);
     setIsModalOpen(true);
     setActiveTab("generalInfo");
   };
@@ -1288,6 +2018,8 @@ const FutureTravels = () => {
       setActiveTab(tabs[currentIndex - 1].id);
     }
   };
+
+
 
   // Função para buscar cidades de um país
   const fetchCities = async (country) => {
@@ -1344,24 +2076,365 @@ const FutureTravels = () => {
       <br />
       <br />
 
-      {isModalOpen && (
+      {/* Modal de Seleção de Tipo de Viagem */}
+      {isTravelTypeModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{  }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-actions">
-              <h2>Comece hoje a planear a sua viagem de sonho com a Globe Memories!</h2>
-              <label>🔒 Privacidade da Viagem:</label>
-              <select
-                name="privacy"
-                value={newTravel.privacy}
-                onChange={handleChange}
-                style={{ width: "15%", padding: "12px", borderRadius: "8px" }}
-              >
-                <option value="public">Pública</option>
-                <option value="followers">Somente para Seguidores</option>
-                <option value="private">Privada</option>
-              </select>
-
+              <h2 style={{ 
+                textAlign: "center", 
+                color: "#2c3e50", 
+                marginBottom: "10px",
+                fontSize: "30px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "100%",
+              }}>
+                ✈️ Que tipo de viagem pretende planear?
+              </h2>
+              <p style={{ 
+                textAlign: "center", 
+                color: "#666",
+                marginBottom: "30px",
+                fontSize: "16px"
+              }}>
+                
+              </p>
+              
               <div className="modal-header-buttons">
+                <button 
+                  type="button-danger" 
+                  onClick={() => setIsTravelTypeModalOpen(false)} 
+                  className="button-danger"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button-success"
+                  onClick={confirmTravelType}
+                  className="button-success"
+                  disabled={!selectedTravelType.main}
+                >
+                  Continuar
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: "20px 0" }}>
+              {/* Tipos principais de viagem */}
+              <div style={{ marginBottom: "30px" }}>
+                <h3 style={{ 
+                  color: "#2c3e50", 
+                  marginBottom: "20px",
+                  fontSize: "18px",
+                  textAlign: "center"
+                }}>
+                  Tipo de Destino:
+                </h3>
+                
+                <div style={{ 
+                  display: "flex", 
+                  gap: "20px", 
+                  justifyContent: "center",
+                  flexWrap: "wrap"
+                }}>
+                  {/* Viagem a Destino Único */}
+                  <div 
+                    onClick={() => handleTravelTypeSelection('single')}
+                    style={{
+                      flex: 1,
+                      minWidth: "250px",
+                      maxWidth: "300px",
+                      padding: "20px",
+                      border: selectedTravelType.main === 'single' ? "3px solid #007bff" : "2px solid #e9ecef",
+                      borderRadius: "12px",
+                      backgroundColor: selectedTravelType.main === 'single' ? "#f0f8ff" : "#fff",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      textAlign: "center",
+                      boxShadow: selectedTravelType.main === 'single' ? "0 4px 12px rgba(0,123,255,0.2)" : "0 2px 6px rgba(0,0,0,0.1)"
+                    }}
+                  >
+                    <div style={{ fontSize: "40px", marginBottom: "15px" }}>🎯</div>
+                    <h4 style={{ 
+                      color: selectedTravelType.main === 'single' ? "#007bff" : "#2c3e50",
+                      marginBottom: "10px",
+                      fontSize: "18px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px"
+                    }}>
+                      Viagem a Destino Único
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "16px", 
+                          height: "16px", 
+                          backgroundColor: "#007bff", 
+                          color: "white", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "11px", 
+                          lineHeight: "16px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "🎯 Viagem a Destino Único", "Viagem focada numa única localização (um país e uma cidade). Ideal para escapadas de fim de semana, city breaks, ou quando pretende explorar profundamente um local específico.")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </h4>
+                    <p style={{ 
+                      color: "#666", 
+                      fontSize: "14px", 
+                      lineHeight: "1.5",
+                      margin: 0
+                    }}>
+                      Uma viagem focada num único país e uma única cidade. 
+                    </p>
+                    <div style={{ 
+                      marginTop: "15px", 
+                      fontSize: "12px", 
+                      color: "#888" 
+                    }}>
+                      Exemplo: Portugal - Lisboa
+                    </div>
+                  </div>
+
+                  {/* Viagem Multidestino */}
+                  <div 
+                    onClick={() => handleTravelTypeSelection('multi')}
+                    style={{
+                      flex: 1,
+                      minWidth: "250px",
+                      maxWidth: "300px",
+                      padding: "20px",
+                      border: selectedTravelType.main === 'multi' ? "3px solid #007bff" : "2px solid #e9ecef",
+                      borderRadius: "12px",
+                      backgroundColor: selectedTravelType.main === 'multi' ? "#f0f8ff" : "#fff",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      textAlign: "center",
+                      boxShadow: selectedTravelType.main === 'multi' ? "0 4px 12px rgba(0,123,255,0.2)" : "0 2px 6px rgba(0,0,0,0.1)"
+                    }}
+                  >
+                    <div style={{ fontSize: "40px", marginBottom: "15px" }}>🗺️</div>
+                    <h4 style={{ 
+                      color: selectedTravelType.main === 'multi' ? "#007bff" : "#2c3e50",
+                      marginBottom: "10px",
+                      fontSize: "18px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px"
+                    }}>
+                      Viagem Multidestino
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "16px", 
+                          height: "16px", 
+                          backgroundColor: "#007bff", 
+                          color: "white", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "11px", 
+                          lineHeight: "16px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "🗺️ Viagem Multidestino", "Viagem que inclui múltiplos países e/ou cidades. Perfeita para roteiros complexos, viagens longas, tours pela Europa, ou quando pretende visitar vários locais numa única viagem.")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </h4>
+                    <p style={{ 
+                      color: "#666", 
+                      fontSize: "14px", 
+                      lineHeight: "1.5",
+                      margin: 0
+                    }}>
+                      Uma viagem que inclui vários países e/ou várias cidades. 
+                    </p>
+                    <div style={{ 
+                      marginTop: "15px", 
+                      fontSize: "12px", 
+                      color: "#888" 
+                    }}>
+                      Exemplo: Portugal - Lisboa, Coimbra / Espanha - Madrid
+                    </div>
+                  </div>
+                </div>
+
+                {/* Checkbox para Viagem em Grupo no modal de seleção de tipo */}
+                <div style={{ display: "flex", justifyContent: "center", marginTop: "20px", alignItems: "center", gap: "10px" }}>
+                  <input
+                    type="checkbox"
+                    id="modalGroupCheckbox"
+                    checked={selectedTravelType.isGroup || false}
+                    onChange={(e) => setSelectedTravelType(prev => ({ ...prev, isGroup: e.target.checked }))}
+                    style={{ transform: "scale(1.15)" }}
+                  />
+                  <label htmlFor="modalGroupCheckbox" style={{ fontSize: "15px", fontWeight: "600", color: "#2c3e50", cursor: "pointer" }}>
+                    👥 Viagem em Grupo
+                  </label>
+                  <span
+                    className="tooltip-icon"
+                    onMouseEnter={(e) => showTooltip(e, "Viagem em Grupo", "Ative se esta viagem for feita por um grupo. Irá permitir convidar membros e partilhar detalhes do grupo.")}
+                    onMouseLeave={hideTooltip}
+                  >
+                    ?
+                  </span>
+                </div>
+              </div>
+
+           
+
+              {/* Resumo da seleção */}
+              {(selectedTravelType.main || selectedTravelType.isGroup) && (
+                <div style={{ 
+                  marginTop: "30px", 
+                  padding: "20px", 
+                  backgroundColor: "#f8f9fa", 
+                  borderRadius: "8px",
+                  border: "1px solid #e9ecef"
+                }}>
+                  <h4 style={{ 
+                    color: "#2c3e50", 
+                    marginBottom: "10px",
+                    textAlign: "center"
+                  }}>
+                    A Sua Seleção:
+                  </h4>
+                  <div style={{ 
+                    textAlign: "center", 
+                    color: "#666" 
+                  }}>
+                    {selectedTravelType.main === 'single' && "✅ Viagem a Destino Único"}
+                    {selectedTravelType.main === 'multi' && "✅ Viagem Multidestino"}
+                    {selectedTravelType.isGroup && (
+                      <div style={{ marginTop: "5px" }}>
+                        ✅ Viagem em Grupo
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="travel-planner-modal">
+          <div className="travel-planner-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-actions">
+              <h2>
+                ✈️ {isEditing ? "Editar Viagem Futura" : "Planear Nova Viagem"}
+              </h2>
+              
+              <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "15px", flexWrap: "wrap", justifyContent: "center" }}>
+                {/* Privacidade da Viagem */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <label style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: "5px",
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}>
+                    🔒 Privacidade:
+                    <span 
+                      className="tooltip-icon"
+                      onMouseEnter={(e) => showTooltip(e, "Privacidade da Viagem", "Defina quem pode ver a sua viagem: Pública (todos), Somente para Seguidores (apenas quem o segue), ou Privada (apenas você).")}
+                      onMouseLeave={hideTooltip}
+                    >
+                      ?
+                    </span>
+                  </label>
+                  <select
+                    name="privacy"
+                    value={newTravel.privacy}
+                    onChange={handleChange}
+                    style={{ 
+                      padding: "8px 12px", 
+                      borderRadius: "8px", 
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                      background: "#fff"
+                    }}
+                  >
+                    <option value="public">Pública</option>
+                    <option value="followers">Somente para Seguidores</option>
+                    <option value="private">Privada</option>
+                  </select>
+                </div>
+
+                {/* Checkbox Viagem em Grupo */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <input
+                    type="checkbox"
+                    id="groupTravelCheckbox"
+                    checked={newTravel.travelType?.isGroup || false}
+                    onChange={(e) => {
+                      setNewTravel(prev => ({
+                        ...prev,
+                        travelType: {
+                          ...prev.travelType,
+                          isGroup: e.target.checked
+                        }
+                      }));
+                    }}
+                    style={{ transform: "scale(1.2)" }}
+                  />
+                  <label 
+                    htmlFor="groupTravelCheckbox" 
+                    style={{ 
+                      cursor: "pointer", 
+                      fontSize: "14px", 
+                      fontWeight: "500",
+                      color: "#2c3e50"
+                    }}
+                  >
+                    👥 Viagem em Grupo
+                  </label>
+                  
+                  {/* Dropdown para alternar entre Destino Único e Multidestino */}
+                  {(newTravel.travelType?.main === 'single' || newTravel.travelType?.main === 'multi') && (
+                    <div style={{ marginLeft: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <label style={{ fontWeight: "600", color: "#007bff", fontSize: "14px" }}>
+                        Tipo:
+                      </label>
+                      <select
+                        value={newTravel.travelType.main}
+                        onChange={e => {
+                          const value = e.target.value;
+                          setNewTravel(prev => ({
+                            ...prev,
+                            travelType: {
+                              ...prev.travelType,
+                              main: value
+                            }
+                          }));
+                        }}
+                        style={{ 
+                          padding: "6px 12px", 
+                          borderRadius: "8px", 
+                          border: "2px solid #007bff", 
+                          fontWeight: "600", 
+                          color: "#007bff", 
+                          background: "#f0f8ff", 
+                          fontSize: "14px",
+                          boxShadow: "0 2px 8px rgba(0,123,255,0.08)" 
+                        }}
+                      >
+                        <option value="single">🎯 Destino Único</option>
+                        <option value="multi">🗺️ Multidestino</option>
+                      </select>
+
+         <div className="modal-header-buttons">
                 <button 
                   type="button" 
                   onClick={() => {
@@ -1369,18 +2442,25 @@ const FutureTravels = () => {
                     resetForm();
                     window.history.replaceState({}, document.title, location.pathname);
                   }} 
-                  className="secondary-action-button"
+                  className="button-danger"
                 >
-                  Fechar
+                  ✕ Fechar
                 </button>
                 <button
                   type="button"
                   onClick={handleAddTravel}
-                  className="primary-action-button"
+                  className="button-success"
                 >
-                  {isEditing ? "Guardar Alterações" : "Adicionar Viagem Futura"}
+                  {isEditing ? "💾 Guardar Alterações" : "✅ Adicionar Viagem Futura"}
                 </button>
               </div>
+
+                    </div>
+                  )}
+                </div>
+              </div>
+
+     
             </div>
 
             <div className="tab-nav">
@@ -1395,246 +2475,1070 @@ const FutureTravels = () => {
               ))}
             </div>
 
-            <form onSubmit={(e) => e.preventDefault()}>
-              {activeTab === "generalInfo" && (
-                <div>
-                  <div className="RightPosition">
-                    <label>📖 Descrição Curta do Plano:</label>
-                    <textarea
-                      name="description"
-                      value={newTravel.description}
-                      onChange={handleChange}
-                      rows="4"
-                      placeholder="Insira uma descrição curta do plano"
-                      style={{ width: "100%" }}
-                    />
-                  </div>
+            <div className="modal-form-content">
+              <form onSubmit={(e) => e.preventDefault()}>
+                {activeTab === "generalInfo" && (
+                  <div>
+                    {/* Mostrar tipo de viagem selecionado - versão discreta */}
+                
 
-                  <div className="LeftPosition">
-                    <label>Nome da Viagem Futura: *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newTravel.name}
-                      onChange={handleChange}
-                      required
-                      placeholder="Ex.: Viagem futura a Paris"
-                    />
-
-                    <br />
-                    <br />
-
-                    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", width: "100%" }}>
-                      <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>🌍 País: *</label>
-                        <select name="country" value={newTravel.country} onChange={handleChange} required>
-                          <option value="">Selecione um país</option>
-                          <option value="Portugal">Portugal</option>
-                          <option value="Brasil">Brasil</option>
-                          <option value="United States">Estados Unidos</option>
-                          <option value="Espanha">Espanha</option>
-                          <option value="França">França</option>
-                          <option value="Itália">Itália</option>
-                        </select>
-                      </div>
-                      <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>🏙️ Cidade: *</label>
-                        {isLoadingCities ? (
-                          <div>Carregando cidades...</div>
-                        ) : (
-                          <>
-                            <select
-                              name="city"
-                              value={newTravel.city}
-                              onChange={handleChange}
-                              required
-                              disabled={!newTravel.country}
-                              style={{ width: "100%" }}
+                    <div className="form-row">
+                      <div className="">
+                        <div>
+                          <label>
+                            ✏️ Nome da Viagem Futura: *
+                            <span 
+                              className="tooltip-icon"
+                              onMouseEnter={(e) => showTooltip(e, "✏️ Nome da Viagem", "Dê um nome único e descritivo à sua viagem. Ex: 'Escapadinha a Paris', 'Lua de Mel na Tailândia', 'Aventura na Islândia'.")}
+                              onMouseLeave={hideTooltip}
                             >
-                              <option value="">Selecione uma cidade</option>
-                              {cities.map((city) => (
-                                <option key={city} value={city}>
-                                  {city}
-                                </option>
-                              ))}
-                            </select>
-                            {cities.length > 0 && (
-                              <small style={{ color: "#666", marginTop: "5px", display: "block" }}>
-                                {cities.length} cidades encontradas
-                              </small>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
+                              ?
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={newTravel.name}
+                            onChange={handleChange}
+                            required
+                            placeholder="Ex.: Viagem futura a Paris"
+                          />
+                        </div>
 
-                    <br />
-                    <br />
+                  
 
-                    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", width: "100%" }}>
-                      <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>📅 Data de Início: *</label>
-                        <input
-                          type="date"
-                          name="startDate"
-                          value={newTravel.startDate}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                      <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>📅 Data de Fim: *</label>
-                        <input
-                          type="date"
-                          name="endDate"
-                          value={newTravel.endDate}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <br />
-                    <br />
-
-                    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", width: "100%" }}>
-                      <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>📅 Data Prevista de Reserva/Pagamento:</label>
-                        <input
-                          type="date"
-                          name="BookingTripPaymentDate"
-                          value={newTravel.BookingTripPaymentDate}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-
-                    <br />
-                    <br />
-
-                    <label>🗂️ Categorias Selecionadas:</label>
-                    <p>
-                      {newTravel.category.length > 0 ? newTravel.category.join(", ") : "Nenhuma categoria selecionada"}
-                    </p>
-                    <button type="button" onClick={() => setIsCategoryModalOpen(true)}>
-                      Selecionar Categorias
-                    </button>
-
-                    {isCategoryModalOpen && (
-                      <div className="modal-overlay" onClick={() => setIsCategoryModalOpen(false)}>
-                        <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
-                          <h3>🗂️ Selecionar Categorias</h3>
-                          <div className="category-list">
-                            {categories.map((cat) => (
-                              <div key={cat}>
-                                <input
-                                  type="checkbox"
-                                  name="category"
-                                  value={cat}
-                                  checked={newTravel.category.includes(cat)}
-                                  onChange={handleChange}
-                                />
-                                <label>{cat}</label>
+                        {/* Seção para destino único */}
+                        {newTravel.travelType?.main === 'single' && (
+                          <div className="destination-section">
+                            <h4>
+                              🎯 Destino da Viagem (Viagem a Destino Único)
+                            </h4>
+                            
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                              <div>
+                                <label>
+                                  🌍 País: *
+                                  <span 
+                                    className="tooltip-icon"
+                                    onMouseEnter={(e) => showTooltip(e, "🌍 País", "Selecione o país de destino da sua viagem. Este será o local principal onde irá passar as suas férias.")}
+                                    onMouseLeave={hideTooltip}
+                                  >
+                                    ?
+                                  </span>
+                                </label>
+                                <select
+                                  name="country"
+                                  value={newTravel.country}
+                                  onChange={(e) => {
+                                    handleChange(e);
+                                    fetchCities(e.target.value);
+                                  }}
+                                  required
+                                >
+                                  <option value="">Selecione um país</option>
+                                  <option value="Portugal">Portugal</option>
+                                  <option value="Brasil">Brasil</option>
+                                  <option value="United States">Estados Unidos</option>
+                                  <option value="Espanha">Espanha</option>
+                                  <option value="França">França</option>
+                                  <option value="Itália">Itália</option>
+                                  <option value="Alemanha">Alemanha</option>
+                                  <option value="Reino Unido">Reino Unido</option>
+                                  <option value="Japão">Japão</option>
+                                  <option value="Tailândia">Tailândia</option>
+                                  <option value="Grécia">Grécia</option>
+                                  <option value="Turquia">Turquia</option>
+                                </select>
                               </div>
-                            ))}
+                              <div>
+                                <label>
+                                  🏙️ Cidade: *
+                                  <span 
+                                    className="tooltip-icon"
+                                    onMouseEnter={(e) => showTooltip(e, "🏙️ Cidade", "Escolha a cidade específica dentro do país selecionado. Esta será a sua base principal durante a viagem.")}
+                                    onMouseLeave={hideTooltip}
+                                  >
+                                    ?
+                                  </span>
+                                </label>
+                                <select
+                                  name="city"
+                                  value={newTravel.city}
+                                  onChange={handleChange}
+                                  required
+                                  disabled={!newTravel.country}
+                                >
+                                  <option value="">Selecione uma cidade</option>
+                                  {cities.map((city) => (
+                                    <option key={city} value={city}>
+                                      {city}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
                           </div>
-                          <div className="modal-actions">
-                            <button type="button" onClick={() => setIsCategoryModalOpen(false)}>
-                              Fechar
-                            </button>
+                        )}
+
+                        {/* Seção para múltiplos destinos */}
+                        {newTravel.travelType?.main === 'multi' && (
+                          <div className="multi-destination-section">
+                            <h4>
+                              🗺️ Destinos da Viagem (Viagem Multidestino)
+                              <span 
+                                className="tooltip-icon"
+                                onMouseEnter={(e) => showTooltip(e, "🗺️ Destinos da Viagem Multidestino", "Adicione múltiplos países e cidades à sua viagem. Pode criar um roteiro complexo visitando vários locais numa única viagem.")}
+                                onMouseLeave={hideTooltip}
+                              >
+                                ?
+                              </span>
+                            </h4>
+                            
+                            {/* Formulário para adicionar novos destinos */}
+                            <div style={{ 
+                              display: "grid", 
+                              gridTemplateColumns: "1fr 1fr auto", 
+                              gap: "15px", 
+                              marginBottom: "20px",
+                              alignItems: "end"
+                            }}>
+                              <div>
+                                <label>
+                                  🌍 País:
+                                  <span 
+                                    className="tooltip-icon"
+                                    onMouseEnter={(e) => showTooltip(e, "🌍 País (Multidestino)", "Selecione um país para adicionar ao seu roteiro multidestino. Pode adicionar múltiplos países para criar uma viagem completa.")}
+                                    onMouseLeave={hideTooltip}
+                                  >
+                                    ?
+                                  </span>
+                                </label>
+                                <select 
+                                  name="country" 
+                                  value={newDestination.country} 
+                                  onChange={handleDestinationChange}
+                                >
+                                  <option value="">Selecione um país</option>
+                                  <option value="Portugal">Portugal</option>
+                                  <option value="Brasil">Brasil</option>
+                                  <option value="United States">Estados Unidos</option>
+                                  <option value="Espanha">Espanha</option>
+                                  <option value="França">França</option>
+                                  <option value="Itália">Itália</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label>
+                                  🏙️ Cidade:
+                                  <span 
+                                    className="tooltip-icon"
+                                    onMouseEnter={(e) => showTooltip(e, "🏙️ Cidade (Multidestino)", "Escolha a cidade específica dentro do país selecionado. Pode adicionar múltiplas cidades para criar um roteiro detalhado.")}
+                                    onMouseLeave={hideTooltip}
+                                  >
+                                    ?
+                                  </span>
+                                </label>
+                                <select
+                                  name="city"
+                                  value={newDestination.city}
+                                  onChange={handleDestinationChange}
+                                  disabled={!newDestination.country}
+                                >
+                                  <option value="">Selecione uma cidade</option>
+                                  {cities.map((city) => (
+                                    <option key={city} value={city}>
+                                      {city}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <button
+                                  type="button"
+                                  onClick={addDestination}
+                                  disabled={!newDestination.country || !newDestination.city}
+                                  style={{
+                                    padding: "12px 16px",
+                                    backgroundColor: "#28a745",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    fontWeight: "600"
+                                  }}
+                                >
+                                  + Adicionar
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Lista de destinos adicionados */}
+                            {multiDestinations.length > 0 && (
+                              <div>
+                                <h5 style={{ color: "#2c3e50", marginBottom: "15px" }}>
+                                  Destinos Adicionados ({multiDestinations.length}):
+                                </h5>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                  {multiDestinations.map((destination, index) => (
+                                    <div 
+                                      key={destination.id}
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        padding: "12px",
+                                        backgroundColor: "#fff",
+                                        borderRadius: "8px",
+                                        border: "1px solid #ddd",
+                                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                                      }}
+                                    >
+                                      <span style={{ fontWeight: "600" }}>
+                                        📍 {destination.city}, {destination.country}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeDestination(destination.id)}
+                                        style={{
+                                          padding: "6px 12px",
+                                          backgroundColor: "#dc3545",
+                                          color: "#fff",
+                                          border: "none",
+                                          borderRadius: "6px",
+                                          cursor: "pointer",
+                                          fontSize: "14px"
+                                        }}
+                                      >
+                                        🗑️ Remover
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
+                        )}
+
+                        <div>
+                          <label>
+                            🗂️ Categorias Selecionadas:
+                            <span 
+                              className="tooltip-icon"
+                              onMouseEnter={(e) => showTooltip(e, "🗂️ Categorias", "Escolha as categorias que melhor descrevem o tipo de viagem e atividades que pretende realizar.")}
+                              onMouseLeave={hideTooltip}
+                            >
+                              ?
+                            </span>
+                          </label>
+                          <p style={{ 
+                            padding: "12px 16px", 
+                            backgroundColor: "#f8f9fa", 
+                            borderRadius: "8px",
+                            border: "1px solid #e9ecef",
+                            margin: "8px 0 12px 0"
+                          }}>
+                            {newTravel.category.length > 0 ? newTravel.category.join(", ") : "Nenhuma categoria selecionada"}
+                          </p>
+                          <button 
+                            type="button" 
+                            onClick={() => setIsCategoryModalOpen(true)}
+                            style={{
+                              backgroundColor: "#6f42c1",
+                              color: "white"
+                            }}
+                          >
+                            🏷️ Selecionar Categorias
+                          </button>
                         </div>
                       </div>
-                    )}
 
-                    <br />
-                    <br />
+                      <div className="">
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                          <div>
+                            <label>
+                              📅 Data de Início: *
+                              <span 
+                                className="tooltip-icon"
+                                onMouseEnter={(e) => showTooltip(e, "📅 Data de Início", "Selecione o dia em que pretende iniciar a sua viagem. Deve ser pelo menos um dia depois de hoje.")}
+                                onMouseLeave={hideTooltip}
+                              >
+                                ?
+                              </span>
+                            </label>
+                            <input
+                              type="date"
+                              name="startDate"
+                              value={newTravel.startDate}
+                              onChange={handleChange}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label>
+                              📅 Data de Fim: *
+                              <span 
+                                className="tooltip-icon"
+                                onMouseEnter={(e) => showTooltip(e, "📅 Data de Fim", "Selecione o último dia da sua viagem. Deve ser posterior à data de início.")}
+                                onMouseLeave={hideTooltip}
+                              >
+                                ?
+                              </span>
+                            </label>
+                            <input
+                              type="date"
+                              name="endDate"
+                              value={newTravel.endDate}
+                              onChange={handleChange}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <br></br>
+                          <label>
+                            📅 Data Prevista de Reserva/Pagamento:
+                            <span 
+                              className="tooltip-icon"
+                              onMouseEnter={(e) => showTooltip(e, "📅 Data de Reserva", "Defina uma data limite para fazer as reservas e pagamentos da viagem (hotéis, voos, atividades).")}
+                              onMouseLeave={hideTooltip}
+                            >
+                              ?
+                            </span>
+                          </label>
+                          <input
+                            type="date"
+                            name="BookingTripPaymentDate"
+                            value={newTravel.BookingTripPaymentDate}
+                            onChange={handleChange}
+                          />
+                        </div>
+
+                        <div>
+                          <br></br>
+                          <label>
+                            📖 Descrição Curta do Plano:
+                            <span 
+                              className="tooltip-icon"
+                              onMouseEnter={(e) => showTooltip(e, "📖 Descrição do Plano", "Escreva uma breve descrição dos principais objetivos e atividades planeadas para esta viagem.")}
+                              onMouseLeave={hideTooltip}
+                            >
+                              ?
+                            </span>
+                          </label>
+                          <textarea
+                            name="description"
+                            value={newTravel.description}
+                            onChange={handleChange}
+                            rows="4"
+                            placeholder="Introduza uma descrição curta do plano"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Modal de Categorias */}
+                {isCategoryModalOpen && (
+                  <div className="modal-overlay" onClick={() => setIsCategoryModalOpen(false)}>
+                    <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
+                      <h3>🗂️ Selecionar Categorias</h3>
+                      <div className="category-list">
+                        {categories.map((cat) => {
+                          const isSelected = newTravel.category.includes(cat);
+                          return (
+                            <label
+                              key={cat}
+                              className="category-item"
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '10px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                border: isSelected ? '2px solid #007bff' : '1px solid #e9ecef',
+                                background: isSelected ? '#f0f8ff' : 'transparent',
+                                marginBottom: '8px'
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                name="category"
+                                value={cat}
+                                checked={isSelected}
+                                onChange={handleChange}
+                                style={{ transform: 'scale(1.05)' }}
+                              />
+                              <span style={{ margin: 0 }}>{cat}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <div className="modal-actions">
+                        <button type="button" onClick={() => setIsCategoryModalOpen(false)}>
+                          Fechar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               {activeTab === "prices" && (
                 <div>
-                  <div className="RightPosition">
-                    <br />
-                    <h2>Estes preços são uma estimativa do que pretendo gastar na viagem!</h2>
-                  </div>
+                 
+
+                  {/* Seção visual para destino único */}
+                  {newTravel.travelType?.main === 'single' && (
+                    <div style={{ 
+                      marginBottom: "25px", 
+                      padding: "15px", 
+                      backgroundColor: "#f0f8ff", 
+                      borderRadius: "8px",
+                      border: "1px solid #007bff"
+                    }}>
+                      <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold", color: "#007bff" }}>
+                        💰 Preços Estimados - Viagem a Destino Único:
+                      </label>
+                      <div style={{ 
+                        padding: "10px", 
+                        backgroundColor: "#e8f4fd", 
+                        borderRadius: "5px",
+                        textAlign: "center"
+                      }}>
+                        <strong>📍 Destino: </strong>
+                        {newTravel.city && newTravel.country 
+                          ? `${newTravel.city}, ${newTravel.country}`
+                          : "Selecione o destino na aba 'Informações Gerais'"
+                        }
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Seletor de destino para viagens multidestino */}
+                  {newTravel.travelType?.main === 'multi' && multiDestinations.length > 0 && (
+                    <div style={{ 
+                      marginBottom: "25px", 
+                      padding: "15px", 
+                      backgroundColor: "#f8f9fa", 
+                      borderRadius: "8px" 
+                    }}>
+                      <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
+                        🎯 Selecione o destino para adicionar preços estimados:
+                      </label>
+                      <select
+                        value={selectedDestinationIndex}
+                        onChange={(e) => setSelectedDestinationIndex(parseInt(e.target.value))}
+                        style={{ width: "100%", padding: "10px", borderRadius: "5px" }}
+                      >
+                        <option value="">Selecione um destino</option>
+                        {multiDestinations.map((dest, index) => (
+                          <option key={dest.id} value={index}>
+                            Destino {index + 1}: {dest.city}, {dest.country}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Mostrar para qual destino está adicionando preços */}
+                  {newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "" && (
+                    <div style={{ 
+                      marginBottom: "15px", 
+                      padding: "10px", 
+                      backgroundColor: "#e8f4fd", 
+                      borderRadius: "5px",
+                      textAlign: "center"
+                    }}>
+                      <strong>💰 A adicionar preços para: </strong>
+                      {multiDestinations[selectedDestinationIndex]?.city && multiDestinations[selectedDestinationIndex]?.country
+                        ? `${multiDestinations[selectedDestinationIndex].city}, ${multiDestinations[selectedDestinationIndex].country}`
+                        : "Destino não definido - Adicione país e cidade primeiro"
+                      }
+                    </div>
+                  )}
+
                   <div className="LeftPosition">
                     <label>💰 Preços Estimados da Viagem:</label>
                     <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", width: "100%" }}>
                       <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>💰 Estadia (€):</label>
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                          🏨 Estadia (€):
+                          <span 
+                            style={{ 
+                              display: "inline-block",
+                              width: "16px", 
+                              height: "16px", 
+                              backgroundColor: "#28a745", 
+                              color: "white", 
+                              borderRadius: "50%", 
+                              textAlign: "center", 
+                              fontSize: "12px", 
+                              lineHeight: "16px", 
+                              cursor: "help"
+                            }}
+                            onMouseEnter={(e) => showTooltip(e, "🏨 Estadia", "Introduza o custo estimado do alojamento (hotéis, pousadas, Airbnb, etc.). Inclua todas as noites da viagem.")}
+                            onMouseLeave={hideTooltip}
+                          >
+                            ?
+                          </span>
+                        </label>
                         <input
                           type="number"
                           name="priceDetails.hotel"
-                          value={newTravel.priceDetails.hotel}
-                          onChange={handleChange}
+                          value={
+                            newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "" 
+                              ? multiDestinations[selectedDestinationIndex]?.priceDetails?.hotel || ""
+                              : newTravel.priceDetails.hotel
+                          }
+                          onChange={(e) => {
+                            if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+                              const destIndex = selectedDestinationIndex;
+                              const destination = multiDestinations[destIndex];
+                              
+                              // Verificar se país e cidade estão definidos
+                              if (!destination?.country || !destination?.city) {
+                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                return;
+                              }
+                              
+                              updateDestinationPrices(destination.id, 'hotel', e.target.value);
+                            } else {
+                              updateSingleDestinationPrices('hotel', e.target.value);
+                            }
+                          }}
                         />
                       </div>
                       <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>💰 Alimentação (€):</label>
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                          🍽️ Alimentação (€):
+                          <span 
+                            style={{ 
+                              display: "inline-block",
+                              width: "16px", 
+                              height: "16px", 
+                              backgroundColor: "#28a745", 
+                              color: "white", 
+                              borderRadius: "50%", 
+                              textAlign: "center", 
+                              fontSize: "12px", 
+                              lineHeight: "16px", 
+                              cursor: "help"
+                            }}
+                            onMouseEnter={(e) => showTooltip(e, "🍽️ Alimentação", "Estimativa de gastos com refeições (restaurantes, lanches, compras no supermercado). Considere todas as refeições da viagem.")}
+                            onMouseLeave={hideTooltip}
+                          >
+                            ?
+                          </span>
+                        </label>
                         <input
                           type="number"
                           name="priceDetails.food"
-                          value={newTravel.priceDetails.food}
-                          onChange={handleChange}
+                          value={
+                            newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "" 
+                              ? multiDestinations[selectedDestinationIndex]?.priceDetails?.food || ""
+                              : newTravel.priceDetails.food
+                          }
+                          onChange={(e) => {
+                            if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+                              const destIndex = selectedDestinationIndex;
+                              const destination = multiDestinations[destIndex];
+                              
+                              // Verificar se país e cidade estão definidos
+                              if (!destination?.country || !destination?.city) {
+                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                return;
+                              }
+                              
+                              updateDestinationPrices(destination.id, 'food', e.target.value);
+                            } else {
+                              updateSingleDestinationPrices('food', e.target.value);
+                            }
+                          }}
                         />
                       </div>
                     </div>
 
                     <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", width: "100%" }}>
                       <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>💰 Transportes (€):</label>
+                       <br></br>
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                          🚗 Transportes (€):
+                          <span 
+                            style={{ 
+                              display: "inline-block",
+                              width: "16px", 
+                              height: "16px", 
+                              backgroundColor: "#28a745", 
+                              color: "white", 
+                              borderRadius: "50%", 
+                              textAlign: "center", 
+                              fontSize: "12px", 
+                              lineHeight: "16px", 
+                              cursor: "help"
+                            }}
+                            onMouseEnter={(e) => showTooltip(e, "🚗 Transportes", "Custos de transporte (avião, comboio, autocarros, táxis, aluguer de carro, combustível, etc.). Inclua ida e volta.")}
+                            onMouseLeave={hideTooltip}
+                          >
+                            ?
+                          </span>
+                        </label>
                         <input
                           type="number"
                           name="priceDetails.transport"
-                          value={newTravel.priceDetails.transport}
-                          onChange={handleChange}
+                          value={
+                            newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "" 
+                              ? multiDestinations[selectedDestinationIndex]?.priceDetails?.transport || ""
+                              : newTravel.priceDetails.transport
+                          }
+                          onChange={(e) => {
+                            if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+                              const destIndex = selectedDestinationIndex;
+                              const destination = multiDestinations[destIndex];
+                              
+                              // Verificar se país e cidade estão definidos
+                              if (!destination?.country || !destination?.city) {
+                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                return;
+                              }
+                              
+                              updateDestinationPrices(destination.id, 'transport', e.target.value);
+                            } else {
+                              updateSingleDestinationPrices('transport', e.target.value);
+                            }
+                          }}
                         />
                       </div>
                       <div style={{ flex: 1, minWidth: "200px" }}>
-                        <label>💰 Extras (€):</label>
+                        <br></br>
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                          🎁 Extras (€):
+                          <span 
+                            style={{ 
+                              display: "inline-block",
+                              width: "16px", 
+                              height: "16px", 
+                              backgroundColor: "#28a745", 
+                              color: "white", 
+                              borderRadius: "50%", 
+                              textAlign: "center", 
+                              fontSize: "12px", 
+                              lineHeight: "16px", 
+                              cursor: "help"
+                            }}
+                            onMouseEnter={(e) => showTooltip(e, "🎁 Extras", "Gastos adicionais como souvenirs, atividades extras, entradas em museus, passeios, compras, seguros de viagem, etc.")}
+                            onMouseLeave={hideTooltip}
+                          >
+                            ?
+                          </span>
+                        </label>
                         <input
                           type="number"
                           name="priceDetails.extras"
-                          value={newTravel.priceDetails.extras}
-                          onChange={handleChange}
+                          value={
+                            newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "" 
+                              ? multiDestinations[selectedDestinationIndex]?.priceDetails?.extras || ""
+                              : newTravel.priceDetails.extras
+                          }
+                          onChange={(e) => {
+                            if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+                              const destIndex = selectedDestinationIndex;
+                              const destination = multiDestinations[destIndex];
+                              
+                              // Verificar se país e cidade estão definidos
+                              if (!destination?.country || !destination?.city) {
+                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                return;
+                              }
+                              
+                              updateDestinationPrices(destination.id, 'extras', e.target.value);
+                            } else {
+                              updateSingleDestinationPrices('extras', e.target.value);
+                            }
+                          }}
                         />
                       </div>
                     </div>
-                    <div className="RightPositionY">
-                      <label>💰 Preço Total Estimado (€):</label>
-                      <input
-                        type="number"
-                        name="price"
-                        value={newTravel.price}
-                        onChange={handleChange}
-                      />
-                    </div>
+
+                    {/* Preço total do destino selecionado para multidestino */}
+                    {newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "" && (
+                      <div className="RightPositionY">
+                        <br></br>
+                        <label>💰 Preço Total Estimado do Destino (€):</label>
+                        <input
+                          type="number"
+                          value={calculateDestinationTotal(selectedDestinationIndex) || ""}
+                          readOnly
+                          style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                        />
+                      </div>
+                    )}
+<br></br>
+                    {/* Preço total para destino único */}
+                    {newTravel.travelType?.main !== 'multi' && (
+                      <div className="RightPositionY">
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                          💰 Preço Total Estimado (€):
+                          <span 
+                            style={{ 
+                              display: "inline-block",
+                              width: "16px", 
+                              height: "16px", 
+                              backgroundColor: "#28a745", 
+                              color: "white", 
+                              borderRadius: "50%", 
+                              textAlign: "center", 
+                              fontSize: "12px", 
+                              lineHeight: "16px", 
+                              cursor: "help"
+                            }}
+                            onMouseEnter={(e) => showTooltip(e, "💰 Preço Total", "Este valor é calculado automaticamente somando os custos de estadia, alimentação, transportes e extras.")}
+                            onMouseLeave={hideTooltip}
+                          >
+                            ?
+                          </span>
+                        </label>
+                        
+                        <input
+                          type="number"
+                          value={calculateSingleDestinationTotal() || ""}
+                          readOnly
+                          style={{ backgroundColor: "#f8f9fa", cursor: "not-allowed" }}
+                        />
+
+                        <br></br><br></br><br></br>
+                      </div>
+                      
+                    )}
+
                   </div>
+                  <div className="RightPosition">
+                    {/* Resumo visual para viagem de destino único */}
+                    {newTravel.travelType?.main === 'single' && newTravel.city && newTravel.country && (
+                      <div style={{ 
+                        marginTop: "30px", 
+                        padding: "20px", 
+                        backgroundColor: "#f0f8ff", 
+                        borderRadius: "10px",
+                        border: "2px solid #007bff"
+                      }}>
+                        <h3 style={{ 
+                          color: "#007bff", 
+                          marginBottom: "20px",
+                          textAlign: "center",
+                          fontSize: "20px"
+                        }}>
+                          💰 Resumo da Viagem a Destino Único
+                        </h3>
+                        
+                        {/* Detalhes do destino */}
+                        <div style={{ marginBottom: "20px" }}>
+                          <h4 style={{ color: "#2c3e50", marginBottom: "15px" }}>
+                            📍 Destino:
+                          </h4>
+                          <div style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "15px",
+                            backgroundColor: "#fff",
+                            borderRadius: "8px",
+                            border: "1px solid #007bff",
+                            marginBottom: "15px"
+                          }}>
+                            <span style={{ fontWeight: "bold", fontSize: "16px" }}>
+                              🏙️ {newTravel.city}, {newTravel.country}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Breakdown de preços */}
+                        <div style={{ marginBottom: "20px" }}>
+                          <h4 style={{ color: "#2c3e50", marginBottom: "15px" }}>
+                            Breakdown de Preços:
+                          </h4>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            <div style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              backgroundColor: "#fff",
+                              borderRadius: "5px",
+                              border: "1px solid #ddd"
+                            }}>
+                              <span>🏨 Estadia:</span>
+                              <span style={{ fontWeight: "bold", color: "#007bff" }}>
+                                {parseFloat(newTravel.priceDetails.hotel || 0) > 0 ? `${newTravel.priceDetails.hotel}€` : "0€"}
+                              </span>
+                            </div>
+                            <div style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              backgroundColor: "#fff",
+                              borderRadius: "5px",
+                              border: "1px solid #ddd"
+                            }}>
+                              <span>🍽️ Alimentação:</span>
+                              <span style={{ fontWeight: "bold", color: "#007bff" }}>
+                                {parseFloat(newTravel.priceDetails.food || 0) > 0 ? `${newTravel.priceDetails.food}€` : "0€"}
+                              </span>
+                            </div>
+                            <div style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              backgroundColor: "#fff",
+                              borderRadius: "5px",
+                              border: "1px solid #ddd"
+                            }}>
+                              <span>🚗 Transportes:</span>
+                              <span style={{ fontWeight: "bold", color: "#007bff" }}>
+                                {parseFloat(newTravel.priceDetails.transport || 0) > 0 ? `${newTravel.priceDetails.transport}€` : "0€"}
+                              </span>
+                            </div>
+                            <div style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              backgroundColor: "#fff",
+                              borderRadius: "5px",
+                              border: "1px solid #ddd"
+                            }}>
+                              <span>🎁 Extras:</span>
+                              <span style={{ fontWeight: "bold", color: "#007bff" }}>
+                                {parseFloat(newTravel.priceDetails.extras || 0) > 0 ? `${newTravel.priceDetails.extras}€` : "0€"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Total geral */}
+                        <div style={{ 
+                          textAlign: "center", 
+                          padding: "15px",
+                          backgroundColor: "#007bff",
+                          borderRadius: "8px",
+                          color: "#fff"
+                        }}>
+                          <h3 style={{ margin: 0, fontSize: "24px" }}>
+                            💰 Preço Total Estimado: {calculateSingleDestinationTotal()}€
+                          </h3>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preço total de toda a viagem multidestino */}
+                    {newTravel.travelType?.main === 'multi' && multiDestinations.length > 0 && (
+                      <div style={{ 
+                        marginTop: "30px", 
+                        padding: "20px", 
+                        backgroundColor: "#f0fff4", 
+                        borderRadius: "10px",
+                        border: "2px solid #28a745"
+                      }}>
+                        <h3 style={{ 
+                          color: "#28a745", 
+                          marginBottom: "20px",
+                          textAlign: "center",
+                          fontSize: "20px"
+                        }}>
+                          💰 Resumo Total da Viagem Multidestino
+                        </h3>
+                        
+                        {/* Lista de preços por destino */}
+                        <div style={{ marginBottom: "20px" }}>
+                          <h4 style={{ color: "#2c3e50", marginBottom: "15px" }}>
+                            Preços por Destino:
+                          </h4>
+                          {multiDestinations.map((dest, index) => {
+                            const price = parseFloat(dest.price || 0);
+                            return (
+                              <div 
+                                key={dest.id}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  padding: "10px",
+                                  backgroundColor: "#fff",
+                                  borderRadius: "5px",
+                                  border: "1px solid #ddd",
+                                  marginBottom: "10px"
+                                }}
+                              >
+                                <span style={{ fontWeight: "bold" }}>
+                                  📍 {dest.city}, {dest.country}
+                                </span>
+                                <span style={{ 
+                                  fontWeight: "bold", 
+                                  color: "#28a745",
+                                  fontSize: "16px"
+                                }}>
+                                  {price > 0 ? `${price}€` : "Não definido"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Total geral */}
+                        <div style={{ 
+                          textAlign: "center", 
+                          padding: "15px",
+                          backgroundColor: "#28a745",
+                          borderRadius: "8px",
+                          color: "#fff"
+                        }}>
+                          <h3 style={{ margin: 0, fontSize: "24px" }}>
+                            💰 Preço Total Estimado: {
+                              multiDestinations.reduce((total, dest) => {
+                                return total + parseFloat(dest.price || 0);
+                              }, 0)
+                            }€
+                          </h3>
+                        </div>
+                      </div>
+                    )}
+                    </div>
                 </div>
+
               )}
 
               {activeTab === "accommodation" && (
                 <div className="form-group-CenterPosition">
                   <label>Alojamento Planeado (Opcional):</label>
-                  {newTravel.accommodations.map((accommodation, index) => (
+                  
+                  {/* Seletor de destino para viagens multidestino */}
+                  {newTravel.travelType?.main === 'multi' && multiDestinations.length > 0 && (
+                    <div style={{ 
+                      marginBottom: "25px", 
+                      padding: "15px", 
+                      backgroundColor: "#f8f9fa", 
+                      borderRadius: "8px" 
+                    }}>
+                      <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
+                        🎯 Selecione o destino para adicionar alojamento:
+                      </label>
+                      <select
+                        value={selectedDestinationIndex}
+                        onChange={(e) => setSelectedDestinationIndex(parseInt(e.target.value))}
+                        style={{ width: "100%", padding: "10px", borderRadius: "5px" }}
+                      >
+                        <option value="">Selecione um destino</option>
+                        {multiDestinations.map((dest, index) => (
+                          <option key={dest.id} value={index}>
+                            Destino {index + 1}: {dest.city}, {dest.country}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Mostrar para qual destino está adicionando */}
+                  {newTravel.travelType?.main === 'multi' && (
+                    <div style={{ 
+                      marginBottom: "15px", 
+                      padding: "10px", 
+                      backgroundColor: "#e8f4fd", 
+                      borderRadius: "5px",
+                      textAlign: "center"
+                    }}>
+                      <strong>📍 A adicionar alojamento para: </strong>
+                      {selectedDestinationIndex === "" 
+                        ? "Selecione um destino" 
+                        : (multiDestinations[selectedDestinationIndex]?.city && multiDestinations[selectedDestinationIndex]?.country
+                          ? `${multiDestinations[selectedDestinationIndex].city}, ${multiDestinations[selectedDestinationIndex].country}`
+                          : "Destino não definido - Adicione país e cidade primeiro")
+                      }
+                    </div>
+                  )}
+
+                  {/* Formulário de alojamento */}
+                  {(newTravel.travelType?.main !== 'multi' ? newTravel.accommodations : 
+                    selectedDestinationIndex === "" 
+                      ? [] 
+                      : multiDestinations[selectedDestinationIndex]?.accommodations || []
+                  ).map((accommodation, index) => (
                     <div key={index} className="accommodation-section">
-                      <label>Nome do Alojamento:</label>
+                      <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                        Nome do Alojamento:
+                        <span 
+                          style={{ 
+                            display: "inline-block",
+                            width: "16px", 
+                            height: "16px", 
+                            backgroundColor: "#fd7e14", 
+                            color: "white", 
+                            borderRadius: "50%", 
+                            textAlign: "center", 
+                            fontSize: "12px", 
+                            lineHeight: "16px", 
+                            cursor: "help"
+                          }}
+                          onMouseEnter={(e) => showTooltip(e, "🏨 Nome do Alojamento", "Introduza o nome do hotel, pousada, Airbnb ou outro local onde pretende ficar hospedado.")}
+                          onMouseLeave={hideTooltip}
+                        >
+                          ?
+                        </span>
+                      </label>
                       <input
                         type="text"
                         name={`accommodations${index}.name`}
                         value={accommodation.name}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                          if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+                            // Atualizar alojamento do destino específico
+                            const destIndex = selectedDestinationIndex;
+                            const updatedAccommodations = [...multiDestinations[destIndex].accommodations];
+                            updatedAccommodations[index] = { ...updatedAccommodations[index], name: e.target.value };
+                            updateDestinationData(multiDestinations[destIndex].id, 'accommodations', updatedAccommodations);
+                          } else {
+                            // Atualizar alojamento do destino principal
+                            handleChange(e);
+                          }
+                        }}
                         placeholder="Ex.: Hotel Pestana"
                         style={{ width: "100%", marginBottom: "10px" }}
                       />
 
-                      <label>Tipo de Alojamento:</label>
+                      <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                        Tipo de Alojamento:
+                        <span 
+                          style={{ 
+                            display: "inline-block",
+                            width: "16px", 
+                            height: "16px", 
+                            backgroundColor: "#fd7e14", 
+                            color: "white", 
+                            borderRadius: "50%", 
+                            textAlign: "center", 
+                            fontSize: "12px", 
+                            lineHeight: "16px", 
+                            cursor: "help"
+                          }}
+                          onMouseEnter={(e) => showTooltip(e, "🏠 Tipo de Alojamento", "Selecione o tipo de alojamento que melhor descreve onde irá ficar (hotel, hostel, apartamento, etc.).")}
+                          onMouseLeave={hideTooltip}
+                        >
+                          ?
+                        </span>
+                      </label>
                       <select
                         name={`accommodations${index}.type`}
                         value={accommodation.type}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                          if (newTravel.travelType?.main === 'multi' && selectedDestinationIndex !== "") {
+                            // Atualizar tipo do destino específico
+                            const destIndex = selectedDestinationIndex;
+                            const updatedAccommodations = [...multiDestinations[destIndex].accommodations];
+                            updatedAccommodations[index] = { ...updatedAccommodations[index], type: e.target.value };
+                            updateDestinationData(multiDestinations[destIndex].id, 'accommodations', updatedAccommodations);
+                          } else {
+                            // Atualizar tipo do destino principal
+                            handleChange(e);
+                          }
+                        }}
                         style={{ width: "100%", marginBottom: "10px" }}
                       >
                         <option value="">Selecione o tipo</option>
@@ -1651,7 +3555,27 @@ const FutureTravels = () => {
 
               {activeTab === "transport" && (
                 <div className="form-group-CenterPosition">
-                  <label>Métodos de Transporte Planeado:</label>
+                  <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                    Métodos de Transporte Planeado:
+                    <span 
+                      style={{ 
+                        display: "inline-block",
+                        width: "16px", 
+                        height: "16px", 
+                        backgroundColor: "#20c997", 
+                        color: "white", 
+                        borderRadius: "50%", 
+                        textAlign: "center", 
+                        fontSize: "12px", 
+                        lineHeight: "16px", 
+                        cursor: "help"
+                      }}
+                      onMouseEnter={(e) => showTooltip(e, "🚗 Métodos de Transporte", "Selecione os meios de transporte que pretende utilizar durante a viagem (avião, comboio, autocarro, carro alugado, etc.).")}
+                      onMouseLeave={hideTooltip}
+                    >
+                      ?
+                    </span>
+                  </label>
                   <p>
                     {newTravel.localTransport.length > 0
                       ? newTravel.localTransport.map(transport => 
@@ -1669,7 +3593,7 @@ const FutureTravels = () => {
                         <h3>🚗 Selecionar Métodos de Transporte</h3>
                         <div className="category-list">
                           {transportOptions.map((option) => (
-                            <div key={option}>
+                            <label key={option} className="category-item">
                               <input
                                 type="checkbox"
                                 name="localTransport"
@@ -1679,12 +3603,12 @@ const FutureTravels = () => {
                                 )}
                                 onChange={handleChange}
                               />
-                              <label>{option}</label>
-                            </div>
+                              <span>{option}</span>
+                            </label>
                           ))}
                         </div>
                         <div className="modal-actions">
-                          <button type="button" onClick={() => setIsTransportModalOpen(false)}>
+                          <button type="button-danger" onClick={() => setIsTransportModalOpen(false)}>
                             Fechar
                           </button>
                         </div>
@@ -1696,11 +3620,65 @@ const FutureTravels = () => {
 
               {activeTab === "pointsOfInterest" && (
                 <div>
+                  {/* Seletor de destino para viagens multidestino */}
+                  {newTravel.travelType?.main === 'multi' && multiDestinations.length > 0 && (
+                    <div style={{ 
+                      marginBottom: "25px", 
+                      padding: "15px", 
+                      backgroundColor: "#f8f9fa", 
+                      borderRadius: "8px" 
+                    }}>
+                      <label style={{ display: "block", marginBottom: "10px", fontWeight: "bold" }}>
+                        🎯 Selecione o destino para adicionar pontos de referência:
+                      </label>
+                      <select
+                        value={selectedDestinationIndex}
+                        onChange={(e) => setSelectedDestinationIndex(parseInt(e.target.value))}
+                        style={{ width: "100%", padding: "10px", borderRadius: "5px" }}
+                      >
+                        <option value="">Selecione um destino</option>
+                        {multiDestinations.map((dest, index) => (
+                          <option key={dest.id} value={index}>
+                            Destino {index + 1}: {dest.city}, {dest.country}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="RightPosition">
                     <h3>Pontos de Referência Planeados</h3>
-                    {newTravel.pointsOfInterest.length > 0 ? (
+                    
+                    {/* Mostrar para qual destino está visualizando */}
+                    {newTravel.travelType?.main === 'multi' && (
+                      <div style={{ 
+                        marginBottom: "15px", 
+                        padding: "10px", 
+                        backgroundColor: "#e8f4fd", 
+                        borderRadius: "5px",
+                        textAlign: "center"
+                      }}>
+                        <strong>📍 Pontos de referência para: </strong>
+                        {selectedDestinationIndex === "" 
+                          ? "Selecione um destino" 
+                          : (multiDestinations[selectedDestinationIndex]?.city && multiDestinations[selectedDestinationIndex]?.country
+                            ? `${multiDestinations[selectedDestinationIndex].city}, ${multiDestinations[selectedDestinationIndex].country}`
+                            : "Destino não definido - Adicione país e cidade primeiro")
+                        }
+                      </div>
+                    )}
+
+                    {(newTravel.travelType?.main !== 'multi' ? newTravel.pointsOfInterest : 
+                      selectedDestinationIndex === "" 
+                        ? [] 
+                        : multiDestinations[selectedDestinationIndex]?.pointsOfInterest || []
+                    ).length > 0 ? (
                       <ul style={{ listStyle: "none", padding: "0" }}>
-                        {newTravel.pointsOfInterest.map((point, index) => (
+                        {(newTravel.travelType?.main !== 'multi' ? newTravel.pointsOfInterest : 
+                          selectedDestinationIndex === "" 
+                            ? [] 
+                            : multiDestinations[selectedDestinationIndex]?.pointsOfInterest || []
+                        ).map((point, index) => (
                           <li
                             key={index}
                             style={{ marginBottom: "10px", padding: "10px", border: "1px solid #e9ecef", borderRadius: "4px" }}
@@ -1748,7 +3726,27 @@ const FutureTravels = () => {
                   </div>
 
                   <div className="LeftPosition">
-                    <label>Nome do Ponto de Referência:</label>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                      Nome do Ponto de Referência:
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "16px", 
+                          height: "16px", 
+                          backgroundColor: "#ffc107", 
+                          color: "black", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "12px", 
+                          lineHeight: "16px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "📍 Ponto de Referência", "Introduza o nome do local que pretende visitar (monumentos, museus, restaurantes, praias, etc.).")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </label>
                     <input
                       type="text"
                       name="name"
@@ -1757,7 +3755,28 @@ const FutureTravels = () => {
                       placeholder="Ex.: Torre Eiffel"
                     />
 
-                    <label>Tipo:</label>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                     <br></br>
+                      Tipo:
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "16px", 
+                          height: "16px", 
+                          backgroundColor: "#ffc107", 
+                          color: "black", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "12px", 
+                          lineHeight: "16px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "🏷️ Tipo de Local", "Selecione a categoria que melhor descreve o tipo de local (monumento, museu, restaurante, natureza, etc.).")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </label>
                     <select
                       name="type"
                       value={newPointOfInterest.type}
@@ -1770,7 +3789,7 @@ const FutureTravels = () => {
                       <option value="Praia">Praia</option>
                       <option value="Mercado">Mercado</option>
                     </select>
-
+<br></br><br></br>
                     <button
                       onClick={(e) => handleAddOrEditPointOfInterest(e)}
                       style={{
@@ -1783,6 +3802,7 @@ const FutureTravels = () => {
                       }}
                       disabled={!newPointOfInterest.name.trim()}
                     >
+                      
                       {editingPointIndex !== null ? "Guardar Alterações" : "Adicionar"}
                     </button>
                     {editingPointIndex !== null && (
@@ -1811,7 +3831,7 @@ const FutureTravels = () => {
                       <strong>Duração Total:</strong> {calculateTripDays()} dias
                     </p>
                     {newTravel.itinerary.length > 0 ? (
-                      <ul style={{ listStyle: "none", padding: "0" }}>
+                      <ul style={{ listStyle: "none", padding: 0 }}>
                         {newTravel.itinerary.map((item, index) => (
                           <li
                             key={index}
@@ -1859,7 +3879,27 @@ const FutureTravels = () => {
                   </div>
 
                   <div className="LeftPosition">
-                    <label>Dia:</label>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                      Dia:
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "16px", 
+                          height: "16px", 
+                          backgroundColor: "#795548", 
+                          color: "white", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "12px", 
+                          lineHeight: "16px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "📅 Dia da Viagem", "Especifique em que dia da viagem pretende realizar estas atividades (1 = primeiro dia, 2 = segundo dia, etc.).")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </label>
                     <input
                       type="number"
                       name="day"
@@ -1867,11 +3907,31 @@ const FutureTravels = () => {
                       onChange={handleItineraryChange}
                       min="1"
                       max={calculateTripDays()}
-                      placeholder={`Digite um número entre 1 e ${calculateTripDays()}`}
+                      placeholder={`Introduza um número entre 1 e ${calculateTripDays()}`}
                     />
                     {itineraryError && <p style={{ color: "red", marginBottom: "10px" }}>{itineraryError}</p>}
-
-                    <label>Atividades Planeadas:</label>
+<br></br><br></br>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                      Atividades Planeadas:
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "16px", 
+                          height: "16px", 
+                          backgroundColor: "#795548", 
+                          color: "white", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "12px", 
+                          lineHeight: "16px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "📝 Atividades Planeadas", "Descreva as atividades que pretende realizar neste dia (visitas, passeios, refeições especiais, etc.).")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </label>
                     {newItineraryDay.activities.map((activity, index) => (
                       <div key={index} style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
                         <input
@@ -1898,6 +3958,7 @@ const FutureTravels = () => {
                         )}
                       </div>
                     ))}
+                    <br></br>
                     <button
                       onClick={handleAddActivityField}
                       style={{
@@ -2053,11 +4114,34 @@ const FutureTravels = () => {
                       marginBottom: "20px"
                     }}>
                       <label style={{ 
-                        display: "block",
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        gap: "5px",
                         marginBottom: "10px",
                         fontSize: "16px",
                         color: "#2c3e50"
-                      }}>Item da Checklist:</label>
+                      }}>
+                        Item da Checklist:
+                        <span 
+                          style={{ 
+                            display: "inline-block",
+                            width: "16px", 
+                            height: "16px", 
+                            backgroundColor: "#6f42c1", 
+                            color: "white", 
+                            borderRadius: "50%", 
+                            textAlign: "center", 
+                            fontSize: "12px", 
+                            lineHeight: "16px", 
+                            cursor: "help"
+                          }}
+                          onMouseEnter={(e) => showTooltip(e, "Item da Checklist", "Adicione itens importantes para não esquecer na sua viagem (ex: passaporte, medicamentos, carregadores, roupa adequada).")}
+                          onMouseLeave={hideTooltip}
+                        >
+                          ?
+                        </span>
+                      </label>
                       <input
                         type="text"
                         value={newChecklistItem}
@@ -2119,22 +4203,454 @@ const FutureTravels = () => {
                   </div>
                 </div>
               )}
-            </form>
 
-            <div className="fixed-nav-buttons">
+              {activeTab === "group" && newTravel.travelType?.isGroup && (
+                <div>
+                  <div style={{ 
+                    textAlign: "center", 
+                    marginBottom: "30px",
+                    padding: "20px",
+                    backgroundColor: "#f8f9fa",
+                    borderRadius: "10px",
+                    border: "1px solid #e9ecef"
+                  }}>
+                    <h3 style={{ 
+                      color: "#2c3e50", 
+                      marginBottom: "15px",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px"
+                    }}>
+                      👥 Gestão do Grupo de Viagem
+                      <span 
+                        style={{ 
+                          display: "inline-block",
+                          width: "20px", 
+                          height: "20px", 
+                          backgroundColor: "#28a745", 
+                          color: "white", 
+                          borderRadius: "50%", 
+                          textAlign: "center", 
+                          fontSize: "14px", 
+                          lineHeight: "20px", 
+                          cursor: "help"
+                        }}
+                        onMouseEnter={(e) => showTooltip(e, "👥 Gestão do Grupo de Viagem", "Crie e gira um grupo de viagem colaborativo. Convide amigos para planear a viagem em conjunto, partilhar ideias e dividir responsabilidades na organização.")}
+                        onMouseLeave={hideTooltip}
+                      >
+                        ?
+                      </span>
+                    </h3>
+                    <p style={{ 
+                      color: "#666",
+                      fontSize: "16px",
+                      marginBottom: "10px"
+                    }}>
+                      Convide amigos para planear esta viagem em conjunto. 
+                      Os membros poderão colaborar na edição do plano de viagem.
+                    </p>
+                    <div style={{ 
+                      display: "flex", 
+                      justifyContent: "center", 
+                      alignItems: "center",
+                      gap: "10px",
+                      marginTop: "15px"
+                    }}>
+                      <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                        👤 Administrador: Tiago
+                      </span>
+                      <span style={{ color: "#666" }}>
+                        | 👥 Membros: {groupMembers.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "30px", flexWrap: "wrap" }}>
+                    {/* Lado esquerdo - Adicionar membros */}
+                    <div style={{ flex: 1, minWidth: "300px" }}>
+                      <h4 style={{ 
+                        color: "#2c3e50", 
+                        marginBottom: "20px",
+                        fontSize: "20px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px"
+                      }}>
+                        ➕ Adicionar Membros ao Grupo
+                        <span 
+                          style={{ 
+                            display: "inline-block",
+                            width: "18px", 
+                            height: "18px", 
+                            backgroundColor: "#007bff", 
+                            color: "white", 
+                            borderRadius: "50%", 
+                            textAlign: "center", 
+                            fontSize: "12px", 
+                            lineHeight: "18px", 
+                            cursor: "help"
+                          }}
+                          onMouseEnter={(e) => showTooltip(e, "➕ Adicionar Membros ao Grupo", "Pesquise e convide amigos para se juntarem ao grupo de viagem. Introduza o nome ou email do utilizador que pretende adicionar à viagem.")}
+                          onMouseLeave={hideTooltip}
+                        >
+                          ?
+                        </span>
+                      </h4>
+                      
+                      <div style={{ marginBottom: "20px" }}>
+                        <label style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "5px",
+                          marginBottom: "10px",
+                          fontSize: "16px",
+                          color: "#2c3e50"
+                        }}>
+                          🔍 Buscar utilizadores:
+                          <span 
+                            style={{ 
+                              display: "inline-block",
+                              width: "16px", 
+                              height: "16px", 
+                              backgroundColor: "#17a2b8", 
+                              color: "white", 
+                              borderRadius: "50%", 
+                              textAlign: "center", 
+                              fontSize: "12px", 
+                              lineHeight: "16px", 
+                              cursor: "help"
+                            }}
+                            onMouseEnter={(e) => showTooltip(e, "🔍 Buscar Utilizadores", "Introduza o nome de utilizador ou endereço de email da pessoa que pretende convidar para o grupo de viagem. O sistema irá procurar utilizadores registados na plataforma.")}
+                            onMouseLeave={hideTooltip}
+                          >
+                            ?
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          value={newMemberEmail}
+                          onChange={handleMemberEmailChange}
+                          placeholder="Introduza o nome ou email do utilizador..."
+                          style={{
+                            width: "100%",
+                            padding: "12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            fontSize: "16px"
+                          }}
+                        />
+                        
+                        {isLoadingUsers && (
+                          <div style={{ 
+                            marginTop: "10px", 
+                            color: "#666",
+                            textAlign: "center"
+                          }}>
+                            🔄 Procurando utilizadores...
+                          </div>
+                        )}
+
+                        {/* Lista de utilizadores encontrados */}
+                        {availableUsers.length > 0 && (
+                          <div style={{ 
+                            marginTop: "15px",
+                            border: "1px solid #e9ecef",
+                            borderRadius: "8px",
+                            backgroundColor: "#fff",
+                            maxHeight: "200px",
+                            overflowY: "auto"
+                          }}>
+                            {availableUsers.map((user) => (
+                              <div 
+                                key={user.id}
+                                onClick={() => addMemberToGroup(user)}
+                                style={{
+                                  padding: "12px",
+                                  borderBottom: "1px solid #f8f9fa",
+                                  cursor: "pointer",
+                                  transition: "background-color 0.3s",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px"
+                                }}
+                                onMouseOver={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+                                onMouseOut={(e) => e.target.style.backgroundColor = "transparent"}
+                              >
+                                <div style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  borderRadius: "50%",
+                                  backgroundColor: "#007bff",
+                                  color: "#fff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "18px",
+                                  fontWeight: "bold"
+                                }}>
+                                  {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{ fontWeight: "bold", color: "#2c3e50" }}>
+                                    {user.name}
+                                  </div>
+                                  <div style={{ fontSize: "14px", color: "#666" }}>
+                                    {user.email}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {groupMembers.length > 0 && (
+                        <div style={{ marginTop: "30px" }}>
+                          <button
+                            onClick={sendGroupInvites}
+                            style={{
+                              width: "100%",
+                              padding: "15px",
+                              backgroundColor: "#28a745",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "8px",
+                              fontSize: "16px",
+                              fontWeight: "bold",
+                              cursor: "pointer",
+                              transition: "background-color 0.3s"
+                            }}
+                            onMouseOver={(e) => e.target.style.backgroundColor = "#218838"}
+                            onMouseOut={(e) => e.target.style.backgroundColor = "#28a745"}
+                          >
+                            📨 Enviar Convites ({groupMembers.length})
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Lado direito - Membros do grupo */}
+                    <div style={{ flex: 1, minWidth: "300px" }}>
+                      <h4 style={{ 
+                        color: "#2c3e50", 
+                        marginBottom: "20px",
+                        fontSize: "20px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px"
+                      }}>
+                        👥 Membros do Grupo ({groupMembers.length})
+                        <span 
+                          style={{ 
+                            display: "inline-block",
+                            width: "18px", 
+                            height: "18px", 
+                            backgroundColor: "#6f42c1", 
+                            color: "white", 
+                            borderRadius: "50%", 
+                            textAlign: "center", 
+                            fontSize: "12px", 
+                            lineHeight: "18px", 
+                            cursor: "help"
+                          }}
+                          onMouseEnter={(e) => showTooltip(e, "👥 Membros do Grupo", "Lista de todos os membros que fazem parte do grupo de viagem. Os membros podem colaborar na edição do plano, adicionar sugestões e partilhar responsabilidades.")}
+                          onMouseLeave={hideTooltip}
+                        >
+                          ?
+                        </span>
+                      </h4>
+                      
+                      {groupMembers.length === 0 ? (
+                        <div style={{ 
+                          textAlign: "center",
+                          padding: "40px 20px",
+                          backgroundColor: "#f8f9fa",
+                          borderRadius: "8px",
+                          color: "#666"
+                        }}>
+                          <div style={{ fontSize: "48px", marginBottom: "15px" }}>👥</div>
+                          <p>Nenhum membro adicionado ainda.</p>
+                          <p style={{ fontSize: "14px" }}>
+                            Use a busca ao lado para encontrar e adicionar amigos ao grupo!
+                          </p>
+                        </div>
+                      ) : (
+                        <div style={{ 
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "15px"
+                        }}>
+                          {groupMembers.map((member, index) => (
+                            <div 
+                              key={member.id}
+                              style={{
+                                padding: "15px",
+                                border: "1px solid #e9ecef",
+                                borderRadius: "8px",
+                                backgroundColor: "#fff",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between"
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                                <div style={{
+                                  width: "50px",
+                                  height: "50px",
+                                  borderRadius: "50%",
+                                  backgroundColor: "#007bff",
+                                  color: "#fff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "20px",
+                                  fontWeight: "bold"
+                                }}>
+                                  {member.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{ 
+                                    fontWeight: "bold", 
+                                    color: "#2c3e50",
+                                    fontSize: "16px"
+                                  }}>
+                                    {member.name}
+                                  </div>
+                                  <div style={{ 
+                                    fontSize: "14px", 
+                                    color: "#666",
+                                    marginBottom: "5px"
+                                  }}>
+                                    {member.email}
+                                  </div>
+                                  <div style={{ 
+                                    fontSize: "12px",
+                                    color: member.status === 'pending' ? "#ffc107" : "#28a745",
+                                    fontWeight: "bold"
+                                  }}>
+                                    {member.status === 'pending' && "⏳ Convite pendente"}
+                                    {member.status === 'sent' && "📨 Convite enviado"}
+                                    {member.status === 'accepted' && "✅ Aceito"}
+                                    {member.status === 'rejected' && "❌ Rejeitado"}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <button
+                                onClick={() => removeMemberFromGroup(member.id)}
+                                style={{
+                                  padding: "8px 12px",
+                                  backgroundColor: "#dc3545",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                  transition: "background-color 0.3s"
+                                }}
+                                onMouseOver={(e) => e.target.style.backgroundColor = "#c82333"}
+                                onMouseOut={(e) => e.target.style.backgroundColor = "#dc3545"}
+                              >
+                                🗑️ Remover
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Informações sobre convites enviados */}
+                      {sentInvites.length > 0 && (
+                        <div style={{ 
+                          marginTop: "30px",
+                          padding: "20px",
+                          backgroundColor: "#d4edda",
+                          borderRadius: "8px",
+                          border: "1px solid #c3e6cb"
+                        }}>
+                          <h5 style={{ 
+                            color: "#155724", 
+                            marginBottom: "15px",
+                            fontSize: "16px"
+                          }}>
+                            ✅ Convites Enviados com Sucesso!
+                          </h5>
+                          <p style={{ 
+                            color: "#155724", 
+                            fontSize: "14px",
+                            margin: 0
+                          }}>
+                            Os membros receberão uma notificação na app e poderão aceitar 
+                            ou rejeitar o convite para participar no planeamento desta viagem.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+
+          <div className="fixed-nav-buttons">
+            <button
+              onClick={handlePrevTab}
+              disabled={tabs.findIndex((tab) => tab.id === activeTab) === 0}
+              className="nav-button prev-button"
+            >
+              Anterior
+            </button>
               <button
-                onClick={handlePrevTab}
-                disabled={tabs.findIndex((tab) => tab.id === activeTab) === 0}
-                className="nav-button prev-button"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={activeTab === "checklist" ? handleAddTravel : handleNextTab}
-                disabled={tabs.findIndex((tab) => tab.id === activeTab) === tabs.length - 1 && activeTab !== "checklist"}
+                onClick={
+                  (activeTab === "checklist" && !newTravel.travelType?.isGroup) || 
+                  (activeTab === "group" && newTravel.travelType?.isGroup) 
+                    ? handleAddTravel 
+                    : handleNextTab
+                }
+                disabled={
+                  tabs.findIndex((tab) => tab.id === activeTab) === tabs.length - 1 && 
+                  activeTab !== "checklist" && 
+                  activeTab !== "group"
+                }
                 className="nav-button next-button"
               >
-                {activeTab === "checklist" ? (isEditing ? "Guardar Alterações" : "Adicionar Viagem Futura") : "Avançar"}
+                {(activeTab === "checklist" && !newTravel.travelType?.isGroup) || 
+                 (activeTab === "group" && newTravel.travelType?.isGroup)
+                  ? (isEditing ? "Guardar Alterações" : "Adicionar Viagem Futura") 
+                  : "Avançar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Categorias */}
+      {isCategoryModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsCategoryModalOpen(false)}>
+          <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>🗂️ Selecionar Categorias</h3>
+            <div className="category-list">
+              {categories.map((cat) => (
+                <label key={cat} className="category-item">
+                  <input
+                    type="checkbox"
+                    name="category"
+                    value={cat}
+                    checked={newTravel.category.includes(cat)}
+                    onChange={handleChange}
+                  />
+                  <span>{cat}</span>
+                </label>
+              ))}
+            </div>
+            <div className="modal-actions">
+              <button type="button" onClick={() => setIsCategoryModalOpen(false)}>
+                Fechar
               </button>
             </div>
           </div>
@@ -2363,7 +4879,7 @@ const FutureTravels = () => {
               justifyContent: "center",
               marginTop: "30px"
             }}>
-              <button
+              <button className="button-success"
                 onClick={confirmAIPlan}
                 style={{ 
                   padding: "12px 30px",
@@ -2381,7 +4897,7 @@ const FutureTravels = () => {
               >
                 ✨ Confirmar e Guardar
               </button>
-              <button
+              <button className="button-danger"
                 onClick={() => setIsPreviewModalOpen(false)}
                 style={{ 
                   padding: "12px 30px",
@@ -2427,6 +4943,194 @@ const FutureTravels = () => {
         </div>
       )}
 
+      {/* Modal de Preferências de IA */}
+      {isAIModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-actions">
+              <h2>🤖 Planeamento Inteligente com IA - Globe Memories</h2>
+              <p style={{ color: "#666", marginBottom: "20px" }}>
+                Deixe a nossa IA criar o plano de viagem perfeito para si! Todos os campos são opcionais.
+              </p>
+              
+              <div className="modal-header-buttons">
+                <button 
+                  type="button-danger" 
+                  onClick={() => setIsAIModalOpen(false)} 
+                  className="button-danger"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button-success"
+                  onClick={generateAITrip}
+                  className="button-success"
+                  disabled={isLoadingAI}
+                  style={{ backgroundColor: "#28a745" }}
+                >
+                  {isLoadingAI ? "🔄 A Gerar..." : "✨ Gerar Viagem com IA"}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: "20px 0" }}>
+              {/* Categorias */}
+              <div style={{ marginBottom: "25px" }}>
+                <label style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+                  🏷️ Categorias de Interesse (opcional):
+                  <span 
+                    style={{ 
+                      display: "inline-block",
+                      width: "16px", 
+                      height: "16px", 
+                      backgroundColor: "#17a2b8", 
+                      color: "white", 
+                      borderRadius: "50%", 
+                      textAlign: "center", 
+                      fontSize: "12px", 
+                      lineHeight: "16px", 
+                      cursor: "help"
+                    }}
+                    onMouseEnter={(e) => showTooltip(e, "🏷️ Categorias de Interesse", "Selecione os tipos de atividades e experiências que mais lhe interessam. Isto ajudará a personalizar as sugestões da sua viagem.")}
+                    onMouseLeave={hideTooltip}
+                  >
+                    ?
+                  </span>
+                </label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                  {categories.map((category) => (
+                    <label key={category} style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={aiPreferences.categories.includes(category)}
+                        onChange={() => handleAICategoryToggle(category)}
+                        style={{ marginRight: "8px" }}
+                      />
+                      {category}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* País e Cidade */}
+              <div style={{ display: "flex", gap: "20px", marginBottom: "25px", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: "200px" }}>
+                  <label style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px", display: "block" }}>
+                    🌍 País (opcional):
+                  </label>
+                  <select 
+                    name="country" 
+                    value={aiPreferences.country} 
+                    onChange={handleAIPreferenceChange}
+                    style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ddd" }}
+                  >
+                    <option value="">Deixar a IA escolher</option>
+                    <option value="Portugal">Portugal</option>
+                    <option value="Brasil">Brasil</option>
+                    <option value="United States">Estados Unidos</option>
+                    <option value="Espanha">Espanha</option>
+                    <option value="França">França</option>
+                    <option value="Itália">Itália</option>
+                  </select>
+                </div>
+                
+                <div style={{ flex: 1, minWidth: "200px" }}>
+                  <label style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px", display: "block" }}>
+                    🏠 Cidade (opcional):
+                  </label>
+                  {isLoadingCities ? (
+                    <div>Carregando cidades...</div>
+                  ) : (
+                    <select 
+                      name="city" 
+                      value={aiPreferences.city} 
+                      onChange={handleAIPreferenceChange}
+                      style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ddd" }}
+                      disabled={!aiPreferences.country}
+                    >
+                      <option value="">Deixar a IA escolher</option>
+                      {cities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* Orçamento e Duração */}
+              <div style={{ display: "flex", gap: "20px", marginBottom: "25px", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: "200px" }}>
+                  <label style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px", display: "block" }}>
+                    💰 Orçamento (opcional):
+                  </label>
+                  <select 
+                    name="budget" 
+                    value={aiPreferences.budget} 
+                    onChange={handleAIPreferenceChange}
+                    style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ddd" }}
+                  >
+                    <option value="">Deixar a IA escolher</option>
+                    <option value="baixo">Baixo (€50-80/dia)</option>
+                    <option value="medio">Médio (€80-150/dia)</option>
+                    <option value="alto">Alto (€150-300/dia)</option>
+                    <option value="luxo">Luxo (€300+/dia)</option>
+                  </select>
+                </div>
+                
+                <div style={{ flex: 1, minWidth: "200px" }}>
+                  <label style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px", display: "block" }}>
+                    📅 Duração (dias):
+                  </label>
+                  <input
+                    type="number"
+                    name="duration"
+                    value={aiPreferences.duration}
+                    onChange={handleAIPreferenceChange}
+                    min="1"
+                    max="30"
+                    style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ddd" }}
+                  />
+                </div>
+              </div>
+
+              {/* Estilo de Viagem */}
+              <div style={{ marginBottom: "25px" }}>
+                <label style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "10px", display: "block" }}>
+                  ✈️ Estilo de Viagem:
+                </label>
+                <select 
+                  name="travelStyle" 
+                  value={aiPreferences.travelStyle} 
+                  onChange={handleAIPreferenceChange}
+                  style={{ width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #ddd" }}
+                >
+                  <option value="balanced">Equilibrado</option>
+                  <option value="relaxed">Relaxado</option>
+                  <option value="adventure">Aventura</option>
+                  <option value="cultural">Cultural</option>
+                  <option value="luxury">Luxo</option>
+                </select>
+              </div>
+
+              <div style={{ 
+                backgroundColor: "#e8f4fd", 
+                padding: "15px", 
+                borderRadius: "8px", 
+                border: "1px solid #bee5eb",
+                marginTop: "20px"
+              }}>
+                <p style={{ margin: 0, color: "#0c5460", fontSize: "14px" }}>
+                  💡 <strong>Dica:</strong> Quanto mais informações fornecer, mais personalizada será a sua viagem! 
+                  Mas não se preocupe - a nossa IA pode criar uma viagem incrível mesmo sem preferências específicas.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="travels-list">
         {futureTravels.length === 0 ? (
           <p>
@@ -2457,12 +5161,56 @@ const FutureTravels = () => {
                     <p>
                       <b>👤 Utilizador:</b> {travel.user || "Desconhecido"}
                     </p>
+                    {/* Mostrar informações do tipo de viagem */}
+                    {travel.travelType && (
+                      <p>
+                        <b>🎯 Tipo:</b> 
+                        {travel.travelType.main === 'single' && " Destino Único"}
+                        {travel.travelType.main === 'multi' && " Multidestino"}
+                        {travel.travelType.isGroup && (
+                          <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                            {travel.travelType.main ? " + " : ""}👥 Viagem em Grupo
+                          </span>
+                        )}
+                      </p>
+                    )}
+                    {/* Mostrar informações do grupo se for viagem em grupo */}
+                    {travel.groupData && (
+                      <p>
+                        <b>👥 Grupo:</b> {travel.groupData.members.length} membro(s) convidado(s)
+                        <br />
+                        <small style={{ color: "#666" }}>
+                          Admin: {travel.groupData.admin}
+                        </small>
+                      </p>
+                    )}
                     <p>
                       <b>🌍 País:</b> {travel.country || "Não definido"}
                     </p>
                     <p>
-                      <b>🏙️ Cidade:</b> {travel.city}
+                      <b>🏙️ Cidade:</b> {travel.city || "Não definido"}
                     </p>
+                    {/* Mostrar destinos adicionais se for viagem multidestino */}
+                    {travel.multiDestinations && travel.multiDestinations.length > 0 && (
+                      <div style={{ 
+                        marginTop: "10px", 
+                        padding: "10px", 
+                        backgroundColor: "#f8f9fa", 
+                        borderRadius: "5px" 
+                      }}>
+                        <p style={{ margin: "0 0 5px 0", fontWeight: "bold" }}>
+                          <b>🗺️ Destinos Adicionais:</b>
+                        </p>
+                        {travel.multiDestinations.map((dest, index) => (
+                          <p key={dest.id} style={{ margin: "2px 0", fontSize: "14px" }}>
+                            📍 {dest.city}, {dest.country}
+                          </p>
+                        ))}
+                        <small style={{ color: "#666" }}>
+                          Total: {travel.multiDestinations.length + 1} destino(s)
+                        </small>
+                      </div>
+                    )}
                     <p>
                       <b>🗂️ Categoria:</b> {Array.isArray(travel.category) && travel.category.length > 0 ? travel.category.join(", ") : "Nenhuma categoria"}
                     </p>
@@ -2486,14 +5234,76 @@ const FutureTravels = () => {
                   </div>
                 </div>
                 <div className="travel-actions">
-                  <button onClick={() => handleEdit(travel.id)}>Editar</button>
-                  <button onClick={() => handleDelete(travel.id)}>Excluir</button>
+                  <button onClick={(e) => { e.stopPropagation(); handleEdit(travel.id); }}>Editar</button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(travel.id); }}>Excluir</button>
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* Modal de Tooltip */}
+      {tooltipModal.show && (
+        <div
+          style={{
+            position: "fixed",
+            left: `${tooltipModal.position.x}px`,
+            top: `${tooltipModal.position.y}px`,
+            transform: "translate(-50%, -100%)",
+            backgroundColor: "#2c3e50",
+            color: "white",
+            padding: "15px 20px",
+            borderRadius: "12px",
+            boxShadow: "0 8px 25px rgba(0,0,0,0.3)",
+            zIndex: 10000,
+            maxWidth: "350px",
+            fontSize: "14px",
+            lineHeight: "1.5",
+            border: "2px solid #34495e",
+            animation: "fadeInTooltip 0.3s ease-out",
+          }}
+          onMouseEnter={() => setTooltipModal(prev => ({ ...prev, show: true }))}
+          onMouseLeave={hideTooltip}
+        >
+          {tooltipModal.title && (
+            <div style={{ 
+              fontWeight: "bold", 
+              marginBottom: "8px", 
+              fontSize: "16px",
+              color: "#3498db"
+            }}>
+              {tooltipModal.title}
+            </div>
+          )}
+          <div>{tooltipModal.content}</div>
+          {/* Seta apontando para baixo */}
+          <div style={{
+            position: "absolute",
+            bottom: "-8px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "0",
+            height: "0",
+            borderLeft: "8px solid transparent",
+            borderRight: "8px solid transparent",
+            borderTop: "8px solid #2c3e50"
+          }}></div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fadeInTooltip {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -100%) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -100%) scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import '../styles/styles.css';
-import defaultAvatar from '../images/assets/avatar1.jpg'; // Imagem de avatar padrão
+
+// Avatar padrão como componente SVG
+const DefaultAvatar = ({ size = 150 }) => (
+  <svg width={size} height={size} viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ borderRadius: '50%' }}>
+    <circle cx="75" cy="75" r="75" fill="#e0e0e0" />
+    <circle cx="75" cy="60" r="25" fill="#bdbdbd" />
+    <ellipse cx="75" cy="110" rx="35" ry="25" fill="#bdbdbd" />
+  </svg>
+);
+
+const defaultAvatar = '/images/assets/avatar1.jpg'; // Fallback para imagem
 
 const Profile = () => {
   const [editing, setEditing] = useState(false);
@@ -18,8 +27,11 @@ const Profile = () => {
     lastName: '',
     username: '',
     email: '',
+    currentPassword: '', // Nova: password atual para confirmação
     password: '',
+    confirmPassword: '',
     bio: '',
+    quote: '', // Nova frase sobre o usuário
     country: '',
     city: '',
     gender: '',
@@ -37,9 +49,99 @@ const Profile = () => {
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
+  
+  // Estados para validação de password
+  const [passwordError, setPasswordError] = useState('');
+  const [currentPasswordError, setCurrentPasswordError] = useState('');
+  const [bioCharCount, setBioCharCount] = useState(0);
+  const [quoteCharCount, setQuoteCharCount] = useState(0);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  
+  // Listas para dropdowns
+  const countries = [
+    'Portugal', 'Brasil', 'Espanha', 'França', 'Itália', 'Alemanha', 'Reino Unido',
+    'Estados Unidos', 'Canadá', 'Austrália', 'Japão', 'China', 'Índia', 'Rússia',
+    'México', 'Argentina', 'Chile', 'Colômbia', 'Peru', 'Venezuela', 'Outro'
+  ];
+  
+  const citiesByCountry = {
+    'Portugal': ['Lisboa', 'Porto', 'Braga', 'Coimbra', 'Aveiro', 'Faro', 'Setúbal', 'Évora'],
+    'Brasil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Belo Horizonte', 'Manaus', 'Curitiba'],
+    'Espanha': ['Madrid', 'Barcelona', 'Valencia', 'Sevilha', 'Bilbao', 'Málaga', 'Granada'],
+    'França': ['Paris', 'Lyon', 'Marselha', 'Toulouse', 'Nice', 'Nantes', 'Bordeaux'],
+    'Itália': ['Roma', 'Milão', 'Nápoles', 'Turim', 'Palermo', 'Génova', 'Bolonha'],
+    'Alemanha': ['Berlim', 'Munique', 'Hamburgo', 'Colónia', 'Frankfurt', 'Stuttgart', 'Düsseldorf'],
+    'Reino Unido': ['Londres', 'Manchester', 'Birmingham', 'Liverpool', 'Bristol', 'Leeds', 'Sheffield'],
+    'Estados Unidos': ['Nova York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio'],
+    'Canadá': ['Toronto', 'Montreal', 'Vancouver', 'Calgary', 'Edmonton', 'Ottawa', 'Winnipeg'],
+    'Outro': []
+  };
+  
+  // Função para validar password
+  const validatePassword = (password) => {
+    const errors = [];
+    if (password.length < 8) {
+      errors.push('Mínimo 8 caracteres');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Pelo menos uma letra maiúscula');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('Pelo menos uma letra minúscula');
+    }
+    if (!/\d/.test(password)) {
+      errors.push('Pelo menos um número');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('Pelo menos um caractere especial');
+    }
+    return errors;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validações específicas
+    if (name === 'bio') {
+      if (value.length <= 500) {
+        setBioCharCount(value.length);
+        setFormData((prevData) => ({
+          ...prevData,
+          [name]: value,
+        }));
+      }
+      return;
+    }
+    
+    if (name === 'quote') {
+      if (value.length <= 100) {
+        setQuoteCharCount(value.length);
+        setFormData((prevData) => ({
+          ...prevData,
+          [name]: value,
+        }));
+      }
+      return;
+    }
+    
+    if (name === 'password') {
+      const errors = validatePassword(value);
+      setPasswordError(errors.length > 0 ? errors.join(', ') : '');
+    }
+    
+    if (name === 'currentPassword') {
+      setCurrentPasswordError(''); // Reset error when typing
+    }
+    
+    if (name === 'country') {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+        city: '' // Reset cidade quando mudar país
+      }));
+      return;
+    }
+    
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
@@ -56,6 +158,40 @@ const Profile = () => {
     setIsSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
+    setCurrentPasswordError('');
+
+    // Validações antes de salvar
+    if (formData.password) {
+      // Se está tentando alterar a password, deve confirmar a atual
+      if (!formData.currentPassword) {
+        setCurrentPasswordError('Deve confirmar a password atual para alterá-la');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Validar nova password
+      const errors = validatePassword(formData.password);
+      if (errors.length > 0) {
+        setSaveError('Password não atende aos critérios de segurança: ' + errors.join(', '));
+        setIsSaving(false);
+        return;
+      }
+      
+      // Confirmar que as novas passwords coincidem
+      if (formData.password !== formData.confirmPassword) {
+        setSaveError('As novas passwords não coincidem');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Aqui você validaria a password atual com o backend
+      // Por agora, simularemos que está correto
+      // if (!await validateCurrentPassword(formData.currentPassword)) {
+      //   setCurrentPasswordError('Password atual incorreta');
+      //   setIsSaving(false);
+      //   return;
+      // }
+    }
 
     try {
       // Aqui você deve substituir pela URL correta do seu backend
@@ -71,6 +207,15 @@ const Profile = () => {
         setSaveSuccess(true);
         setUser({ ...user, ...formData });
         setEditing(false);
+        setShowChangePassword(false);
+        
+        // Limpar campos de password
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          password: '',
+          confirmPassword: ''
+        }));
         
         // Feedback visual temporário
         setTimeout(() => {
@@ -108,33 +253,49 @@ const Profile = () => {
 
   const handleMouseDown = (e) => {
     if (!editing) return;
-    e.preventDefault(); // Previne o comportamento padrão
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
+    
+    const rect = e.currentTarget.getBoundingClientRect();
     setDragStart({
       x: e.clientX - imagePosition.x,
-      y: e.clientY - imagePosition.y
+      y: e.clientY - imagePosition.y,
+      startX: e.clientX,
+      startY: e.clientY
     });
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging || !editing) return;
-    e.preventDefault(); // Previne o comportamento padrão
+    e.preventDefault();
+    e.stopPropagation();
+    
     const newX = e.clientX - dragStart.x;
     const newY = e.clientY - dragStart.y;
-    setImagePosition({ x: newX, y: newY });
+    
+    // Limitar o movimento para manter a imagem dentro dos limites razoáveis
+    const maxMove = 100;
+    const limitedX = Math.max(-maxMove, Math.min(maxMove, newX));
+    const limitedY = Math.max(-maxMove, Math.min(maxMove, newY));
+    
+    setImagePosition({ x: limitedX, y: limitedY });
   };
 
   const handleMouseUp = (e) => {
     if (!editing) return;
-    e.preventDefault(); // Previne o comportamento padrão
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
   };
 
   const handleWheel = (e) => {
     if (!editing) return;
     e.preventDefault();
+    e.stopPropagation();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setImageScale(prevScale => Math.max(0.5, Math.min(2, prevScale + delta)));
+    const newScale = Math.max(0.5, Math.min(3, imageScale + delta));
+    setImageScale(newScale);
   };
 
   useEffect(() => {
@@ -165,8 +326,11 @@ const Profile = () => {
         lastName: user.lastName || '',
         username: user.username || '',
         email: user.email || '',
+        currentPassword: '',
         password: '',
+        confirmPassword: '',
         bio: user.bio || '',
+        quote: user.quote || '',
         country: user.nationality || '',
         city: user.city || '',
         gender: user.gender || '',
@@ -174,25 +338,31 @@ const Profile = () => {
         profilePicture: user.profilePicture || '',
         privacy: user.privacy || 'public'
       });
+      setBioCharCount((user.bio || '').length);
+      setQuoteCharCount((user.quote || '').length);
     }
   }, [user]);
 
   useEffect(() => {
-    if (editing) {
+    if (editing && isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('selectstart', (e) => e.preventDefault()); // Previne seleção de texto
     }
+    
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('selectstart', (e) => e.preventDefault());
     };
-  }, [editing, isDragging]);
+  }, [editing, isDragging, dragStart.x, dragStart.y, imagePosition.x, imagePosition.y]);
 
   return (
     <div className="profile-page">
       <div className="profile-container">
         {user ? (
           <>
+        
             <form className="profile-form" onSubmit={handleSave}>
               <div className="button-group">
                 {editing ? (
@@ -202,7 +372,16 @@ const Profile = () => {
                       className="save-button"
                       disabled={isSaving}
                     >
-                      {isSaving ? 'A Guardar...' : 'Guardar'}
+                      {isSaving ? (
+                        <>
+                          <div className="loading-spinner" style={{width: '20px', height: '20px', margin: '0 10px 0 0'}}></div>
+                          A Guardar...
+                        </>
+                      ) : (
+                        <>
+                          💾 Guardar
+                        </>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -210,234 +389,186 @@ const Profile = () => {
                       onClick={handleEditToggle}
                       disabled={isSaving}
                     >
-                      Cancelar
+                      ❌ Cancelar
                     </button>
                   </>
                 ) : (
                   <button
                     type="button"
-                    className="edit-button"
+                    className="button"
                     onClick={handleEditToggle}
                   >
-                    Editar Perfil
+                    ✏️ Editar Perfil
                   </button>
                 )}
               </div>
 
               {saveError && (
-                <div className="error-message" style={{
-                  color: 'red',
-                  margin: '10px 0',
-                  padding: '10px',
-                  backgroundColor: '#ffebee',
-                  borderRadius: '4px',
-                  textAlign: 'center',
-                  opacity: errorVisible ? 1 : 0,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}>
-                  {saveError}
+                <div className="error-message">
+                  ⚠️ {saveError}
                 </div>
               )}
 
               {saveSuccess && (
-                <div className="success-message" style={{
-                  color: 'green',
-                  margin: '10px 0',
-                  padding: '10px',
-                  backgroundColor: '#e8f5e9',
-                  borderRadius: '4px',
-                  textAlign: 'center'
-                }}>
-                  Dados salvos com sucesso!
+                <div className="success-message">
+                  ✅ Dados salvos com sucesso!
                 </div>
               )}
 
               <div className="form-section">
                 {/* Informações Complementares (lado esquerdo) */}
                 <div className="form-left">
-                  <div 
-                    className="profile-picture-containerEdit"
-                    ref={containerRef}
-                    style={{
-                      position: 'relative',
-                      width: '100%',
-                      textAlign: 'center',
-                      marginBottom: '20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}
-                  >
-                    <div
-                      className="profile-picture-wrapper"
-                      style={{
-                        position: 'relative',
-                        width: '100px',
-                        height: '100px',
-                        overflow: 'hidden',
-                        borderRadius: '50%',
-                        border: '4px solid var(--primary-color)',
-                        boxShadow: '0 0 10px rgba(0, 123, 255, 0.3)',
-                        cursor: editing ? 'move' : 'default'
-                      }}
-                    >
-                      <img
-                        ref={imageRef}
-                        src={formData.profilePicture || defaultAvatar}
-                        alt="Foto de perfil"
-                        className="profile-picture-edit"
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          transform: `scale(${imageScale}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                          transition: isDragging ? 'none' : 'transform 0.1s ease',
-                          cursor: editing ? 'move' : 'default',
-                          userSelect: 'none',
-                          WebkitUserDrag: 'none',
-                          MozUserSelect: 'none',
-                          msUserSelect: 'none',
-                          WebkitUserSelect: 'none',
-                          userDrag: 'none'
-                        }}
-                        onLoad={handleImageLoad}
+                  <h3>📝 Informações Pessoais</h3>
+                  {/* Foto de Perfil Reformulada */}
+                  <div className="profile-photo-section">
+                    <div className="photo-container">
+                      <div 
+                        className="photo-wrapper"
                         onMouseDown={handleMouseDown}
                         onWheel={handleWheel}
-                        draggable="false"
-                      />
+                        style={{
+                          cursor: editing && formData.profilePicture ? (isDragging ? 'grabbing' : 'grab') : 'default'
+                        }}
+                      >
+                        {formData.profilePicture ? (
+                          <img
+                            ref={imageRef}
+                            src={formData.profilePicture}
+                            alt="Foto de perfil"
+                            className="profile-photo"
+                            style={{
+                              transform: `scale(${imageScale}) translate(${imagePosition.x / imageScale}px, ${imagePosition.y / imageScale}px)`,
+                              transition: isDragging ? 'none' : 'transform 0.2s ease'
+                            }}
+                            onLoad={handleImageLoad}
+                            draggable="false"
+                          />
+                        ) : (
+                          <div className="photo-placeholder">
+                            <DefaultAvatar size={120} />
+                          </div>
+                        )}
+                        
+                        {isDragging && (
+                          <div className="drag-overlay">
+                            <span>A Posicionar...</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {editing && (
+                        <div className="photo-controls">
+                          <label htmlFor="photoUpload" className="upload-btn">
+                            <span>📷</span>
+                            Alterar Foto
+                          </label>
+                          <input
+                            id="photoUpload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  profilePicture: URL.createObjectURL(file)
+                                }));
+                                setImageScale(1);
+                                setImagePosition({ x: 0, y: 0 });
+                              }
+                            }}
+                            style={{ display: 'none' }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    {editing && (
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginTop: '10px'
-                      }}>
-                        <input
-                          type="file"
-                          name="profilePicture"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              setFormData((prevData) => ({
-                                ...prevData,
-                                profilePicture: URL.createObjectURL(file),
-                              }));
+                    
+                    {editing && formData.profilePicture && (
+                      <div className="photo-editor">
+                        <div className="editor-header">
+                          <span className="editor-title">Editar Foto</span>
+                        </div>
+                        
+                        <div className="zoom-section">
+                          <span className="zoom-label">Zoom</span>
+                          <div className="zoom-controls">
+                            <button
+                              type="button"
+                              onClick={() => setImageScale(prev => Math.max(0.5, prev - 0.1))}
+                              disabled={imageScale <= 0.5}
+                              className="zoom-btn minus"
+                            >
+                              −
+                            </button>
+                            
+                            <div className="zoom-display">
+                              <span className="zoom-value">{Math.round(imageScale * 100)}%</span>
+                              <div className="zoom-bar">
+                                <div 
+                                  className="zoom-fill"
+                                  style={{ width: `${((imageScale - 0.5) / 2.5) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                            
+                            <button
+                              type="button"
+                              onClick={() => setImageScale(prev => Math.min(3, prev + 0.1))}
+                              disabled={imageScale >= 3}
+                              className="zoom-btn plus"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="editor-actions">
+                          <button
+                            type="button"
+                            onClick={() => {
                               setImageScale(1);
                               setImagePosition({ x: 0, y: 0 });
-                            }
-                          }}
-                        />
-                        <div style={{
-                          display: 'flex',
-                          gap: '10px',
-                          marginTop: '5px'
-                        }}>
-                          <button
-                            type="button"
-                            onClick={() => setImageScale(prev => Math.max(0.5, prev - 0.1))}
-                            style={{
-                              backgroundColor: 'var(--primary-color)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '50%',
-                              width: '30px',
-                              height: '30px',
-                              fontSize: '18px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'background-color 0.3s ease, transform 0.2s ease'
                             }}
-                            onMouseOver={(e) => {
-                              e.target.style.backgroundColor = 'var(--button-primary-hover)';
-                              e.target.style.transform = 'scale(1.1)';
-                            }}
-                            onMouseOut={(e) => {
-                              e.target.style.backgroundColor = 'var(--primary-color)';
-                              e.target.style.transform = 'scale(1)';
-                            }}
-                            onMouseDown={(e) => {
-                              e.target.style.transform = 'scale(0.95)';
-                            }}
-                            onMouseUp={(e) => {
-                              e.target.style.transform = 'scale(1.1)';
-                            }}
+                            className="reset-btn"
                           >
-                            -
+                            Resetar
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setImageScale(prev => Math.min(2, prev + 0.1))}
-                            style={{
-                              backgroundColor: 'var(--primary-color)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '50%',
-                              width: '30px',
-                              height: '30px',
-                              fontSize: '18px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'background-color 0.3s ease, transform 0.2s ease'
-                            }}
-                            onMouseOver={(e) => {
-                              e.target.style.backgroundColor = 'var(--button-primary-hover)';
-                              e.target.style.transform = 'scale(1.1)';
-                            }}
-                            onMouseOut={(e) => {
-                              e.target.style.backgroundColor = 'var(--primary-color)';
-                              e.target.style.transform = 'scale(1)';
-                            }}
-                            onMouseDown={(e) => {
-                              e.target.style.transform = 'scale(0.95)';
-                            }}
-                            onMouseUp={(e) => {
-                              e.target.style.transform = 'scale(1.1)';
-                            }}
-                          >
-                            +
-                          </button>
+                        </div>
+                        
+                        <div className="editor-tips">
+                          <span>💡 Arraste para mover • Use scroll para zoom</span>
                         </div>
                       </div>
                     )}
                   </div>
 <br></br>
                   {/* Contadores de seguidores */}
-                  <div className="followers-section">
-                    <span>{followersCount} Seguidores</span> |{' '}
-                    <span>{followingCount} Seguindo</span>
-                  </div>
 
-                  {/* Removido o botão "Seguir" porque este é o perfil do usuário logado */}
 
                   <div className="form-group">
                     <div className="form-group-LeftPosition">
-                      <label>Primeiro Nome:</label>
+                      <label>👤 Primeiro Nome:</label>
                       {editing ? (
                         <input
                           type="text"
                           name="firstName"
                           value={formData.firstName}
                           onChange={handleInputChange}
+                          placeholder="Digite seu primeiro nome"
                         />
                       ) : (
                         <p>{user.firstName}</p>
                       )}
                     </div>
                     <div className="form-group-RightPosition">
-                      <label>Último Nome:</label>
+                      <label>👤 Último Nome:</label>
                       {editing ? (
                         <input
                           type="text"
                           name="lastName"
                           value={formData.lastName}
                           onChange={handleInputChange}
+                          placeholder="Digite seu último nome"
                         />
                       ) : (
                         <p>{user.lastName}</p>
@@ -446,50 +577,96 @@ const Profile = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Sobre Mim:</label>
+                    <label>� Frase sobre Mim:</label>
                     {editing ? (
-                      <textarea
-                        name="bio"
-                        value={formData.bio}
-                        onChange={handleInputChange}
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          name="quote"
+                          value={formData.quote}
+                          onChange={handleInputChange}
+                          placeholder="Uma frase que te descreva..."
+                          maxLength="100"
+                        />
+                        <small style={{ color: '#666', fontSize: '12px' }}>
+                          {quoteCharCount}/100 caracteres
+                        </small>
+                      </div>
                     ) : (
-                      <p>{user.bio}</p>
+                      <p>{user.quote || 'Nenhuma frase definida.'}</p>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>�📝 Sobre Mim:</label>
+                    {editing ? (
+                      <div>
+                        <textarea
+                          name="bio"
+                          value={formData.bio}
+                          onChange={handleInputChange}
+                          placeholder="Conte um pouco sobre você..."
+                          rows="4"
+                          maxLength="500"
+                        />
+                        <small style={{ color: '#666', fontSize: '12px' }}>
+                          {bioCharCount}/500 caracteres
+                        </small>
+                      </div>
+                    ) : (
+                      <p>{user.bio || 'Ainda não há uma biografia.'}</p>
                     )}
                   </div>
 
                   <div className="form-group">
                     <div className="form-group-LeftPosition">
-                      <label>País:</label>
+                      <label>🌍 País:</label>
                       {editing ? (
-                        <input
-                          type="text"
+                        <select
                           name="country"
                           value={formData.country}
                           onChange={handleInputChange}
-                        />
+                        >
+                          <option value="">Selecione um país</option>
+                          {countries.map((country) => (
+                            <option key={country} value={country}>
+                              {country}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        <p>{user.nationality}</p>
+                        <p>{user.nationality || 'Não informado'}</p>
                       )}
                     </div>
                     <div className="form-group-RightPosition">
-                      <label>Cidade:</label>
+                      <label>🏙️ Cidade:</label>
                       {editing ? (
-                        <input
-                          type="text"
+                        <select
                           name="city"
                           value={formData.city}
                           onChange={handleInputChange}
-                        />
+                          disabled={!formData.country || formData.country === 'Outro'}
+                        >
+                          <option value="">Selecione uma cidade</option>
+                          {formData.country && citiesByCountry[formData.country] && 
+                            citiesByCountry[formData.country].map((city) => (
+                              <option key={city} value={city}>
+                                {city}
+                              </option>
+                            ))}
+                          {formData.country === 'Outro' && (
+                            <option value="Outra">Outra</option>
+                          )}
+                        </select>
                       ) : (
-                        <p>{user.city}</p>
+                        <p>{user.city || 'Não informado'}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="form-group">
                     <div className="form-group-LeftPosition">
-                      <label>Sexo:</label>
+                      <label>⚧️ Sexo:</label>
                       {editing ? (
                         <select
                           name="gender"
@@ -502,11 +679,11 @@ const Profile = () => {
                           <option value="Outro">Outro</option>
                         </select>
                       ) : (
-                        <p>{user.gender}</p>
+                        <p>{user.gender || 'Não informado'}</p>
                       )}
                     </div>
                     <div className="form-group-RightPosition">
-                      <label>Aniversário:</label>
+                      <label>🎂 Aniversário:</label>
                       {editing ? (
                         <input
                           type="date"
@@ -515,7 +692,7 @@ const Profile = () => {
                           onChange={handleInputChange}
                         />
                       ) : (
-                        <p>{user.birthDate}</p>
+                        <p>{user.birthDate || 'Não informado'}</p>
                       )}
                     </div>
                   </div>
@@ -525,71 +702,136 @@ const Profile = () => {
 
                 {/* Informações Obrigatórias (lado direito) */}
                 <div className="form-right">
-                  <h3>Informações Obrigatórias</h3>
+                  <h3>🔒 Informações Obrigatórias</h3>
                   <div className="form-group">
-                    <label>Username:</label>
+                    <label>👥 Username:</label>
                     {editing ? (
                       <input
                         type="text"
                         name="username"
                         value={formData.username}
                         onChange={handleInputChange}
+                        placeholder="Digite seu nome de usuário"
                       />
                     ) : (
                       <p>{user.username}</p>
                     )}
                   </div>
                   <div className="form-group">
-                    <label>Email:</label>
+                    <label>📧 Email:</label>
                     {editing ? (
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
+                        placeholder="Digite seu email"
                       />
                     ) : (
                       <p>{user.email}</p>
                     )}
                   </div>
                   <div className="form-group">
-                    <label>{editing ? 'Alterar Palavra-Passe:' : 'Palavra-Passe:'}</label>
+                    <label>{editing ? '🔐 Alterar Palavra-Passe:' : '🔐 Palavra-Passe:'}</label>
                     {editing ? (
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                      />
+                      <div>
+                        <div style={{ marginBottom: '15px' }}>
+                          <label style={{ fontSize: '14px', marginBottom: '5px', color: '#666' }}>
+                            Password Atual (obrigatória para alterar):
+                          </label>
+                          <input
+                            type="password"
+                            name="currentPassword"
+                            value={formData.currentPassword}
+                            onChange={handleInputChange}
+                            placeholder="Digite a sua password atual"
+                            style={{
+                              borderColor: currentPasswordError ? 'red' : 'var(--border-color)'
+                            }}
+                          />
+                          {currentPasswordError && (
+                            <small style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '5px' }}>
+                              ❌ {currentPasswordError}
+                            </small>
+                          )}
+                        </div>
+                        
+                        <div style={{ marginBottom: '15px' }}>
+                          <label style={{ fontSize: '14px', marginBottom: '5px', color: '#666' }}>
+                            Nova Password (opcional):
+                          </label>
+                          <input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            placeholder="Digite uma nova senha (deixe vazio para manter atual)"
+                            disabled={!formData.currentPassword}
+                            style={{
+                              backgroundColor: !formData.currentPassword ? '#f5f5f5' : 'white',
+                              borderColor: passwordError ? 'red' : 'var(--border-color)'
+                            }}
+                          />
+                          <div style={{ marginTop: '8px' }}>
+                            <small style={{ color: '#666', fontSize: '11px', display: 'block' }}>
+                              Regras de segurança: Mín. 8 caracteres, 1 maiúscula, 1 minúscula, 1 número, 1 especial
+                            </small>
+                          </div>
+                          {passwordError && (
+                            <small style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '5px' }}>
+                              ❌ {passwordError}
+                            </small>
+                          )}
+                          {!passwordError && formData.password && (
+                            <small style={{ color: 'green', fontSize: '12px', display: 'block', marginTop: '5px' }}>
+                              ✅ Password válida
+                            </small>
+                          )}
+                        </div>
+                      </div>
                     ) : (
-                      <p>********</p>
+                      <p>••••••••</p>
                     )}
                   </div>
-                  {editing && (
+                  {editing && formData.password && (
                     <div className="form-group">
-                      <label>Confirmar Palavra-Passe</label>
+                      <label>🔐 Confirmar Nova Password:</label>
                       <input
                         type="password"
                         name="confirmPassword"
-                        value={formData.confirmPassword}
+                        value={formData.confirmPassword || ''}
                         onChange={handleInputChange}
+                        placeholder="Confirme a nova senha"
+                        style={{
+                          borderColor: (formData.confirmPassword && formData.password !== formData.confirmPassword) ? 'red' : 'var(--border-color)'
+                        }}
                       />
+                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                        <small style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '5px' }}>
+                          ❌ As passwords não coincidem
+                        </small>
+                      )}
+                      {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                        <small style={{ color: 'green', fontSize: '12px', display: 'block', marginTop: '5px' }}>
+                          ✅ Passwords coincidem
+                        </small>
+                      )}
                     </div>
                   )}
-                   {/* Privacidade do perfil */}
-                   <div className="form-group">
-                    <label>Privacidade do Perfil:</label>
+                  {/* Privacidade do perfil */}
+                  <div className="form-group">
+                    <label>🔒 Privacidade do Perfil:</label>
                     {editing ? (
                       <select
                         name="privacy"
                         value={formData.privacy}
                         onChange={handleInputChange}
                       >
-                        <option value="public">Público</option>
-                        <option value="private">Privado</option>
+                        <option value="public">🌍 Público</option>
+                        <option value="private">🔒 Privado</option>
                       </select>
                     ) : (
-                      <p>{formData.privacy === 'public' ? 'Público' : 'Privado'}</p>
+                      <p>{formData.privacy === 'public' ? '🌍 Público' : '🔒 Privado'}</p>
                     )}
                   </div>
                 </div>

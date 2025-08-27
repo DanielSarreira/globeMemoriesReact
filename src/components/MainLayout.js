@@ -5,7 +5,6 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import { FaChevronUp, FaPlus } from 'react-icons/fa';
-import '../styles/styles.css';
 
 const MainLayout = () => {
   const location = useLocation();

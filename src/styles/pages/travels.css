@@ -1,0 +1,573 @@
+/* pages/travels.css */
+
+/* --------------------------------------- Travels Page Base Styles --------------------------------------- */
+.travels-container {
+  
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* --------------------------------------- Filters Section --------------------------------------- */
+/* Container principal dos filtros */
+.filters-container {
+  background-color: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(12,18,25,0.06);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Make direct children distribute nicely and wrap responsively */
+.filters-container > * {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+/* Action buttons or compact controls should not stretch */
+.filters-container .filters-actions,
+.filters-container .filters-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .filters-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  .filters-container > * {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .filters-container .filters-actions,
+  .filters-container .filters-buttons {
+    justify-content: flex-start;
+  }
+}
+
+.filters {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+.filters input,
+.filters select,
+.filters button {
+  margin: 5px;
+  padding: 8px 15px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+/* Barra de pesquisa */
+.search-bar {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.search-bar input {
+  width: 250px;
+  max-width: 100%;
+  padding: 8px 30px 8px 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 15px;
+  transition: border-color 0.3s;
+}
+
+.search-bar input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.search-bar input::placeholder {
+  color: #aaa;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+/* Filtros de país e cidade */
+.country-city-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: nowrap;
+  align-items: center;
+  border-radius: 8px;
+  padding: 10px 15px;
+}
+
+.country-city-filters select {
+  flex: 0 1 180px;
+  min-width: 120px;
+  max-width: 220px;
+  padding: 8px 12px;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  font-size: 15px;
+  background: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  margin-right: 8px;
+}
+
+.country-city-filters select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.12);
+}
+
+/* Grupos de filtros */
+.filter-group,
+.filter-group2 {
+  margin-bottom: 15px;
+}
+
+.filter-group label,
+.filter-group2 label {
+  display: block;
+  margin-bottom: 5px;
+  color: #666;
+  font-weight: 500;
+}
+
+.filter-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.filter-group2 {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Filtro de data */
+.date-filters {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.date-filters input[type="date"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.date-filters input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+.date-filters input[type="date"]:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.date-filters select {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.date-filters select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* Grupo de ordenação */
+.sort-group {
+  margin-bottom: 15px;
+}
+
+.sort-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.sort-group select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* --------------------------------------- Category Filters --------------------------------------- */
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  align-items: start;
+  background-color: #fff !important;
+  border-radius: 10px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 75px;
+  padding: 12px 16px;
+  background-color: #f2f2f2;
+  border-radius: 14px;
+  border: 1px solid rgba(20,30,40,0.04);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(18,24,32,0.03);
+}
+
+.checkbox-label:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(18,24,32,0.06);
+}
+
+.checkbox-label .category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  font-size: 20px;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+  box-shadow: inset 0 -2px 6px rgba(0,0,0,0.03);
+}
+
+/* label active state (JS adds .active) */
+.checkbox-label.active {
+  background: linear-gradient(135deg, var(--primary-color), #2c8fe6);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 14px 40px rgba(26,115,255,0.14);
+  transform: translateY(-6px) scale(1.01);
+}
+
+.checkbox-label.active .category-icon {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  transform: scale(1.03);
+  box-shadow: none;
+}
+
+.categories-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  grid-column: 1 / -1; /* span entire checkbox grid */
+}
+
+.selected-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.selected-category {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: var(--secondary-color);
+  color: white;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.selected-category button {
+  background: none;
+  border: solid 1px white;
+  color: white;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.selected-category button:hover {
+  color: #f8f9fa;
+}
+
+/* --------------------------------------- Buttons --------------------------------------- */
+.filters-container .button {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filters-container .button:hover {
+  background-color: var(--primary-color-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+button.filters-button {
+  padding: 10px 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button.filters-button:hover {
+  background-color: var(--primary-color-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.see-all-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+}
+
+.see-all-button:hover {
+  background-color: var(--primary-color-hover);
+}
+
+button.see-more-categories-button,
+button.see-less-categories-button {
+  padding: 8px 15px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.details-button {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 15px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.details-button:hover {
+  background-color: var(--primary-color-hover);
+}
+
+/* --------------------------------------- Travels List and Cards --------------------------------------- */
+.travels-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin: 20px;
+}
+
+.travel-item {
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.travel-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-8px) scale(1.02) !important;
+}
+
+.travel-item h3 {
+  padding: 15px;
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.travel-item p {
+  padding: 0 15px;
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.highlight-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.travel-content {
+  padding: 15px;
+}
+
+.travel-stars {
+  margin-top: 10px;
+  color: #ffc107;
+}
+
+/* --------------------------------------- Layout Helpers --------------------------------------- */
+.filtersStyles {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+/* --------------------------------------- Form Controls --------------------------------------- */
+/* visually hide the native checkbox but keep it accessible
+   the visible square is the label/.category-icon, toggled by JS (.active) */
+input[type="checkbox"] {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+input[type="checkbox"]:focus-visible {
+  /* show focus ring on label when checkbox focused via keyboard */
+  outline: none;
+}
+
+/* Make checkboxes visible again inside modal forms (reports) */
+.modal-content-users input[type="checkbox"],
+.modal-content input[type="checkbox"],
+.modal-content-users .modal-content input[type="checkbox"] {
+  position: relative !important;
+  width: 18px;
+  height: 18px;
+  margin: 0 10px 0 0;
+  padding: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  border: 2px solid #d6dde3;
+  border-radius: 4px;
+  background: #fff;
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  -moz-appearance: checkbox;
+  opacity: 1;
+  cursor: pointer;
+  box-shadow: none;
+  vertical-align: middle;
+}
+
+.modal-content-users input[type="checkbox"]:hover,
+.modal-content input[type="checkbox"]:hover {
+  border-color: var(--primary-color);
+}
+
+.modal-content-users input[type="checkbox"]:focus,
+.modal-content input[type="checkbox"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.12);
+  border-color: var(--primary-color);
+}
+
+.modal-content-users input[type="checkbox"]:checked,
+.modal-content input[type="checkbox"]:checked {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* --------------------------------------- Modal Styles --------------------------------------- */
+.modal-content.category-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* --------------------------------------- Mobile Responsive --------------------------------------- */
+@media (max-width: 768px) {
+  .travels-list {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  .country-city-filters {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 5px;
+    gap: 8px;
+  }
+  .date-filters {
+    flex-direction: column;
+  }
+  .filtersStyles {
+    flex-direction: column;
+  }
+  .filters-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

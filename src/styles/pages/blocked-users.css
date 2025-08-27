@@ -1,0 +1,107 @@
+/* pages/blocked-users.css */
+
+/* --------------------------------------- Blocked Users Page --------------------------------------- */
+
+.blocked-users-page {
+  margin: 20px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-height: 100vh;
+}
+
+.blocked-users-title {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 20px;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+}
+
+.blocked-users-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.blocked-user-item {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: transform 0.2s ease;
+}
+
+.blocked-user-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.blocked-user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+}
+
+.blocked-user-info {
+  flex: 1;
+}
+
+.blocked-user-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.blocked-user-email {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.unblock-button {
+  padding: 8px 16px;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+.unblock-button:hover {
+  background: var(--primary-color-hover);
+}
+
+.no-blocked-users {
+  text-align: center;
+  color: #666;
+  font-size: 1.2rem;
+  margin: 50px 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .blocked-users-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .blocked-user-item {
+    flex-direction: column;
+    text-align: center;
+  }
+}

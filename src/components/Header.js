@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBell, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown, FaGlobe, FaSun } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBell, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown, FaGlobe, FaSun, FaAdn, FaBan } from 'react-icons/fa';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 import TravelsData from '../data/travelsData';
-import '../styles/styles.css';
 import { request, setAuthHeader } from '../axios_helper';
 import axios from 'axios';
 import { useWeather } from '../context/WeatherContext';
+import InstallAppModal from './InstallAppModal';
 
 // Dados mockados para notificações
 const mockNotifications = [
@@ -31,10 +31,11 @@ const Header = () => {
   const [activePage, setActivePage] = useState('/');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
-  const { weather, isLoading } = useWeather();
+  const { weather, isLoading, setWeather, setIsLoading } = useWeather();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   useEffect(() => {
     setTotalTravels(TravelsData.length);
@@ -59,6 +60,48 @@ const Header = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  // Sempre obter o tempo atual para a localização do utilizador ao montar o header
+  useEffect(() => {
+    const fetchWeatherForCoords = async (lat, lon) => {
+      try {
+        setIsLoading(true);
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&timezone=auto`;
+        const res = await axios.get(url);
+        const current = res.data?.current_weather;
+        if (current) {
+          setWeather({
+            temperature: Math.round(current.temperature),
+            windspeed: current.windspeed,
+            weathercode: current.weathercode,
+            time: current.time,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao obter o tempo atual:', error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchWeatherForCoords(latitude, longitude);
+        },
+        (error) => {
+          // Se o utilizador negar, usar Lisboa como fallback
+          console.warn('Geolocalização não disponível:', error.message);
+          fetchWeatherForCoords(38.7167, -9.1333);
+        },
+        { enableHighAccuracy: false, timeout: 5000 }
+      );
+    } else {
+      // Sem geolocalização, fallback para Lisboa
+      fetchWeatherForCoords(38.7167, -9.1333);
+    }
+  }, [setWeather, setIsLoading]);
 
   // Handlers existentes
   const handleUserSearch = (e) => {
@@ -107,10 +150,12 @@ const Header = () => {
   }
 
   const handleInstallClick = () => {
-    // Implemente a lógica para instalar o aplicativo
+    // Abre o modal com instruções de instalação (e opção nativa quando disponível)
+    setIsInstallModalOpen(true);
   };
 
   return (
+    <>
     <header className="header">
       <div className="header-left">
         {isMobile ? (
@@ -118,8 +163,6 @@ const Header = () => {
             <button
               className="install-app-btn"
               onClick={handleInstallClick}
-              disabled={!deferredPrompt}
-              style={{ opacity: deferredPrompt ? 1 : 0.5, cursor: deferredPrompt ? 'pointer' : 'not-allowed' }}
             >
               Instalar App
             </button>
@@ -152,51 +195,9 @@ const Header = () => {
         {user && (
           <>
             {/* Seção de Notificações */}
-            <div className="notification-section">
-              <button
-                className="notification-icon"
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                aria-label="Abrir menu de notificações"
-              >
-                <FaBell />
-                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
-              </button>
-              {isNotificationsOpen && (
-                <div className="notification-menu">
-                  {notifications.length > 0 ? (
-                    <>
-                      {notifications.slice(0, 6).map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
-                        >
-                          <Link
-                            to={notif.type === 'like' || notif.type === 'comment' ? `/travel/${notif.relatedId}` : `/profile/${notif.relatedId}`}
-                            onClick={() => {
-                              markAsRead(notif.id);
-                              setIsNotificationsOpen(false);
-                            }}
-                          >
-                            {notif.message}
-                          </Link>
-                        </div>
-                      ))}
-                      <Link
-                        to="/notifications"
-                        className="view-more-notifications"
-                        onClick={() => setIsNotificationsOpen(false)}
-                      >
-                        Ver mais notificações
-                      </Link>
-                    </>
-                  ) : (
-                    <p className="no-notifications">Nenhuma notificação disponível.</p>
-                  )}
-                </div>
-              )}
-            </div>
+          
 
-            {/* Seção de Meteorologia Simplificada */}
+            {/* Seção de Meteorologia Simplificada (sempre visível) */}
             <div className="weather-section">
               <Link to="/weather" className="weather-icon" title={weather ? `${weather.temperature}°C` : 'Carregando...'}>
                 <FaSun />
@@ -238,11 +239,17 @@ const Header = () => {
                 <Link to={`/profile/edit/${user.username}`} onClick={() => setIsProfileMenuOpen(false)}>
                   <FaUserEdit /> Editar Perfil
                 </Link>
+                <Link to="/blocked-users" onClick={() => setIsProfileMenuOpen(false)}>
+                  <FaBan /> Viajantes Bloqueados
+                </Link>
                 <Link to="/my-travels" onClick={() => setIsProfileMenuOpen(false)}>
                   <FaMap /> As Minhas Viagens
                 </Link>
                 <Link to={`/achievements`} onClick={() => setIsProfileMenuOpen(false)}>
                   <FaTrophy /> As Minhas Conquistas
+                </Link>
+                <Link to="/help-support" onClick={() => setIsProfileMenuOpen(false)}>
+                  <FaAdn /> Ajuda e Suporte
                 </Link>
                 <Link
                   to="/login"
@@ -262,6 +269,12 @@ const Header = () => {
         )}
       </div>
     </header>
+    <InstallAppModal
+      open={isInstallModalOpen}
+      onClose={() => setIsInstallModalOpen(false)}
+      deferredPrompt={deferredPrompt}
+    />
+    </>
   );
 };
 

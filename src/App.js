@@ -16,6 +16,7 @@ import HelpSupport from './pages/HelpSupport';
 import NotFound from './pages/NotFound';
 import Users from './pages/Users';
 import UserProfile from './pages/UserProfile';
+import BlockedUsers from './pages/BlockedUsers';
 import Notifications from './components/Notifications';
 import InteractiveMap from './pages/InteractiveMap';
 import QandA from './pages/QandA';
@@ -26,7 +27,7 @@ import Weather from './pages/weather';
 import FutureTravels from './pages/FutureTravels';
 import MainLayout from './components/MainLayout';
 import AdminLayout from './components/AdminLayout';
-import './styles/styles.css';
+import './styles/index.css';
 
 // Função para verificar autenticação
 const isAuthenticated = () => {
@@ -64,11 +65,14 @@ const App = () => {
         <Route path="/profile/:username" element={<ProtectedRoute />}>
           <Route index element={<UserProfile />} />
         </Route>
-        <Route path="/HelpSupport" element={<ProtectedRoute />}>
+        <Route path="/help-support" element={<ProtectedRoute />}>
           <Route index element={<HelpSupport />} />
         </Route>
         <Route path="/users" element={<ProtectedRoute />}>
           <Route index element={<Users />} />
+        </Route>
+        <Route path="/blocked-users" element={<ProtectedRoute />}>
+          <Route index element={<BlockedUsers />} />
         </Route>
         <Route path="/qanda" element={<ProtectedRoute />}>
           <Route index element={<QandA />} />

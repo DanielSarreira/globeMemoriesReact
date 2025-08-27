@@ -3,7 +3,7 @@
   "short_name": "Globe Memories",
   "start_url": "/",
   "display": "standalone", 
-  "background_color": "#fff !important",
+  "background_color": "#fff",
   "theme_color": "#fff",
   "icons": [
     {

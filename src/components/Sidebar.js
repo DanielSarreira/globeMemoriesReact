@@ -25,7 +25,6 @@ import {
   FaRoute,
   FaPlus
 } from 'react-icons/fa';
-import '../styles/styles.css';
 import logo from '../images/logo_white.png';
 
 const Sidebar = () => {
@@ -67,76 +66,81 @@ const Sidebar = () => {
 
   const profileLink = user ? `/profile/${user.username || 'guest'}` : '/profile/guest';
   const editProfileLink = user ? `/profile/edit/${user.username || 'guest'}` : '/profile/edit/guest';
-
   // Lista de itens da navegação sem o botão "Adicionar Viagem"
   const navItems = [
-    {
-      to: '/',
-      label: 'Página Inicial',
-      icon: <FaHome className="icon" />,
-    },
-    {
-      to: '/travels',
-      label: 'Descobrir Viagens',
-      icon: <FaPlane className="icon" />,
-    },
-    {
-      to: '/users',
-      label: 'Seguir Viajantes',
-      icon: <FaSearch className="icon" />,
-    },
-    {
-      to: '/interactivemap',
-      label: 'Mapa Mundo',
-      icon: <FaGlobe className="icon" />,
-    },
-    {
-      to: '/qanda',
-      label: 'Forum',
-      icon: <FaComments className="icon" />,
-    },
-    {
-      to: '/futuretravels',
-      label: 'Planear Viagem',
-      icon: <FaRoute className="icon" />,
-    },
+    { to: '/', label: 'Página Inicial', icon: <FaHome className="icon" /> },
+    { to: '/travels', label: 'Descobrir Viagens', icon: <FaPlane className="icon" /> },
+    { to: '/users', label: 'Seguir Viajantes', icon: <FaSearch className="icon" /> },
+    { to: '/interactivemap', label: 'Mapa Mundo', icon: <FaGlobe className="icon" /> },
+    { to: '/qanda', label: 'Forum', icon: <FaComments className="icon" /> },
+    { to: '/futuretravels', label: 'Planear Viagem', icon: <FaRoute className="icon" /> },
   ];
-
   // Determinar a posição do botão "Adicionar Viagem"
   const navItemsWithAddButton = [...navItems];
   if (isMobile) {
-    // No mobile, inserir o botão "Adicionar Viagem" no meio da lista (após o 3º item)
-    const middleIndex = Math.floor(navItems.length / 2); // Índice 3 (após "Seguir Viajantes")
+    const middleIndex = Math.floor(navItems.length / 2);
     navItemsWithAddButton.splice(middleIndex, 0, {
       to: '/my-travels',
       label: 'Adicionar Viagem',
       icon: <FaPlus className="icon" />,
       isAddButton: true,
-      className: 'top', // Adicionar a classe "top" para o estilo no mobile
+      className: 'top',
     });
   } else {
-    // No desktop, manter o botão "Adicionar Viagem" como último item dentro de um div com classe "top"
     navItemsWithAddButton.push({
       to: '/my-travels',
       label: 'Adicionar Viagem',
       icon: <FaPlus className="icon" />,
       isAddButton: true,
-      className: 'top', // Adicionar a classe "top" para o estilo no desktop
+      className: 'top',
     });
   }
 
+  // Renderização horizontal para mobile
+  if (isMobile) {
+    return (
+      <nav className="bottom-navbar">
+        <ul>
+          {navItemsWithAddButton.map((item, index) => (
+            <li key={index} className={item.className || ''}>
+              <Link
+                to={item.to}
+                className={activePage === item.to ? 'active' : ''}
+                onClick={() => {
+                  setActivePage(item.to);
+                  if (item.to === '/') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.dispatchEvent(new Event('refreshHomeTravels'));
+                  }
+                }}
+                state={item.isAddButton ? { openModal: true } : undefined}
+              >
+                {item.icon}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    );
+  }
+  // Sidebar vertical para desktop
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <button className="toggle-button" onClick={toggleSidebar}>
         <FaBars />
       </button>
-
       <div className="user-info">
         {!isCollapsed && (
           <div className="logo-container">
             <Link to="/">
               <img src={logo} alt="Globe Memories Logo" className="logo" />
             </Link>
+          </div>
+        )}
+        {/* Mensagem dinâmica de boas-vindas */}
+        {!isCollapsed && (
+          <div className="welcome-message">
+            Bem-vindo(a) {user?.username || 'Convidado'} ao Globe Memories! ✈️
           </div>
         )}
         <div className="profile-avatar">
@@ -146,9 +150,7 @@ const Sidebar = () => {
             className="avatar"
           />
         </div>
-        {!isCollapsed && <p>Bem-vindo(a) {user?.username || 'Convidado'}!</p>}
       </div>
-
       <nav>
         <ul>
           {navItemsWithAddButton.map((item, index) => (
@@ -156,7 +158,13 @@ const Sidebar = () => {
               <Link
                 to={item.to}
                 className={activePage === item.to ? 'active' : ''}
-                onClick={() => setActivePage(item.to)}
+                onClick={() => {
+                  setActivePage(item.to);
+                  if (item.to === '/') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.dispatchEvent(new Event('refreshHomeTravels'));
+                  }
+                }}
                 state={item.isAddButton ? { openModal: true } : undefined}
               >
                 {item.icon} {!isCollapsed && item.label}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, Link } from 'react-router-dom';
 import travels from '../data/travelsData'; // Verifique se o caminho está correto
-import '../styles/styles.css'; // Certifique-se de que o caminho está correto
+// ...existing code...
 import { FaStar } from 'react-icons/fa';
 
 const TravelDetails = () => {
@@ -100,7 +100,7 @@ const TravelDetails = () => {
   };
 
   if (!travel) {
-    return <div>Viagem não encontrada.</div>;
+    return <div><br></br><br></br>Viagem não encontrada.</div>;
   }
 
   const renderStars = (stars) =>

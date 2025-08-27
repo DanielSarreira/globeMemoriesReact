@@ -1,0 +1,345 @@
+/* header.css */
+
+/* Wrapper para a imagem do perfil e a seta */
+.profile-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Estilização da imagem do perfil */
+.profile-image {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Estilização da seta */
+.profile-dropdown-arrow {
+  position: absolute;
+  bottom: -4px; /* Ajuste para posicionar a seta abaixo da imagem */
+  right: -11px; /* Ajuste para alinhar à direita da imagem */
+  font-size: 12px; /* Tamanho da seta */
+  color: var(--primary-color); /* Cor da seta (ajuste conforme o tema) */
+  background-color: #f2f2f2; /* Cor de fundo para destacar a seta */
+  border-radius: 50%; /* Para deixar a seta dentro de um círculo */
+  padding: 2px; /* Espaçamento interno */
+}
+
+/* Estilização do botão para remover bordas ou padding indesejados */
+.profile-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 30px;
+  background-color: var(--background-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  position: sticky;
+  top: 0;
+  z-index: 90 !important;
+  color: var(--text-color);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.header-center {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-input-header {
+  padding: 10px 35px 10px 35px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: border-color 0.3s ease;
+}
+
+.search-input-header:focus {
+  border-color: var(--button-primary);
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--secondary-text-color);
+}
+
+.search-button {
+  padding: 10px 20px;
+  background-color: var(--button-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+.search-button:hover {
+  background-color: var(--button-primary-hover);
+}
+
+.travel-counter {
+  font-size: 1.1rem;
+  color: #000;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+}
+
+.travel-counter strong {
+  color: var(--button-primary);
+  font-weight: 600;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+
+.social-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.social-icons svg {
+  height: 20px !important;
+  width: 20px !important;
+}
+
+.social-icons a {
+  color: var(--text-color);
+  font-size: 1.8rem;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.social-icons a:hover {
+  color: var(--button-primary);
+}
+
+.profile-section {
+  position: relative;
+}
+
+.profile-icon {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding-top: 6px;
+  display: flex;
+  align-items: center;
+}
+
+
+.profile-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 5px var(--shadow-color);
+  min-width: 250px;
+  z-index: 1001;
+}
+
+.profile-menu a .icon{
+margin-right: 0px;
+}
+
+.profile-menu a,
+.profile-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-family: 'Poppins', sans-serif;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Alinhamento geral do header */
+.header {
+  align-items: center;
+}
+
+.profile-icon:hover {
+  background-color: transparent;
+}
+
+.profile-menu a:hover,
+.profile-menu button:hover {
+  background-color: var(--link-hover);
+}
+
+.logout-button {
+  color: var(--error-color);
+}
+
+.logout-button:hover {
+  color: #c82333;
+}
+
+.login-link {
+  text-decoration: none;
+  color: var(--button-primary);
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  transition: color 0.3s ease;
+}
+
+.login-link:hover {
+  color: var(--button-primary-hover);
+}
+
+.mobile-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--background-color);
+  box-shadow: 0 2px 5px var(--shadow-color);
+  z-index: 1000;
+  flex-direction: column;
+  padding: 15px;
+}
+
+.mobile-menu a {
+  padding: 10px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease;
+}
+
+.mobile-menu a:hover {
+  background-color: var(--link-hover);
+}
+
+/* Responsividade para Header */
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    padding: 10px 20px;
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .mobile-menu {
+    display: flex;
+  }
+
+  .header-center {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .search-form {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-input-wrapper {
+    width: 100%;
+  }
+
+  .search-input-header {
+    width: 100%;
+  }
+
+  .travel-counter {
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  .header-right {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-logo h1 {
+    font-size: 1.5rem;
+  }
+
+  .logo-icon {
+    font-size: 1.5rem;
+  }
+
+  .profile-image {
+    width: 35px;
+    height: 35px;
+  }
+
+  .social-icons a {
+    font-size: 1.2rem;
+  }
+
+  .notification-icon {
+    font-size: 1.2rem;
+  }
+}

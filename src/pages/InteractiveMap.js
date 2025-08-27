@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import travels from "../data/travelsData";
 import L from "leaflet";
 import debounce from "lodash/debounce";
+
 import { useNavigate } from "react-router-dom";
 
 // Corrige o problema de ícones padrão no Leaflet com React
@@ -13,6 +15,30 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
+
+// Ícone azul (viagens de utilizadores que sigo)
+const blueIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// Ícone amarelo (viagens públicas de outros)
+const yellowIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
+  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// (removidas duplicações de ícones)
 
 // Ícone verde (viagens passadas)
 const greenIcon = new L.Icon({
@@ -29,6 +55,17 @@ const greenIcon = new L.Icon({
 const orangeIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
   iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// Ícone roxo (resultados de pesquisa)
+const purpleIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -54,12 +91,16 @@ const MapController = ({ selectedLocation }) => {
 const InteractiveMap = () => {
   const [locations, setLocations] = useState([]);
   const [futureTrips, setFutureTrips] = useState([]);
+  const [followingTrips, setFollowingTrips] = useState([]); // azul
+  const [publicTrips, setPublicTrips] = useState([]); // amarelo
   const [showWelcomePopup, setShowWelcomePopup] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [randomPopup, setRandomPopup] = useState(null);
   const [searchMarker, setSearchMarker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState("mine"); // 'mine' | 'all'
   const navigate = useNavigate();
 
   const MAPTILER_API_KEY = "G59o5q9sfWGLLQJsw3v7";
@@ -159,6 +200,14 @@ const InteractiveMap = () => {
   // Debounce para otimizar a busca
   const debouncedSearch = useCallback(debounce((query) => searchLocations(query), 300), []);
 
+  // Util: valida se a viagem tem coordenadas válidas
+  const hasValidCoords = (t) => {
+    if (!t || !Array.isArray(t.coordinates) || t.coordinates.length !== 2) return false;
+    const lat = Number(t.coordinates[0]);
+    const lng = Number(t.coordinates[1]);
+    return Number.isFinite(lat) && Number.isFinite(lng);
+  };
+
   // Função para obter país e cidade a partir de coordenadas
   const getLocationFromCoordinates = async (lat, lng) => {
     try {
@@ -166,11 +215,21 @@ const InteractiveMap = () => {
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-PT`
       );
       const data = await response.json();
+      console.log("Dados de localização recebidos:", data); // Debug
       if (data && data.address) {
-        return {
-          country: data.address.country || "Desconhecido",
-          city: data.address.city || data.address.town || data.address.village || "Desconhecido",
-        };
+        const country = data.address.country || 
+                       data.address.country_code?.toUpperCase() || 
+                       "Desconhecido";
+        const city = data.address.city || 
+                    data.address.town || 
+                    data.address.village || 
+                    data.address.municipality || 
+                    data.address.hamlet || 
+                    data.address.suburb ||
+                    "Desconhecido";
+        
+        console.log(`Localização processada: ${city}, ${country}`); // Debug
+        return { country, city };
       }
     } catch (error) {
       console.error(`Erro ao obter localização para ${lat}, ${lng}:`, error);
@@ -186,32 +245,34 @@ const InteractiveMap = () => {
     const savedVisitedTrips = JSON.parse(localStorage.getItem("visitedTrips")) || [];
     setLocations(savedVisitedTrips);
 
+    // Dados mock/armazenados: viagens de seguidos e públicas
+    const savedFollowingTrips = JSON.parse(localStorage.getItem("followingTrips")) || [];
+    setFollowingTrips(savedFollowingTrips);
+    const savedPublicTrips = JSON.parse(localStorage.getItem("publicTrips")) || [];
+    setPublicTrips(savedPublicTrips);
+
     const fetchCoordinates = async () => {
-      const uniqueLocations = new Map();
+      // Mostrar TODAS as viagens (mesmo que na mesma cidade), evitando só geocoding duplicado
+      const geoCache = new Map(); // key: "City, Country" -> { coordinates, name }
+      const locationsWithCoords = [];
+
       for (const travel of travels) {
-        const locationKey = `${travel.city}, ${travel.country}`;
-        if (
-          !uniqueLocations.has(locationKey) ||
-          new Date(travel.startDate) > new Date(uniqueLocations.get(locationKey).startDate)
-        ) {
-          uniqueLocations.set(locationKey, {
+        const key = `${travel.city}, ${travel.country}`;
+        let geo = geoCache.get(key);
+        if (!geo) {
+          geo = await getCoordinates(travel.country, travel.city);
+          if (geo) geoCache.set(key, geo);
+        }
+        if (geo) {
+          locationsWithCoords.push({
             city: travel.city,
             country: travel.country,
             startDate: travel.startDate,
             price: travel.price,
             tripLink: `/travel/${travel.id}`,
-          });
-        }
-      }
-
-      const locationsWithCoords = [];
-      for (const location of uniqueLocations.values()) {
-        const result = await getCoordinates(location.country, location.city);
-        if (result) {
-          locationsWithCoords.push({
-            ...location,
-            coordinates: result.coordinates,
-            displayName: result.name,
+            user: travel.user,
+            coordinates: geo.coordinates,
+            displayName: geo.name,
           });
         }
       }
@@ -222,6 +283,120 @@ const InteractiveMap = () => {
 
     fetchCoordinates();
   }, []);
+
+  // Enriquecer viagens públicas e de quem sigo com coordenadas caso faltem
+  useEffect(() => {
+    const enrich = async () => {
+      let changedPublic = false;
+      let changedFollowing = false;
+
+      const enrichList = async (list) => {
+        const result = [];
+        for (const t of list || []) {
+          if (!t) { result.push(t); continue; }
+          // 1) Se já existem coordenadas, tentar normalizar para números
+          if (Array.isArray(t.coordinates) && t.coordinates.length === 2) {
+            const lat = Number(t.coordinates[0]);
+            const lng = Number(t.coordinates[1]);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+              result.push({ ...t, coordinates: [lat, lng] });
+              continue;
+            }
+          }
+
+          // 2) Tentar geocodificar usando country/city
+          let city = t.city;
+          let country = t.country;
+
+          // 2a) Se não houver city/country, tentar inferir do label "City, Country"
+          if ((!city || !country) && t.label && typeof t.label === 'string') {
+            const parts = t.label.split(',').map(s => s.trim());
+            if (parts.length >= 2) {
+              city = city || parts[0];
+              country = country || parts[parts.length - 1];
+            }
+          }
+
+          // 2b) Se ainda faltar, não conseguimos enriquecer
+          if (!city || !country) {
+            result.push(t);
+            continue;
+          }
+
+          try {
+            const geo = await getCoordinates(country, city);
+            if (geo && Array.isArray(geo.coordinates)) {
+              result.push({ ...t, city, country, coordinates: geo.coordinates });
+            } else {
+              result.push(t);
+            }
+          } catch (e) {
+            console.warn('Falha ao geocodificar viagem', t);
+            result.push(t);
+          }
+        }
+        return result;
+      };
+
+      // PublicTrips
+      const needsPublic = (publicTrips || []).some(t => !Array.isArray(t?.coordinates) ||
+        (Array.isArray(t?.coordinates) && (!Number.isFinite(Number(t.coordinates[0])) || !Number.isFinite(Number(t.coordinates[1]))))
+      );
+      let newPublic = publicTrips;
+      if (needsPublic) {
+        newPublic = await enrichList(publicTrips);
+        if (JSON.stringify(newPublic) !== JSON.stringify(publicTrips)) {
+          changedPublic = true;
+        }
+      }
+
+      // FollowingTrips
+      const needsFollowing = (followingTrips || []).some(t => !Array.isArray(t?.coordinates) ||
+        (Array.isArray(t?.coordinates) && (!Number.isFinite(Number(t.coordinates[0])) || !Number.isFinite(Number(t.coordinates[1]))))
+      );
+      let newFollowing = followingTrips;
+      if (needsFollowing) {
+        newFollowing = await enrichList(followingTrips);
+        if (JSON.stringify(newFollowing) !== JSON.stringify(followingTrips)) {
+          changedFollowing = true;
+        }
+      }
+
+      if (changedPublic) {
+        setPublicTrips(newPublic);
+        localStorage.setItem('publicTrips', JSON.stringify(newPublic));
+      }
+      if (changedFollowing) {
+        setFollowingTrips(newFollowing);
+        localStorage.setItem('followingTrips', JSON.stringify(newFollowing));
+      }
+    };
+
+    // Apenas corre se houver algo a enriquecer
+    if (
+      (publicTrips || []).some(t => !Array.isArray(t?.coordinates) || (Array.isArray(t?.coordinates) && (!Number.isFinite(Number(t.coordinates[0])) || !Number.isFinite(Number(t.coordinates[1]))))) ||
+      (followingTrips || []).some(t => !Array.isArray(t?.coordinates) || (Array.isArray(t?.coordinates) && (!Number.isFinite(Number(t.coordinates[0])) || !Number.isFinite(Number(t.coordinates[1])))))
+    ) {
+      enrich();
+    }
+  }, [publicTrips, followingTrips]);
+
+  const myVisited = useMemo(() => locations, [locations]);
+  const myFuture = useMemo(() => futureTrips, [futureTrips]);
+
+  const filteredSets = useMemo(() => {
+    if (mode === 'mine') {
+      // Apenas as minhas viagens (concluídas e futuras)
+      return { visited: myVisited, future: myFuture, following: [], public: [] };
+    }
+    // mode === 'all' -> Apenas viagens de outros (quem sigo e públicas)
+    return {
+      visited: [],
+      future: [],
+      following: followingTrips || [],
+      public: publicTrips || [],
+    };
+  }, [mode, myVisited, myFuture, followingTrips, publicTrips]);
 
   // Componente para gerenciar eventos do mapa
 const MapEvents = () => {
@@ -247,15 +422,23 @@ const MapEvents = () => {
       if (!target.closest('.leaflet-container')) {
         return;
       }
+      
+      // Só permite adicionar viagens futuras no modo 'mine'
+      if (mode !== 'mine') {
+        return;
+      }
 
       const { lat, lng } = e.latlng;
+      console.log(`Clique no mapa em: ${lat}, ${lng}`); // Debug
       const location = await getLocationFromCoordinates(lat, lng);
+      console.log("Localização obtida:", location); // Debug
       const newFutureTrip = {
         coordinates: [lat, lng],
         label: `Viagem Futura a ${location.city}`,
         country: location.country,
         city: location.city,
       };
+      console.log("newFutureTrip criada:", newFutureTrip); // Debug
 
       // Adicionar ao futureTrips
       setFutureTrips((prevTrips) => {
@@ -303,7 +486,12 @@ const MapEvents = () => {
         privacy: "public",
         checklist: [],
         coordinates: [lat, lng],
+        travelType: { // Adicionar estrutura de tipo de viagem
+          main: 'single', // Por padrão, viagens criadas no mapa são de destino único
+          isGroup: false
+        }
       };
+      console.log("newTravel criada:", newTravel); // Debug
 
       futureTravels.push(newTravel);
       localStorage.setItem("futureTravels", JSON.stringify(futureTravels));
@@ -315,33 +503,39 @@ const MapEvents = () => {
   return null;
 };
 
-  // Função para verificar se o local já existe como viagem futura
-  const isLocationInFutureTrips = (coordinates) => {
-    return futureTrips.some(trip => 
-      trip.coordinates[0] === coordinates[0] && 
-      trip.coordinates[1] === coordinates[1]
-    );
-  };
-
-  // Função para remover viagem futura a partir do marcador de pesquisa
-  const removeFutureTripFromSearch = (marker) => {
+  // Função para remover viagem futura
+  const removeFutureTrip = (trip) => {
     // Remover do futureTrips
     setFutureTrips((prevTrips) => {
-      const updatedTrips = prevTrips.filter(trip => 
-        !(trip.coordinates[0] === marker.coordinates[0] && 
-          trip.coordinates[1] === marker.coordinates[1])
+      const updatedTrips = prevTrips.filter(t => 
+        !(t.coordinates[0] === trip.coordinates[0] && 
+          t.coordinates[1] === trip.coordinates[1])
       );
       localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
       return updatedTrips;
     });
 
-    // Remover do futureTravels
+    // Remover do futureTravels no localStorage
     const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
-    const updatedFutureTravels = futureTravels.filter(travel => 
-      !(travel.coordinates[0] === marker.coordinates[0] && 
-        travel.coordinates[1] === marker.coordinates[1])
+    const updatedFutureTravels = futureTravels.filter(t => 
+      !(t.coordinates[0] === trip.coordinates[0] && 
+        t.coordinates[1] === trip.coordinates[1])
     );
     localStorage.setItem("futureTravels", JSON.stringify(updatedFutureTravels));
+  };
+
+  // Função para verificar se o local já existe como viagem futura
+  const isLocationInFutureTrips = (coordinates) => {
+    if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+      return false;
+    }
+    return futureTrips.some(trip => 
+      trip.coordinates && 
+      Array.isArray(trip.coordinates) && 
+      trip.coordinates.length === 2 &&
+      trip.coordinates[0] === coordinates[0] && 
+      trip.coordinates[1] === coordinates[1]
+    );
   };
 
   // Função para fechar o popup de boas-vindas
@@ -350,9 +544,50 @@ const MapEvents = () => {
   // Função para gerar o link do Google Maps
   const getGoogleMapsLink = (lat, lng) => `https://www.google.com/maps?q=${lat},${lng}`;
 
+  // Função para extrair o país e a cidade do resultado da pesquisa
+  const extractLocationInfo = (result) => {
+    const address = result.address || {};
+    let country = '';
+    let city = '';
+
+    // Tenta obter o país de diferentes campos possíveis
+    if (address.country) {
+      country = address.country;
+    } else if (address.country_code) {
+      country = address.country_code.toUpperCase();
+    } else if (result.display_name) {
+      // Se não encontrar nos campos específicos, tenta extrair do display_name
+      const parts = result.display_name.split(',');
+      if (parts.length > 0) {
+        country = parts[parts.length - 1].trim();
+      }
+    }
+
+    // Tenta obter a cidade de diferentes campos possíveis
+    if (address.city) {
+      city = address.city;
+    } else if (address.town) {
+      city = address.town;
+    } else if (address.village) {
+      city = address.village;
+    } else if (address.municipality) {
+      city = address.municipality;
+    } else if (result.display_name) {
+      // Se não encontrar nos campos específicos, usa a primeira parte do display_name
+      const parts = result.display_name.split(',');
+      if (parts.length > 1) {
+        city = parts[0].trim();
+      }
+    }
+
+    return { country, city };
+  };
+
   // Função para selecionar um local da pesquisa
   const handleSelectLocation = (result) => {
     const coordinates = [parseFloat(result.lat), parseFloat(result.lon)];
+    const { country, city } = extractLocationInfo(result);
+    
     setSelectedLocation({
       coordinates,
       name: result.display_name,
@@ -362,10 +597,13 @@ const MapEvents = () => {
              result.type === "Região" ? 20000 : 5000
     });
     
-    // Adicionar marcador para o local pesquisado
+    // Adicionar marcador para o local pesquisado com informações detalhadas
     setSearchMarker({
       coordinates,
-      name: result.display_name
+      name: result.display_name,
+      country,
+      city,
+      address: result.address || {}
     });
     
     setSearchQuery("");
@@ -433,6 +671,10 @@ const MapEvents = () => {
       privacy: "public",
       checklist: [],
       coordinates: marker.coordinates,
+      travelType: { // Adicionar estrutura de tipo de viagem
+        main: 'single', // Por padrão, viagens criadas no mapa são de destino único
+        isGroup: false
+      }
     };
 
     futureTravels.push(newTravel);
@@ -441,15 +683,83 @@ const MapEvents = () => {
 
   return (
     <div style={{ height: "100%", width: "100%", overflow: "hidden", position: "relative" }}>
+      {/* Botões de filtro principais */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "25px",
+          left: "20px",
+          zIndex: 1100,
+          display: "flex",
+          gap: "10px",
+        }}
+      >
+        <button
+          onClick={() => { setMode('mine'); }}
+          style={{
+            padding: "10px 14px",
+            borderRadius: "20px",
+            border: "1px solid #ccc",
+            backgroundColor: mode === 'mine' ? '#4CAF50' : 'white',
+            color: mode === 'mine' ? 'white' : '#333',
+            cursor: 'pointer',
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            fontWeight: 600,
+          }}
+        >
+          As Minhas Viagens / Futuras Viagens
+        </button>
+        <button
+          onClick={() => setMode('all')}
+          style={{
+            padding: "10px 14px",
+            borderRadius: "20px",
+            border: "1px solid #ccc",
+            backgroundColor: mode === 'all' ? '#1976d2' : 'white',
+            color: mode === 'all' ? 'white' : '#333',
+            cursor: 'pointer',
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            fontWeight: 600,
+          }}
+        >
+          Viagens de Todos os Viajantes
+        </button>
+      </div>
+      
+      {/* Legenda */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '90px',
+          left: '20px',
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          border: '1px solid #ddd',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          zIndex: 1100,
+          fontSize: 13,
+          fontWeight: 500,
+        }}
+      >
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>Legenda</div>
+        <div style={{ display: 'grid', gap: 4 }}>
+          <span>• Verde = As Minhas Viagens (Concluídas)</span>
+          <span>• Laranja = As Minhas Viagens (Futuras)</span>
+          <span>• Azul = Viagens de quem sigo</span>
+          <span>• Amarelo = Viagens Públicas</span>
+        </div>
+      </div>
+
       {/* Campo de Pesquisa */}
       <div
         style={{
           position: "absolute",
-          top: "30px",
+          top: "40px",
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 1000,
-          width: "650px",
+          width: "750px",
         }}
       >
         <input
@@ -490,9 +800,10 @@ const MapEvents = () => {
               backgroundColor: "white",
               borderRadius: "8px",
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              maxHeight: "250px",
+              maxHeight: "450px",
               overflowY: "auto",
               border: "1px solid #ddd",
+              width: "771px",
             }}
           >
             {searchResults.map((result) => (
@@ -513,7 +824,7 @@ const MapEvents = () => {
                   <span style={{ 
                     color: "#666", 
                     fontSize: "12px", 
-                    backgroundColor: "transparent",
+                    backgroundColor: "#fff !important",
                     padding: '2px 6px',
                     borderRadius: '4px'
                   }}>
@@ -526,7 +837,7 @@ const MapEvents = () => {
                     color: "#666",
                     marginTop: "4px",
                     display:"flex",
-                    backgroundColor:"transparent",
+                    backgroundColor:"#fff !important",
                   }}>
                     {[
                       result.address_details.city || result.address_details.town,
@@ -543,7 +854,7 @@ const MapEvents = () => {
           <div
             style={{
               padding: "12px",
-              backgroundColor: "white",
+              backgroundColor: "#fff !important",
               borderRadius: "8px",
               boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
               marginTop: "5px",
@@ -606,15 +917,20 @@ const MapEvents = () => {
         >
           <TileLayer
             url={`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`}
-            attribution='© <a href="https://www.maptiler.com/copyright/">MapTiler</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+            attribution='&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
             noWrap={true}
           />
 
           {/* Marcadores de países e cidades visitados */}
-          {locations.map((location) => (
-            <Marker key={location.city + location.country} position={location.coordinates} icon={greenIcon}>
+          {filteredSets.visited.map((location, idx) => (
+            <Marker
+              key={`${location.city}-${location.country}-${location.user || ''}-${location.tripLink || idx}`}
+              position={location.coordinates}
+              icon={greenIcon}
+            >
               <Popup>
                 <h3>{location.country} | {location.city}</h3>
+                <p>Viajante: {location.user || 'Desconhecido'}</p>
                 <p>Local: {location.city}</p>
                 <p>Preço total da Viagem: {location.price ? `${location.price} €` : "Sem Informação"}</p>
                 <p>Visitado em: {location.startDate}</p>
@@ -631,7 +947,7 @@ const MapEvents = () => {
           ))}
 
           {/* Marcadores de futuras viagens */}
-          {futureTrips.map((trip, index) => (
+          {filteredSets.future.map((trip, index) => (
             <Marker key={`future-${index}`} position={trip.coordinates} icon={orangeIcon}>
               <Popup>
                 <h3>{trip.label}</h3>
@@ -643,44 +959,48 @@ const MapEvents = () => {
                 </a>
                 <br />
                 <button 
-                  onClick={() => {
-                    navigate("/futuretravels", { 
-                      state: { 
-                        openModal: true,
-                        editCity: trip.city,
-                        editCountry: trip.country,
-                        editName: trip.label,
-                        fromMap: true
-                      } 
-                    });
-                  }} 
-                  style={{ 
-                    marginTop: "5px", 
-                    cursor: "pointer",
-                    backgroundColor: "#4CAF50",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    marginRight: "5px"
-                  }}
-                >
-                  Editar Viagem Futura
-                </button>
-                <button 
-                  onClick={(e) => removeFutureTripFromSearch(trip)} 
-                  style={{ 
-                    marginTop: "5px", 
-                    cursor: "pointer",
+                  onClick={() => removeFutureTrip(trip)}
+                  style={{
+                    marginTop: "8px",
                     backgroundColor: "#f44336",
                     color: "white",
                     border: "none",
                     padding: "8px 16px",
-                    borderRadius: "4px"
+                    borderRadius: "4px",
+                    cursor: "pointer"
                   }}
                 >
                   Remover
                 </button>
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Marcadores de viagens de quem sigo (azuis) */}
+          {mode === 'all' && filteredSets.following.map((trip, index) => (
+            <Marker key={`following-${index}`} position={trip.coordinates} icon={blueIcon}>
+              <Popup>
+                <h3>{trip.label || `${trip.country} | ${trip.city}`}</h3>
+                <p>Viajante: {trip.user || 'Utilizador'}</p>
+                <p>País: {trip.country}</p>
+                <p>Local: {trip.city}</p>
+                {trip.price && <p>Preço: {trip.price} €</p>}
+                {trip.startDate && <p>Data início: {trip.startDate}</p>}
+                {trip.endDate && <p>Data fim: {trip.endDate}</p>}
+              </Popup>
+            </Marker>
+          ))}
+
+          {/* Marcadores de viagens públicas (amarelos) */}
+          {mode === 'all' && filteredSets.public.map((trip, index) => (
+            <Marker key={`public-${index}`} position={trip.coordinates} icon={yellowIcon}>
+              <Popup>
+                <h3>{trip.label || `${trip.country} | ${trip.city}`}</h3>
+                <p>País: {trip.country}</p>
+                <p>Local: {trip.city}</p>
+                {trip.price && <p>Preço: {trip.price} €</p>}
+                {trip.startDate && <p>Data início: {trip.startDate}</p>}
+                {trip.endDate && <p>Data fim: {trip.endDate}</p>}
               </Popup>
             </Marker>
           ))}
@@ -713,76 +1033,154 @@ const MapEvents = () => {
           {searchMarker && (
             <Marker 
               position={searchMarker.coordinates} 
-              icon={new L.Icon({
-                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-                iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-                shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-              })}
+              icon={purpleIcon}
+              eventHandlers={{
+                popupclose: () => {
+                  // Remove o marcador quando o popup é fechado
+                  setSearchMarker(null);
+                }
+              }}
             >
-              <Popup>
-                <div style={{ textAlign: 'center' }}>
-                  <h3>{searchMarker.name}</h3>
-                  <p>Coordenadas: {searchMarker.coordinates[0].toFixed(4)}, {searchMarker.coordinates[1].toFixed(4)}</p>
-                  {isLocationInFutureTrips(searchMarker.coordinates) ? (
+              <Popup closeButton={false}>
+                <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                  <h4 style={{ margin: '0 0 10px 0' }}>{searchMarker.name}</h4>
+                  
+                  {/* País e Cidade */}
+                  <div style={{ textAlign: 'left', marginBottom: '10px' }}>
+                    {searchMarker.country && <p style={{ margin: '4px 0' }}><strong>País:</strong> {searchMarker.country}</p>}
+                    {searchMarker.city && <p style={{ margin: '4px 0' }}><strong>Cidade:</strong> {searchMarker.city}</p>}
+                    <p style={{ margin: '4px 0' }}><strong>Coordenadas:</strong> {searchMarker.coordinates[0].toFixed(4)}, {searchMarker.coordinates[1].toFixed(4)}</p>
+                  </div>
+                  
+                  {/* Botão Adicionar como Viagem Futura */}
+                  <button
+                    onClick={() => addFutureTripFromSearch(searchMarker)}
+                    style={{
+                      backgroundColor: '#fd7e14', // Laranja
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      margin: '8px 0',
+                      width: '100%',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Adicionar como Viagem Futura
+                  </button>
+                  
+                  {/* Botão Ver no Google Maps */}
+                  <a 
+                    href={getGoogleMapsLink(searchMarker.coordinates[0], searchMarker.coordinates[1])} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ display: 'block', textDecoration: 'none' }}
+                  >
                     <button 
-                      onClick={() => removeFutureTripFromSearch(searchMarker)}
                       style={{ 
-                        marginTop: "5px", 
-                        cursor: "pointer",
-                        backgroundColor: "#f44336",
-                        color: "white",
-                        border: "none",
-                        padding: "8px 16px",
-                        borderRadius: "4px",
-                        marginRight: "5px"
+                        width: '100%',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        backgroundColor: '#28a745', // Verde
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        margin: '8px 0',
+                        fontWeight: 'bold'
                       }}
                     >
-                      Remover Viagem Futura
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => addFutureTripFromSearch(searchMarker)}
-                      style={{ 
-                        marginTop: "5px", 
-                        cursor: "pointer",
-                        backgroundColor: "#ff9800",
-                        color: "white",
-                        border: "none",
-                        padding: "8px 16px",
-                        borderRadius: "4px",
-                        marginRight: "5px"
-                      }}
-                    >
-                      Adicionar Viagem Futura
-                    </button>
-                  )}
-                  <br />
-                  <a href={getGoogleMapsLink(searchMarker.coordinates[0], searchMarker.coordinates[1])} target="_blank" rel="noopener noreferrer">
-                    <button style={{ 
-                      marginTop: "5px", 
-                      cursor: "pointer",
-                      backgroundColor: "#4CAF50",
-                      color: "white",
-                      border: "none",
-                      padding: "8px 16px",
-                      borderRadius: "4px"
-                    }}>
                       Ver no Google Maps
                     </button>
                   </a>
+                  
+                  {/* Botão Fechar */}
+                  <button
+                    onClick={() => setSearchMarker(null)}
+                    style={{
+                      width: '100%',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      backgroundColor: '#f8f9fa',
+                      border: '1px solid #ddd',
+                      cursor: 'pointer',
+                      marginTop: '8px',
+                      fontSize: '0.9em',
+                      color: '#6c757d'
+                    }}
+                  >
+                    Fechar
+                  </button>
                 </div>
               </Popup>
             </Marker>
+          )}
+
+          {/* Popup aberto automaticamente para a viagem aleatória */}
+          {randomPopup && (
+            <Popup position={randomPopup.coordinates} eventHandlers={{ remove: () => setRandomPopup(null) }}>
+              <div style={{ maxWidth: 260 }}>
+                <h3 style={{ marginTop: 0 }}>{randomPopup.label || `${randomPopup.country} | ${randomPopup.city}`}</h3>
+                {randomPopup.image && (
+                  <img src={randomPopup.image} alt={randomPopup.label || randomPopup.city} style={{ width: '100%', borderRadius: 6, marginBottom: 8 }} />
+                )}
+                <p style={{ margin: '6px 0' }}>País: {randomPopup.country}</p>
+                <p style={{ margin: '6px 0' }}>Local: {randomPopup.city}</p>
+                {randomPopup.summary && <p style={{ margin: '6px 0' }}>{randomPopup.summary}</p>}
+                {randomPopup.tripLink && (
+                  <a href={randomPopup.tripLink} target="_blank" rel="noopener noreferrer">
+                    <button style={{ marginTop: 6, cursor: 'pointer' }}>Ver mais</button>
+                  </a>
+                )}
+              </div>
+            </Popup>
           )}
 
           <MapEvents />
           <MapController selectedLocation={selectedLocation} />
         </MapContainer>
       </div>
+
+      {/* Explorar Aleatório (viagem pública aleatória) */}
+      {mode === 'all' && (
+        <div style={{ position: 'absolute', left: 615, bottom: 25, zIndex: 1100 }}>
+          <button
+            onClick={() => {
+              // Considera viagens públicas e de quem sigo
+              const combinedFiltered = [...(filteredSets.public || []), ...(filteredSets.following || [])];
+              const combinedAll = [...(publicTrips || []), ...(followingTrips || [])];
+              const basePool = combinedFiltered.length ? combinedFiltered : combinedAll;
+              const pool = (basePool || []).filter(hasValidCoords);
+              if (!pool.length) {
+                console.warn('Sem viagens elegíveis com coordenadas válidas.');
+                window.alert('Não há viagens com coordenadas válidas para explorar.');
+                return;
+              }
+              const r = pool[Math.floor(Math.random() * pool.length)];
+              const coords = [Number(r.coordinates[0]), Number(r.coordinates[1])];
+              setSelectedLocation({
+                coordinates: coords,
+                name: `${r.city}, ${r.country}`,
+                zoom: 12,
+                radius: 8000,
+              });
+              setRandomPopup({ ...r, coordinates: coords });
+            }}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 20,
+              border: '1px solid #ccc',
+              backgroundColor: '#ff5722',
+              color: 'white',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              fontWeight: 600,
+            }}
+          >
+            Explorar uma Viagem Aleatória
+          </button>
+        </div>
+      )}
     </div>
   );
 };

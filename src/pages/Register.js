@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
-import { FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
-import '../styles/styles.css';
+import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
+
+import bgLoginImage from '../images/banners/bg_login.jpg';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +19,8 @@ const Register = () => {
 
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { setUser } = useAuth();
   const navigate = useNavigate();
 
@@ -180,12 +183,18 @@ const Register = () => {
   };
 
   return (
-    <div className="register-page">
+    <div className="register-page" style={{
+      minHeight: '100vh',
+      width: '',
+      background: `url('${bgLoginImage}') center center/cover no-repeat, linear-gradient(180deg, #004a94 0%, #e68a00 100%)`,
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
       <div className="register-wrapper">
         {/* Seção Esquerda: Formulário de Registo */}
         <div className="register-container">
           <div className="register-header">
-            <h2>Registar na Globe Memories</h2>
+            <h2>Registar:</h2>
 
           </div>
           <form onSubmit={handleSubmit} className="register-form">
@@ -215,17 +224,7 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="form-groupRegister">
-              <label>País:</label>
-              <input
-                type="text"
-                name="nationality"
-                value={formData.nationality}
-                onChange={handleChange}
-                placeholder="Insira o seu País"
-                required
-              />
-            </div>
+           
 
             <div className="user-email-container" style={{ display: 'flex', gap: '20px' }}>
               <div className="form-groupRegister" style={{ flex: 1 }}>
@@ -240,7 +239,22 @@ const Register = () => {
                 />
               </div>
 
-              <div className="form-groupRegister" style={{ flex: 1 }}>
+            <div className="form-groupRegister">
+              <label>País:</label>
+              <input
+                type="text"
+                name="nationality"
+                value={formData.nationality}
+                onChange={handleChange}
+                placeholder="Insira o seu País"
+                required
+              />
+            </div>
+
+            </div>
+ 
+
+             <div className="form-groupRegister" style={{ flex: 1 }}>
                 <label>Email:</label>
                 <input
                   type="email"
@@ -251,31 +265,75 @@ const Register = () => {
                   required
                 />
               </div>
-            </div>
-
             <div className="password-container" style={{ display: 'flex', gap: '20px' }}>
               <div className="form-groupRegister" style={{ flex: 1 }}>
                 <label>Palavra-passe:</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Insira a sua palavra-passe"
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Insira a sua palavra-passe"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#9ca3af',
+                      fontSize: '1.1rem',
+                      padding: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
               </div>
 
               <div className="form-groupRegister" style={{ flex: 1 }}>
-                <label>Confirmar Palavra-passe:</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirme a sua palavra-passe"
-                  required
-                />
+                <label>Confirmar:</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirme a sua palavra-passe"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#9ca3af',
+                      fontSize: '1.1rem',
+                      padding: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
 import TravelsData from '../data/travelsData';
-import '../styles/styles.css';
-import { FaCheck, FaStar } from 'react-icons/fa';
+// ...existing code...
+import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClock, FaUserPlus, FaChartBar, FaMapMarkerAlt } from 'react-icons/fa';
 import { request } from '../axios_helper';
 
 // Dados mockados para perfis de usuário
@@ -66,6 +66,37 @@ const UserProfile = () => {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', list: [], type: '' });
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [reportedUsers, setReportedUsers] = useState([]);
+  const [showTravelDropdown, setShowTravelDropdown] = useState(null);
+  const [showReportTravelModal, setShowReportTravelModal] = useState(false);
+  const [selectedTravel, setSelectedTravel] = useState(null);
+  const [reportedTravels, setReportedTravels] = useState([]);
+  const [reportTravelReasons, setReportTravelReasons] = useState({
+    inappropriate: false,
+    falseInfo: false,
+    abusive: false,
+    spam: false,
+    violation: false,
+    plagiarism: false,
+    other: false,
+  });
+  const [otherTravelReason, setOtherTravelReason] = useState('');
+  const [reportReasons, setReportReasons] = useState({
+    inappropriate: false,
+    falseInfo: false,
+    abusive: false,
+    spam: false,
+    identity: false,
+    plagiarism: false,
+    harassment: false,
+    violation: false,
+    other: false
+  });
+  const [otherReason, setOtherReason] = useState('');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -104,6 +135,31 @@ const UserProfile = () => {
     fetchUserProfile();
   }, [username, user]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showDropdown]);
+
+  useEffect(() => {
+    const handleClickOutsideTravel = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setShowTravelDropdown(null);
+      }
+    };
+    if (showTravelDropdown) {
+      document.addEventListener('click', handleClickOutsideTravel);
+      return () => document.removeEventListener('click', handleClickOutsideTravel);
+    }
+  }, [showTravelDropdown]);
+
   const renderStars = (stars) => (
     [...Array(5)].map((_, index) => (
       <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={20} />
@@ -137,6 +193,137 @@ const UserProfile = () => {
     setPendingRequests(pendingRequests.filter((u) => u !== profile.username));
   };
 
+  const toggleDropdown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDropdown(!showDropdown);
+  };
+
+  const toggleTravelDropdown = (travelId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowTravelDropdown(showTravelDropdown === travelId ? null : travelId);
+  };
+
+  const handleReportUser = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      alert('Faça login para denunciar usuários.');
+      return;
+    }
+    setShowReportModal(true);
+    setShowDropdown(false);
+  };
+
+  const handleBlockUser = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      alert('Faça login para bloquear usuários.');
+      return;
+    }
+    setShowBlockModal(true);
+    setShowDropdown(false);
+  };
+
+  const handleReasonChange = (reason) => {
+    setReportReasons(prev => ({
+      ...prev,
+      [reason]: !prev[reason]
+    }));
+  };
+
+  const handleTravelReasonChange = (reason) => {
+    setReportTravelReasons(prev => ({
+      ...prev,
+      [reason]: !prev[reason]
+    }));
+  };
+
+  const confirmReportUser = () => {
+    if (profile) {
+      // Check if at least one reason is selected
+      const hasSelectedReason = Object.values(reportReasons).some(value => value) || 
+                               (reportReasons.other && otherReason.trim());
+      
+      if (!hasSelectedReason) {
+        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        return;
+      }
+
+      setReportedUsers([...reportedUsers, profile.username]);
+      setShowReportModal(false);
+      // Remove from following if currently following
+      setFollowing(following.filter(username => username !== profile.username));
+      
+      // Reset form
+      setReportReasons({
+        inappropriate: false,
+        falseInfo: false,
+        abusive: false,
+        spam: false,
+        identity: false,
+        plagiarism: false,
+        harassment: false,
+        violation: false,
+        other: false
+      });
+      setOtherReason('');
+    }
+  };
+
+  const confirmBlockUser = () => {
+    if (profile) {
+      setBlockedUsers([...blockedUsers, profile.username]);
+      setShowBlockModal(false);
+      // Remove from following if currently following
+      setFollowing(following.filter(username => username !== profile.username));
+    }
+  };
+
+  const handleReportTravel = (travel, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      alert('Faça login para denunciar viagens.');
+      return;
+    }
+    setSelectedTravel(travel);
+    setShowReportTravelModal(true);
+    setShowTravelDropdown(null);
+  };
+
+  const confirmReportTravel = () => {
+    if (selectedTravel) {
+      const hasSelectedReason = Object.values(reportTravelReasons).some(v => v) ||
+        (reportTravelReasons.other && otherTravelReason.trim());
+      if (!hasSelectedReason) {
+        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        return;
+      }
+      setReportedTravels([...reportedTravels, selectedTravel.id]);
+      setShowReportTravelModal(false);
+      setSelectedTravel(null);
+      setReportTravelReasons({
+        inappropriate: false,
+        falseInfo: false,
+        abusive: false,
+        spam: false,
+        violation: false,
+        plagiarism: false,
+        other: false,
+      });
+      setOtherTravelReason('');
+    }
+  };
+
+  const handleUnblockUser = () => {
+    if (profile) {
+      setBlockedUsers(blockedUsers.filter(username => username !== profile.username));
+    }
+  };
+
   const openFollowModal = (title, list) => {
     console.log('Abrindo Follow Modal:', title, list);
     setModalContent({ title, list, type: 'follow' });
@@ -164,13 +351,13 @@ const UserProfile = () => {
   if (loading) return <div className="user-profile-page"><div className="loading-spinner"></div></div>;
   if (!profile) return <div className="user-profile-page"><p>Viajante não encontrado.</p></div>;
 
-  const isFollowing = following.includes(profile.username);
-  const isPending = pendingRequests.includes(profile.username);
   const isOwnProfile = user && user.username === profile.username;
+  const isFollowing = user && following.includes(profile.username);
+  const isPending = user && pendingRequests.includes(profile.username);
+  const isBlocked = user && blockedUsers.includes(profile.username);
+  const canViewDetails = isOwnProfile || (profile.privacy === 'public') || isFollowing;
+  const canViewFollowStats = isOwnProfile || (profile.privacy === 'public') || isFollowing;
   const visibleTravels = travels;
-
-  const canViewDetails = isOwnProfile || profile.privacy === 'public' || (profile.privacy === 'private' && isFollowing);
-  const canViewFollowStats = isOwnProfile || isFollowing;
 
   const totalTravels = canViewDetails ? visibleTravels.length : 0;
   const uniqueCountries = canViewDetails ? [...new Set(visibleTravels.map((travel) => travel.country))] : [];
@@ -217,90 +404,206 @@ const UserProfile = () => {
   const topExpensive = canViewDetails ? sortedByPrice.slice(0, 3) : [];
   const topCheap = canViewDetails ? sortedByPrice.slice(-3).reverse() : [];
 
+  // If user is blocked, show blocked interface
+  if (isBlocked && !isOwnProfile) {
+    return (
+      <div className="user-profile-page">
+        <div className="blocked-user-container" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          textAlign: 'center',
+          padding: '40px 20px'
+        }}>
+          <div className="blocked-user-avatar" style={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '50%',
+            backgroundColor: '#f0f0f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '20px',
+            border: '3px solid #ddd'
+          }}>
+            <FaBan size={60} color="#999" />
+          </div>
+          <h2 style={{ color: '#333', marginBottom: '10px' }}>{profile.username}</h2>
+          <p style={{ color: '#666', marginBottom: '30px', fontSize: '16px' }}>
+            Você bloqueou este viajante.
+          </p>
+          <div style={{ display: 'flex', gap: '15px', flexDirection: 'column', alignItems: 'center' }}>
+            <button
+              onClick={handleUnblockUser}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#0056b3'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#007bff'}
+            >
+              Desbloquear
+            </button>
+            <Link
+              to="/blocked-users"
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#5a6268'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#6c757d'}
+            >
+              VER TODOS OS VIAJANTES BLOQUEADOS
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="user-profile-page">
       <header className="profile-header">
-        <div className="profile-picture-container">
-          <img
-            src={profile.profilePicture || defaultAvatar}
-            alt={`${profile.username}'s avatar`}
-            className="profile-picture"
-          />
-        </div>
-        <div className="stats">
-          <span
-            onClick={() => canViewFollowStats && openFollowModal('Seguidores', followers)}
-            className={`stat-item ${canViewFollowStats ? '' : 'non-clickable'}`}
-          >
-            <strong>{followers.length}</strong> Seguidores
-          </span>
-          <span
-            onClick={() => canViewFollowStats && openFollowModal('A Seguir', profile.following)}
-            className={`stat-item ${canViewFollowStats ? '' : 'non-clickable'}`}
-          >
-            <strong>{profile.following.length}</strong> A Seguir
-          </span>
-          <span className="stat-item">
-            <strong>{visibleTravels.length}</strong> Viagens
-          </span>
-        </div>
-        <div className="profile-info">
-          <div className="profile-actions">
-            {isOwnProfile && (
-              <Link to={`/profile/edit/${profile.username}`} className="edit-button">
-                Editar Perfil
-              </Link>
-            )}
-            {!isOwnProfile && user && (
-              <div className="user-actions">
-                {isFollowing ? (
-                  <button className="unfollow-button" onClick={handleUnfollow}>
-                    Não seguir
-                  </button>
-                ) : isPending ? (
-                  <button className="pending-button" onClick={handleCancelRequest}>
-                    Pendente
-                  </button>
-                ) : (
-                  <button className="follow-button" onClick={handleFollow}>
-                    {profile.privacy === 'public' ? 'Seguir' : 'Pedir para seguir'}
-                  </button>
+        <div className="profile-header-main">
+          <div className="profile-avatar-section">
+            <div className="profile-picture-container">
+              <img
+                src={profile.profilePicture || defaultAvatar}
+                alt={`${profile.username}'s avatar`}
+                className="profile-picture"
+              />
+              <div className="profile-picture-overlay">
+                <div className="profile-status-indicator">
+                  <div className="status-dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="profile-info-section">
+            <div className="profile-header-top">
+              <div className="profile-name-container">
+                <h1 className="profile-name">
+                  {profile.name}
+                  {user && following.includes(profile.username) && (
+                    <span className="following-badge">
+                      <FaCheck className="following-icon" />
+                      A Seguir
+                    </span>
+                  )}
+                </h1>
+                <p className="profile-username">@{profile.username}</p>
+              </div>
+
+              <div className="profile-actions-section">
+                {isOwnProfile && (
+                  <Link to={`/profile/edit/${profile.username}`} className="button">
+                    <FaEdit />
+                    <span>Editar Perfil</span>
+                  </Link>
+                )}
+                {!isOwnProfile && user && (
+                  <div className="social-actions">
+                    {isFollowing ? (
+                      <button className="unfollow-button" onClick={handleUnfollow}>
+                        <FaUserMinus />
+                        <span>Deixar de Seguir</span>
+                      </button>
+                    ) : isPending ? (
+                      <button className="pending-button" onClick={handleCancelRequest}>
+                        <FaClock />
+                        <span>Pendente</span>
+                      </button>
+                    ) : (
+                      <button className="follow-button" onClick={handleFollow}>
+                        <FaUserPlus />
+                        <span>{profile.privacy === 'public' ? 'Seguir' : 'Solicitar'}</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+          
+                {!isOwnProfile && user && (
+                  <div className="dropdown-container">
+                    <button
+                      className="action-button menu-btn"
+                      onClick={toggleDropdown}
+                    >
+                      <FaEllipsisV />
+                    </button>
+                    {showDropdown && (
+                      <div className="dropdown-menu">
+                        <button
+                          className="dropdown-item"
+                          onClick={handleReportUser}
+                        >
+                          <FaFlag /> Denunciar
+                        </button>
+                        <button
+                          className="dropdown-item"
+                          onClick={handleBlockUser}
+                        >
+                          <FaBan /> Bloquear
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-            {canViewDetails && (
-              <button
-                className="edit-button"
-                onClick={() => {
-                  console.log('Clicou em Ver Estatísticas');
-                  try {
-                    const statsSection = document.getElementById('traveler-stats');
-                    if (statsSection) {
-                      statsSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  } catch (error) {
-                    console.error('Erro ao rolar para estatísticas:', error);
-                  }
-                }}
-              >
-                Ver Estatísticas do Viajante
-              </button>
-            )}
+            </div>
+
+            <div className="profile-details-section">
+              {profile.bio && (
+                <div className="bio-container">
+                  <p className="bio">{profile.bio}</p>
+                </div>
+              )}
+              {(profile.city || profile.country) && (
+                <div className="location-container">
+                  <FaMapMarkerAlt className="location-icon" />
+                  <span className="location-text">
+                    {profile.city && profile.country ? `${profile.city}, ${profile.country}` : profile.city || profile.country}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="profile-stats-section">
+              <div className="stats-grid">
+                <div
+                  className={`stat-card ${canViewFollowStats ? 'clickable' : 'non-clickable'}`}
+                  onClick={() => canViewFollowStats && openFollowModal('Seguidores', followers)}
+                >
+                  <div className="stat-number">{followers.length}</div>
+                  <div className="stat-label">Seguidores</div>
+                </div>
+                <div
+                  className={`stat-card ${canViewFollowStats ? 'clickable' : 'non-clickable'}`}
+                  onClick={() => canViewFollowStats && openFollowModal('A Seguir', profile.following)}
+                >
+                  <div className="stat-number">{profile.following.length}</div>
+                  <div className="stat-label">Seguindo</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-number">{visibleTravels.length}</div>
+                  <div className="stat-label">Viagens</div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="profile-right">
-          <h1>
-            {profile.name}
-            {user && following.includes(profile.username) && (
-              <span className="following-text">
-                <FaCheck className="following-icon" /> A seguir
-              </span>
-            )}
-          </h1>
-          <p className="bio">{profile.bio || 'Sem bio'}</p>
-          <p className="location">
-            {profile.city && profile.country ? `${profile.city}, ${profile.country}` : 'Localização não especificada'}
-          </p>
         </div>
       </header>
 
@@ -308,19 +611,85 @@ const UserProfile = () => {
         {canViewDetails ? (
           <>
             <div className="travels-section">
-              <div className="travels-header">
+              
                 {isOwnProfile && user && (
-                  <Link to="/my-travels" className="manage-travels-button">
+                  <Link to="/my-travels" className="button">
                     Gerir as minhas Viagens
                   </Link>
                 )}
-              </div>
+             
               {visibleTravels.length > 0 ? (
                 <div className="travels-grid">
                   {visibleTravels.map((travel) => (
                     <div key={travel.id} className="travel-card">
                       <Link to={`/travel/${travel.id}`}>
                         <div className="travel-content">
+                          {!isOwnProfile && user && (
+                            <div className="dropdown-container" style={{ position: 'relative' }}>
+                              <button
+                                className="dropdown-toggle"
+                                onClick={(e) => toggleTravelDropdown(travel.id, e)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '10px',
+                                  right: '10px',
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '8px',
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#666',
+                                  transition: 'background-color 0.2s',
+                                  zIndex: 2,
+                                }}
+                                onMouseEnter={(e) => (e.target.style.backgroundColor = '#f0f0f0')}
+                                onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+                              >
+                                <FaEllipsisV />
+                              </button>
+                              {showTravelDropdown === travel.id && (
+                                <div
+                                  className="dropdown-menu"
+                                  style={{
+                                    position: 'absolute',
+                                    top: '40px',
+                                    right: '10px',
+                                    backgroundColor: 'white',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                                    zIndex: 5000,
+                                    minWidth: '180px',
+                                  }}
+                                >
+                                  <button
+                                    className="dropdown-item"
+                                    onClick={(e) => handleReportTravel(travel, e)}
+                                    style={{
+                                      width: '100%',
+                                      padding: '12px 16px',
+                                      border: 'none',
+                                      background: 'none',
+                                      textAlign: 'left',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      color: '#e74c3c',
+                                      fontSize: '14px',
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.backgroundColor = '#f8f9fa')}
+                                    onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+                                  >
+                                    <FaFlag /> Denunciar Viagem
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <img src={travel.highlightImage} alt={travel.name} className="highlight-image" />
                           <div className="travel-text">
                             <h2>{travel.name}</h2>
@@ -342,8 +711,9 @@ const UserProfile = () => {
                 <p className="no-travels">Nenhuma viagem partilhada ainda.</p>
               )}
             </div>
-
+<br></br><br></br>
             <div className="traveler-stats-section" id="traveler-stats">
+              
               <h2>Estatísticas do Viajante</h2>
               <div className="stats-grid">
                 <div className="stat-item-box">
@@ -377,7 +747,7 @@ const UserProfile = () => {
                   <p><strong>{averageDays}</strong></p>
                 </div>
               </div>
-
+<br></br><br></br>
               <div className="top-destinations-section">
                 <h2>Melhores Destinos</h2>
                 <div className="destinations-grid">
@@ -462,6 +832,191 @@ const UserProfile = () => {
         </div>
       )}
 
+      {showReportTravelModal && (
+        <div className="modal-overlay" onClick={() => setShowReportTravelModal(false)}>
+          <div
+            className="modal-content-users"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}
+          >
+            <h2>Denunciar Viagem</h2>
+            <p>
+              Por que deseja denunciar a viagem <strong>{selectedTravel?.name}</strong>?
+            </p>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+              Esta ação irá reportar a viagem aos administradores.
+            </p>
+
+            <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.inappropriate}
+                    onChange={() => handleTravelReasonChange('inappropriate')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Conteúdo inapropriado</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: imagens ofensivas, descrições inapropriadas, nudez, etc.)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.falseInfo}
+                    onChange={() => handleTravelReasonChange('falseInfo')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Informação falsa ou enganosa</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: locais inexistentes, preços manipulados, etc.)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.abusive}
+                    onChange={() => handleTravelReasonChange('abusive')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Assédio/Abuso nos conteúdos</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: linguagem agressiva ou ofensiva)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.spam}
+                    onChange={() => handleTravelReasonChange('spam')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Spam ou autopromoção</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: publicidade abusiva, links externos)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.plagiarism}
+                    onChange={() => handleTravelReasonChange('plagiarism')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Plágio de conteúdo</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: fotos/textos copiados sem créditos)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.violation}
+                    onChange={() => handleTravelReasonChange('violation')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Violação das regras da plataforma</strong>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportTravelReasons.other}
+                    onChange={() => handleTravelReasonChange('other')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Outro (especificar)</strong>
+                  </div>
+                </label>
+                {reportTravelReasons.other && (
+                  <textarea
+                    value={otherTravelReason}
+                    onChange={(e) => setOtherTravelReason(e.target.value)}
+                    placeholder="Descreva o motivo da denúncia..."
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '5px',
+                      fontSize: '14px',
+                      resize: 'vertical',
+                      minHeight: '80px',
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  setShowReportTravelModal(false);
+                  setReportTravelReasons({
+                    inappropriate: false,
+                    falseInfo: false,
+                    abusive: false,
+                    spam: false,
+                    violation: false,
+                    plagiarism: false,
+                    other: false,
+                  });
+                  setOtherTravelReason('');
+                }}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                className="confirm-button"
+                onClick={confirmReportTravel}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#e74c3c',
+                  color: 'white',
+                }}
+              >
+                Denunciar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showStatsModal && (
         <div className="stats-modal-overlay" onClick={closeStatsModal}>
           <div className="stats-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -512,6 +1067,259 @@ const UserProfile = () => {
           <div className="request-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Sucesso!</h2>
             <p>Pedido enviado com sucesso.<br />Aguarde até que o Viajante aceite o seu pedido!</p>
+          </div>
+        </div>
+      )}
+
+      {showReportModal && (
+        <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
+          <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h2>Denunciar Viajante</h2>
+            <p>Por que deseja denunciar <strong>{profile?.username}</strong>?</p>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta ação irá reportar o usuário aos administradores.</p>
+            
+            <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.inappropriate}
+                    onChange={() => handleReasonChange('inappropriate')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Conteúdo inapropriado</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: imagens ofensivas, descrições inapropriadas, nudez, etc.)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.falseInfo}
+                    onChange={() => handleReasonChange('falseInfo')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Informação falsa ou enganosa</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens inventadas, locais inexistentes, preços manipulados, etc.)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.abusive}
+                    onChange={() => handleReasonChange('abusive')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Comportamento abusivo ou ofensivo</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: linguagem agressiva, insultos, bullying)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.spam}
+                    onChange={() => handleReasonChange('spam')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Spam ou autopromoção excessiva</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: promoção constante de marcas, links externos, publicidade abusiva)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.identity}
+                    onChange={() => handleReasonChange('identity')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Roubo de identidade</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: perfis falsos, uso de fotos de outras pessoas sem autorização)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.plagiarism}
+                    onChange={() => handleReasonChange('plagiarism')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Plágio de conteúdo</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros utilizadores sem créditos)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.harassment}
+                    onChange={() => handleReasonChange('harassment')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Assédio ou comportamento inadequado</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: mensagens ou comentários inapropriados, perseguição)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.violation}
+                    onChange={() => handleReasonChange('violation')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Violação das regras da plataforma</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: uso da plataforma para fins ilegais ou proibidos)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reportReasons.other}
+                    onChange={() => handleReasonChange('other')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Outro (especificar)</strong>
+                  </div>
+                </label>
+                {reportReasons.other && (
+                  <textarea
+                    value={otherReason}
+                    onChange={(e) => setOtherReason(e.target.value)}
+                    placeholder="Descreva o motivo da denúncia..."
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '5px',
+                      fontSize: '14px',
+                      resize: 'vertical',
+                      minHeight: '80px'
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button 
+                className="cancel-button" 
+                onClick={() => {
+                  setShowReportModal(false);
+                  // Reset form when canceling
+                  setReportReasons({
+                    inappropriate: false,
+                    falseInfo: false,
+                    abusive: false,
+                    spam: false,
+                    identity: false,
+                    plagiarism: false,
+                    harassment: false,
+                    violation: false,
+                    other: false
+                  });
+                  setOtherReason('');
+                }}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#6c757d',
+                  color: 'white'
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="confirm-button" 
+                onClick={confirmReportUser}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#e74c3c',
+                  color: 'white'
+                }}
+              >
+                Denunciar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBlockModal && (
+        <div className="modal-overlay" onClick={() => setShowBlockModal(false)}>
+          <div className="modal-content-users" onClick={(e) => e.stopPropagation()}>
+            <h2>Bloquear Viajante</h2>
+            <p>Tem certeza de que deseja bloquear <strong>{profile?.username}</strong>?</p>
+            <p>Você não verá mais este usuário na lista e ele não poderá interagir consigo.</p>
+            <div className="modal-buttons">
+              <button 
+                className="cancel-button" 
+                onClick={() => setShowBlockModal(false)}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#6c757d',
+                  color: 'white'
+                }}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="confirm-button" 
+                onClick={confirmBlockUser}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#e74c3c',
+                  color: 'white'
+                }}
+              >
+                Bloquear
+              </button>
+            </div>
           </div>
         </div>
       )}

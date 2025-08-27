@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Travels from './pages/Travels';
 import MyTravels from './pages/MyTravels';
 import ViewProfile from './pages/ViewProfile';
+import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 
 const AppRouter = () => {
@@ -14,6 +15,7 @@ const AppRouter = () => {
         <Route path="/travels" element={<Travels />} />
         <Route path="/my-travels" element={<MyTravels />} />
         <Route path="/profile" element={<ViewProfile />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
