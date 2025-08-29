@@ -103,13 +103,13 @@ const Register = () => {
         console.log('Chamando deferredPrompt.prompt()');
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        console.log('Resultado da escolha do usuário:', outcome);
+        console.log('Resultado da escolha do utilizador:', outcome);
         if (outcome === 'accepted') {
-          console.log('Usuário aceitou instalar o PWA');
+          console.log('Utilizador aceitou instalar o PWA');
           localStorage.setItem('isInstalled', 'true');
           setIsInstalled(true);
         } else {
-          console.log('Usuário recusou instalar o PWA');
+          console.log('Utilizador recusou instalar o PWA');
         }
         setDeferredPrompt(null);
       } catch (error) {
@@ -122,7 +122,7 @@ const Register = () => {
   };
 
   const handleDismiss = () => {
-    console.log('Usuário fechou o pop-up');
+    console.log('Utilizador fechou o modal');
     setShowInstallPrompt(false);
   };
 
@@ -375,18 +375,18 @@ const Register = () => {
             <h3>Instale o Globe Memories!</h3>
             {supportsBeforeInstallPrompt ? (
               <>
-                <p>Adicione à sua tela inicial com um clique.</p>
+                <p>Adicione ao seu ecrã inicial com um clique.</p>
                 <button onClick={handleInstall} className="install-button">
                   Instalar
                 </button>
               </>
             ) : isIOS ? (
               <p>
-                Toque no botão <strong>Compartilhar</strong> e selecione <strong>Adicionar à Tela Inicial</strong>.
+                Toque no botão <strong>Partilhar</strong> e seleccione <strong>Adicionar ao Ecrã Principal</strong>.
               </p>
             ) : (
               <p>
-                Para instalar, use a opção do seu navegador para adicionar à tela inicial (geralmente no menu de opções).
+                Para instalar, use a opção do seu navegador para adicionar ao ecrã inicial (geralmente no menu de opções).
               </p>
             )}
           </div>

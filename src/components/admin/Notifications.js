@@ -67,7 +67,7 @@ const Notifications = () => {
               <td>{notification.recipient}</td>
               <td>{notification.sentAt}</td>
               <td>
-                <button className="btn-danger-admin" onClick={() => handleDelete(notification._id)}>Excluir</button>
+                <button className="btn-danger-admin" onClick={() => handleDelete(notification._id)}>Eliminar</button>
               </td>
             </tr>
           ))}

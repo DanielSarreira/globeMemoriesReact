@@ -58,8 +58,13 @@ const Home = () => {
   });
   const [otherReason, setOtherReason] = useState('');
 
-  // Adiciona o estado para expandir descrição no mobile
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  // Estados para swipe gestures
+  const [swipeStartX, setSwipeStartX] = useState(0);
+  const [swipeStartY, setSwipeStartY] = useState(0);
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
+  const [currentSwipeTravel, setCurrentSwipeTravel] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -141,7 +146,7 @@ const Home = () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification('Globe Memories', {
-            body: 'Bem-vindo! Você ativou as notificações.',
+            body: 'Bem-vindo! Activou as notificações.',
             icon: '/icons/icon-192x192.png',
             data: { type: 'welcome', relatedId: '' },
           });
@@ -208,7 +213,7 @@ const Home = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para curtir!');
+      alert('Inicie sessão para dar gosto!');
       return;
     }
 
@@ -245,7 +250,7 @@ const Home = () => {
 
   const handleAddComment = (travelId, parentIds = [], text) => {
     if (!user) {
-      alert('Faça login para comentar!');
+      alert('Inicie sessão para comentar!');
       return;
     }
 
@@ -320,7 +325,7 @@ const Home = () => {
 
   const handleCommentLike = (travelId, commentId, parentIds = []) => {
     if (!user) {
-      alert('Faça login para curtir comentários!');
+      alert('Inicie sessão para dar gosto aos comentários!');
       return;
     }
 
@@ -699,6 +704,65 @@ const Home = () => {
     setShowDropdown(prev => (prev === travelId ? null : travelId));
   };
 
+  // Funções para swipe gestures
+  const handleSwipeTouchStart = (e, travel) => {
+    if (!isMobile) return;
+    
+    const touch = e.touches[0];
+    setSwipeStartX(touch.clientX);
+    setSwipeStartY(touch.clientY);
+    setIsSwipeActive(true);
+    setCurrentSwipeTravel(travel);
+  };
+
+  const handleSwipeTouchMove = (e) => {
+    if (!isMobile || !isSwipeActive) return;
+    
+    e.preventDefault(); // Previne scroll padrão
+  };
+
+  const handleSwipeTouchEnd = (e) => {
+    if (!isMobile || !isSwipeActive || !currentSwipeTravel) return;
+    
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - swipeStartX;
+    const deltaY = touch.clientY - swipeStartY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Só considera swipe se o movimento for principalmente horizontal
+    if (Math.abs(deltaX) > Math.abs(deltaY) && distance > 50) {
+      if (Math.abs(deltaX) > 100) { // Swipe com força
+        if (deltaX < 0) {
+          // Swipe para esquerda - ir para perfil do usuário
+          handleSwipeRight(currentSwipeTravel);
+        } else {
+          // Swipe para direita - abrir modal adicionar viagem
+          handleSwipeLeft(currentSwipeTravel);
+        }
+      } else if (Math.abs(deltaX) > 30) { // Swipe leve - mudar imagem
+        if (deltaX < 0) {
+          handleNextImage(currentSwipeTravel.id, e);
+        } else {
+          handlePrevImage(currentSwipeTravel.id, e);
+        }
+      }
+    }
+    
+    setIsSwipeActive(false);
+    setCurrentSwipeTravel(null);
+  };
+
+  const handleSwipeLeft = (travel) => {
+    // Abrir modal de adicionar viagem
+    // Como não temos acesso direto ao modal, vamos navegar para a página de adicionar viagem
+    navigate('/my-travels', { state: { openModal: true } });
+  };
+
+  const handleSwipeRight = (travel) => {
+    // Navegar para o perfil do usuário da viagem
+    navigate(`/profile/${travel.user}`);
+  };
+
   const handleReasonChange = (reason) => {
     setReportReasons((prev) => ({ ...prev, [reason]: !prev[reason] }));
   };
@@ -707,7 +771,7 @@ const Home = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para denunciar viagens.');
+      alert('Inicie sessão para denunciar viagens.');
       return;
     }
     setSelectedTravel(travel);
@@ -720,7 +784,7 @@ const Home = () => {
       const hasSelectedReason = Object.values(reportReasons).some((v) => v) ||
         (reportReasons.other && otherReason.trim());
       if (!hasSelectedReason) {
-        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        alert('Por favor, seleccione pelo menos um motivo para a denúncia.');
         return;
       }
       console.log('Travel reported:', selectedTravel.id, 'Reasons:', reportReasons, 'Other:', otherReason);
@@ -1276,7 +1340,9 @@ const Home = () => {
             className="feed-content"
             style={isMobile ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
             onError={(e) => { e.target.style.backgroundImage = `url(https://via.placeholder.com/300)`; }}
-            onTouchStart={isMobile ? (e) => handleDragStart(travel.id, e) : undefined}
+            onTouchStart={isMobile ? (e) => handleSwipeTouchStart(e, travel) : undefined}
+            onTouchMove={isMobile ? handleSwipeTouchMove : undefined}
+            onTouchEnd={isMobile ? handleSwipeTouchEnd : undefined}
             onMouseDown={isMobile ? (e) => handleDragStart(travel.id, e) : undefined}
           >
             <div className="dropdown-container" style={{ position: 'relative' }}>
@@ -1446,15 +1512,7 @@ const Home = () => {
                   <strong></strong> {renderStars(travel.stars)}
                 </p>
                 {/* Botão para expandir descrição */}
-                {isMobile && (
-                  <button
-                    className="expand-description-btn"
-                    style={{ margin: '8px auto', display: 'block', background: 'none', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer' }}
-                    onClick={() => setIsDescriptionExpanded(prev => !prev)}
-                  >
-                    ...
-                  </button>
-                )}
+          
               </div>
               {/* Só mostra descrição se expandido */}
               {isMobile && isDescriptionExpanded && (
@@ -1836,7 +1894,7 @@ const Home = () => {
               </select>
             </div>
             <button onClick={handleRefreshFeed} className="refresh-button">
-              <FaSync /> Atualizar Feed
+              <FaSync /> Actualizar Feed
             </button>
             <div className="view-mode-toggle">
               <button

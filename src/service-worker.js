@@ -58,7 +58,7 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   const title = data.title || 'Globe Memories';
   const options = {
-    body: data.body || 'Você tem uma nova notificação!',
+    body: data.body || 'Tem uma nova notificação!',
     icon: '/icons/icon-192x192.png', // Ícone da notificação
     badge: '/icons/icon-192x192.png', // Ícone pequeno para a notificação (opcional)
     data: data.payload || {}, // Dados adicionais para redirecionamento

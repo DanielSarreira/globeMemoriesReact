@@ -75,14 +75,14 @@
 /* Setas de navegação */
 .gallery-arrow {
   position: absolute;
-  top: 50%;
+  top: 50% !important;
   transform: translateY(-50%);
   background-color: rgba(0, 0, 0, 0.48);
   color: #fff;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 59px;
+  height: 53px;
   cursor: pointer;
   display: flex;
   align-items: center;

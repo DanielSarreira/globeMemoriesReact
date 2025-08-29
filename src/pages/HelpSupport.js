@@ -22,7 +22,7 @@ const HelpSupport = () => {
   </div>
   <div className="faq-item">
     <h3>4. O que devo fazer se encontrar um erro na aplicação?</h3>
-    <p>Contacta-nos através do formulário abaixo ou envia um email para <a href="mailto:suporte@app.com">suporte@app.com</a>.</p>
+    <p>Contacta-nos através do formulário abaixo ou envia um email para <a href="mailto:suporte@aplicacao.com">suporte@aplicacao.com</a>.</p>
   </div>
 </section>
 

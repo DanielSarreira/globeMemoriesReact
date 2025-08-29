@@ -24,7 +24,7 @@ const TravelDetails = () => {
   // e limitar a 5 viagens
   const recommendedTravels = userTravels
     .filter((t) => {
-      // Excluir a viagem atual
+      // Eliminar a viagem actual
       if (t.id === travel.id) return false;
       // Verificar se a viagem tem TODAS as categorias da viagem atual
       // Adicionar verificações de segurança para categories

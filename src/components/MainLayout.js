@@ -4,13 +4,14 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
-import { FaChevronUp, FaPlus } from 'react-icons/fa';
+import { FaChevronUp, FaPlus, FaPlane, FaGlobe } from 'react-icons/fa';
 
 const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isLoginOrRegister = location.pathname === '/login' || location.pathname === '/register';
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,8 +22,16 @@ const MainLayout = () => {
       }
     };
 
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const scrollToTop = () => {
@@ -52,13 +61,13 @@ const MainLayout = () => {
           <Outlet />
         </main>
         <Footer />
-        {!isLoginOrRegister && (
+        {!isLoginOrRegister && !isMobile && (
           <div className="fixed-buttons">
             <button className="scroll-to-top" onClick={scrollToTop} style={{ display: showScrollTop ? 'flex' : 'none' }}>
               <FaChevronUp />
             </button>
             <button className="plan-new-travel" onClick={handlePlanNewTravel}>
-              <FaPlus />
+              <FaPlane />
             </button>
           </div>
         )}

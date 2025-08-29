@@ -65,7 +65,7 @@ const RoleManagement = () => {
               <td>{role.name}</td>
               <td>{role.permissions.join(', ')}</td>
               <td>
-                <button className="btn-danger-admin" onClick={() => handleDelete(role._id)}>Excluir</button>
+                <button className="btn-danger-admin" onClick={() => handleDelete(role._id)}>Eliminar</button>
               </td>
             </tr>
           ))}

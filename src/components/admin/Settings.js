@@ -26,7 +26,7 @@ const Settings = () => {
     // await axios.put('/api/settings', settings, {
     //   headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
     // });
-    alert('Configurações salvas com sucesso!');
+    alert('Configurações guardadas com sucesso!');
   };
 
   return (
@@ -49,14 +49,14 @@ const Settings = () => {
         />
       </div>
       <div className="form-group-admin">
-        <label>Tamanho Máximo de Arquivo (MB):</label>
+        <label>Tamanho Máximo de Ficheiro (MB):</label>
         <input
           type="number"
           value={settings.maxFileSize}
           onChange={(e) => setSettings({ ...settings, maxFileSize: parseInt(e.target.value) })}
         />
       </div>
-      <button className="btn-primary-admin" onClick={handleSave}>Salvar Configurações</button>
+      <button className="btn-primary-admin" onClick={handleSave}>Guardar Configurações</button>
     </div>
   );
 };

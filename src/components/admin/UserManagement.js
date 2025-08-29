@@ -72,7 +72,7 @@ const UserManagement = () => {
                 {user.isBanned && (
                   <button className="btn-success-admin" onClick={() => handleUnban(user._id)}>Desbanir</button>
                 )}
-                <button className="btn-danger-admin" onClick={() => handleDelete(user._id)}>Excluir</button>
+                <button className="btn-danger-admin" onClick={() => handleDelete(user._id)}>Eliminar</button>
               </td>
             </tr>
           ))}

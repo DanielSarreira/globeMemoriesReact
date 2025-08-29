@@ -839,12 +839,17 @@
     height: 100vh;
     scroll-snap-type: y mandatory;
     -webkit-overflow-scrolling: touch;
+    background: #000;
   }
   .feed-snap > * {
     scroll-snap-align: start;
     min-height: 100vh;
     max-height: 100vh;
     box-sizing: border-box;
+  }
+
+  .bottom-navbar a{
+    height: 93%;
   }
 
   /* Mobile TikTok-style: full viewport images with right-side actions */
@@ -901,15 +906,15 @@
   /* User info positioned at top-left */
   .feed-snap .feed-user {
     position: absolute;
-    top: 60px;
+    top: 40px;
     left: 15px;
     z-index: 3;
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(0,0,0,0.3);
+    background: linear-gradient(180deg, rgba(54, 54, 54, 0.089) 0%, rgba(0, 0, 0, 0.137) 100%);
     padding: 8px 12px;
-    border-radius: 20px;
+    border-radius: 0px;
     backdrop-filter: blur(10px);
   }
 
@@ -931,12 +936,12 @@
   .feed-snap .feed-actions-mobile {
     position: absolute;
     right: 15px;
-    top: 50%;
+    top: 405px;
     transform: translateY(-50%);
     z-index: 3;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 20px !important;
     align-items: center;
   }
 
@@ -976,26 +981,28 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
 
-  /* Travel info moved to center/top area */
+  /* Travel info moved to bottom area */
   .feed-snap .travel-info-mobile {
     position: absolute;
-    top: 20%;
+    bottom: 80px;
     left: 15px;
-    right: 80px;
+    right: 15px;
     z-index: 3;
     color: white;
     text-align: center;
-    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%);
-    padding: 20px;
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, rgba(54, 54, 54, 0.514) 0%, rgba(0, 0, 0, 0.637) 100%);
+    padding: 15px;
+    border-radius: 0px;
+   
+    max-height: 30vh;
+    overflow-y: auto;
   }
 
   .feed-snap .travel-info-mobile h1 {
     color: white !important;
-    font-size: 20px !important;
+    font-size: 18px !important;
     font-weight: 700;
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     text-shadow: 0 1px 3px rgba(0,0,0,0.7);
   }
 
@@ -1007,11 +1014,11 @@
   }
 
   .feed-snap .travel-info-mobile .travel-description {
-    margin-top: 10px;
-    font-size: 15px;
-    line-height: 1.5;
-    max-height: 80px;
-    overflow: hidden;
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    max-height: 60px;
+    overflow-y: auto;
     text-align: left;
   }
 
@@ -1019,7 +1026,7 @@
   .feed-snap .image-indicators {
     position: absolute;
     top: 50%;
-    right: 20px;
+    left: 20px;
     transform: translateY(-50%);
     z-index: 3;
     display: flex;
@@ -1059,26 +1066,210 @@
     z-index: 0;
   }
 
-
-
-  .home-content {
-    padding: 1rem;
+  /* Comments optimization for mobile */
+  .feed-snap .comments-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 10;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
   }
 
-  .home-title {
-    font-size: 2rem;
+  .feed-snap .comments-section.open {
+    transform: translateY(0);
   }
 
-  .home-subtitle {
-    font-size: 1rem;
+  .feed-snap .comments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
   }
 
-  .home-stats-grid {
-    grid-template-columns: 1fr;
+  .feed-snap .comments-header h3 {
+    color: white;
+    margin: 0;
+    font-size: 18px;
   }
 
-  .home-stat-number {
-    font-size: 2rem;
+  .feed-snap .close-comments {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+  }
+
+  .feed-snap .comment-input-container {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 10px;
+    margin: -20px;
+    margin-top: 15px;
+    backdrop-filter: blur(10px);
+  }
+
+  .feed-snap .comment-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 25px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 16px;
+    outline: none;
+    resize: none;
+    min-height: 40px;
+    max-height: 100px;
+  }
+
+  .feed-snap .comment-input::placeholder {
+    color: rgba(255,255,255,0.7);
+  }
+
+  .feed-snap .comment-input:focus {
+    border-color: #667eea;
+    background: rgba(255,255,255,0.2);
+  }
+
+  .feed-snap .comment-item {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(5px);
+  }
+
+  .feed-snap .comment-author {
+    font-weight: 600;
+    color: white;
+    margin-bottom: 5px;
+  }
+
+  .feed-snap .comment-text {
+    color: rgba(255,255,255,0.9);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .feed-snap .comment-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .feed-snap .comment-reply-btn,
+  .feed-snap .comment-like-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+  }
+
+  .feed-snap .comment-reply-btn:hover,
+  .feed-snap .comment-like-btn:hover {
+    color: white;
+    background: rgba(255,255,255,0.2);
+  }
+
+  .feed-snap .reply-input-container {
+    margin-top: 10px;
+    padding-left: 20px;
+    border-left: 2px solid rgba(255,255,255,0.3);
+  }
+
+  .feed-snap .reply-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 15px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .feed-snap .reply-input::placeholder {
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Ensure touch targets are adequate for mobile */
+  .feed-snap .feed-actions-mobile button {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .feed-snap .image-indicators .indicator-dot {
+    min-width: 8px;
+    min-height: 8px;
+    cursor: pointer;
+  }
+
+  /* Improve text readability on small screens */
+  .feed-snap .travel-info-mobile h1 {
+    font-size: clamp(16px, 4vw, 20px);
+  }
+
+  .feed-snap .travel-info-mobile p {
+    font-size: clamp(12px, 3.5vw, 14px);
+  }
+
+  .feed-snap .feed-user span {
+    font-size: clamp(12px, 3.5vw, 14px);
+  }
+
+  /* Better spacing for different mobile screen sizes */
+  @media (max-width: 480px) {
+    .feed-snap .feed-user {
+      top: 5px;
+      left: 0px;
+      width: 100%;
+      padding: 6px 10px;
+    }
+
+    .feed-snap .feed-actions-mobile {
+      right: 10px;
+      gap: 12px;
+    }
+
+    .feed-snap .travel-info-mobile {
+      bottom: 215px;
+      left: 0px;
+      right: 0px;
+      padding: 27px;
+    }
+
+    .feed-snap .image-indicators {
+      top: 195px;
+      left: 15px;
+    }
+
+    .feed-snap .comments-section {
+      padding: 15px;
+      max-height: 75vh;
+    }
+  }
+
+  /* Hide desktop gallery in mobile */
+  .feed-snap .travel-gallery {
+    display: none !important;
   }
 
 }

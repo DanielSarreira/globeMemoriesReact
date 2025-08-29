@@ -59,7 +59,7 @@ const CategoryManagement = () => {
     setNewCategory({ name: '', description: '' });
   };
 
-  // Função para excluir uma categoria
+  // Função para eliminar uma categoria
   const handleDelete = async (id) => {
     // Placeholder para chamada à API
     setCategories(categories.filter((category) => category._id !== id));
@@ -120,7 +120,7 @@ const CategoryManagement = () => {
                   className="btn-danger-admin"
                   onClick={() => handleDelete(category._id)}
                 >
-                  Excluir
+                  Eliminar
                 </button>
               </td>
             </tr>

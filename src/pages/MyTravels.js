@@ -220,7 +220,7 @@ const MyTravels = () => {
   // Abrir modal automaticamente ao redirecionar com estado
   useEffect(() => {
     if (location.state?.openModal) {
-      setIsModalOpen(true);
+      setIsTravelTypeModalOpen(true);
       // Limpar o state para evitar reabertura ao voltar
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -1460,7 +1460,7 @@ const MyTravels = () => {
     return newTravel.pointsOfInterest;
   };
 
-  // Função para salvar dados do destino atual
+  // Função para guardar dados do destino actual
   const saveCurrentDestinationData = () => {
     const destinationKey = getCurrentDestinationKey();
     if (!destinationKey || selectedTravelType.main !== 'multi') return;
@@ -1584,7 +1584,7 @@ const MyTravels = () => {
       </div>
 
       {isTravelTypeModalOpen && (
-        <div className="travel-planner-modal">
+        <div className="travel-planner-modal travel-type-modal">
           <div className="travel-planner-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-actions">
               <h2>Que tipo de viagem realizou?</h2>
@@ -1667,7 +1667,8 @@ const MyTravels = () => {
                 </div>
               </div>
 
-              {/* Checkbox Viagem em Grupo */}
+              {/* Checkbox Viagem em Grupo - REMOVIDO */}
+              {/* 
               <div 
                 className={`destination-type-card ${selectedTravelType.isGroup ? 'selected' : ''}`}
                 onClick={() => {
@@ -1705,6 +1706,7 @@ const MyTravels = () => {
                   <span className="tooltip-icon" title="Ao marcar esta opção, será adicionada uma aba especial onde pode adicionar outros viajantes que participaram na viagem. Eles poderão partilhar fotos e experiências.">?</span>
                 </small>
               </div>
+              */}
             </div>
           </div>
         </div>
@@ -1729,7 +1731,7 @@ const MyTravels = () => {
                     fontWeight: "500"
                   }}>
                     🔒 Privacidade:
-                    <span className="tooltip-icon" title="Defina quem pode ver a sua viagem: Pública (todos), Somente para Seguidores (apenas quem o segue), ou Privada (apenas você).">
+                    <span className="tooltip-icon" title="Defina quem pode ver a sua viagem: Pública (todos), Somente para Seguidores (apenas quem o segue), ou Privada (apenas si).">
                       ?
                     </span>
                   </label>
@@ -3481,6 +3483,7 @@ const MyTravels = () => {
       <div className="travels-header">
         <div className="travels-stats">
           <h2>As minhas viagens ({travels.length})</h2>
+          <br></br>
           <div className="stats-cards">
             <div className="stat-card">
               <span className="stat-number">

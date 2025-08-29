@@ -16,7 +16,7 @@ const BlockedUsers = () => {
     { id: 2, username: 'AnaSilva', name: 'Ana Silva', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.' },
     { id: 3, username: 'PedroCosta', name: 'Pedro Costa', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.' },
     { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.' },
-    { id: 5, username: 'JoaoPereira', name: 'João Pereira', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'Aventura é meu lema!' },
+    { id: 5, username: 'JoaoPereira', name: 'João Pereira', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!' },
   ];
 
   useEffect(() => {
@@ -100,7 +100,7 @@ const BlockedUsers = () => {
           <FaBan size={80} color="#ddd" style={{ marginBottom: '20px' }} />
           <h3 style={{ color: '#666', marginBottom: '10px' }}>Nenhum viajante bloqueado</h3>
           <p style={{ color: '#999' }}>
-            Você não bloqueou nenhum viajante ainda.
+            Não bloqueou nenhum viajante ainda.
           </p>
         </div>
       ) : (

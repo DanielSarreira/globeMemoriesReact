@@ -280,7 +280,7 @@ const FutureTravels = () => {
   const addDestination = () => {
     if (!newDestination.country || !newDestination.city.trim()) {
       setToast({ 
-        message: "Por favor, selecione um país e uma cidade!", 
+        message: "Por favor, seleccione um país e uma cidade!", 
         type: "error", 
         show: true 
       });
@@ -1200,7 +1200,7 @@ const FutureTravels = () => {
     try {
       // Tenta limpar o localStorage
       localStorage.clear();
-      setToast({ message: "Armazenamento limpo para salvar nova viagem.", type: "info", show: true });
+      setToast({ message: "Armazenamento limpo para guardar nova viagem.", type: "info", show: true });
     } catch (error) {
       console.error("Erro ao limpar localStorage:", error);
     }
@@ -1210,7 +1210,7 @@ const FutureTravels = () => {
     try {
       const updatedTravel = { ...previewTravel, id: Date.now() };
       
-      // Tenta salvar no localStorage
+      // Tenta guardar no localStorage
       try {
         const updatedFutureTravels = [...futureTravels, updatedTravel];
         localStorage.setItem("futureTravels", JSON.stringify(updatedFutureTravels));
@@ -1255,7 +1255,7 @@ const FutureTravels = () => {
     } catch (error) {
       console.error("Erro ao confirmar plano de Globe Memories!:", error);
       setToast({ 
-        message: "Erro ao salvar viagem planeada pela Globe Memories!. Tente novamente.", 
+        message: "Erro ao guardar viagem planeada pela Globe Memories!. Tente novamente.", 
         type: "error", 
         show: true 
       });
@@ -1815,7 +1815,7 @@ const FutureTravels = () => {
       }
       setFutureTravels(updatedFutureTravels);
 
-      // Depois, salvar no localStorage
+      // Depois, guardar no localStorage
       localStorage.setItem("futureTravels", JSON.stringify(updatedFutureTravels));
 
       // Atualizar futureTrips apenas para viagens de destino único
@@ -1859,8 +1859,8 @@ const FutureTravels = () => {
         window.history.replaceState({}, document.title, location.pathname);
       }
     } catch (error) {
-      console.error("Erro ao salvar viagem:", error);
-      setToast({ message: "Erro ao salvar viagem. Tente novamente.", type: "error", show: true });
+      console.error("Erro ao guardar viagem:", error);
+      setToast({ message: "Erro ao guardar viagem. Tente novamente.", type: "error", show: true });
     }
   };
 
@@ -1944,7 +1944,7 @@ const FutureTravels = () => {
   const confirmTravelType = () => {
     if (!selectedTravelType.main) {
       setToast({ 
-        message: "Por favor, selecione pelo menos um tipo de viagem (Destino Único ou Multidestino)!", 
+        message: "Por favor, seleccione pelo menos um tipo de viagem (Destino Único ou Multidestino)!", 
         type: "error", 
         show: true 
       });
@@ -2348,7 +2348,7 @@ const FutureTravels = () => {
                     🔒 Privacidade:
                     <span 
                       className="tooltip-icon"
-                      onMouseEnter={(e) => showTooltip(e, "Privacidade da Viagem", "Defina quem pode ver a sua viagem: Pública (todos), Somente para Seguidores (apenas quem o segue), ou Privada (apenas você).")}
+                      onMouseEnter={(e) => showTooltip(e, "Privacidade da Viagem", "Defina quem pode ver a sua viagem: Pública (todos), Somente para Seguidores (apenas quem o segue), ou Privada (apenas si).")}
                       onMouseLeave={hideTooltip}
                     >
                       ?
@@ -2535,7 +2535,7 @@ const FutureTravels = () => {
                                   }}
                                   required
                                 >
-                                  <option value="">Selecione um país</option>
+                                  <option value="">Seleccione um país</option>
                                   <option value="Portugal">Portugal</option>
                                   <option value="Brasil">Brasil</option>
                                   <option value="United States">Estados Unidos</option>
@@ -5235,7 +5235,7 @@ const FutureTravels = () => {
                 </div>
                 <div className="travel-actions">
                   <button onClick={(e) => { e.stopPropagation(); handleEdit(travel.id); }}>Editar</button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(travel.id); }}>Excluir</button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(travel.id); }}>Eliminar</button>
                 </div>
               </div>
             );

@@ -31,7 +31,7 @@ const Profile = () => {
     password: '',
     confirmPassword: '',
     bio: '',
-    quote: '', // Nova frase sobre o usuário
+    quote: '', // Nova frase sobre o utilizador
     country: '',
     city: '',
     gender: '',
@@ -160,7 +160,7 @@ const Profile = () => {
     setSaveSuccess(false);
     setCurrentPasswordError('');
 
-    // Validações antes de salvar
+    // Validações antes de guardar
     if (formData.password) {
       // Se está tentando alterar a password, deve confirmar a atual
       if (!formData.currentPassword) {
@@ -318,7 +318,7 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // Novo useEffect para atualizar formData quando o usuário mudar
+  // Novo useEffect para actualizar formData quando o utilizador mudar
   useEffect(() => {
     if (user) {
       setFormData({
@@ -605,7 +605,7 @@ const Profile = () => {
                           name="bio"
                           value={formData.bio}
                           onChange={handleInputChange}
-                          placeholder="Conte um pouco sobre você..."
+                          placeholder="Conte um pouco sobre si..."
                           rows="4"
                           maxLength="500"
                         />
@@ -711,7 +711,7 @@ const Profile = () => {
                         name="username"
                         value={formData.username}
                         onChange={handleInputChange}
-                        placeholder="Digite seu nome de usuário"
+                        placeholder="Digite o seu nome de utilizador"
                       />
                     ) : (
                       <p>{user.username}</p>

@@ -17,8 +17,8 @@
   color: white;
   border: none;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 65px;
+  height: 65px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,12 +33,12 @@
 
 /* Estilo do botão Planear Nova Viagem */
 .plan-new-travel {
-  background-color: var(--secondary-color);
+  background-color: var(--secondary-color) !important;
   color: white;
   border: none;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 65px;
+  height: 65px;
   display: flex;
   align-items: center;
   justify-content: center;

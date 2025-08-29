@@ -2317,6 +2317,90 @@ label.upload-button{
   transform-origin: center;
 }
 
+/* Travel Type Modal - Smaller Size */
+.travel-type-modal .travel-planner-content {
+  max-width: 900px;
+  width: 90%;
+  margin: 20px auto;
+}
+
+.travel-type-modal .modal-header-actions h2 {
+  font-size: 1.4rem;
+}
+
+.travel-type-modal .modal-form-content {
+  padding: 20px;
+}
+
+.travel-type-modal .destination-type-card {
+  padding: 20px 15px;
+}
+
+.travel-type-modal .destination-type-card h4 {
+  font-size: 16px;
+}
+
+.travel-type-modal .destination-type-card p {
+  font-size: 13px;
+}
+
+/* Responsive styles for travel type modal */
+@media (max-width: 768px) {
+  .travel-type-modal .travel-planner-content {
+    max-width: 95%;
+    width: 95%;
+    margin: 10px auto;
+  }
+  
+  .travel-type-modal .modal-header-actions h2 {
+    font-size: 1.2rem;
+  }
+  
+  .travel-type-modal .modal-form-content {
+    padding: 15px;
+  }
+  
+  .travel-type-modal .destination-type-card {
+    padding: 15px 12px;
+  }
+  
+  .travel-type-modal .destination-type-card h4 {
+    font-size: 15px;
+  }
+  
+  .travel-type-modal .destination-type-card p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .travel-type-modal .travel-planner-content {
+    max-width: 98%;
+    width: 98%;
+    margin: 5px auto;
+  }
+  
+  .travel-type-modal .modal-header-actions h2 {
+    font-size: 1.1rem;
+  }
+  
+  .travel-type-modal .modal-form-content {
+    padding: 10px;
+  }
+  
+  .travel-type-modal .destination-type-card {
+    padding: 12px 10px;
+  }
+  
+  .travel-type-modal .destination-type-card h4 {
+    font-size: 14px;
+  }
+  
+  .travel-type-modal .destination-type-card p {
+    font-size: 11px;
+  }
+}
+
 @keyframes tooltipPulse {
   0%, 100% {
     transform: scale(1);

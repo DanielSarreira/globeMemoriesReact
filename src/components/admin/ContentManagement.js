@@ -67,7 +67,7 @@ const ContentManagement = () => {
                     <button className="btn-warning-admin" onClick={() => handleReject(content._id)}>Rejeitar</button>
                   </>
                 )}
-                <button className="btn-danger-admin" onClick={() => handleDelete(content._id)}>Excluir</button>
+                <button className="btn-danger-admin" onClick={() => handleDelete(content._id)}>Eliminar</button>
               </td>
             </tr>
           ))}

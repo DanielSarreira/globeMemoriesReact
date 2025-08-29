@@ -7,7 +7,7 @@ import TravelsData from '../data/travelsData';
 import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClock, FaUserPlus, FaChartBar, FaMapMarkerAlt } from 'react-icons/fa';
 import { request } from '../axios_helper';
 
-// Dados mockados para perfis de usuário
+// Dados fictícios para perfis de utilizador
 const mockProfiles = [
   {
     username: 'tiago',
@@ -168,7 +168,7 @@ const UserProfile = () => {
 
   const handleFollow = () => {
     if (!user) {
-      alert('Faça login para seguir usuários.');
+      alert('Inicie sessão para seguir utilizadores.');
       return;
     }
     if (profile.privacy === 'public') {
@@ -209,7 +209,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para denunciar usuários.');
+      alert('Faça login para denunciar utilizadores.');
       return;
     }
     setShowReportModal(true);
@@ -220,7 +220,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para bloquear usuários.');
+      alert('Faça login para bloquear utilizadores.');
       return;
     }
     setShowBlockModal(true);
@@ -432,7 +432,7 @@ const UserProfile = () => {
           </div>
           <h2 style={{ color: '#333', marginBottom: '10px' }}>{profile.username}</h2>
           <p style={{ color: '#666', marginBottom: '30px', fontSize: '16px' }}>
-            Você bloqueou este viajante.
+            Bloqueou este viajante.
           </p>
           <div style={{ display: 'flex', gap: '15px', flexDirection: 'column', alignItems: 'center' }}>
             <button
@@ -595,7 +595,7 @@ const UserProfile = () => {
                   onClick={() => canViewFollowStats && openFollowModal('A Seguir', profile.following)}
                 >
                   <div className="stat-number">{profile.following.length}</div>
-                  <div className="stat-label">Seguindo</div>
+                  <div className="stat-label">A seguir</div>
                 </div>
                 <div className="stat-card">
                   <div className="stat-number">{visibleTravels.length}</div>
@@ -1076,7 +1076,7 @@ const UserProfile = () => {
           <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
             <h2>Denunciar Viajante</h2>
             <p>Por que deseja denunciar <strong>{profile?.username}</strong>?</p>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta ação irá reportar o usuário aos administradores.</p>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta acção irá reportar o utilizador aos administradores.</p>
             
             <div style={{ textAlign: 'left', marginBottom: '20px' }}>
               <div style={{ marginBottom: '15px' }}>
@@ -1287,7 +1287,7 @@ const UserProfile = () => {
           <div className="modal-content-users" onClick={(e) => e.stopPropagation()}>
             <h2>Bloquear Viajante</h2>
             <p>Tem certeza de que deseja bloquear <strong>{profile?.username}</strong>?</p>
-            <p>Você não verá mais este usuário na lista e ele não poderá interagir consigo.</p>
+            <p>Não verá mais este utilizador na lista e ele não poderá interagir consigo.</p>
             <div className="modal-buttons">
               <button 
                 className="cancel-button" 

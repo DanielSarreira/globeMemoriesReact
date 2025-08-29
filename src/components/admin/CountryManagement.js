@@ -59,7 +59,7 @@ const CountryManagement = () => {
     setNewCountry({ name: '', code: '' });
   };
 
-  // Função para excluir um país
+  // Função para eliminar um país
   const handleDelete = async (id) => {
     // Placeholder para chamada à API
     setCountries(countries.filter((country) => country._id !== id));
@@ -120,7 +120,7 @@ const CountryManagement = () => {
                   className="btn-danger-admin"
                   onClick={() => handleDelete(country._id)}
                 >
-                  Excluir
+                  Eliminar
                 </button>
               </td>
             </tr>

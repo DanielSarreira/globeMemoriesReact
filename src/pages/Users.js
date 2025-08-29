@@ -40,11 +40,11 @@ const Users = () => {
     { id: 2, username: 'AnaSilva', name: 'Ana Silva', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.', travelCount: 0, followersCount: 200, trendingScore: 90, joinDate: '2023-06-10', privacy: 'private' },
     { id: 3, username: 'PedroCosta', name: 'Pedro Costa', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.', travelCount: 0, followersCount: 80, trendingScore: 60, joinDate: '2024-03-22', privacy: 'public' },
     { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.', travelCount: 0, followersCount: 150, trendingScore: 85, joinDate: '2023-09-05', privacy: 'private' },
-    { id: 5, username: 'JoaoPereira', name: 'João Pereira', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'Aventura é meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
+    { id: 5, username: 'JoaoPereira', name: 'João Pereira', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
     { id: 6, username: 'MariaOliveira', name: 'Maria Oliveira', profilePicture: 'https://randomuser.me/api/portraits/women/6.jpg', bio: 'História e arte em cada destino.', travelCount: 0, followersCount: 110, trendingScore: 75, joinDate: '2023-11-30', privacy: 'private' },
     { id: 7, username: 'LucasSantos', name: 'Lucas Santos', profilePicture: 'https://randomuser.me/api/portraits/men/7.jpg', bio: 'Sempre em busca do próximo voo.', travelCount: 0, followersCount: 130, trendingScore: 88, joinDate: '2024-04-01', privacy: 'public' },
-    { id: 8, username: 'BeatrizLima', name: 'Beatriz Lima', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'Natureza é meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
-    { id: 9, username: 'Teste', name: 'Teste User', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'Natureza é meu refúgio.', travelCount: 0, followersCount: 50, trendingScore: 55, joinDate: '2024-04-20', privacy: 'private' },
+    { id: 8, username: 'BeatrizLima', name: 'Beatriz Lima', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
+    { id: 9, username: 'Teste', name: 'Teste User', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 50, trendingScore: 55, joinDate: '2024-04-20', privacy: 'private' },
   ];
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para seguir usuários.');
+      alert('Inicie sessão para seguir utilizadores.');
       return;
     }
     if (targetUser.privacy === 'public') {
@@ -129,7 +129,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para denunciar usuários.');
+      alert('Inicie sessão para denunciar utilizadores.');
       return;
     }
     setSelectedUser(targetUser);
@@ -141,7 +141,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para bloquear usuários.');
+      alert('Inicie sessão para bloquear utilizadores.');
       return;
     }
     setSelectedUser(targetUser);
@@ -239,7 +239,7 @@ const Users = () => {
             <div className="search-bar" style={{ marginRight: 12 }}>
               <input
                 type="text"
-                placeholder="Pesquisar Viajantes por nome ou usuário..."
+                placeholder="Pesquisar Viajantes por nome ou utilizador..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="search-input"
@@ -281,7 +281,7 @@ const Users = () => {
           <div className="search-bar">
             <input
               type="text"
-              placeholder="Pesquisar Viajantes por nome ou usuário..."
+              placeholder="Pesquisar Viajantes por nome ou utilizador..."
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-input"
@@ -684,7 +684,7 @@ const Users = () => {
           <div className="modal-content-users" onClick={(e) => e.stopPropagation()}>
             <h2>Bloquear Viajante</h2>
             <p>Tem certeza de que deseja bloquear <strong>{selectedUser?.username}</strong>?</p>
-            <p>Você não verá mais este viajante na lista e ele não poderá interagir consigo.</p>
+            <p>Não verá mais este viajante na lista e ele não poderá interagir consigo.</p>
             <div className="modal-buttons">
               <button 
                 className="button-danger" 

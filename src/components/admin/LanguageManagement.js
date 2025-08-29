@@ -59,7 +59,7 @@ const LanguageManagement = () => {
     setNewLanguage({ name: '', code: '' });
   };
 
-  // Função para excluir um idioma
+  // Função para eliminar um idioma
   const handleDelete = async (id) => {
     // Placeholder para chamada à API
     setLanguages(languages.filter((language) => language._id !== id));
@@ -120,7 +120,7 @@ const LanguageManagement = () => {
                   className="btn-danger-admin"
                   onClick={() => handleDelete(language._id)}
                 >
-                  Excluir
+                  Eliminar
                 </button>
               </td>
             </tr>

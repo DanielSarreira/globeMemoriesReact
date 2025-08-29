@@ -1022,6 +1022,12 @@ padding-bottom: 30px;
   margin: 0;
 }
 
+.follow-user-link:hover {
+    color: var(--primary-color);
+    transform: none;
+}
+
+
 .follow-modal-close-button {
   margin: var(--spacing-lg);
   margin-top: var(--spacing-md);

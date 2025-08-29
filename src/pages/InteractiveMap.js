@@ -888,7 +888,7 @@ const MapEvents = () => {
           <ul style={{ textAlign: "left", margin: "10px 0" }}>
             <li><strong>Marcadores Verdes:</strong> Mostram as viagens que já realizou...</li>
             <li><strong>Marcadores Laranjas:</strong> Adicione futuras viagens clicando no mapa!</li>
-            <li><strong>Interação:</strong> Arraste o mapa e clique nos marcadores.</li>
+            <li><strong>Interacção:</strong> Arraste o mapa e clique nos marcadores.</li>
           </ul>
           <button
             onClick={closeWelcomePopup}

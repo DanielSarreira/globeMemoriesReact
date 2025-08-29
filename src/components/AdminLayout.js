@@ -5,6 +5,7 @@ import { FaChevronUp } from 'react-icons/fa';
 
 const AdminLayout = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,8 +16,16 @@ const AdminLayout = () => {
       }
     };
 
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const scrollToTop = () => {
@@ -29,7 +38,7 @@ const AdminLayout = () => {
   return (
     <div className="admin-layout">
       <Outlet />
-      {showScrollTop && (
+      {showScrollTop && !isMobile && (
         <button className="scroll-to-top" onClick={scrollToTop}>
           <FaChevronUp />
         </button>

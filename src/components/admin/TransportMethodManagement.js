@@ -61,7 +61,7 @@ const TransportMethodManagement = () => {
     setNewTransportMethod({ name: '', description: '' });
   };
 
-  // Função para excluir um método de transporte
+  // Função para eliminar um método de transporte
   const handleDelete = async (id) => {
     // Placeholder para chamada à API
     setTransportMethods(transportMethods.filter((method) => method._id !== id));
@@ -122,7 +122,7 @@ const TransportMethodManagement = () => {
                   className="btn-danger-admin"
                   onClick={() => handleDelete(method._id)}
                 >
-                  Excluir
+                  Eliminar
                 </button>
               </td>
             </tr>
