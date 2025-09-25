@@ -26,6 +26,7 @@ import {
   FaQuestionCircle
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import '../styles/pages/achievements.css';
 // ...existing code...
 
 // Dados simulados para visualizações e gostos dados pelo utilizador (simulando o backend)
@@ -536,15 +537,31 @@ const Achievements = () => {
   );
 
   // Calcular progresso (percentagem de conquistas desbloqueadas)
-  const progressPercentage = (userAchievements.length / achievements.length) * 100;
+  const progressPercentage = achievements.length > 0
+    ? Math.min(100, Math.max(0, Math.round((userAchievements.length / achievements.length) * 100)))
+    : 0;
 
   return (
     <div className="achievements-page">
-      <div className="progress-bar-container">
+      <div 
+        className="progress-bar-A-container" 
+        aria-hidden={false} 
+        aria-label={`Progresso de conquistas: ${progressPercentage}%`}
+        role="progressbar"
+        aria-valuenow={progressPercentage}
+        aria-valuemin="0"
+        aria-valuemax="100"
+      > 
         <div
-          className="progress-bar"
-          style={{ width: `${progressPercentage}%` }}
-        ></div>
+          className="progress-bar-A"
+          style={{ 
+            width: `${progressPercentage}%`,
+            opacity: progressPercentage > 0 ? 1 : 0
+          }}
+        />
+        <span className="progress-text">
+          {progressPercentage}% Completo
+        </span>
       </div>
       <h2>
         Conquistas

@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: url('../../images/banners/bg_login.jpg') center/cover !important;
   position: relative;
   padding: 2rem 1rem;
 }
@@ -18,7 +18,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('../../images/banners/bg_login.jpg') center/cover;
+  background: url('../../images/banners/bg_login.jpg') center/cover !important;
   opacity: 0.3;
   z-index: 0;
 }

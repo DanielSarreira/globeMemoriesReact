@@ -49,14 +49,14 @@
   background: #fff;
   color: white;
   padding: 25px;
-  border-radius: 16px 16px 0 0;
+  border-radius: 0px !important;
   text-align: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   position: relative;
 }
 
 .modal-header-actions h2 {
-  margin: 0 0 20px 0;
+  margin: 15px 0 20px 0 !important;
   font-size: 1.8em;
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -910,10 +910,8 @@
 /* Enhanced Prices section */
 .prices-section {
   padding: 25px 0;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
   border-radius: 15px;
   margin: 25px 0;
-  border: 1px solid #e9ecef;
 }
 
 .prices-section h3 {
@@ -2319,7 +2317,7 @@ label.upload-button{
 
 /* Travel Type Modal - Smaller Size */
 .travel-type-modal .travel-planner-content {
-  max-width: 900px;
+  max-width: 1100px;
   width: 90%;
   margin: 20px auto;
 }

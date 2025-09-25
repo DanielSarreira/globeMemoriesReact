@@ -115,6 +115,7 @@
   display: flex;
   gap: var(--spacing-md);
   flex-wrap: wrap;
+  margin-top: 0px;
 }
 
 .action-btn {
@@ -162,6 +163,7 @@
   border-color: var(--primary-color);
   color: white;
   box-shadow: var(--card-shadow-hover);
+  width: 300px;
 }
 
 .action-btn.active::before {
@@ -1659,12 +1661,17 @@
 }
 
 .comment-user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   border-radius: var(--border-radius-full);
   object-fit: cover;
   border: 2px solid var(--border-light);
   flex-shrink: 0;
+}
+
+img.comment-avatar-modern{
+  width: 50px;
+  height: 50px;
 }
 
 .comment-input-container {

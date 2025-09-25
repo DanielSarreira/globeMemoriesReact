@@ -1,0 +1,288 @@
+.login-travel-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+}
+.login-travel-bg iframe {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  object-fit: cover;
+  opacity: 0.7;
+  filter: blur(1.5px) brightness(0.8) saturate(1.2);
+  pointer-events: none;
+  z-index: 1;
+}
+.login-travel-gradient {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: linear-gradient(120deg, rgba(0,123,255,0.25) 0%, rgba(0,212,255,0.18) 50%, rgba(255,255,255,0.12) 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+.travel-icons-floating {
+  position: absolute;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: 3;
+  pointer-events: none;
+}
+.travel-icons-floating span {
+  position: absolute;
+  font-size: 2.2rem;
+  opacity: 0.7;
+  animation: floatTravelIcons 8s infinite linear;
+}
+.travel-icons-floating span:nth-child(1) { left: 10vw; top: 12vh; animation-delay: 0s; }
+.travel-icons-floating span:nth-child(2) { left: 80vw; top: 18vh; animation-delay: 2s; }
+.travel-icons-floating span:nth-child(3) { left: 50vw; top: 80vh; animation-delay: 4s; }
+.travel-icons-floating span:nth-child(4) { left: 70vw; top: 60vh; animation-delay: 1s; }
+.travel-icons-floating span:nth-child(5) { left: 20vw; top: 70vh; animation-delay: 3s; }
+@keyframes floatTravelIcons {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  50% { transform: translateY(-30px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 0.7; }
+}
+.login-travel-wrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.login-travel-card {
+  background: rgba(16, 15, 15, 0.216);
+  box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 32px;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  padding: 2.5rem 2rem 2rem 2rem;
+  max-width: 870px;
+  width: 95vw;
+  margin: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeInCard 1.2s cubic-bezier(.4,0,.2,1);
+}
+@keyframes fadeInCard {
+  from { opacity: 0; transform: translateY(40px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.login-travel-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+.travel-logo-img {
+  width: 350px;
+  height: auto;
+  margin-bottom: 0.2rem;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.10));
+  animation: bounceLogo 2.5s infinite;
+}
+@keyframes bounceLogo {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.login-travel-header h1 {
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #007bff;
+  margin: 0 0 0.2rem 0;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0,123,255,0.08);
+}
+.travel-slogan {
+  font-size: 1.05rem;
+  color: var(--secondary-color);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+.login-travel-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-bottom: 1.2rem;
+}
+.login-travel-form h2 {
+  font-size: 1.3rem;
+  color: var(--secondary-color);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.input-group label {
+  font-size: 0.98rem;
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+.input-group input {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 1rem;
+  outline: none;
+  background: rgba(255,255,255,0.85);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  width: 96%;
+}
+.input-group input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.12);
+}
+.password-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.password-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  outline: none;
+  margin-left: 0.2rem;
+  padding: 0 0.4rem;
+  transition: none;
+}
+.login-travel-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.97rem;
+  margin-bottom: 0.2rem;
+}
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #fff;
+}
+.forgot-password {
+  background: var(--primary-color);
+  border: none;
+  color: #fff !important;
+  cursor: pointer;
+  font-size: 0.97rem;
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.10);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  outline: none;
+  border: 1.5px solid transparent;
+}
+.forgot-password:hover, .forgot-password:focus {
+  background: #fff;
+  color: #007bff !important;
+  border: 1.5px solid var(--primary-color);
+  text-decoration: none !important;
+}
+.login-travel-btn {
+  width: 100%;
+  padding: 0.95rem 0;
+  border-radius: 18px;
+  border: solid;
+  background: transparent;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 16px rgba(0,123,255,0.13);
+  cursor: pointer;
+  margin-top: 0.2rem;
+  transition: background 0.2s, transform 0.2s;
+}
+.login-travel-btn:hover {
+  background: var(--secondary-color);
+  transform: translateY(-2px) scale(1.03);
+}
+.error-message, .success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.98rem;
+  margin: 0.2rem 0 0.1rem 0;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.error-message {
+  color: #fff !important;
+  border: 1.5px solid #ffffff;
+  background: linear-gradient(135deg, var(--error-light), rgb(220 53 69 / 62%));
+}
+.success-message {
+  color: #218838;
+  border: 1.5px solid #c3e6cb;
+}
+.login-travel-register {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.login-travel-register span {
+  color: #fff;
+  font-size: 1rem;
+}
+.register-btn {
+  background: var(--secondary-color);
+  color: #fff;
+  padding: 0.7rem 1.5rem;
+  border-radius: 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 0.2rem;
+  box-shadow: 0 2px 8px rgba(0,123,255,0.10);
+  transition: background 0.2s, transform 0.2s;
+}
+.register-btn:hover {
+  background: var(--secondary-color);
+  transform: translateY(-1px) scale(1.04);
+  color: #fff;
+}
+@media (max-width: 600px) {
+  .login-travel-card {
+    padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+    max-width: 99vw;
+    border-radius: 18px;
+  }
+  .login-travel-header h1 {
+    font-size: 1.3rem;
+  }
+  .travel-logo {
+    font-size: 1.7rem;
+  }
+  .login-travel-form h2 {
+    font-size: 1.1rem;
+  }
+  .register-btn {
+    font-size: 0.95rem;
+    padding: 0.6rem 1.1rem;
+  }
+}

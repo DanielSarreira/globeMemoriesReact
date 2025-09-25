@@ -16,7 +16,6 @@ import HelpSupport from './pages/HelpSupport';
 import NotFound from './pages/NotFound';
 import Users from './pages/Users';
 import UserProfile from './pages/UserProfile';
-import BlockedUsers from './pages/BlockedUsers';
 import Notifications from './components/Notifications';
 import InteractiveMap from './pages/InteractiveMap';
 import QandA from './pages/QandA';
@@ -24,9 +23,11 @@ import AdminLogin from './components/admin/AdminLogin';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Achievements from './pages/Achievements';
 import Weather from './pages/weather';
+import SettingsAndPrivacy from './pages/SettingsAndPrivacy';
 import FutureTravels from './pages/FutureTravels';
 import MainLayout from './components/MainLayout';
 import AdminLayout from './components/AdminLayout';
+
 import './styles/index.css';
 
 // Função para verificar autenticação
@@ -71,9 +72,6 @@ const App = () => {
         <Route path="/users" element={<ProtectedRoute />}>
           <Route index element={<Users />} />
         </Route>
-        <Route path="/blocked-users" element={<ProtectedRoute />}>
-          <Route index element={<BlockedUsers />} />
-        </Route>
         <Route path="/qanda" element={<ProtectedRoute />}>
           <Route index element={<QandA />} />
         </Route>
@@ -92,6 +90,11 @@ const App = () => {
         <Route path="/notifications" element={<ProtectedRoute />}>
           <Route index element={<Notifications />} />
         </Route>
+        <Route path="/settings-and-privacy" element={<ProtectedRoute />}>
+          <Route index element={<SettingsAndPrivacy />} />
+        </Route>
+        {/* Redirecionar /blocked-users para /settings-and-privacy#blocked-users */}
+        <Route path="/blocked-users" element={<Navigate to="/settings-and-privacy#blocked-users" replace />} />
         <Route path="*" element={<ProtectedRoute />}>
           <Route index element={<NotFound />} />
         </Route>

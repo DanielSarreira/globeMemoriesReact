@@ -1,13 +1,70 @@
 // src/components/SplashScreen.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import logo from '../images/logo_white.png';
 // ...existing code...
 
 const SplashScreen = () => {
+  const [progress, setProgress] = useState(0);
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    // Simulate loading progress
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          return 100;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+
+    // Show content after initial delay
+    setTimeout(() => setShowContent(true), 10);
+
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="splash-screen">
-      <img src="images/logo_white.png" alt="Globe Memories" className="splash-logo" />
-      <br></br><br></br>
-      <h1 className="splash-title"></h1>
+      {/* Animated background particles */}
+      <div className="particles">
+        {[...Array(20)].map((_, i) => (
+          <div key={i} className={`particle particle-${i}`}></div>
+        ))}
+      </div>
+      
+      {/* Floating travel icons */}
+      <div className="floating-icons">
+        <div className="icon-plane">✈️</div>
+        <div className="icon-globe">🌍</div>
+        <div className="icon-camera">📸</div>
+        <div className="icon-compass">🧭</div>
+        <div className="icon-map">🗺️</div>
+      </div>
+
+      <div className={`splash-content ${showContent ? 'show' : ''}`}>
+        <div className="logo-container">
+          <img src={logo} alt="Globe Memories Logo" className="splash-logo" />
+          <div className="logo-glow"></div>
+        </div>
+  
+
+        <div className="loading-container">
+          <div className="progress-bar">
+            <div className="progress-fill" style={{width: `${progress}%`}}></div>
+          </div>
+          <div className="loading-text">
+            {progress < 100 ? `A carregar... ${Math.round(progress)}%` : 'Pronto para explorar! 🎉'}
+          </div>
+        </div>
+      </div>
+
+      {/* Decorative elements */}
+      <div className="corner-decoration top-left"></div>
+      <div className="corner-decoration top-right"></div>
+      <div className="corner-decoration bottom-left"></div>
+      <div className="corner-decoration bottom-right"></div>
     </div>
   );
 };

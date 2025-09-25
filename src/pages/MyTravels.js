@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
@@ -1539,55 +1539,13 @@ const MyTravels = () => {
           onClose={() => setToast({ ...toast, show: false })}
         />
       )}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-        <button className='button-success' onClick={openModal}>Adicionar Viagem</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <label style={{ fontWeight: '600', color: '#2c3e50' }}>Tipo:</label>
-          <select 
-            value={selectedTravelType.main === 'multi' ? 'multi' : 'single'}
-            onChange={(e) => {
-              const value = e.target.value;
-              setSelectedTravelType(prev => ({
-                ...prev,
-                main: value
-              }));
-            }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '8px',
-              border: '2px solid #e9ecef',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            <option value="single">Destino Único</option>
-            <option value="multi">Multidestino</option>
-          </select>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', color: '#2c3e50' }}>
-            <input
-              type="checkbox"
-              checked={selectedTravelType.isGroup}
-              onChange={(e) => {
-                setSelectedTravelType(prev => ({
-                  ...prev,
-                  isGroup: e.target.checked
-                }));
-              }}
-              style={{ transform: 'scale(1.2)' }}
-            />
-            👥 Viagem em Grupo
-          </label>
-        </div>
-      </div>
-
+<br></br>
       {isTravelTypeModalOpen && (
         <div className="travel-planner-modal travel-type-modal">
           <div className="travel-planner-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-actions">
-              <h2>Que tipo de viagem realizou?</h2>
+              <h1>Que tipo de viagem realizou?</h1>
+              
               <div className="modal-header-buttons">
                 <button type="button" className="button-danger" onClick={resetForm}>Fechar</button>
                 <button type="button" className="button-success" onClick={confirmTravelType}>Continuar</button>
@@ -1716,10 +1674,6 @@ const MyTravels = () => {
         <div className="travel-planner-modal">
           <div className="travel-planner-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header-actions">
-              <h2>
-                ✈️ {isEditing ? "Editar Viagem" : "Planear Nova Viagem"}
-              </h2>
-              
               <div style={{ display: "flex", alignItems: "center", gap: "20px", marginTop: "15px", flexWrap: "wrap", justifyContent: "center" }}>
                 {/* Privacidade da Viagem */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -2114,7 +2068,7 @@ const MyTravels = () => {
                     <div className="form-row">
                       <div className="form-group">
                        
-                     <label style={{textAlign: 'center', width: '100%'}}>� Data de Marcação / Pagamento da Viagem: <span className="tooltip-icon" title="Data em que fez a reserva ou pagamento da viagem">?</span></label>
+                     <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Marcação / Pagamento da Viagem: <span className="tooltip-icon" title="Data em que fez a reserva ou pagamento da viagem">?</span></label>
                         <input
                           type="date"
                           name="BookingTripPaymentDate"
@@ -3507,6 +3461,8 @@ const MyTravels = () => {
         </div>
 
         <div className="travels-filters">
+          <button className='button' onClick={openModal} style={{marginBottom: '10px'}}>Adicionar Viagem</button>
+
           <label>Filtrar por:</label>
           <select 
             value={filterType} 

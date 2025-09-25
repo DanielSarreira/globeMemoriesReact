@@ -28,7 +28,6 @@
 /* Pages */
 @import './pages/achievements.css';
 @import './pages/auth.css';
-@import './pages/blocked-users.css';
 @import './pages/future-travels.css';
 @import './pages/help-support.css';
 @import './pages/home.css';
@@ -46,23 +45,10 @@
 @import './pages/users.css';
 @import './pages/view-profile.css';
 @import './pages/weather.css';
+@import './pages/SettingsAndPrivacy.css';
 
 /* Admin Styles */
 @import './Admin.css';
 
-/* Content Layout Adjustment */
-.content {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: calc(100% - 270px);
-  background-color: #f9f9fb !important;
-  min-height: 100vh;
-}
-
-/* Responsive content adjustment */
-@media (max-width: 768px) {
-  .content {
-    width: 100%;
-  }
-}
+/* Tablet Styles - Importado por último para ter prioridade */
+@import './tablet.css';

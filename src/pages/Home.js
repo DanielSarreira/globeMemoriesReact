@@ -6,7 +6,9 @@ import { FaHeart, FaComment, FaSync, FaShareAlt, FaChevronDown, FaSearch, FaBell
 import { FaStar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import TravelsData from '../data/travelsData';
+import WelcomeModal from '../components/WelcomeModal';
 import '../styles/pages/qanda.css';
+import '../styles/pages/home.css';
 
 // Dados mockados para notificações (simulando o backend)
 const mockNotifications = [];
@@ -66,6 +68,9 @@ const Home = () => {
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const [currentSwipeTravel, setCurrentSwipeTravel] = useState(null);
 
+  // Estado para a modal de boas-vindas
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -73,6 +78,37 @@ const Home = () => {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // useEffect para verificar se deve mostrar a modal de boas-vindas
+  useEffect(() => {
+    const checkWelcomeModal = () => {
+      // Debug: Clear localStorage para teste - TEMPORÁRIO PARA TESTAR
+      localStorage.removeItem('globeMemoriesWelcomeShown');
+      
+      // Verificar se é dispositivo móvel
+      const isMobileDevice = window.innerWidth <= 768;
+      console.log('Is mobile device:', isMobileDevice);
+      
+      // Verificar se já foi mostrada anteriormente
+      const hasSeenWelcome = localStorage.getItem('globeMemoriesWelcomeShown');
+      console.log('Has seen welcome:', hasSeenWelcome);
+      console.log('localStorage value:', hasSeenWelcome);
+      
+      // Mostrar modal apenas se não foi vista antes
+      if (!hasSeenWelcome) {
+        console.log('Showing welcome modal in 1 second...');
+        setTimeout(() => {
+          console.log('Setting showWelcomeModal to true');
+          setShowWelcomeModal(true);
+        }, 1000); // Delay de 1 segundo para melhor UX
+      } else {
+        console.log('Welcome modal already seen, not showing');
+        console.log('To test modal again, uncomment the localStorage.removeItem line above');
+      }
+    };
+
+    checkWelcomeModal();
   }, []);
 
   useEffect(() => {
@@ -801,6 +837,11 @@ const Home = () => {
       });
       setOtherReason('');
     }
+  };
+
+  // Função para fechar a modal de boas-vindas
+  const handleCloseWelcomeModal = () => {
+    setShowWelcomeModal(false);
   };
 
   const renderReportModal = () => (
@@ -1818,7 +1859,7 @@ const Home = () => {
           transition={{ duration: 0.5 }}
           className="feed-refreshed-message"
         >
-          O feed foi atualizado com sucesso!
+          
         </motion.div>
       )}
       {renderReportModal()}
@@ -2162,6 +2203,12 @@ const Home = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Boas-vindas */}
+      <WelcomeModal 
+        isOpen={showWelcomeModal} 
+        onClose={handleCloseWelcomeModal} 
+      />
     </div>
   );
 };

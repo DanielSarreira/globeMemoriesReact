@@ -87,82 +87,6 @@ const getSeason = (month, isNorthernHemisphere) => {
   }
 };
 
-// Função para obter sugestões climáticas com dados reais do Open-Meteo
-const getClimateSuggestions = async (cityName, lat, lon) => {
-  const normalizedCity = normalizeCityName(cityName);
-  try {
-    if (!isValidCoordinate(lat, lon)) {
-      throw new Error('Coordenadas inválidas para sugestões climáticas.');
-    }
-    const url = `https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lon}&start_date=1991-01-01&end_date=2021-12-31&models=CMCC_CM2_VHR4&monthly=temperature_2m_mean,precipitation_sum,sunshine_duration`;
-    const response = await axios.get(url);
-    const monthlyData = response.data.monthly || [];
-
-    const months = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    const climateByMonth = months.map((month, index) => {
-      const monthData = monthlyData.filter(data => new Date(data.time).getMonth() === index);
-      const avgTemp = monthData.length
-        ? monthData.reduce((sum, data) => sum + (data.temperature_2m_mean || 0), 0) / monthData.length
-        : estimateClimate(cityName, lat, index + 1).maxTemp;
-      const avgPrecip = monthData.length
-        ? monthData.reduce((sum, data) => sum + (data.precipitation_sum || 0), 0) / monthData.length
-        : estimateClimate(cityName, lat, index + 1).precipitation;
-      const avgSunshine = monthData.length
-        ? monthData.reduce((sum, data) => sum + ((data.sunshine_duration || 0) / 3600), 0) / monthData.length
-        : 6;
-      return { month, avgTemp: parseFloat(avgTemp.toFixed(1)), avgPrecip: Math.round(avgPrecip), avgSunshine: Math.round(avgSunshine) };
-    });
-
-    const bestForHeat = climateByMonth
-      .filter(data => data.avgTemp > 22 && data.avgPrecip < 30)
-      .map(data => data.month)
-      .join(' e ') || 'Julho e Agosto';
-    const bestForRain = climateByMonth
-      .filter(data => data.avgPrecip > 80)
-      .map(data => data.month)
-      .join(' e ') || 'Novembro e Dezembro';
-    const bestForMild = climateByMonth
-      .filter(data => data.avgTemp >= 15 && data.avgTemp <= 20 && data.avgPrecip < 50)
-      .map(data => data.month)
-      .join(' e ') || 'Abril e Outubro';
-
-    if (normalizedCity.includes('lisboa') || normalizedCity.includes('lisbon')) {
-      return `
-        **Sugestões Climáticas para ${cityName}:**
-        - **Melhor época para calor**: ${bestForHeat}, com temperaturas médias de 22–30°C e precipitação mínima (~3–6 mm). [Fonte: Open-Meteo]
-        - **Melhor época para chuva**: ${bestForRain}, com precipitação de 80–120 mm e mais dias chuvosos. [Fonte: Open-Meteo]
-        - **Melhor época para clima ameno**: ${bestForMild}, com temperaturas de 15–20°C e chuvas moderadas. [Fonte: Open-Meteo]
-      `;
-    }
-
-    return `
-      **Sugestões Climáticas para ${cityName}:**
-      - **Melhor época para calor**: ${bestForHeat}, com temperaturas médias acima de 22°C e baixa precipitação (~${climateByMonth.find(data => data.month === bestForHeat.split(' e ')[0])?.avgPrecip || 20} mm).
-      - **Melhor época para chuva**: ${bestForRain}, com alta precipitação (~${climateByMonth.find(data => data.month === bestForRain.split(' e ')[0])?.avgPrecip || 80} mm).
-      - **Melhor época para clima ameno**: ${bestForMild}, com temperaturas moderadas (~15–20°C).
-    `;
-  } catch (error) {
-    console.error('Erro ao obter dados climáticos:', error.message);
-    if (normalizedCity.includes('lisboa') || normalizedCity.includes('lisbon')) {
-      return `
-        **Sugestões Climáticas para ${cityName}:**
-        - **Melhor época para calor**: Julho e Agosto, com temperaturas médias de 22–30°C e apenas 3–6 mm de chuva. [Fonte: climate-data.org]
-        - **Melhor época para chuva**: Novembro e Dezembro, com 87–127 mm de precipitação. [Fonte: climate-data.org]
-        - **Melhor época para clima ameno**: Abril–Maio ou Setembro–Outubro, com temperaturas de 15–20°C. [Fonte: climate-data.org]
-      `;
-    }
-    const climate = estimateClimate(cityName, lat, new Date().getMonth() + 1);
-    return `
-      **Sugestões Climáticas para ${cityName}:**
-      - **Melhor época para calor**: ${lat >= 0 ? 'Junho–Agosto' : 'Dezembro–Fevereiro'}, com temperaturas mais altas (~${climate.maxTemp}°C).
-      - **Melhor época para chuva**: ${lat >= 0 ? 'Novembro–Março' : 'Maio–Setembro'}, com maior precipitação (~${climate.precipitation} mm).
-      - **Melhor época para clima ameno**: ${lat >= 0 ? 'Abril–Maio ou Setembro–Outubro' : 'Março–Abril ou Outubro–Novembro'}, com temperaturas moderadas (~${climate.maxTemp - 5}–${climate.maxTemp}°C).
-    `;
-  }
-};
 
 // Funções para gerenciar o armazenamento local
 const STORAGE_KEYS = {
@@ -280,17 +204,7 @@ const WeatherPage = () => {
     return travels;
   });
 
-  // Atualizar sugestões climáticas quando a cidade mudar
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      const city = weatherData?.city || userLocation.city;
-      const lat = userLocation.lat || 38.7167; // Fallback para Lisboa
-      const lon = userLocation.lon || -9.1333;
-      const suggestions = await getClimateSuggestions(city, lat, lon);
-      setClimateSuggestions(suggestions);
-    };
-    fetchSuggestions();
-  }, [weatherData, userLocation]);
+  
 
   // Atualizar futureTravels quando localStorage mudar
   useEffect(() => {
@@ -1027,31 +941,6 @@ const WeatherPage = () => {
         </div>
       )}
 
-      {showInfoModal && (
-        <div className="modal-overlay-weather fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="modal-content-weather bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Sugestões Climáticas</h2>
-            <p className="text-gray-600 mb-6 whitespace-pre-line">{climateSuggestions}</p>
-            <button
-              onClick={() => setShowInfoModal(false)}
-              className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 w-full transition-colors"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between mb-8">
-        <button
-          onClick={() => setShowInfoModal(true)}
-          className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
-          title="Ver sugestões climáticas"
-        >
-          <FaInfoCircle size={24} />
-        </button>
-      </div>
-
       <div className="weather-search-section mb-8 flex flex-col sm:flex-row gap-4">
         <form onSubmit={handleCitySearch} className="weather-search-form flex-1">
           <div className="search-container relative">
@@ -1122,9 +1011,11 @@ const WeatherPage = () => {
                     <p className="text-gray-600 text-lg flex items-center">
                       <span className="mr-2">💧</span> Chuva: {weatherData.precipitationProbability}%
                     </p>
+                    <br></br>
                     <p className="text-gray-600 text-lg flex items-center">
                       <span className="mr-2">💨</span> Vento: {weatherData.windSpeed} km/h
                     </p>
+                    <br></br>
                     <p className="text-gray-600 text-lg flex items-center">
                       <span className="mr-2">💦</span> Humidade: {weatherData.humidity}%
                     </p>

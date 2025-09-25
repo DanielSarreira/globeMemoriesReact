@@ -102,6 +102,10 @@ const UserProfile = () => {
     const fetchUserProfile = async () => {
       try {
         // Dados temporários enquanto o backend não está pronto
+        // Tenta obter dados de capa do localStorage (simulação de persistência)
+        const coverPhoto = localStorage.getItem(`${username}_coverPhoto`) || '';
+        const coverPhotoScale = parseFloat(localStorage.getItem(`${username}_coverPhotoScale`)) || 1;
+        const coverPhotoPosition = JSON.parse(localStorage.getItem(`${username}_coverPhotoPosition`) || '{"x":0,"y":0}');
         const tempProfile = {
           username: username,
           name: username,
@@ -114,7 +118,10 @@ const UserProfile = () => {
           followingCount: 0,
           privacy: 'public',
           followers: [],
-          following: []
+          following: [],
+          coverPhoto,
+          coverPhotoScale,
+          coverPhotoPosition
         };
 
         setProfile(tempProfile);
@@ -474,10 +481,40 @@ const UserProfile = () => {
     );
   }
 
+  // Lógica para coverPhoto e transformações
+  const coverPhoto = profile?.coverPhoto;
+  const coverPhotoScale = profile?.coverPhotoScale || 1;
+  const coverPhotoPosition = profile?.coverPhotoPosition || { x: 0, y: 0 };
+
   return (
     <div className="user-profile-page">
-      <header className="profile-header">
-        <div className="profile-header-main">
+      <header
+        className="profile-header"
+        style={coverPhoto ? {
+          backgroundImage: `url(${coverPhoto})`,
+          backgroundSize: `cover`,
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          overflow: 'hidden',
+          position: 'relative',
+        } : {}}
+      >
+        {/* Overlay para escurecer a imagem e garantir legibilidade */}
+        {coverPhoto && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.25)',
+            zIndex: 0,
+          }} />
+        )}
+        <div className="profile-header-main" style={coverPhoto ? {
+          position: 'relative',
+          zIndex: 1,
+        } : {}}>
           <div className="profile-avatar-section">
             <div className="profile-picture-container">
               <img
@@ -991,7 +1028,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#6c757d',
+                  backgroundColor: '#dc3545',
                   color: 'white',
                 }}
               >
@@ -1006,7 +1043,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#e74c3c',
+                  backgroundColor: 'var (--danger-color)',
                   color: 'white',
                 }}
               >
@@ -1256,7 +1293,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#6c757d',
+                  backgroundColor: '#dc3545',
                   color: 'white'
                 }}
               >
@@ -1271,7 +1308,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#e74c3c',
+                  background: 'var (--danger-color)',
                   color: 'white'
                 }}
               >
@@ -1298,7 +1335,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#6c757d',
+                  backgroundColor: '#dc3545',
                   color: 'white'
                 }}
               >
@@ -1313,7 +1350,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#e74c3c',
+                  background: 'var (--danger-color)',
                   color: 'white'
                 }}
               >

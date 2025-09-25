@@ -4,7 +4,11 @@ import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
 import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
 
-import bgLoginImage from '../images/banners/bg_login.jpg';
+import '../styles/pages/register-travel.css';
+import logoImg from '../images/Globe-Memories.png';
+
+// Modern travel-themed background video (optional, fallback to gradient if not loaded)
+const YOUTUBE_BG_URL = 'https://www.youtube.com/embed/YFhwEJosUsU?autoplay=1&mute=1&controls=0&loop=1&playlist=YFhwEJosUsU&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -183,23 +187,45 @@ const Register = () => {
   };
 
   return (
-    <div className="register-page" style={{
-      minHeight: '100vh',
-      width: '',
-      background: `url('${bgLoginImage}') center center/cover no-repeat, linear-gradient(180deg, #004a94 0%, #e68a00 100%)`,
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <div className="register-wrapper">
-        {/* Seção Esquerda: Formulário de Registo */}
-        <div className="register-container">
-          <div className="register-header">
-            <h2>Registar:</h2>
-
-          </div>
-          <form onSubmit={handleSubmit} className="register-form">
-            <div className="name-container" style={{ display: 'flex', gap: '20px' }}>
-              <div className="form-groupRegister" style={{ flex: 1 }}>
+    <>
+      {/* Travel-themed animated background */}
+      <div className="register-travel-bg">
+        <iframe
+          src={YOUTUBE_BG_URL}
+          title="Register Background Video"
+          frameBorder="0"
+          allow="autoplay; fullscreen"
+          allowFullScreen
+          tabIndex="-1"
+          aria-hidden="true"
+          style={{ pointerEvents: 'none' }}
+        />
+        {/* Gradient overlay for glassmorphism effect */}
+        <div className="register-travel-gradient" />
+        {/* Travel icons floating animation */}
+        <div className="travel-icons-floating">
+          <span role="img" aria-label="airplane">✈️</span>
+          <span role="img" aria-label="palm">🌴</span>
+          <span role="img" aria-label="mountain">🏔️</span>
+          <span role="img" aria-label="camera">📷</span>
+          <span role="img" aria-label="beach">🏖️</span>
+        </div>
+      </div>
+      
+      <div className="register-travel-wrapper">
+        <div className="register-travel-container">
+          <div className="register-travel-form-container">
+            <div className="register-travel-header">
+              <img src={logoImg} alt="Globe Memories Logo" className="register-travel-logo" />
+              <div className="register-slogan-highlight">
+                <span role="img" aria-label="explore">🌎</span>
+                <span className="slogan-text">Viaje. Explore. Lembre. Compartilhe.</span>
+                <span role="img" aria-label="camera">📸</span>
+              </div>
+            </div>
+          <form onSubmit={handleSubmit} className="register-travel-form">
+            <div className="form-row">
+              <div className="form-group">
                 <label>Primeiro Nome:</label>
                 <input
                   type="text"
@@ -210,8 +236,7 @@ const Register = () => {
                   required
                 />
               </div>
-
-              <div className="form-groupRegister" style={{ flex: 1 }}>
+              <div className="form-group">
                 <label>Último Nome:</label>
                 <input
                   type="text"
@@ -224,10 +249,8 @@ const Register = () => {
               </div>
             </div>
 
-           
-
-            <div className="user-email-container" style={{ display: 'flex', gap: '20px' }}>
-              <div className="form-groupRegister" style={{ flex: 1 }}>
+            <div className="form-row">
+              <div className="form-group">
                 <label>Nome de Utilizador:</label>
                 <input
                   type="text"
@@ -238,37 +261,35 @@ const Register = () => {
                   required
                 />
               </div>
+              <div className="form-group">
+                <label>País:</label>
+                <input
+                  type="text"
+                  name="nationality"
+                  value={formData.nationality}
+                  onChange={handleChange}
+                  placeholder="Insira o seu País"
+                  required
+                />
+              </div>
+            </div>
 
-            <div className="form-groupRegister">
-              <label>País:</label>
+            <div className="form-group">
+              <label>Email:</label>
               <input
-                type="text"
-                name="nationality"
-                value={formData.nationality}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                placeholder="Insira o seu País"
+                placeholder="Insira o seu email"
                 required
               />
             </div>
 
-            </div>
- 
-
-             <div className="form-groupRegister" style={{ flex: 1 }}>
-                <label>Email:</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Insira o seu email"
-                  required
-                />
-              </div>
-            <div className="password-container" style={{ display: 'flex', gap: '20px' }}>
-              <div className="form-groupRegister" style={{ flex: 1 }}>
+            <div className="form-row">
+              <div className="form-group">
                 <label>Palavra-passe:</label>
-                <div style={{ position: 'relative' }}>
+                <div className="password-group">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
@@ -279,31 +300,17 @@ const Register = () => {
                   />
                   <button
                     type="button"
+                    className="password-toggle"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '15px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#9ca3af',
-                      fontSize: '1.1rem',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
                   >
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
               </div>
 
-              <div className="form-groupRegister" style={{ flex: 1 }}>
+              <div className="form-group">
                 <label>Confirmar:</label>
-                <div style={{ position: 'relative' }}>
+                <div className="password-group">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
@@ -314,22 +321,8 @@ const Register = () => {
                   />
                   <button
                     type="button"
+                    className="password-toggle"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '15px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#9ca3af',
-                      fontSize: '1.1rem',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
                   >
                     {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -348,19 +341,48 @@ const Register = () => {
               </div>
             )}
 
-            <button type="submit" className="register-button">Registar</button>
+            <button type="submit" className="register-travel-btn">
+              <span style={{display:'inline-flex',alignItems:'center',gap:'0.5em'}}>
+                Registar
+              </span>
+            </button>
+
+            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+              <Link 
+                to="/login" 
+                className="login-link-button"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.8rem 1.5rem',
+                  borderRadius: '999px',
+                  backgroundColor: 'var(--primary-color)',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  width: '20%'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--secondary-color)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--primary-color)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <span>🌍</span>
+                Já tem conta criada? Iniciar Sessão
+              </Link>
+            </div>
           </form>
         </div>
 
-        {/* Seção Direita: Texto de Boas-Vindas */}
-        <div className="welcome-section-register">
-          <h3>Bem-vindo (a) à<br /> Globe Memories!</h3>
-          <p className="app-description">
-            A Globe Memories é a sua plataforma para guardar e partilhar as suas memórias de viagem. 
-            Registe-se para começar a criar o seu mapa de memórias pessoal e conectar-se com outros viajantes.
-          </p>
-          <p>Já tem uma conta?</p>
-          <Link to="/login" className="signup-button">Iniciar Sessão</Link>
+
         </div>
       </div>
 
@@ -392,7 +414,7 @@ const Register = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

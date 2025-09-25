@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBell, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown, FaGlobe, FaSun, FaAdn, FaBan } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBell, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown, FaGlobe, FaSun, FaAdn, FaBan, FaCog } from 'react-icons/fa';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 import TravelsData from '../data/travelsData';
 import { request, setAuthHeader } from '../axios_helper';
@@ -187,7 +187,7 @@ const Header = () => {
 
       <div className="header-center">
         <p className="travel-counter">
-          Já foram partilhadas <strong>{totalTravels}</strong> viagens na Globe Memories! Obrigado a Todos!
+          Já foram partilhadas <strong>{totalTravels}</strong> viagens na Globe Memories
         </p>
       </div>
 
@@ -225,7 +225,7 @@ const Header = () => {
                 <img
                   src={user.profilePicture || defaultAvatar}
                   alt="Foto de perfil"
-                  className="profile-image"
+                  className="header-profile-image"
                   onError={(e) => { e.target.src = 'https://via.placeholder.com/30'; }}
                 />
                 <FaCaretDown className="profile-dropdown-arrow" />
@@ -239,14 +239,14 @@ const Header = () => {
                 <Link to={`/profile/edit/${user.username}`} onClick={() => setIsProfileMenuOpen(false)}>
                   <FaUserEdit /> Editar Perfil
                 </Link>
-                <Link to="/blocked-users" onClick={() => setIsProfileMenuOpen(false)}>
-                  <FaBan /> Viajantes Bloqueados
-                </Link>
                 <Link to="/my-travels" onClick={() => setIsProfileMenuOpen(false)}>
                   <FaMap /> As Minhas Viagens
                 </Link>
                 <Link to={`/achievements`} onClick={() => setIsProfileMenuOpen(false)}>
                   <FaTrophy /> As Minhas Conquistas
+                </Link>
+                <Link to="/settings-and-privacy" onClick={() => setIsProfileMenuOpen(false)}>
+                  <FaCog /> Definições e Privacidade
                 </Link>
                 <Link to="/help-support" onClick={() => setIsProfileMenuOpen(false)}>
                   <FaAdn /> Ajuda e Suporte
@@ -259,7 +259,7 @@ const Header = () => {
                     logout();
                   }}
                 >
-                  <FaSignOutAlt className="icon" /> {!isCollapsed && 'Logout'}
+                  <FaSignOutAlt className="icon logout-button" /> {!isCollapsed && 'Logout'}
                 </Link>
               </div>
             )}

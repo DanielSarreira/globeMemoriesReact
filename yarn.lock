@@ -7251,6 +7251,16 @@ leaflet-geosearch@^2.7.0:
     lodash.debounce "^4.0.8"
     nodent-runtime "^3.0.4"
 
+leaflet.heat@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.npmjs.org/leaflet.heat/-/leaflet.heat-0.2.0.tgz"
+  integrity sha512-Cd5PbAA/rX3X3XKxfDoUGi9qp78FyhWYurFg3nsfhntcM/MCNK08pRkf4iEenO1KNqwVPKCmkyktjW3UD+h9bQ==
+
+leaflet.markercluster@^1.5.3:
+  version "1.5.3"
+  resolved "https://registry.npmjs.org/leaflet.markercluster/-/leaflet.markercluster-1.5.3.tgz"
+  integrity sha512-vPTw/Bndq7eQHjLBVlWpnGeLa3t+3zGiuM7fJwCkiMFq+nmRuG3RI3f7f4N4TDX7T4NpbAXpR2+NTRSEGfCSeA==
+
 leaflet@^1.9.4:
   version "1.9.4"
   resolved "https://registry.npmjs.org/leaflet/-/leaflet-1.9.4.tgz"
@@ -8959,6 +8969,16 @@ react-leaflet-geosearch@^0.3.4:
   dependencies:
     leaflet-geosearch "^2.7.0"
     react-leaflet "^3.0.5"
+
+react-leaflet-markercluster@^5.0.0-rc.0:
+  version "5.0.0-rc.0"
+  resolved "https://registry.npmjs.org/react-leaflet-markercluster/-/react-leaflet-markercluster-5.0.0-rc.0.tgz"
+  integrity sha512-jWa4bPD5LfLV3Lid1RWgl+yKUuQtnqeYtJzzLb/fiRjvX+rtwzY8pMoUFuygqyxNrWxMTQlWKBHxkpI7Sxvu4Q==
+  dependencies:
+    "@react-leaflet/core" "^3.0.0"
+    leaflet "^1.9.4"
+    leaflet.markercluster "^1.5.3"
+    react-leaflet "^5.0.0"
 
 react-leaflet-search@^2.0.1:
   version "2.0.1"

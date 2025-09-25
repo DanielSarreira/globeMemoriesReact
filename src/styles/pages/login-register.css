@@ -176,7 +176,7 @@ input.remember-me-checkbox {
 .signup-button {
   display: inline-block;
   padding: 12px 30px;
-  background-color: white;
+  background-color: transparent;
   color: var(--primary-color);
   border: none;
   border-radius: 5px;
@@ -188,9 +188,10 @@ input.remember-me-checkbox {
 }
 
 .signup-button:hover {
-  background-color: #f1f1f1;
+  background-color: transparent;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: #fff !important;
 }
 
 /* Estilos gerais para a página de registo */
@@ -467,10 +468,7 @@ a.signup-button {
   z-index: 1000;
 }
 
-.signup-button:hover {
-  background: #f2f2f2;
-  color: var(--primary-color) !important;
-}
+
 
 /* Pop-up de instalação */
 .install-prompt-overlay {

@@ -27,18 +27,72 @@ const Profile = () => {
     lastName: '',
     username: '',
     email: '',
-    currentPassword: '', // Nova: password atual para confirmação
+    currentPassword: '',
     password: '',
     confirmPassword: '',
     bio: '',
-    quote: '', // Nova frase sobre o utilizador
+    quote: '',
     country: '',
     city: '',
     gender: '',
     birthday: '',
     profilePicture: '',
-    privacy: 'public', // Valor padrão
+    coverPhoto: '', // NOVO: foto de capa
+    coverPhotoScale: 1,
+    coverPhotoPosition: { x: 0, y: 0 },
+    privacy: 'public',
   });
+  // Estados para edição da foto de capa
+  const [coverIsDragging, setCoverIsDragging] = useState(false);
+  const [coverDragStart, setCoverDragStart] = useState({ x: 0, y: 0 });
+  const coverImageRef = useRef(null);
+  const coverContainerRef = useRef(null);
+  // Handlers para foto de capa
+  const handleCoverMouseDown = (e) => {
+    if (!editing || !formData.coverPhoto) return;
+    setCoverIsDragging(true);
+    setCoverDragStart({ x: e.clientX - formData.coverPhotoPosition.x, y: e.clientY - formData.coverPhotoPosition.y });
+    document.body.style.cursor = 'grabbing';
+  };
+
+  const handleCoverMouseMove = (e) => {
+    if (!coverIsDragging) return;
+    setFormData((prev) => ({
+      ...prev,
+      coverPhotoPosition: {
+        x: e.clientX - coverDragStart.x,
+        y: e.clientY - coverDragStart.y,
+      },
+    }));
+  };
+
+  const handleCoverMouseUp = () => {
+    setCoverIsDragging(false);
+    document.body.style.cursor = '';
+  };
+
+  const handleCoverWheel = (e) => {
+    if (!editing || !formData.coverPhoto) return;
+    e.preventDefault();
+    setFormData((prev) => {
+      let newScale = prev.coverPhotoScale + (e.deltaY < 0 ? 0.1 : -0.1);
+      newScale = Math.max(0.5, Math.min(3, newScale));
+      return { ...prev, coverPhotoScale: newScale };
+    });
+  };
+
+  useEffect(() => {
+    if (editing && coverIsDragging) {
+      document.addEventListener('mousemove', handleCoverMouseMove);
+      document.addEventListener('mouseup', handleCoverMouseUp);
+      document.addEventListener('selectstart', (e) => e.preventDefault());
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleCoverMouseMove);
+      document.removeEventListener('mouseup', handleCoverMouseUp);
+      document.removeEventListener('selectstart', (e) => e.preventDefault());
+    };
+  }, [editing, coverIsDragging, coverDragStart.x, coverDragStart.y, formData.coverPhotoPosition.x, formData.coverPhotoPosition.y]);
   const { user, setUser } = useAuth();
 
   // Estados para o sistema de seguidores
@@ -159,6 +213,13 @@ const Profile = () => {
     setSaveError(null);
     setSaveSuccess(false);
     setCurrentPasswordError('');
+    
+      // Salvar dados da capa no localStorage (simulação de persistência)
+      if (formData.coverPhoto) {
+        localStorage.setItem(`${formData.username}_coverPhoto`, formData.coverPhoto);
+        localStorage.setItem(`${formData.username}_coverPhotoScale`, formData.coverPhotoScale);
+        localStorage.setItem(`${formData.username}_coverPhotoPosition`, JSON.stringify(formData.coverPhotoPosition));
+      }
 
     // Validações antes de guardar
     if (formData.password) {
@@ -336,7 +397,10 @@ const Profile = () => {
         gender: user.gender || '',
         birthday: user.birthDate || '',
         profilePicture: user.profilePicture || '',
-        privacy: user.privacy || 'public'
+        coverPhoto: user.coverPhoto || '',
+        coverPhotoScale: user.coverPhotoScale || 1,
+        coverPhotoPosition: user.coverPhotoPosition || { x: 0, y: 0 },
+        privacy: user.privacy || 'public',
       });
       setBioCharCount((user.bio || '').length);
       setQuoteCharCount((user.quote || '').length);
@@ -361,9 +425,8 @@ const Profile = () => {
     <div className="profile-page">
       <div className="profile-container">
         {user ? (
-          <>
-        
             <form className="profile-form" onSubmit={handleSave}>
+              {/* Foto de Capa será renderizada abaixo do button-group */}
               <div className="button-group">
                 {editing ? (
                   <>
@@ -402,6 +465,7 @@ const Profile = () => {
                   </button>
                 )}
               </div>
+              
 
               {saveError && (
                 <div className="error-message">
@@ -577,7 +641,7 @@ const Profile = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>� Frase sobre Mim:</label>
+                    <label>📝 Frase sobre Mim:</label>
                     {editing ? (
                       <div>
                         <input
@@ -598,7 +662,7 @@ const Profile = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>�📝 Sobre Mim:</label>
+                    <label>📝 Sobre Mim:</label>
                     {editing ? (
                       <div>
                         <textarea
@@ -666,7 +730,7 @@ const Profile = () => {
 
                   <div className="form-group">
                     <div className="form-group-LeftPosition">
-                      <label>⚧️ Sexo:</label>
+                      <label>⚧️ Género:</label>
                       {editing ? (
                         <select
                           name="gender"
@@ -703,7 +767,79 @@ const Profile = () => {
                 {/* Informações Obrigatórias (lado direito) */}
                 <div className="form-right">
                   <h3>🔒 Informações Obrigatórias</h3>
+                  {/* Foto de Capa acima do username */}
+                  <div className="cover-photo-section" style={{ marginBottom: 12 }}>
+                    <div
+                      className="cover-photo-wrapper"
+                      ref={coverContainerRef}
+                      style={{
+                        width: '100%',
+                        height: 166,
+                        borderRadius: 12,
+                        overflow: 'hidden',
+                        background: '#e0e0e0',
+                        position: 'relative',
+                        cursor: editing && formData.coverPhoto ? (coverIsDragging ? 'grabbing' : 'grab') : 'default',
+                        marginBottom: 8,
+                      }}
+                      onMouseDown={handleCoverMouseDown}
+                      onWheel={handleCoverWheel}
+                    >
+                      {formData.coverPhoto ? (
+                        <img
+                          ref={coverImageRef}
+                          src={formData.coverPhoto}
+                          alt="Foto de capa"
+                          className="cover-photo"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transform: `scale(${formData.coverPhotoScale}) translate(${formData.coverPhotoPosition.x / formData.coverPhotoScale}px, ${formData.coverPhotoPosition.y / formData.coverPhotoScale}px)`,
+                            transition: coverIsDragging ? 'none' : 'transform 0.2s ease',
+                          }}
+                          draggable="false"
+                        />
+                      ) : (
+                        <div className="cover-photo-placeholder" style={{ width: '100%', height: '100%', background: '#bdbdbd', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18 }}>
+                          Sem foto de capa
+                        </div>
+                      )}
+                      {coverIsDragging && (
+                        <div className="drag-overlay" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                          <span style={{ color: '#333' }}>A Posicionar...</span>
+                        </div>
+                      )}
+                    </div>
+                    {editing && (
+                      <div className="cover-photo-controls" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+                        <label htmlFor="coverPhotoUpload" className="upload-btn">
+                          <span role="img" aria-label="Upload">🖼️</span> Alterar Capa
+                        </label>
+                        <input
+                          id="coverPhotoUpload"
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setFormData(prev => ({ ...prev, coverPhoto: URL.createObjectURL(file), coverPhotoScale: 1, coverPhotoPosition: { x: 0, y: 0 } }));
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                        <div className="zoom-controls">
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, coverPhotoScale: Math.max(0.5, prev.coverPhotoScale - 0.1) }))} disabled={formData.coverPhotoScale <= 0.5} className="zoom-btn minus">−</button>
+                          <span className="zoom-value">{Math.round(formData.coverPhotoScale * 100)}%</span>
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, coverPhotoScale: Math.min(3, prev.coverPhotoScale + 0.1) }))} disabled={formData.coverPhotoScale >= 3} className="zoom-btn plus">+</button>
+                        </div>
+                        <button type="button" className="reset-btn" onClick={() => setFormData(prev => ({ ...prev, coverPhotoScale: 1, coverPhotoPosition: { x: 0, y: 0 } }))}>Resetar</button>
+                        <span style={{ fontSize: 12, color: '#666' }}>💡 Arraste • Scroll para zoom</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="form-group">
+                    <br></br>
                     <label>👥 Username:</label>
                     {editing ? (
                       <input
@@ -818,26 +954,11 @@ const Profile = () => {
                       )}
                     </div>
                   )}
-                  {/* Privacidade do perfil */}
-                  <div className="form-group">
-                    <label>🔒 Privacidade do Perfil:</label>
-                    {editing ? (
-                      <select
-                        name="privacy"
-                        value={formData.privacy}
-                        onChange={handleInputChange}
-                      >
-                        <option value="public">🌍 Público</option>
-                        <option value="private">🔒 Privado</option>
-                      </select>
-                    ) : (
-                      <p>{formData.privacy === 'public' ? '🌍 Público' : '🔒 Privado'}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </form>
-          </>
+                
+                
+                </div> {/* close .form-right */}
+              </div> {/* close .form-section */}
+              </form>
         ) : null}
       </div>
     </div>

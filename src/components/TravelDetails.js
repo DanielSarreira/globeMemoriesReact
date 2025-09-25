@@ -124,7 +124,7 @@ const TravelDetails = () => {
         <div className="info">
           <div className="infoLeft">
             <h1>{travel.name}</h1>
-            <p><strong>👤 Utilizador:</strong> {user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Utilizador não disponível'}</p>
+            <p><strong>👤 Viajante:</strong> {user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Viajante não disponível'}</p>
             <p>
               <strong>🌍 País:</strong> {travel.countryName}
               <strong> 🏙️ Cidade:</strong> {travel.city}

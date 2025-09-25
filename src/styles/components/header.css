@@ -4,35 +4,38 @@
 .profile-icon-wrapper {
   position: relative;
   display: inline-flex;
+  background-color: #fff !important;
   align-items: center;
 }
 
 /* Estilização da imagem do perfil */
-.profile-image {
-  width: 45px;
-  height: 45px;
+.header-profile-image {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
+  margin-top: 0;
 }
 
 /* Estilização da seta */
 .profile-dropdown-arrow {
   position: absolute;
-  bottom: -4px; /* Ajuste para posicionar a seta abaixo da imagem */
-  right: -11px; /* Ajuste para alinhar à direita da imagem */
-  font-size: 12px; /* Tamanho da seta */
-  color: var(--primary-color); /* Cor da seta (ajuste conforme o tema) */
-  background-color: #f2f2f2; /* Cor de fundo para destacar a seta */
-  border-radius: 50%; /* Para deixar a seta dentro de um círculo */
-  padding: 2px; /* Espaçamento interno */
+  bottom: -4px !important;
+  right: -0px !important;
+  font-size: 14px;
+  color: var(--primary-color) !important;
+  background-color: transparent !important;
+  padding: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Estilização do botão para remover bordas ou padding indesejados */
 .profile-icon {
-  background: none;
   border: none;
+  background: none;
   padding: 0;
   cursor: pointer;
+  outline: none;
 }
 
 .header {
@@ -40,12 +43,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 0px 30px;
-  background-color: var(--background-color);
-  box-shadow: 0 2px 8px var(--shadow-color);
+  height: 80px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 90 !important;
-  color: var(--text-color);
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .header-left {
@@ -126,43 +131,56 @@
 }
 
 .travel-counter {
-  font-size: 1.1rem;
-  color: #000;
+  font-size: 1.2rem;
+  color: #333;
   font-family: 'Poppins', sans-serif;
-  font-weight: 400;
+  font-weight: 500;
+  text-align: center;
+  margin: 0px;
 }
 
 .travel-counter strong {
-  color: var(--button-primary);
-  font-weight: 600;
+  color: #007bff;
+  font-weight: 700;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 20px;
+  height: 100%;
 }
 
 
 .social-icons {
   display: flex;
-  gap: 15px;
+  gap: 12px;
+  height: 100%;
+  align-items: center;
+  margin: 0px !important;
 }
 
 .social-icons svg {
-  height: 20px !important;
-  width: 20px !important;
+  height: 18px !important;
+  width: 18px !important;
 }
 
 .social-icons a {
-  color: var(--text-color);
+  color: #666;
   font-size: 1.8rem;
   text-decoration: none;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .social-icons a:hover {
-  color: var(--button-primary);
+  color: #007bff;
+  background-color: #f0f0f0;
+  transform: scale(1.1);
 }
 
 .profile-section {
@@ -183,13 +201,20 @@
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 5px var(--shadow-color);
-  min-width: 250px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 270px;
   z-index: 1001;
+  overflow: hidden;
 }
+
+.logout-button{
+  color: #c82333 !important;
+}
+
+#c82333
 
 .profile-menu a .icon{
 margin-right: 0px;
@@ -200,14 +225,16 @@ margin-right: 0px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 15px;
+  padding: 14px 18px;
   text-decoration: none;
-  color: var(--text-color);
+  color: #333;
   font-family: 'Poppins', sans-serif;
+  font-weight: 500;
   border: none;
   background: none;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease;
+  border-radius: 6px;
 }
 
 /* Alinhamento geral do header */
@@ -216,12 +243,16 @@ margin-right: 0px;
 }
 
 .profile-icon:hover {
-  background-color: transparent;
+  background-color: transparent !important;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .profile-menu a:hover,
 .profile-menu button:hover {
-  background-color: var(--link-hover);
+  background-color: #f8f9fa;
+  transform: translateX(2px);
 }
 
 .logout-button {
@@ -270,15 +301,69 @@ margin-right: 0px;
   background-color: var(--link-hover);
 }
 
+/* Estilização do botão "Instalar App" */
+.install-app-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 25px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.install-app-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+}
+
+/* Estilização da seção do tempo */
+.weather-section {
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.weather-icon {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #ffa500;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background-color: #fff8e1;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  height: 36px;
+  margin: 0px !important;
+}
+
+.weather-icon:hover {
+  background-color: #ffe082;
+  transform: scale(1.05);
+  color: #ffa500;
+}
+
+.weather-temp {
+  font-size: 1rem;
+  color: #333;
+}
+
 /* Responsividade para Header */
 @media (max-width: 768px) {
   .header {
-    flex-wrap: wrap;
-    padding: 10px 20px;
+    padding: 8px 16px;
+    height: auto;
+    min-height: 70px;
   }
 
   .header-left {
-    flex: 1;
+    flex: 0 0 auto;
   }
 
   .header-nav {
@@ -294,30 +379,48 @@ margin-right: 0px;
   }
 
   .header-center {
-    width: 100%;
-    margin-top: 10px;
-  }
-
-  .search-form {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .search-input-wrapper {
-    width: 100%;
-  }
-
-  .search-input-header {
-    width: 100%;
-  }
-
-  .travel-counter {
-    text-align: center;
-    font-size: 0.85rem;
+    display: none;
   }
 
   .header-right {
-    gap: 15px;
+    gap: 12px;
+  }
+
+  .header-profile-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .weather-section {
+    margin-right: 8px;
+  }
+
+  .weather-icon {
+    padding: 6px 10px;
+  }
+}
+
+/* Tablet específico */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header {
+    padding: 10px 20px;
+  }
+
+  .header-center {
+    padding: 0 20px;
+  }
+
+  .travel-counter {
+    font-size: 1rem;
+  }
+
+  .social-icons {
+    gap: 10px;
+  }
+
+  .header-profile-image {
+    width: 55px;
+    height: 55px;
   }
 }
 
@@ -330,9 +433,9 @@ margin-right: 0px;
     font-size: 1.5rem;
   }
 
-  .profile-image {
-    width: 35px;
-    height: 35px;
+  .header-profile-image {
+    width: 45px;
+    height: 45px;
   }
 
   .social-icons a {

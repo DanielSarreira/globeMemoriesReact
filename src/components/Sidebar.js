@@ -33,16 +33,16 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const [activePage, setActivePage] = useState('/');
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1320);
 
   useEffect(() => {
     setActivePage(location.pathname);
   }, [location]);
 
-  // Detectar se é mobile com base no tamanho da janela
+  // Detectar se é mobile/tablet com base no tamanho da janela
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.innerWidth <= 1320);
     };
 
     window.addEventListener('resize', handleResize);
@@ -96,7 +96,7 @@ const Sidebar = () => {
     });
   }
 
-  // Renderização horizontal para mobile
+  // Renderização horizontal para mobile e tablet
   if (isMobile) {
     return (
       <nav className="bottom-navbar">
@@ -123,7 +123,7 @@ const Sidebar = () => {
       </nav>
     );
   }
-  // Sidebar vertical para desktop
+  // Sidebar vertical para desktop (acima de 1320px)
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <button className="toggle-button" onClick={toggleSidebar}>

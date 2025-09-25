@@ -8,7 +8,7 @@
   background: linear-gradient(90deg, var(--secondary-color) 0%, #0066ccc7 100%);
   box-shadow: 0 -2px 16px rgba(0,0,0,0.18);
   z-index: 9999;
-  display: flex;
+  display: none; /* Escondido por padrão */
   align-items: center;
 }
 
@@ -64,7 +64,8 @@
   transform: scale(1.12);
 }
 
-@media (max-width: 768px) {
+/* Media query para mostrar bottom navbar e esconder sidebar em tablet/mobile */
+@media (max-width: 1320px) {
   .sidebar {
     display: none !important;
   }
@@ -72,7 +73,7 @@
     display: flex !important;
   }
 }
-/* Sidebar */
+/* Sidebar padrão - visível apenas em desktop (acima de 1320px) */
 .sidebar {
   position: fixed;
   top: 0;
@@ -503,8 +504,8 @@ button.toggle-button:hover {
   filter: drop-shadow(0 6px 18px rgba(0,0,0,0.25));
 }
 
-/* Responsividade para dispositivos móveis */
-@media (max-width: 768px) {
+/* Responsividade para dispositivos móveis e tablets */
+@media (max-width: 1320px) {
   .sidebar .top a.active {
     margin-top: 0px;
   }

@@ -539,6 +539,14 @@ button-orange:disabled {
   border-right: none;
 }
 
+
+
+.cancel-btn:hover{
+  color: #000;
+}
+
+
+
 /* --------------------------------------- Responsividade --------------------------------------- */
 @media (max-width: 768px) {
   .button,

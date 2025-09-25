@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import travels from '../data/travelsData.js';
+import '../styles/components/modern-filters.css';
 // ...existing code...
 import { FaStar, FaFlag, FaEllipsisV } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
@@ -310,72 +311,88 @@ const Travels = () => {
           </div>
         )}
 
-        <div className="filters-container">
-          <div className="search-bar">
-            <input
-              type="text"
-              placeholder="Pesquisar viagens..."
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </div>
+        <div className="modern-filters-wrapper">
+          <div className="modern-filters-grid">
+            <div className="modern-filter-group">
+              <label className="modern-filter-label">🔍 Pesquisar</label>
+              <div className="modern-search-wrapper">
+                <input
+                  type="text"
+                  className="modern-filter-input modern-search-input"
+                  placeholder="Nome da viagem / país / cidade / viajante ..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+              </div>
+            </div>
 
-          <div className="country-city-filters">
-            <select value={selectedCountry} onChange={handleCountryChange}>
-              <option value="">Selecionar País</option>
-              {uniqueCountries.map((country) => (
-                <option key={country} value={country}>{country}</option>
-              ))}
-            </select>
+            <div className="modern-filter-group">
+              <label className="modern-filter-label">🌍 Localização</label>
+              <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: selectedCountry ? '1fr 1fr' : '1fr' }}>
+                <select className="modern-filter-select" value={selectedCountry} onChange={handleCountryChange}>
+                  <option value="">Todos os Países</option>
+                  {uniqueCountries.map((country) => (
+                    <option key={country} value={country}>{country}</option>
+                  ))}
+                </select>
 
-            {selectedCountry && (
-              <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
-                <option value="">Selecionar Cidade</option>
-                {uniqueCities.map((city) => (
-                  <option key={city} value={city}>{city}</option>
+                {selectedCountry && (
+                  <select className="modern-filter-select" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
+                    <option value="">Todas as Cidades</option>
+                    {uniqueCities.map((city) => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            <div className="modern-filter-group">
+              <label className="modern-filter-label">📅 Período</label>
+              <select
+                className="modern-filter-select"
+                value={selectedMonth}
+                onChange={(e) => {
+                  setSelectedMonth(e.target.value);
+                  if (e.target.value) {
+                    setStartDate('');
+                    setEndDate('');
+                  }
+                }}
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
                 ))}
               </select>
-            )}
-          </div>
+            </div>
 
-          <div className="date-filters" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <select
-              value={selectedMonth}
-              onChange={(e) => {
-                setSelectedMonth(e.target.value);
-                if (e.target.value) {
-                  setStartDate('');
-                  setEndDate('');
-                }
-              }}
-            >
-              {months.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
+            <div className="modern-filter-group" style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '12px', alignItems: 'end' }}>
+              <div>
+                <label className="modern-filter-label">🔄 Ordenar por</label>
+                <select className="modern-filter-select" onChange={handleSortChange} value={sortOption}>
+                  <option value="recent">Mais recente</option>
+                  <option value="name">Nome (A-Z)</option>
+                  <option value="name-desc">Nome (Z-A)</option>
+                  <option value="price-asc">Preço (Crescente)</option>
+                  <option value="price-desc">Preço (Decrescente)</option>
+                </select>
+              </div>
+              <button onClick={toggleModal} className="modern-filter-button modern-more-filters-btn">
+                Mais Filtros
+              </button>
+            </div>
           </div>
-
-          <div className="sort-group">
-            <select onChange={handleSortChange} value={sortOption}>
-              <option value="recent">Mais recente</option>
-              <option value="name">Nome (A-Z)</option>
-              <option value="name-desc">Nome (Z-A)</option>
-              <option value="price-asc">Preço (Crescente)</option>
-              <option value="price-desc">Preço (Decrescente)</option>
-            </select>
-          </div>
-
-          <button onClick={toggleModal} className="button">FILTROS</button>
         </div>
 
         {isModalOpen && (
-          <div className="modal-overlay" onClick={toggleModal}>
-            <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>Filtros</h3>
-              <div className="filter-group">
-                <label>Preço Total da Viagem:</label>
+          <div className="modal-overlay">
+            <div className="modern-modal-content">
+              <h3 className="modern-modal-title">Filtros Avançados</h3>
+              
+              <div className="modern-modal-group">
+                <label className="modern-modal-label">💰 Preço Total da Viagem:</label>
                 <Slider
                   value={priceRange}
                   onChange={handlePriceChange}
@@ -383,22 +400,26 @@ const Travels = () => {
                   min={0}
                   max={5000}
                 />
-                <p>De: {priceRange[0]}€ até {priceRange[1]}€</p>
+                <p className="modern-modal-value">De: {priceRange[0]}€ até {priceRange[1]}€</p>
               </div>
 
-              <div className="filter-group">
-                <label>Número de Dias da Viagem:</label>
+              <div className="modern-modal-group">
+                <label className="modern-modal-label">📅 Número de Dias da Viagem:</label>
                 <Slider
                   value={daysRange}
                   onChange={handleDaysChange}
                   valueLabelDisplay="auto"
                   min={1}
-                  max={90}
+                  max={365}
                 />
-                <p>De {daysRange[0]} a {daysRange[1]} dias</p>
+                <p className="modern-modal-value">De {daysRange[0]} a {daysRange[1]} dias</p>
               </div>
 
-              <button onClick={toggleModal} className="close-modal-button">Fechar</button>
+              <div className="modern-modal-footer">
+                <button onClick={toggleModal} className="modern-modal-button">
+                  Fechar
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -479,7 +500,7 @@ const Travels = () => {
                   <img src={travel.highlightImage} alt={travel.name} className="highlight-image" />
                   <div className="travel-text">
                     <h2>{travel.name}</h2>
-                    <p><b>👤 Utilizador:</b> {travel.user}</p>
+                    <p><b>👤 Viajante:</b> {travel.user}</p>
                     <p><b>🌍 País:</b> {travel.country}</p>
                     <p><b>🏙️ Cidade:</b> {travel.city}</p>
                     <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p>

@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle, useMap, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "../styles/pages/globe-memories-interactive-map.css";
 import travels from "../data/travelsData";
 import L from "leaflet";
 import debounce from "lodash/debounce";
 
 import { useNavigate } from "react-router-dom";
 
-// Corrige o problema de ícones padrão no Leaflet com React
+// Corrige o probleaflet-left .leaflet-controlma de ícones padrão no Leaflet com React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -16,62 +17,42 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Ícone azul (viagens de utilizadores que sigo)
-const blueIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+// Criar ícones customizados modernos
+const createCustomIcon = (color, iconType = 'location') => {
+  const svgIcon = `
+    <svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <path d="M15 2c-7.168 0-13 5.832-13 13 0 8.284 13 23 13 23s13-14.716 13-23c0-7.168-5.832-13-13-13z" 
+            fill="${color}" 
+            stroke="white" 
+            stroke-width="2" 
+            filter="url(#shadow)"/>
+      <circle cx="15" cy="15" r="6" fill="white"/>
+      <text x="15" y="20" text-anchor="middle" fill="${color}" font-size="10" font-weight="bold">
+        ${iconType === 'visited' ? '✓' : iconType === 'future' ? '⚡' : iconType === 'following' ? '👥' : iconType === 'public' ? '🌍' : '📍'}
+      </text>
+    </svg>
+  `;
+  
+  return new L.DivIcon({
+    html: svgIcon,
+    className: 'gm-map-custom-marker',
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+    popupAnchor: [0, -40],
+  });
+};
 
-// Ícone amarelo (viagens públicas de outros)
-const yellowIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
-  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-// (removidas duplicações de ícones)
-
-// Ícone verde (viagens passadas)
-const greenIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-// Ícone laranja (futuras viagens)
-const orangeIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
-  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-// Ícone roxo (resultados de pesquisa)
-const purpleIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
-  iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+// Ícones modernos para diferentes tipos de viagem
+const visitedIcon = createCustomIcon('#22c55e', 'visited'); // Verde
+const futureIcon = createCustomIcon('#f97316', 'future'); // Laranja
+const followingIcon = createCustomIcon('#3b82f6', 'following'); // Azul
+const publicIcon = createCustomIcon('#eab308', 'public'); // Amarelo
+const searchIcon = createCustomIcon('#8b5cf6', 'search'); // Roxo
 
 // Componente para centralizar o mapa no local selecionado
 const MapController = ({ selectedLocation }) => {
@@ -101,9 +82,42 @@ const InteractiveMap = () => {
   const [searchMarker, setSearchMarker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState("mine"); // 'mine' | 'all'
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showStreetView, setShowStreetView] = useState(false);
+  const [streetViewPerson, setStreetViewPerson] = useState(null);
+  const [filters, setFilters] = useState({
+    visited: true,
+    future: true,
+    following: true,
+    public: true,
+    dateRange: 'all',
+    priceRange: 'all'
+  });
+  const mapRef = useRef(null);
   const navigate = useNavigate();
 
   const MAPTILER_API_KEY = "G59o5q9sfWGLLQJsw3v7";
+
+  // Múltiplas opções de mapas para melhor qualidade
+  const mapLayers = {
+    streets: {
+      url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`,
+      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    },
+    satellite: {
+      url: `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_API_KEY}`,
+      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    },
+    terrain: {
+      url: `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`,
+      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    },
+    basic: {
+      url: `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`,
+      attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }
+  };
 
   // Função para obter coordenadas e nome em pt-PT usando Nominatim
   const getCoordinates = async (country, city) => {
@@ -385,18 +399,29 @@ const InteractiveMap = () => {
   const myFuture = useMemo(() => futureTrips, [futureTrips]);
 
   const filteredSets = useMemo(() => {
+    let visited = myVisited;
+    let future = myFuture;
+    let following = followingTrips || [];
+    let publicTripsData = publicTrips || [];
+
+    // Aplicar filtros
+    if (!filters.visited) visited = [];
+    if (!filters.future) future = [];
+    if (!filters.following) following = [];
+    if (!filters.public) publicTripsData = [];
+
     if (mode === 'mine') {
       // Apenas as minhas viagens (concluídas e futuras)
-      return { visited: myVisited, future: myFuture, following: [], public: [] };
+      return { visited, future, following: [], public: [] };
     }
     // mode === 'all' -> Apenas viagens de outros (quem sigo e públicas)
     return {
       visited: [],
       future: [],
-      following: followingTrips || [],
-      public: publicTrips || [],
+      following,
+      public: publicTripsData,
     };
-  }, [mode, myVisited, myFuture, followingTrips, publicTrips]);
+  }, [mode, myVisited, myFuture, followingTrips, publicTrips, filters]);
 
   // Componente para gerenciar eventos do mapa
 const MapEvents = () => {
@@ -583,6 +608,12 @@ const MapEvents = () => {
     return { country, city };
   };
 
+  // Função para abrir o Street View do Google Maps
+  const openStreetView = (lat, lng) => {
+    const streetViewUrl = `https://www.google.com/maps/@${lat},${lng},3a,75y,0h,90t/data=!3m7!1e1!3m5!1s0x0:0x0!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fpanoid%3D${lat}_${lng}%26cb_client%3Dsearch.gws-prod.gps%26w%3D86%26h%3D86%26yaw%3D0%26pitch%3D0%26thumbfov%3D100!7i16384!8i8192`;
+    window.open(streetViewUrl, '_blank');
+  };
+
   // Função para selecionar um local da pesquisa
   const handleSelectLocation = (result) => {
     const coordinates = [parseFloat(result.lat), parseFloat(result.lon)];
@@ -682,325 +713,369 @@ const MapEvents = () => {
   };
 
   return (
-    <div style={{ height: "100%", width: "100%", overflow: "hidden", position: "relative" }}>
-      {/* Botões de filtro principais */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "25px",
-          left: "20px",
-          zIndex: 1100,
-          display: "flex",
-          gap: "10px",
-        }}
-      >
-        <button
-          onClick={() => { setMode('mine'); }}
-          style={{
-            padding: "10px 14px",
-            borderRadius: "20px",
-            border: "1px solid #ccc",
-            backgroundColor: mode === 'mine' ? '#4CAF50' : 'white',
-            color: mode === 'mine' ? 'white' : '#333',
-            cursor: 'pointer',
-            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-            fontWeight: 600,
-          }}
-        >
-          As Minhas Viagens / Futuras Viagens
-        </button>
-        <button
-          onClick={() => setMode('all')}
-          style={{
-            padding: "10px 14px",
-            borderRadius: "20px",
-            border: "1px solid #ccc",
-            backgroundColor: mode === 'all' ? '#1976d2' : 'white',
-            color: mode === 'all' ? 'white' : '#333',
-            cursor: 'pointer',
-            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-            fontWeight: 600,
-          }}
-        >
-          Viagens de Todos os Viajantes
-        </button>
+    <div className="gm-map-container">
+      {/* Header transparente com controles e pesquisa */}
+      <div className="gm-map-header">
+        <div className="gm-map-controls">
+          <button
+            className={`gm-map-control-btn ${mode === 'mine' ? 'active' : ''}`}
+            onClick={() => setMode('mine')}
+          >
+            <span className="gm-map-btn-icon">🏠</span>
+            As Minhas Viagens
+          </button>
+          <button
+            className={`gm-map-control-btn ${mode === 'all' ? 'active' : ''}`}
+            onClick={() => setMode('all')}
+          >
+            <span className="gm-map-btn-icon">🌍</span>
+            Todos os Viajantes
+          </button>
+       
+        </div>
+        
+        {/* Barra de pesquisa integrada no header */}
+        <div className="gm-map-search-container">
+          <div className="gm-map-search-wrapper">
+            <div className="gm-map-search-input-wrapper">
+              <span className="gm-map-search-icon">🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Pesquisar países, cidades, locais de interesse..."
+                className="gm-map-search-input"
+              />
+              {isLoading && <div className="gm-map-loading-spinner">⏳</div>}
+            </div>
+            
+            {searchResults.length > 0 && (
+              <div className="gm-map-search-results">
+                {searchResults.map((result) => (
+                  <div
+                    key={result.place_id}
+                    className="gm-map-search-result-item"
+                    onClick={() => handleSelectLocation(result)}
+                  >
+                    <div className="gm-map-result-info">
+                      <strong>{result.display_name}</strong>
+                      <span className="gm-map-result-type">{result.type}</span>
+                    </div>
+                    {result.address_details && (
+                      <div className="gm-map-result-details">
+                        {[
+                          result.address_details.city || result.address_details.town,
+                          result.address_details.state || result.address_details.region,
+                          result.address_details.country
+                        ].filter(Boolean).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {searchQuery.length > 0 && !isLoading && searchResults.length === 0 && (
+              <div className="gm-map-no-results">
+                Nenhum resultado encontrado para "{searchQuery}"
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
-      {/* Legenda */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '90px',
-          left: '20px',
-          backgroundColor: 'white',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          border: '1px solid #ddd',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-          zIndex: 1100,
-          fontSize: 13,
-          fontWeight: 500,
-        }}
-      >
-        <div style={{ fontWeight: 800, marginBottom: 6 }}>Legenda</div>
-        <div style={{ display: 'grid', gap: 4 }}>
-          <span>• Verde = As Minhas Viagens (Concluídas)</span>
-          <span>• Laranja = As Minhas Viagens (Futuras)</span>
-          <span>• Azul = Viagens de quem sigo</span>
-          <span>• Amarelo = Viagens Públicas</span>
+    
+
+     
+      {/* Legenda moderna */}
+      <div className="gm-map-legend">
+        <div className="gm-map-legend-header">
+          <span className="gm-map-legend-icon">🗺️</span>
+          <span>Legenda</span>
+        </div>
+        <div className="gm-map-legend-items">
+          <div className="gm-map-legend-item">
+            <span className="gm-map-legend-marker visited">✓</span>
+            <span>Viagens Concluídas</span>
+          </div>
+          <div className="gm-map-legend-item">
+            <span className="gm-map-legend-marker future">⚡</span>
+            <span>Viagens Futuras</span>
+          </div>
+         
         </div>
       </div>
 
-      {/* Campo de Pesquisa */}
-      <div
-        style={{
-          position: "absolute",
-          top: "40px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 1000,
-          width: "750px",
-        }}
-      >
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          placeholder="Pesquisar países, cidades, regiões..."
-          style={{
-            width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
-            fontSize: "16px",
-            outline: "none",
-          }}
-        />
-        {isLoading && (
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              right: "10px",
-              transform: "translateY(-50%)",
-              fontSize: "14px",
-              color: "#666",
-            }}
-          >
-            A Carregar...
-          </div>
-        )}
-        {searchResults.length > 0 && (
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              margin: "5px 0 0 0",
-              backgroundColor: "white",
-              borderRadius: "8px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              maxHeight: "450px",
-              overflowY: "auto",
-              border: "1px solid #ddd",
-              width: "771px",
-            }}
-          >
-            {searchResults.map((result) => (
-              <li
-                key={result.place_id}
-                onClick={() => handleSelectLocation(result)}
-                style={{
-                  padding: "12px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #eee",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = "white")}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <strong>{result.display_name}</strong>
-                  <span style={{ 
-                    color: "#666", 
-                    fontSize: "12px", 
-                    backgroundColor: "#fff !important",
-                    padding: '2px 6px',
-                    borderRadius: '4px'
-                  }}>
-                    {result.type}
-                  </span>
-                </div>
-                {result.address_details && (
-                  <div style={{ 
-                    fontSize: "12px", 
-                    color: "#666",
-                    marginTop: "4px",
-                    display:"flex",
-                    backgroundColor:"#fff !important",
-                  }}>
-                    {[
-                      result.address_details.city || result.address_details.town,
-                      result.address_details.state || result.address_details.region,
-                      result.address_details.country
-                    ].filter(Boolean).join(', ')}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        {searchQuery.length > 0 && !isLoading && searchResults.length === 0 && (
-          <div
-            style={{
-              padding: "12px",
-              backgroundColor: "#fff !important",
-              borderRadius: "8px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              marginTop: "5px",
-              color: "#666",
-            }}
-          >
-            Nenhum resultado encontrado para "{searchQuery}"
-          </div>
-        )}
-      </div>
-
-      {/* Popup de Boas-Vindas */}
+      {/* Modal de Boas-vindas */}
       {showWelcomePopup && (
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "white",
-            padding: "20px",
-            borderRadius: "8px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-            zIndex: 1000,
-            maxWidth: "400px",
-            textAlign: "center",
-          }}
-        >
-          <h2>Bem-vindo ao Mapa Interativo!</h2>
-          <p>Aqui pode explorar as suas aventuras! <br></br>Veja como funciona:</p>
-          <ul style={{ textAlign: "left", margin: "10px 0" }}>
-            <li><strong>Marcadores Verdes:</strong> Mostram as viagens que já realizou...</li>
-            <li><strong>Marcadores Laranjas:</strong> Adicione futuras viagens clicando no mapa!</li>
-            <li><strong>Interacção:</strong> Arraste o mapa e clique nos marcadores.</li>
-          </ul>
-          <button
-            onClick={closeWelcomePopup}
-            style={{
-              marginTop: "10px",
-              padding: "10px 20px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Entendido
-          </button>
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>🗺️ Bem-vindo ao Mapa Interativo</h2>
+              <button className="gm-map-close-btn" onClick={closeWelcomePopup}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Explore o mundo de forma interativa e descubra novos destinos!</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">✓</span>
+                  <div>
+                    <strong>Marcadores Verdes</strong>
+                    <p>Viagens já realizadas</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">⚡</span>
+                  <div>
+                    <strong>Marcadores Laranjas</strong>
+                    <p>Viagens Futuras que estão a ser planeadas</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🔍</span>
+                  <div>
+                    <strong>Pesquisa Inteligente</strong>
+                    <p>Encontre qualquer lugar do mundo</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">📊</span>
+                  <div>
+                    <strong>Estatísticas</strong>
+                    <p>Acompanhe o seu progresso de viagens</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <button className="gm-map-welcome-btn primary" onClick={closeWelcomePopup}>
+                Comece a explorar!
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div style={{ height: "95vh", width: "200vh", position: "relative" }}>
+      {/* Container do Mapa com múltiplas camadas */}
+      <div className="gm-map-wrapper">
         <MapContainer
           center={[20, 0]}
           zoom={3}
-          style={{ height: "1000px", width: "100%" }}
+          className="gm-map-leaflet"
           maxBounds={[[-90, -180], [90, 180]]}
           maxBoundsViscosity={1.0}
+          ref={mapRef}
         >
-          <TileLayer
-            url={`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_API_KEY}`}
-            attribution='&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-            noWrap={true}
-          />
+          <LayersControl position="topright">
+            <LayersControl.BaseLayer checked name="🌍 Ruas">
+              <TileLayer
+                url={mapLayers.streets.url}
+                attribution={mapLayers.streets.attribution}
+                noWrap={true}
+                maxZoom={19}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="🛰️ Satélite">
+              <TileLayer
+                url={mapLayers.satellite.url}
+                attribution={mapLayers.satellite.attribution}
+                noWrap={true}
+                maxZoom={19}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="🏔️ Terreno">
+              <TileLayer
+                url={mapLayers.terrain.url}
+                attribution={mapLayers.terrain.attribution}
+                noWrap={true}
+                maxZoom={19}
+              />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="🗺️ Básico">
+              <TileLayer
+                url={mapLayers.basic.url}
+                attribution={mapLayers.basic.attribution}
+                noWrap={true}
+                maxZoom={19}
+              />
+            </LayersControl.BaseLayer>
+          </LayersControl>
 
           {/* Marcadores de países e cidades visitados */}
           {filteredSets.visited.map((location, idx) => (
             <Marker
               key={`${location.city}-${location.country}-${location.user || ''}-${location.tripLink || idx}`}
               position={location.coordinates}
-              icon={greenIcon}
+              icon={visitedIcon}
             >
               <Popup>
-                <h3>{location.country} | {location.city}</h3>
-                <p>Viajante: {location.user || 'Desconhecido'}</p>
-                <p>Local: {location.city}</p>
-                <p>Preço total da Viagem: {location.price ? `${location.price} €` : "Sem Informação"}</p>
-                <p>Visitado em: {location.startDate}</p>
-                <p>Coordenadas: {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}</p>
-                <a href={getGoogleMapsLink(location.coordinates[0], location.coordinates[1])} target="_blank" rel="noopener noreferrer">
-                  <button style={{ marginTop: "5px", cursor: "pointer" }}>Ver no Google Maps</button>
-                </a>
-                <br />
-                <a href={location.tripLink} target="_blank" rel="noopener noreferrer">
-                  <button style={{ marginTop: "5px", cursor: "pointer" }}>Ver Viagem</button>
-                </a>
+                <div className="gm-map-popup-content">
+                  <h3>🏛️ {location.country} | {location.city}</h3>
+                  <div className="gm-map-popup-info">
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">👤</span>
+                      <span>Viajante: {location.user || 'Você'}</span>
+                    </div>
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">📍</span>
+                      <span>Local: {location.city}</span>
+                    </div>
+                    {location.price && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">💰</span>
+                        <span>Custo: {location.price} €</span>
+                      </div>
+                    )}
+                    {location.startDate && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">📅</span>
+                        <span>Visitado em: {location.startDate}</span>
+                      </div>
+                    )}
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">🌍</span>
+                      <span>Coordenadas: {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}</span>
+                    </div>
+                  </div>
+                  <div className="gm-map-popup-actions">
+                    <a href={getGoogleMapsLink(location.coordinates[0], location.coordinates[1])} target="_blank" rel="noopener noreferrer">
+                      <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
+                    </a>
+                    {location.tripLink && (
+                      <a href={location.tripLink} target="_blank" rel="noopener noreferrer">
+                        <button className="gm-map-popup-btn secondary">📖 Ver Viagem</button>
+                      </a>
+                    )}
+                  </div>
+                </div>
               </Popup>
             </Marker>
           ))}
 
           {/* Marcadores de futuras viagens */}
           {filteredSets.future.map((trip, index) => (
-            <Marker key={`future-${index}`} position={trip.coordinates} icon={orangeIcon}>
+            <Marker key={`future-${index}`} position={trip.coordinates} icon={futureIcon}>
               <Popup>
-                <h3>{trip.label}</h3>
-                <p>País: {trip.country}</p>
-                <p>Local: {trip.city}</p>
-                <p>Coordenadas: {trip.coordinates[0].toFixed(4)}, {trip.coordinates[1].toFixed(4)}</p>
-                <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
-                  <button style={{ marginTop: "5px", cursor: "pointer" }}>Ver no Google Maps</button>
-                </a>
-                <br />
-                <button 
-                  onClick={() => removeFutureTrip(trip)}
-                  style={{
-                    marginTop: "8px",
-                    backgroundColor: "#f44336",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "4px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Remover
-                </button>
+                <div className="gm-map-popup-content">
+                  <h3>⚡ {trip.label || `Viagem Futura para ${trip.city}`}</h3>
+                  <div className="gm-map-popup-info">
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">🌍</span>
+                      <span>País: {trip.country}</span>
+                    </div>
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">📍</span>
+                      <span>Local: {trip.city}</span>
+                    </div>
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">🧭</span>
+                      <span>Coordenadas: {trip.coordinates[0].toFixed(4)}, {trip.coordinates[1].toFixed(4)}</span>
+                    </div>
+                  </div>
+                  <div className="gm-map-popup-actions">
+                    <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
+                      <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
+                    </a>
+                    <button 
+                      className="gm-map-popup-btn danger"
+                      onClick={() => removeFutureTrip(trip)}
+                    >
+                      🗑️ Remover
+                    </button>
+                  </div>
+                </div>
               </Popup>
             </Marker>
           ))}
 
           {/* Marcadores de viagens de quem sigo (azuis) */}
           {mode === 'all' && filteredSets.following.map((trip, index) => (
-            <Marker key={`following-${index}`} position={trip.coordinates} icon={blueIcon}>
+            <Marker key={`following-${index}`} position={trip.coordinates} icon={followingIcon}>
               <Popup>
-                <h3>{trip.label || `${trip.country} | ${trip.city}`}</h3>
-                <p>Viajante: {trip.user || 'Utilizador'}</p>
-                <p>País: {trip.country}</p>
-                <p>Local: {trip.city}</p>
-                {trip.price && <p>Preço: {trip.price} €</p>}
-                {trip.startDate && <p>Data início: {trip.startDate}</p>}
-                {trip.endDate && <p>Data fim: {trip.endDate}</p>}
+                <div className="gm-map-popup-content">
+                  <h3>👥 {trip.label || `${trip.country} | ${trip.city}`}</h3>
+                  <div className="gm-map-popup-info">
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">👤</span>
+                      <span>Viajante: {trip.user || 'Utilizador'}</span>
+                    </div>
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">🌍</span>
+                      <span>País: {trip.country}</span>
+                    </div>
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">📍</span>
+                      <span>Local: {trip.city}</span>
+                    </div>
+                    {trip.price && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">💰</span>
+                        <span>Preço: {trip.price} €</span>
+                      </div>
+                    )}
+                    {trip.startDate && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">📅</span>
+                        <span>Data início: {trip.startDate}</span>
+                      </div>
+                    )}
+                    {trip.endDate && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">🏁</span>
+                        <span>Data fim: {trip.endDate}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="gm-map-popup-actions">
+                    <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
+                      <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
+                    </a>
+                  </div>
+                </div>
               </Popup>
             </Marker>
           ))}
 
           {/* Marcadores de viagens públicas (amarelos) */}
           {mode === 'all' && filteredSets.public.map((trip, index) => (
-            <Marker key={`public-${index}`} position={trip.coordinates} icon={yellowIcon}>
+            <Marker key={`public-${index}`} position={trip.coordinates} icon={publicIcon}>
               <Popup>
-                <h3>{trip.label || `${trip.country} | ${trip.city}`}</h3>
-                <p>País: {trip.country}</p>
-                <p>Local: {trip.city}</p>
-                {trip.price && <p>Preço: {trip.price} €</p>}
-                {trip.startDate && <p>Data início: {trip.startDate}</p>}
-                {trip.endDate && <p>Data fim: {trip.endDate}</p>}
+                <div className="gm-map-popup-content">
+                  <h3>🌍 {trip.label || `${trip.country} | ${trip.city}`}</h3>
+                  <div className="gm-map-popup-info">
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">🌍</span>
+                      <span>País: {trip.country}</span>
+                    </div>
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">📍</span>
+                      <span>Local: {trip.city}</span>
+                    </div>
+                    {trip.price && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">💰</span>
+                        <span>Preço: {trip.price} €</span>
+                      </div>
+                    )}
+                    {trip.startDate && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">📅</span>
+                        <span>Data início: {trip.startDate}</span>
+                      </div>
+                    )}
+                    {trip.endDate && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">🏁</span>
+                        <span>Data fim: {trip.endDate}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="gm-map-popup-actions">
+                    <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
+                      <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
+                    </a>
+                  </div>
+                </div>
               </Popup>
             </Marker>
           ))}
@@ -1033,7 +1108,7 @@ const MapEvents = () => {
           {searchMarker && (
             <Marker 
               position={searchMarker.coordinates} 
-              icon={purpleIcon}
+              icon={searchIcon}
               eventHandlers={{
                 popupclose: () => {
                   // Remove o marcador quando o popup é fechado
@@ -1042,75 +1117,50 @@ const MapEvents = () => {
               }}
             >
               <Popup closeButton={false}>
-                <div style={{ textAlign: 'center', minWidth: '200px' }}>
-                  <h4 style={{ margin: '0 0 10px 0' }}>{searchMarker.name}</h4>
-                  
-                  {/* País e Cidade */}
-                  <div style={{ textAlign: 'left', marginBottom: '10px' }}>
-                    {searchMarker.country && <p style={{ margin: '4px 0' }}><strong>País:</strong> {searchMarker.country}</p>}
-                    {searchMarker.city && <p style={{ margin: '4px 0' }}><strong>Cidade:</strong> {searchMarker.city}</p>}
-                    <p style={{ margin: '4px 0' }}><strong>Coordenadas:</strong> {searchMarker.coordinates[0].toFixed(4)}, {searchMarker.coordinates[1].toFixed(4)}</p>
+                <div className="gm-map-popup-content">
+                  <h3>🔍 {searchMarker.name}</h3>
+                  <div className="gm-map-popup-info">
+                    {searchMarker.country && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">🌍</span>
+                        <span>País: {searchMarker.country}</span>
+                      </div>
+                    )}
+                    {searchMarker.city && (
+                      <div className="gm-map-info-item">
+                        <span className="gm-map-info-icon">📍</span>
+                        <span>Local: {searchMarker.city}</span>
+                      </div>
+                    )}
+                    <div className="gm-map-info-item">
+                      <span className="gm-map-info-icon">🧭</span>
+                      <span>Coordenadas: {searchMarker.coordinates[0].toFixed(4)}, {searchMarker.coordinates[1].toFixed(4)}</span>
+                    </div>
                   </div>
-                  
-                  {/* Botão Adicionar como Viagem Futura */}
-                  <button
-                    onClick={() => addFutureTripFromSearch(searchMarker)}
-                    style={{
-                      backgroundColor: '#fd7e14', // Laranja
-                      color: 'white',
-                      border: 'none',
-                      padding: '8px 16px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      margin: '8px 0',
-                      width: '100%',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Adicionar como Viagem Futura
-                  </button>
-                  
-                  {/* Botão Ver no Google Maps */}
-                  <a 
-                    href={getGoogleMapsLink(searchMarker.coordinates[0], searchMarker.coordinates[1])} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ display: 'block', textDecoration: 'none' }}
-                  >
-                    <button 
-                      style={{ 
-                        width: '100%',
-                        padding: '8px 16px',
-                        borderRadius: '4px',
-                        backgroundColor: '#28a745', // Verde
-                        color: 'white',
-                        border: 'none',
-                        cursor: 'pointer',
-                        margin: '8px 0',
-                        fontWeight: 'bold'
-                      }}
+                  <div className="gm-map-popup-actions">
+                    <button
+                      className="gm-map-popup-btn primary"
+                      onClick={() => addFutureTripFromSearch(searchMarker)}
                     >
-                      Ver no Google Maps
+                      ⚡ Adicionar Viagem
                     </button>
-                  </a>
-                  
-                  {/* Botão Fechar */}
-                  <button
-                    onClick={() => setSearchMarker(null)}
-                    style={{
-                      width: '100%',
-                      padding: '6px 12px',
-                      borderRadius: '4px',
-                      backgroundColor: '#f8f9fa',
-                      border: '1px solid #ddd',
-                      cursor: 'pointer',
-                      marginTop: '8px',
-                      fontSize: '0.9em',
-                      color: '#6c757d'
-                    }}
-                  >
-                    Fechar
-                  </button>
+                    <a 
+                      href={getGoogleMapsLink(searchMarker.coordinates[0], searchMarker.coordinates[1])} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ display: 'block', textDecoration: 'none', flex: 1 }}
+                    >
+                      <button className="gm-map-popup-btn secondary">
+                        🗺️ Google Maps
+                      </button>
+                    </a>
+                    <button
+                      className="gm-map-popup-btn danger"
+                      onClick={() => setSearchMarker(null)}
+                    >
+                      ❌ Fechar
+                    </button>
+                  </div>
                 </div>
               </Popup>
             </Marker>
@@ -1141,10 +1191,11 @@ const MapEvents = () => {
         </MapContainer>
       </div>
 
-      {/* Explorar Aleatório (viagem pública aleatória) */}
+      {/* Botão de ação flutuante */}
       {mode === 'all' && (
-        <div style={{ position: 'absolute', left: 615, bottom: 25, zIndex: 1100 }}>
+        <div className="gm-map-floating-action-btn">
           <button
+            className="gm-map-fab-main"
             onClick={() => {
               // Considera viagens públicas e de quem sigo
               const combinedFiltered = [...(filteredSets.public || []), ...(filteredSets.following || [])];
@@ -1166,18 +1217,9 @@ const MapEvents = () => {
               });
               setRandomPopup({ ...r, coordinates: coords });
             }}
-            style={{
-              padding: '10px 14px',
-              borderRadius: 20,
-              border: '1px solid #ccc',
-              backgroundColor: '#ff5722',
-              color: 'white',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-              fontWeight: 600,
-            }}
           >
-            Explorar uma Viagem Aleatória
+            <span className="gm-map-fab-icon">🎲</span>
+            <span className="gm-map-fab-text">Descobrir</span>
           </button>
         </div>
       )}

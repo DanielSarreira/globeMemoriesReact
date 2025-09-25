@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
 import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
+import '../styles/pages/login-travel.css';
 
-import bgLoginImage from '../images/banners/bg_login.jpg';
+// Modern travel-themed background video (optional, fallback to gradient if not loaded)
+const YOUTUBE_BG_URL = 'https://www.youtube.com/embed/YFhwEJosUsU?autoplay=1&mute=1&controls=0&loop=1&playlist=YFhwEJosUsU&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -355,21 +357,39 @@ const Login = () => {
   };
 
   return (
-    <div className="register-page" style={{
-      minHeight: '100vh',
-      width: '',
-      background: `url('${bgLoginImage}') center center/cover no-repeat, linear-gradient(180deg, #004a94 0%, #e68a00 100%)`,
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <div className="register-wrapper">
-        {/* Seção Esquerda: Formulário de Login */}
-        <div className="register-container">
-          <div className="login-header">
-            <h2>Iniciar Sessão:</h2>
+    <>
+      {/* Travel-themed animated background */}
+      <div className="login-travel-bg">
+        <iframe
+          src={YOUTUBE_BG_URL}
+          title="Login Background Video"
+          frameBorder="0"
+          allow="autoplay; fullscreen"
+          allowFullScreen
+          tabIndex="-1"
+          aria-hidden="true"
+          style={{ pointerEvents: 'none' }}
+        />
+        {/* Gradient overlay for glassmorphism effect */}
+        <div className="login-travel-gradient" />
+        {/* Travel icons floating animation */}
+        <div className="travel-icons-floating">
+          <span role="img" aria-label="airplane">✈️</span>
+          <span role="img" aria-label="palm">🌴</span>
+          <span role="img" aria-label="mountain">🏔️</span>
+          <span role="img" aria-label="camera">📷</span>
+          <span role="img" aria-label="beach">🏖️</span>
+        </div>
+      </div>
+      <div className="login-travel-wrapper">
+        <div className="login-travel-card">
+          <div className="login-travel-header">
+            <img src={require('../images/Globe-Memories.png')} alt="Globe Memories Logo" className="travel-logo-img" />
+            
           </div>
-          <form onSubmit={handleSubmit} className="register-form">
-            <div className="form-groupRegister">
+          <form onSubmit={handleSubmit} className="login-travel-form">
+            <br></br>
+            <div className="input-group">
               <label>Nome de Utilizador:</label>
               <input
                 type="text"
@@ -378,123 +398,48 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="Insira o seu nome de utilizador"
                 required
+                autoComplete="username"
               />
             </div>
-
-            <div className="form-groupRegister">
+            <div className="input-group">
               <label>Palavra-passe:</label>
-              <div style={{ position: 'relative' }}>
+              <div className="password-group-inline">
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Insira a sua palavra-passe"
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
+                  className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#9ca3af',
-                    fontSize: '1.1rem',
-                    padding: '0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  tabIndex={-1}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
             </div>
-
-            <div className="login-options" style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              margin: '20px 0',
-              fontSize: '0.95rem'
-            }}>
-              <label style={{
-                color: '#fff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontWeight: '500',
-                transition: 'all 0.3s ease',
-                padding: '8px 12px',
-                borderRadius: '20px',
-                background: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(5px)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                fontSize: '0.9rem',
-                fontFamily: 'inherit'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.15)';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.1)';
-                e.target.style.transform = 'translateY(0)';
-              }}>
+            <div className="login-travel-options">
+              <label className="remember-me">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
-                  style={{ 
-                    accentColor: '#fff', 
-                    width: '16px', 
-                    height: '16px',
-                    cursor: 'pointer'
-                  }}
                 />
-                <span style={{
-                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                  fontFamily: 'inherit'
-                }}>💾 Lembrar-me</span>
+                Lembrar-me
               </label>
               <button
                 type="button"
+                className="forgot-password"
                 onClick={() => setShowForgotPasswordModal(true)}
-                style={{
-                  color: '#fff',
-                  background: '#000',
-                  border: '2px solid rgba(0, 0, 0, 0.2)',
-                  borderRadius: '15px',
-                  padding: '5px 10px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(5px)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                  fontSize: '0.9rem',
-                  fontFamily: 'inherit'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#000';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#000';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = 'none';
-                }}
               >
-                ✨ Esqueceu a palavra-passe?
+                Esqueceu a palavra-passe?
               </button>
             </div>
-
             {errorMessage && (
               <div className="error-message">
                 <FaExclamationCircle /> {errorMessage}
@@ -505,62 +450,17 @@ const Login = () => {
                 <FaCheckCircle /> {successMessage}
               </div>
             )}
-
-            <button type="submit" className="login1-button">Entrar</button>
+            <button type="submit" className="login-travel-btn">Entrar</button>
           </form>
-        </div>
-
-        {/* Seção Direita: Texto de Boas-Vindas */}
-        <div className="welcome-section-login">
-          <h3>Bem-vindo (a) de volta à<br /> Globe Memories!</h3>
-          <p className="app-description">
-            Capture e partilhe as suas memórias pelo mundo. Explore destinos únicos,
-            documente as suas aventuras e conecte-se com outros viajantes numa experiência
-            verdadeiramente global.
-          </p>
-          <div style={{
-            marginTop: '30px',
-            textAlign: 'center'
-          }}>
-            <p style={{
-              color: '#fff',
-              fontSize: '1.1rem',
-              marginBottom: '15px',
-              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-            }}>Não tem uma conta?</p>
-            <Link 
-              to="/register" 
-              className="signup-button"
-              style={{
-                display: 'inline-block',
-                padding: '12px 25px',
-                background: 'transparent',
-                color: '#333',
-                textDecoration: 'none',
-                borderRadius: '25px',
-                fontWeight: 'bold',
-                fontSize: '1.05rem',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                border: '2px solid rgba(255,255,255,0.3)',
-                textShadow: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
-                e.target.style.background = 'transparent';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
-                e.target.style.background = 'transparent';
-              }}
-            >
-              🌍 Registar Agora
+          <div className="login-travel-register">
+            <span>Ainda não tem conta?</span>
+            <Link to="/register" className="register-btn">
+              Registar Agora
             </Link>
           </div>
         </div>
       </div>
+      {/* ...existing code for modals and install prompt... */}
 
       {/* Modal de Redefinir Palavra-passe */}
       {showResetPasswordModal && (
@@ -1044,7 +944,7 @@ const Login = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
