@@ -384,11 +384,10 @@ const Login = () => {
       <div className="login-travel-wrapper">
         <div className="login-travel-card">
           <div className="login-travel-header">
-            <img src={require('../images/Globe-Memories.png')} alt="Globe Memories Logo" className="travel-logo-img" />
-            
+            <img src={require('../images/Globe-Memories.png')} alt="Globe Memories Logo" className="travel-logo-img" /><br></br>
+            <div className="travel-slogan">Viaje. Explore. Lembre. Compartilhe.</div>
           </div>
           <form onSubmit={handleSubmit} className="login-travel-form">
-            <br></br>
             <div className="input-group">
               <label>Nome de Utilizador:</label>
               <input

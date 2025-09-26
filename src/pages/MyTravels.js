@@ -85,6 +85,7 @@ const MyTravels = () => {
     endDate: '',
     BookingTripPaymentDate: '',
     highlightImage: '',
+    travelVideos: [], // Array para múltiplos vídeos
     views: 0,
     priceDetails: { hotel: '', flight: '', food: '', extras: '' },
     images: [],
@@ -129,6 +130,8 @@ const MyTravels = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTravelId, setEditTravelId] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [videosPreviews, setVideosPreviews] = useState([]); // Array de previews dos vídeos
+  const [videosInfo, setVideosInfo] = useState([]); // Array de informações dos vídeos
   const [generalInfoImagePreviews, setGeneralInfoImagePreviews] = useState([]);
   const [accommodationImagePreviews, setAccommodationImagePreviews] = useState([]);
   const [foodRecommendationImagePreviews, setFoodRecommendationImagePreviews] = useState([]);
@@ -187,6 +190,44 @@ const MyTravels = () => {
 
   const getCitiesForCountry = (country) => {
     return countryToCities[country] || [];
+  };
+
+  // Função para formatar tamanho de arquivo
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Função para formatar duração de vídeo
+  const formatVideoDuration = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Função para calcular totais dos vídeos
+  const calculateVideoTotals = (videos, videosInfoArray) => {
+    let totalSize = 0;
+    let totalDuration = 0;
+    
+    videos.forEach((video, index) => {
+      if (video instanceof File) {
+        totalSize += video.size;
+      }
+      if (videosInfoArray[index] && videosInfoArray[index].durationSeconds) {
+        totalDuration += videosInfoArray[index].durationSeconds;
+      }
+    });
+
+    return {
+      totalSize,
+      totalDuration,
+      formattedSize: formatFileSize(totalSize),
+      formattedDuration: formatVideoDuration(totalDuration)
+    };
   };
 
   const categories = [
@@ -431,6 +472,116 @@ const MyTravels = () => {
           }));
           setImagePreview(null);
         }
+      } else if (name === 'travelVideos') {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        const maxTotalSize = 100 * 1024 * 1024; // 100MB
+        const maxTotalDuration = 180; // 3 minutos em segundos
+
+        // Calcular tamanho total dos vídeos existentes
+        const currentTotals = calculateVideoTotals(newTravel.travelVideos, videosInfo);
+        
+        // Calcular tamanho total dos novos arquivos
+        let newFilesSize = 0;
+        files.forEach(file => {
+          newFilesSize += file.size;
+        });
+
+        // Verificar se o tamanho total excede o limite
+        if (currentTotals.totalSize + newFilesSize > maxTotalSize) {
+          const remainingSize = formatFileSize(maxTotalSize - currentTotals.totalSize);
+          setToast({ 
+            message: `O tamanho total dos vídeos não pode exceder 100MB. Espaço restante: ${remainingSize}. Por favor, selecione arquivos menores.`, 
+            type: 'error', 
+            show: true 
+          });
+          // Limpar o input
+          e.target.value = '';
+          return;
+        }
+
+        // Processar cada arquivo para validar duração
+        let processedCount = 0;
+        const newVideos = [...newTravel.travelVideos];
+        const newPreviews = [...videosPreviews];
+        const newInfos = [...videosInfo];
+
+        files.forEach((file, fileIndex) => {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+          
+          video.onloadedmetadata = function() {
+            window.URL.revokeObjectURL(video.src);
+            
+            // Calcular duração total incluindo este vídeo
+            const currentDuration = currentTotals.totalDuration;
+            let newVideosDuration = 0;
+            for (let i = 0; i < fileIndex; i++) {
+              const prevVideoInfo = newInfos.find((info, idx) => idx === newVideos.length + i);
+              if (prevVideoInfo) newVideosDuration += prevVideoInfo.durationSeconds || 0;
+            }
+            
+            const totalDurationWithNew = currentDuration + newVideosDuration + video.duration;
+            
+            if (totalDurationWithNew > maxTotalDuration) {
+              const remainingTime = formatVideoDuration(maxTotalDuration - currentDuration - newVideosDuration);
+              setToast({ 
+                message: `A duração total dos vídeos não pode exceder 3 minutos. Tempo restante: ${remainingTime}. Por favor, selecione vídeos mais curtos.`, 
+                type: 'error', 
+                show: true 
+              });
+              processedCount++;
+              // Limpar o input se todos os arquivos foram processados
+              if (processedCount === files.length) {
+                e.target.value = '';
+              }
+              return;
+            }
+
+            // Adicionar o vídeo se passou nas validações
+            newVideos.push(file);
+            newPreviews.push(URL.createObjectURL(file));
+            newInfos.push({
+              name: file.name,
+              size: formatFileSize(file.size),
+              duration: formatVideoDuration(video.duration),
+              durationSeconds: video.duration,
+              sizeBytes: file.size
+            });
+
+            processedCount++;
+            
+            // Se todos os arquivos foram processados, atualizar o estado
+            if (processedCount === files.length) {
+              setNewTravel((prevState) => ({
+                ...prevState,
+                travelVideos: newVideos,
+              }));
+              setVideosPreviews(newPreviews);
+              setVideosInfo(newInfos);
+              
+              // Limpar o input para permitir selecionar os mesmos arquivos novamente
+              e.target.value = '';
+            }
+          };
+
+          video.onerror = function() {
+            processedCount++;
+            setToast({ 
+              message: `Erro ao carregar o vídeo "${file.name}". Verifique se o formato é válido.`, 
+              type: 'error', 
+              show: true 
+            });
+            
+            // Limpar o input se todos os arquivos foram processados
+            if (processedCount === files.length) {
+              e.target.value = '';
+            }
+          };
+
+          video.src = URL.createObjectURL(file);
+        });
       } else if (name === 'images_generalInformation') {
         const newFiles = Array.from(files);
         const previews = newFiles.map((file) => URL.createObjectURL(file));
@@ -962,6 +1113,7 @@ const MyTravels = () => {
     setNewTravel({
       ...travelToEdit,
       highlightImage: travelToEdit.highlightImage || '',
+      travelVideos: travelToEdit.travelVideos || [], // Incluir o array de vídeos
       category: travelToEdit.category || [],
       priceDetails: travelToEdit.priceDetails || { hotel: '', flight: '', food: '', extras: '' },
       accommodations: Array.isArray(travelToEdit.accommodations) && travelToEdit.accommodations.length > 0
@@ -1024,6 +1176,34 @@ const MyTravels = () => {
       }
     } else {
       setImagePreview(null);
+    }
+
+    // Corrigir a pré-visualização dos vídeos
+    if (travelToEdit.travelVideos && Array.isArray(travelToEdit.travelVideos)) {
+      const previews = [];
+      const infos = [];
+      
+      travelToEdit.travelVideos.forEach((video, index) => {
+        if (video instanceof File) {
+          previews.push(URL.createObjectURL(video));
+        } else if (typeof video === 'string') {
+          previews.push(video);
+        }
+        // Para vídeos existentes, não temos informações detalhadas, então adicionamos informações básicas
+        infos.push({
+          name: `video-${index + 1}`,
+          size: 'Carregado',
+          duration: '--:--',
+          durationSeconds: 0,
+          sizeBytes: 0
+        });
+      });
+      
+      setVideosPreviews(previews);
+      setVideosInfo(infos);
+    } else {
+      setVideosPreviews([]);
+      setVideosInfo([]);
     }
 
     if (travelToEdit.images_generalInformation && Array.isArray(travelToEdit.images_generalInformation)) {
@@ -1239,6 +1419,7 @@ const MyTravels = () => {
       endDate: '',
       BookingTripPaymentDate: '',
       highlightImage: '',
+      travelVideos: [], // Reset do array de vídeos
       views: 0,
       priceDetails: { hotel: '', flight: '', food: '', extras: '' },
       images: [],
@@ -1278,6 +1459,8 @@ const MyTravels = () => {
     setIsCategoryModalOpen(false);
     setIsTransportModalOpen(false);
     setImagePreview(null);
+    setVideosPreviews([]); // Reset dos previews dos vídeos
+    setVideosInfo([]); // Reset das informações dos vídeos
     setGeneralInfoImagePreviews([]);
     setAccommodationImagePreviews([]);
     setFoodRecommendationImagePreviews([]);
@@ -1474,6 +1657,20 @@ const MyTravels = () => {
       ...prev,
       [destinationKey]: getCurrentPointsOfInterest()
     }));
+  };
+
+  // Função para remover vídeo individual
+  const removeVideo = (index) => {
+    const newVideos = newTravel.travelVideos.filter((_, i) => i !== index);
+    const newPreviews = videosPreviews.filter((_, i) => i !== index);
+    const newInfos = videosInfo.filter((_, i) => i !== index);
+
+    setNewTravel((prevState) => ({
+      ...prevState,
+      travelVideos: newVideos,
+    }));
+    setVideosPreviews(newPreviews);
+    setVideosInfo(newInfos);
   };
 
   const closeModal = () => {
@@ -1870,6 +2067,136 @@ const MyTravels = () => {
                       ) : (
                         <p className="upload-placeholder">Nenhuma imagem selecionada. Adicione uma foto para destacar a sua viagem!</p>
                       )}
+                    </div>
+
+                    <div style={{marginTop: '20px'}}>
+                      <label style={{textAlign: 'center', width: '100%'}}>🎥 Vídeos da Viagem: <span className="tooltip-icon" title="Selecione vídeos que representem melhor a sua viagem">?</span></label>
+                       <label htmlFor="travelVideosInput" className="upload-button" title="Selecione vídeos que representem a sua viagem" style={{textAlign: 'center', width: '100% !important'}}>
+                          <span role="img" aria-label="video">🎬</span> Adicionar Vídeos
+                        </label>
+                      <div style={{
+                        background: '#f8f9fa',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        marginBottom: '10px',
+                        fontSize: '14px',
+                        color: '#495057'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ marginRight: '8px', fontSize: '16px' }}>ℹ️</span>
+                          <strong>Requisitos dos Vídeos:</strong>
+                        </div>
+                        <div style={{ paddingLeft: '24px' }}>
+                          <div>• <strong>Duração total máxima:</strong> 3 minutos (soma de todos os vídeos)</div>
+                          <div>• <strong>Tamanho total máximo:</strong> 100 MB (soma de todos os vídeos)</div>
+                          <div>• <strong>Quantidade:</strong> Ilimitada (respeitando os limites acima)</div>
+                          <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
+                            Os vídeos serão reproduzidos em sequência no feed!
+                          </div>
+                        </div>
+                        {newTravel.travelVideos.length > 0 && (
+                          <div style={{
+                            marginTop: '10px',
+                            padding: '8px',
+                            background: '#e8f5e8',
+                            border: '1px solid #d4edda',
+                            borderRadius: '6px',
+                            fontSize: '13px',
+                            color: '#155724'
+                          }}>
+                            {(() => {
+                              const totals = calculateVideoTotals(newTravel.travelVideos, videosInfo);
+                              return (
+                                <div>
+                                  <strong>📊 Totais atuais:</strong>
+                                  <div>⏱️ Duração: {totals.formattedDuration} / 3:00</div>
+                                  <div>💾 Tamanho: {totals.formattedSize} / 100 MB</div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="video-upload-container">
+                        <input
+                          type="file"
+                          name="travelVideos"
+                          onChange={handleChange}
+                          accept="video/*"
+                          multiple
+                          id="travelVideosInput"
+                          className="video-input"
+                          style={{ display: 'none' }}
+                        />
+                       
+                        {videosPreviews.length > 0 ? (
+                          <div style={{ marginTop: '15px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+                              {videosPreviews.map((preview, index) => (
+                                <div key={index} className="video-preview-container" style={{ position: 'relative' }}>
+                                  <video
+                                    src={preview}
+                                    className="video-preview"
+                                    controls
+                                    style={{
+                                      width: '100%',
+                                      height: 'auto',
+                                      maxHeight: '200px',
+                                      borderRadius: '8px'
+                                    }}
+                                    onError={() => {
+                                      console.error(`Erro ao carregar vídeo ${index}`);
+                                    }}
+                                  />
+                                  {videosInfo[index] && (
+                                    <div style={{
+                                      background: '#e8f5e8',
+                                      border: '1px solid #d4edda',
+                                      borderRadius: '6px',
+                                      padding: '6px 8px',
+                                      marginTop: '5px',
+                                      fontSize: '12px',
+                                      color: '#155724'
+                                    }}>
+                                      <div style={{ fontWeight: 'bold' }}>📄 {videosInfo[index].name}</div>
+                                      <div>⏱️ {videosInfo[index].duration} | 💾 {videosInfo[index].size}</div>
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeVideo(index)}
+                                    className="remove-preview-button"
+                                    title="Remover este vídeo"
+                                    style={{
+                                      position: 'absolute',
+                                      top: '5px',
+                                      right: '5px',
+                                      background: 'rgba(255, 255, 255, 0.9)',
+                                      color: '#e74c3c',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '24px',
+                                      height: '24px',
+                                      fontSize: '14px',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      zIndex: 10,
+                                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="upload-placeholder">Nenhum vídeo selecionado. Adicione vídeos para destacar a sua viagem!</p>
+                        )}
+                      </div>
                     </div>
 <br></br><br></br>
                     <div>

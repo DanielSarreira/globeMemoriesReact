@@ -466,6 +466,20 @@ button.see-less-categories-button {
   color: #ffc107;
 }
 
+/* Travel Card - Mobile ordering */
+.travel-card {
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.travel-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
 /* --------------------------------------- Layout Helpers --------------------------------------- */
 .filtersStyles {
   display: flex;
@@ -554,10 +568,10 @@ svg {
   .travels-container {
     margin: 0 auto;
     padding: 0px;
-}
-.travels-list{
-margin: 10px;
-}
+  }
+  .travels-list{
+    margin: 10px;
+  }
 
   .filters {
     padding: 10px;
@@ -586,6 +600,21 @@ margin: 10px;
   .filters-container {
     flex-direction: column;
     gap: 10px;
+  }
+
+  /* Mobile Travel Card - Reverse order (image first, then text) */
+  .travel-content {
+    display: flex;
+    flex-direction: column-reverse;
+    padding: 15px;
+  }
+
+  .highlight-image {
+    margin-top: 15px;
+  }
+
+  .travel-text {
+    margin-bottom: 0;
   }
 
 }

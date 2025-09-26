@@ -14,6 +14,7 @@ const travels = [
     endDate: "2025-03-06",
     BookingTripPaymentDate:"2025-01-01",
     highlightImage: require('../images/highlightImage/aveiro.jpg'),
+    travelVideos: [require('../videos/sintra.mp4'), require('../videos/suica.mp4'), require('../videos/lisboa.mp4')], // Array de vídeos
     views: 100,
     price: 70,
     priceDetails: {
@@ -103,7 +104,7 @@ const travels = [
 
   {
     id: 2,
-    name: "Viagem a Lisboa",
+    name: "Viagem a Lisboa Tiago",
     user: "tiago",
     category: ["Cidade", "Cultural"],
     country: "Portugal",
@@ -116,6 +117,7 @@ const travels = [
     endDate: "2025-02-05",
     BookingTripPaymentDate:"2025-01-01",
     highlightImage: require('../images/highlightImage/aveiro.jpg'),
+    travelVideos: [require('../videos/sintra.mp4'), require('../videos/suica.mp4'), require('../videos/lisboa.mp4')], // Array de vídeos
     views: 100,
     price: 70,
     priceDetails: {

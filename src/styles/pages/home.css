@@ -832,35 +832,49 @@
     align-items: center;
   }
 
-  /* Snap estilo TikTok para mobile */
+ 
   .feed-snap {
     display: flex;
     flex-direction: column;
     overflow-y: scroll;
     height: 100vh;
+    height: 100dvh; /* Suporte para altura dinâmica do viewport */
     scroll-snap-type: y mandatory;
     -webkit-overflow-scrolling: touch;
-    background: #000;
+    background: linear-gradient(180deg, #fff 0%, #494949 100%); /* Gradiente suave em vez de preto sólido */
+    scroll-behavior: smooth; /* Scroll suave estilo TikTok */
+    position: relative;
+    overscroll-behavior: none; /* Previne bounce no iOS */
   }
+  
   .feed-snap > * {
-    scroll-snap-align: start;
+    scroll-snap-align: center; /* Mudado para center para melhor alinhamento */
     min-height: 100vh;
+    min-height: 100dvh; /* Suporte para altura dinâmica do viewport */
     max-height: 100vh;
+    max-height: 100dvh;
     box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
   }
 
   .bottom-navbar a{
     height: 93%;
   }
 
-  /* Mobile TikTok-style: full viewport images with right-side actions */
+  
   .feed-snap .feed-item {
     min-height: 100vh;
+    min-height: 100dvh;
     height: 100vh;
-    display: block;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
     position: relative;
     transition: opacity 600ms ease, transform 600ms ease;
-    opacity: 0;
+    opacity: 1; /* Sempre visível, sem fade */
     pointer-events: auto;
     background-color: transparent;
     border-radius: 0;
@@ -869,20 +883,32 @@
     box-shadow: none;
     border: none;
     overflow: hidden;
+    scroll-snap-align: center;
   }
 
   .feed-snap .feed-item.active {
     opacity: 1;
+    transform: scale(1); /* Item ativo em escala normal */
+  }
+
+  .feed-snap .feed-item:not(.active) {
+    opacity: 0.8; /* Itens não ativos ligeiramente transparentes */
+    transform: scale(0.95); /* Ligeiramente menores */
   }
 
   /* Full viewport background image */
   .feed-snap .feed-content {
     width: 100vw;
     height: 100vh;
+    height: 100dvh; /* Suporte para altura dinâmica */
     background-size: cover !important;
     background-position: center !important;
-    position: relative;
-    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Dark overlay for better text readability */
@@ -933,11 +959,11 @@
     border: 2px solid white;
   }
 
-  /* TikTok-style actions on the right side - moved higher */
+
   .feed-snap .feed-actions-mobile {
     position: absolute;
     right: 15px;
-    top: 405px;
+    top: 350px;
     transform: translateY(-50%);
     z-index: 3;
     display: flex;
@@ -985,17 +1011,17 @@
   /* Travel info moved to bottom area */
   .feed-snap .travel-info-mobile {
     position: absolute;
-    bottom: 215px !important;
+    bottom: 80px !important; /* Ajustado para ficar sempre acima do menu */
     left: 15px;
     right: 15px;
-    z-index: 3;
+    z-index: 10; /* Z-index maior para ficar sobre o menu */
     color: white;
     text-align: center;
     background: linear-gradient(180deg, rgba(54, 54, 54, 0.514) 0%, rgba(0, 0, 0, 0.637) 100%);
     padding: 15px;
     border-radius: 0px;
    
-    max-height: 30vh;
+    max-height: 25vh; /* Reduzido para caber melhor */
     overflow-y: auto;
   }
 
@@ -1026,7 +1052,7 @@
   /* Image indicators (dots) */
   .feed-snap .image-indicators {
     position: absolute;
-    top: 50%;
+    top: 30% !important;
     left: 20px;
     transform: translateY(-50%);
     z-index: 3;
@@ -1037,7 +1063,7 @@
 
   .feed-snap .indicator-dot {
     width: 4px;
-    height: 20px;
+    height: 8px;
     background: rgba(255,255,255,0.4);
     border-radius: 2px;
     transition: all 0.3s ease;
@@ -1161,7 +1187,8 @@
   }
 
   .feed-snap .comment-text {
-    color: rgba(255,255,255,0.9);
+    color: #000;
+    font-size: 0.9rem;
     line-height: 1.4;
     margin-bottom: 8px;
   }
@@ -1251,14 +1278,15 @@
     }
 
     .feed-snap .travel-info-mobile {
-      bottom: 14.1% !important;
+      bottom: 130px !important; /* Consistente em todos os dispositivos */
       left: 0px;
       right: 0px;
-      padding: 50px;
+      padding: 20px;
+      z-index: 10; /* Z-index maior */
     }
 
     .feed-snap .image-indicators {
-      top: 195px;
+      top: 195px ;
       left: 15px;
     }
 
@@ -2637,5 +2665,191 @@
   
   .stat-compact:last-child {
     border-bottom: none;
+  }
+}
+
+/* Estilos para vídeos nas viagens */
+.feed-video-mobile {
+  border-radius: 8px;
+}
+
+.video-upload-container {
+  margin-top: 10px;
+}
+
+.video-preview-container {
+  position: relative;
+  margin-top: 10px;
+}
+
+.video-preview {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.video-preview-container .remove-preview-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #e74c3c;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.video-preview-container .remove-preview-button:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #c0392b;
+}
+
+/* Estilos para informações e requisitos do vídeo */
+.video-requirements-info {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #495057;
+}
+
+.video-requirements-info .info-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.video-requirements-info .info-header span {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.video-requirements-list {
+  padding-left: 24px;
+}
+
+.video-requirements-list div {
+  margin-bottom: 2px;
+}
+
+.video-requirements-note {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.video-info-success {
+  background: #e8f5e8;
+  border: 1px solid #d4edda;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #155724;
+}
+
+.video-info-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.video-info-header span {
+  margin-right: 6px;
+}
+
+.video-info-details {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.video-info-details div {
+  margin-bottom: 1px;
+}
+
+/* Estilos para múltiplos vídeos */
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.video-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+.video-item video {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+}
+
+.video-item-info {
+  padding: 8px;
+  background: #e8f5e8;
+  border: 1px solid #d4edda;
+  font-size: 12px;
+  color: #155724;
+}
+
+.video-item-info .video-name {
+  font-weight: bold;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.video-totals-info {
+  margin-top: 10px;
+  padding: 8px;
+  background: #e8f5e8;
+  border: 1px solid #d4edda;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #155724;
+}
+
+.video-playlist-indicator {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 768px) {
+  .videos-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .video-item video {
+    max-height: 150px;
   }
 }

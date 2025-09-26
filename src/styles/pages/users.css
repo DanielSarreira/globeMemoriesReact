@@ -890,7 +890,9 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .users-page {
-    padding: 1rem;
+    margin-top: 10px !important;
+    padding: 10px;
+    margin: 0px;
   }
   
   .users-title {
@@ -900,12 +902,22 @@
   .users-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    margin-top: 0px;
   }
   
+.search-bar input{
+  margin-bottom: 0px;
+  width: 82% !important;
+}
+
   .search-bar {
     flex-direction: column;
   }
   
+.search-filter-container{
+  background-color: transparent;
+}
+
   .search-input {
     min-width: auto;
   }

@@ -13,6 +13,47 @@ import '../styles/pages/home.css';
 // Dados mockados para notificações (simulando o backend)
 const mockNotifications = [];
 
+// --- New Custom Arrow SVG Components (Desktop/Tablet Only) ---
+// Completely new white arrows without any circular background, higher visibility (60x60)
+// Built from scratch (not using Material/Icon paths) per user request.
+const ArrowLeft = () => (
+  <svg
+    width="60"
+    height="60"
+    viewBox="0 0 60 60"
+    fill="none"
+    role="img"
+    aria-label="Anterior"
+    style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))' }}
+  >
+    {/* Stylized left arrow: geometric multi-point path for a bolder modern look */}
+    <path
+      d="M37 6 L14 30 L37 54 L44 47 L27 30 L44 13 Z"
+      fill="white"
+      shapeRendering="geometricPrecision"
+    />
+  </svg>
+);
+
+const ArrowRight = () => (
+  <svg
+    width="60"
+    height="60"
+    viewBox="0 0 60 60"
+    fill="none"
+    role="img"
+    aria-label="Seguinte"
+    style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))' }}
+  >
+    {/* Stylized right arrow: mirrored version of left arrow */}
+    <path
+      d="M23 6 L46 30 L23 54 L16 47 L33 30 L16 13 Z"
+      fill="white"
+      shapeRendering="geometricPrecision"
+    />
+  </svg>
+);
+
 const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -70,6 +111,9 @@ const Home = () => {
 
   // Estado para a modal de boas-vindas
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  
+  // Estados para reprodução de vídeos
+  const [currentVideoIndex, setCurrentVideoIndex] = useState({}); // Índice do vídeo atual para cada viagem
 
   useEffect(() => {
     const handleResize = () => {
@@ -205,17 +249,69 @@ const Home = () => {
   );
 
   useEffect(() => {
-    const intervals = feedTravels.map((travel) => {
-      return setInterval(() => {
+    if (!isMobile) {
+      // No desktop, sempre ativo
+      const intervals = feedTravels.map((travel) => {
+        return setInterval(() => {
+          setCurrentImageIndices((prev) => ({
+            ...prev,
+            [travel.id]: (prev[travel.id] + 1) % (getAllImages(travel).length || 1),
+          }));
+        }, 8000);
+      });
+
+      return () => intervals.forEach((interval) => interval && clearInterval(interval));
+    }
+
+    // No mobile, só quando visível
+    const intervals = {};
+    
+    const startSlideshow = (travelId) => {
+      if (intervals[travelId]) return;
+      intervals[travelId] = setInterval(() => {
         setCurrentImageIndices((prev) => ({
           ...prev,
-          [travel.id]: (prev[travel.id] + 1) % (travel.images_generalInformation?.length || 1),
+          [travelId]: (prev[travelId] + 1) % (getAllImages(feedTravels.find(t => t.id === travelId)).length || 1),
         }));
       }, 8000);
-    });
+    };
 
-    return () => intervals.forEach((interval) => interval && clearInterval(interval));
-  }, [feedTravels]);
+    const stopSlideshow = (travelId) => {
+      if (intervals[travelId]) {
+        clearInterval(intervals[travelId]);
+        delete intervals[travelId];
+      }
+    };
+
+    // Observer para detectar viagens visíveis no mobile
+    const container = feedContainerRef.current?.querySelector('.feed-snap');
+    if (container) {
+      const items = Array.from(container.querySelectorAll('.feed-item'));
+      
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            const travelId = parseInt(entry.target.dataset.travelId);
+            if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+              startSlideshow(travelId);
+            } else {
+              stopSlideshow(travelId);
+            }
+          });
+        },
+        { root: container, threshold: [0.5] }
+      );
+
+      items.forEach((item) => observer.observe(item));
+
+      return () => {
+        observer.disconnect();
+        Object.values(intervals).forEach(interval => clearInterval(interval));
+      };
+    }
+
+    return () => Object.values(intervals).forEach(interval => clearInterval(interval));
+  }, [feedTravels, isMobile]);
 
   useEffect(() => {
     // Only observe on mobile and when feed container exists
@@ -276,6 +372,12 @@ const Home = () => {
     setIsFeedRefreshed(true);
     setTimeout(() => {
       setFeedTravels(TravelsData);
+      // Reset image indices for refreshed travels
+      const resetIndices = TravelsData.reduce((acc, t) => {
+        acc[t.id] = 0;
+        return acc;
+      }, {});
+      setCurrentImageIndices(resetIndices);
       setCurrentPage(1);
       setLoading(false);
       setIsRefreshing(false);
@@ -571,18 +673,22 @@ const Home = () => {
   const handleNextImage = (travelId, e) => {
     e.preventDefault();
     e.stopPropagation();
+    const travel = feedTravels.find((t) => t.id === travelId);
+    const images = getAllImages(travel);
     setCurrentImageIndices((prev) => ({
       ...prev,
-      [travelId]: (prev[travelId] + 1) % (feedTravels.find((t) => t.id === travelId)?.images_generalInformation?.length || 1),
+      [travelId]: (prev[travelId] + 1) % (images.length || 1),
     }));
   };
 
   const handlePrevImage = (travelId, e) => {
     e.preventDefault();
     e.stopPropagation();
+    const travel = feedTravels.find((t) => t.id === travelId);
+    const images = getAllImages(travel);
     setCurrentImageIndices((prev) => ({
       ...prev,
-      [travelId]: (prev[travelId] - 1 + (feedTravels.find((t) => t.id === travelId)?.images_generalInformation?.length || 1)) % (feedTravels.find((t) => t.id === travelId)?.images_generalInformation?.length || 1),
+      [travelId]: (prev[travelId] - 1 + (images.length || 1)) % (images.length || 1),
     }));
   };
 
@@ -657,12 +763,13 @@ const Home = () => {
   };
 
   const handleImageNavigation = (travelId, targetIndex) => {
-    const travel = displayedTravels.find(t => t.id === travelId);
+    const travel = displayedTravels.find(t => t.id === travelId) || feedTravels.find(t => t.id === travelId);
     if (!travel) return;
-
+    const images = getAllImages(travel);
+    const idx = Math.max(0, Math.min(targetIndex, (images.length || 1) - 1));
     setCurrentImageIndices(prevState => ({
       ...prevState,
-      [travelId]: targetIndex
+      [travelId]: idx
     }));
   };
 
@@ -738,6 +845,49 @@ const Home = () => {
     e.preventDefault();
     e.stopPropagation();
     setShowDropdown(prev => (prev === travelId ? null : travelId));
+  };
+
+  // Helper: collect all images for a travel with highlightImage first
+  const getAllImages = (travel) => {
+    if (!travel) return [];
+    
+    // Se a viagem tem vídeos, retornar array vazio para não mostrar galeria de imagens
+    if (travel.travelVideos && travel.travelVideos.length > 0) return [];
+    
+    const result = [];
+
+    const pushIf = (item) => {
+      if (!item) return;
+      if (Array.isArray(item)) {
+        item.forEach((i) => i && result.push(i));
+      } else {
+        result.push(item);
+      }
+    };
+
+    // Highlight first
+    pushIf(travel.highlightImage);
+
+    // Order: general info, accommodations, food, transport, reference points, any other common props
+    pushIf(travel.images_generalInformation);
+    pushIf(travel.images_accommodations);
+    pushIf(travel.accommodationImagePreviews);
+    pushIf(travel.images_foodRecommendations);
+    pushIf(travel.images_referencePoints);
+    pushIf(travel.images_localTransport);
+    pushIf(travel.images_transport);
+    pushIf(travel.transportImagePreviews);
+
+    // Remove duplicates while preserving order
+    const seen = new Set();
+    return result.filter((img) => {
+      if (!img) return false;
+      // Use src/string or object identity
+      const key = typeof img === 'string' ? img : img;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   };
 
   // Funções para swipe gestures
@@ -842,6 +992,52 @@ const Home = () => {
   // Função para fechar a modal de boas-vindas
   const handleCloseWelcomeModal = () => {
     setShowWelcomeModal(false);
+  };
+
+  // Função para avançar para o próximo vídeo
+  const handleVideoEnd = (travelId, videos) => {
+    setCurrentVideoIndex(prev => {
+      const currentIndex = prev[travelId] || 0;
+      const nextIndex = (currentIndex + 1) % videos.length;
+      return {
+        ...prev,
+        [travelId]: nextIndex
+      };
+    });
+  };
+
+  // Função para navegar manualmente nos vídeos
+  const handleNextVideo = (travelId, videos, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentVideoIndex(prev => {
+      const currentIndex = prev[travelId] || 0;
+      const nextIndex = (currentIndex + 1) % videos.length;
+      return {
+        ...prev,
+        [travelId]: nextIndex
+      };
+    });
+  };
+
+  const handlePrevVideo = (travelId, videos, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentVideoIndex(prev => {
+      const currentIndex = prev[travelId] || 0;
+      const prevIndex = currentIndex === 0 ? videos.length - 1 : currentIndex - 1;
+      return {
+        ...prev,
+        [travelId]: prevIndex
+      };
+    });
+  };
+
+  const handleVideoNavigation = (travelId, targetIndex) => {
+    setCurrentVideoIndex(prev => ({
+      ...prev,
+      [travelId]: targetIndex
+    }));
   };
 
   const renderReportModal = () => (
@@ -1044,11 +1240,12 @@ const Home = () => {
 
   const renderTravelItem = (travel) => {
     const currentIndex = currentImageIndices[travel.id] || 0;
-    const images = travel.images_generalInformation || [];
+    const images = getAllImages(travel) || [];
     const totalImages = images.length;
     const maxDescriptionLength = 400; // Limite de caracteres para a descrição
-    const backgroundImage = images[currentIndex] || 'https://via.placeholder.com/300';
+    const backgroundImage = images[currentIndex] || travel.highlightImage || 'https://via.placeholder.com/300';
     const isDescriptionExpanded = expandedDescriptions[travel.id] || false;
+    const hasVideo = travel.travelVideos && travel.travelVideos.length > 0; // Verificar se a viagem tem vídeos
 
     // Função para truncar a descrição
     const truncateDescription = (text) => {
@@ -1062,7 +1259,7 @@ const Home = () => {
 
     if (isGridDesktop) {
       return (
-        <div key={travel.id} className="feed-item feed-item-grid">
+        <div key={travel.id} className="feed-item feed-item-grid" data-travel-id={travel.id}>
           <Link to={`/travel/${travel.id}`} className="feed-link" style={{ textDecoration: 'none', color: 'inherit', display: 'block', flex: 1 }}>
             <div className="dropdown-container" style={{ position: 'relative' }}>
               {!(user && travel.user && user.username === travel.user) && (
@@ -1155,30 +1352,158 @@ const Home = () => {
               <p className="travel-description">{isDescriptionExpanded ? travel.description : truncateDescription(travel.description)}</p>
             </div>
             <div className="travel-gallery-grid" style={{ position: 'relative' }}>
-              {totalImages > 1 && (
+              {(totalImages > 1 && !hasVideo) && (
                 <button
                   className="gallery-arrow left"
                   onClick={e => handlePrevImage(travel.id, e)}
-                  style={{ position: 'absolute', left: 10, top: '55%', transform: 'translateY(-50%)', zIndex: 2 }}
+                  style={{ 
+                    position: 'absolute', 
+                    left: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
                   aria-label="Imagem anterior"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
                 >
-                  <FaChevronLeft size={45} color="#111" />
+                  <ArrowLeft />
                 </button>
               )}
-              <img
-                src={backgroundImage}
-                alt={`${travel.name} - Imagem ${currentIndex + 1}`}
-                className="feed-image"
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
-              />
-              {totalImages > 1 && (
+              {(hasVideo && travel.travelVideos.length > 1) && (
+                <button
+                  className="gallery-arrow left"
+                  onClick={e => handlePrevVideo(travel.id, travel.travelVideos, e)}
+                  style={{ 
+                    position: 'absolute', 
+                    left: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  aria-label="Vídeo anterior"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
+                >
+                  <ArrowLeft />
+                </button>
+              )}
+              {hasVideo ? (
+                <video
+                  key={`grid-${travel.id}-${currentVideoIndex[travel.id] || 0}`}
+                  src={travel.travelVideos[currentVideoIndex[travel.id] || 0]}
+                  className="feed-image"
+                  autoPlay
+                  loop={travel.travelVideos.length === 1}
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '400px',
+                    objectFit: 'cover',
+                  }}
+                  onEnded={() => {
+                    if (travel.travelVideos.length > 1) {
+                      handleVideoEnd(travel.id, travel.travelVideos);
+                    }
+                  }}
+                  onError={(e) => {
+                    console.error('Erro ao carregar vídeo:', e);
+                    // Em caso de erro, mostrar imagem como fallback
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <img
+                  src={backgroundImage}
+                  alt={`${travel.name} - Imagem ${currentIndex + 1}`}
+                  className="feed-image"
+                  style={{
+                    width: '100%',
+                    height: '400px',
+                    objectFit: 'cover',
+                  }}
+                  onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
+                />
+              )}
+              {(totalImages > 1 && !hasVideo) && (
                 <button
                   className="gallery-arrow right"
                   onClick={e => handleNextImage(travel.id, e)}
-                  style={{ position: 'absolute', right: 10, top: '55%', transform: 'translateY(-50%)', zIndex: 2 }}
+                  style={{ 
+                    position: 'absolute', 
+                    right: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
                   aria-label="Próxima imagem"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
                 >
-                  <FaChevronRight size={45} color="#111" />
+                  <ArrowRight />
+                </button>
+              )}
+              {(hasVideo && travel.travelVideos.length > 1) && (
+                <button
+                  className="gallery-arrow right"
+                  onClick={e => handleNextVideo(travel.id, travel.travelVideos, e)}
+                  style={{ 
+                    position: 'absolute', 
+                    right: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  aria-label="Próximo vídeo"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
+                >
+                  <ArrowRight />
                 </button>
               )}
               <div className="feed-actions-grid">
@@ -1379,108 +1704,204 @@ const Home = () => {
         <Link to={`/travel/${travel.id}`} className="feed-link">
           <div
             className="feed-content"
-            style={isMobile ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            style={isMobile && !hasVideo ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
             onError={(e) => { e.target.style.backgroundImage = `url(https://via.placeholder.com/300)`; }}
             onTouchStart={isMobile ? (e) => handleSwipeTouchStart(e, travel) : undefined}
             onTouchMove={isMobile ? handleSwipeTouchMove : undefined}
             onTouchEnd={isMobile ? handleSwipeTouchEnd : undefined}
             onMouseDown={isMobile ? (e) => handleDragStart(travel.id, e) : undefined}
           >
-            <div className="dropdown-container" style={{ position: 'relative' }}>
-              {!(user && travel.user && user.username === travel.user) && (
-                <button
-                  className="dropdown-toggle"
-                  onClick={(e) => toggleDropdown(travel.id, e)}
-                  style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '8px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#666',
-                    transition: 'background-color 0.2s',
-                    zIndex: 2,
-                  }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = '#f0f0f0')}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
-                >
-                  <FaEllipsisV color="#666" />
-                </button>
-              )}
-              {showDropdown === travel.id && (
-                <div
-                  className="dropdown-menu"
-                  style={{
-                    position: 'absolute',
-                    top: '40px',
-                    right: '10px',
-                    backgroundColor: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                    zIndex: 5000,
-                    minWidth: '180px',
-                  }}
-                >
-                  <button
-                    className="dropdown-item"
-                    onClick={(e) => handleReportTravel(travel, e)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: 'none',
-                      background: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      color: '#e74c3c',
-                      fontSize: '14px',
-                    }}
-                    onMouseEnter={(e) => (e.target.style.backgroundColor = '#f8f9fa')}
-                    onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
-                  >
-                    <FaFlag /> Denunciar Viagem
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Vídeo para dispositivos móveis */}
+            {isMobile && hasVideo && (
+              <video
+                src={travel.travelVideos[currentVideoIndex[travel.id] || 0]}
+                className="feed-video-mobile"
+                autoPlay
+                loop={travel.travelVideos.length === 1}
+                muted
+                playsInline
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  zIndex: 1,
+                }}
+                onEnded={() => {
+                  if (travel.travelVideos.length > 1) {
+                    handleVideoEnd(travel.id, travel.travelVideos);
+                  }
+                }}
+                onError={(e) => {
+                  console.error('Erro ao carregar vídeo mobile:', e);
+                  // Em caso de erro, usar background image como fallback
+                  e.target.style.display = 'none';
+                  e.target.parentElement.style.backgroundImage = `url(${backgroundImage})`;
+                  e.target.parentElement.style.backgroundSize = 'cover';
+                  e.target.parentElement.style.backgroundPosition = 'center';
+                }}
+              />
+            )}
+            {/* Desktop gallery with navigation */}
             <div className="travel-gallery" style={{ position: 'relative', display: isMobile ? 'none' : 'flex' }}>
-              {!isMobile && totalImages > 1 && (
+              {!isMobile && totalImages > 1 && !hasVideo && (
                 <button
                   className="gallery-arrow left"
                   onClick={e => handlePrevImage(travel.id, e)}
-                  style={{ position: 'absolute', left: 10, top: '55%', transform: 'translateY(-50%)', zIndex: 2 }}
+                  style={{ 
+                    position: 'absolute', 
+                    left: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
                   aria-label="Imagem anterior"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
                 >
-                  <FaChevronLeft size={45} color="#111" />
+                  <ArrowLeft />
+                </button>
+              )}
+              {!isMobile && hasVideo && travel.travelVideos.length > 1 && (
+                <button
+                  className="gallery-arrow left"
+                  onClick={e => handlePrevVideo(travel.id, travel.travelVideos, e)}
+                  style={{ 
+                    position: 'absolute', 
+                    left: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  aria-label="Vídeo anterior"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
+                >
+                  <ArrowLeft />
                 </button>
               )}
               {!isMobile && (
-                <img
-                  src={backgroundImage}
-                  alt={`${travel.name} - Imagem ${currentIndex + 1}`}
-                  className="feed-image"
-                  onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
-                  onTouchStart={e => handleDragStart(travel.id, e)}
-                  onMouseDown={e => handleDragStart(travel.id, e)}
-                />
+                hasVideo ? (
+                  <video
+                    key={`desktop-${travel.id}-${currentVideoIndex[travel.id] || 0}`}
+                    src={travel.travelVideos[currentVideoIndex[travel.id] || 0]}
+                    className="feed-image"
+                    autoPlay
+                    loop={travel.travelVideos.length === 1}
+                    muted
+                    playsInline
+                    style={{
+                      width: '100%',
+                      height: '400px',
+                      objectFit: 'cover',
+                    }}
+                    onEnded={() => {
+                      if (travel.travelVideos.length > 1) {
+                        handleVideoEnd(travel.id, travel.travelVideos);
+                      }
+                    }}
+                    onError={(e) => {
+                      console.error('Erro ao carregar vídeo:', e);
+                      // Em caso de erro, mostrar imagem como fallback
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={backgroundImage}
+                    alt={`${travel.name} - Imagem ${currentIndex + 1}`}
+                    className="feed-image"
+                    style={{
+                      width: '100%',
+                      height: '400px',
+                      objectFit: 'cover',
+                    }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/300'; }}
+                    onTouchStart={e => handleDragStart(travel.id, e)}
+                    onMouseDown={e => handleDragStart(travel.id, e)}
+                  />
+                )
               )}
-              {!isMobile && totalImages > 1 && (
+              {!isMobile && totalImages > 1 && !hasVideo && (
                 <button
                   className="gallery-arrow right"
                   onClick={e => handleNextImage(travel.id, e)}
-                  style={{ position: 'absolute', right: 10, top: '55%', transform: 'translateY(-50%)', zIndex: 2 }}
+                  style={{ 
+                    position: 'absolute', 
+                    right: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
                   aria-label="Próxima imagem"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
                 >
-                  <FaChevronRight size={45} color="#111" />
+                  <ArrowRight />
+                </button>
+              )}
+              {!isMobile && hasVideo && travel.travelVideos.length > 1 && (
+                <button
+                  className="gallery-arrow right"
+                  onClick={e => handleNextVideo(travel.id, travel.travelVideos, e)}
+                  style={{ 
+                    position: 'absolute', 
+                    right: 10, 
+                    top: '55%', 
+                    transform: 'translateY(-50%)', 
+                    zIndex: 2,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  aria-label="Próximo vídeo"
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
+                    e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(-50%) scale(1)';
+                    e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+                  }}
+                >
+                  <ArrowRight />
                 </button>
               )}
               {!isMobile && (
@@ -1500,7 +1921,7 @@ const Home = () => {
             </div>
 
             {/* Image indicators for mobile */}
-            {isMobile && totalImages > 1 && (
+            {isMobile && totalImages > 1 && !hasVideo && (
               <div className="image-indicators">
                 {Array.from({ length: totalImages }).map((_, index) => (
                   <span
@@ -1510,6 +1931,23 @@ const Home = () => {
                       e.preventDefault();
                       e.stopPropagation();
                       handleImageNavigation(travel.id, index);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Video indicators for mobile */}
+            {isMobile && hasVideo && travel.travelVideos.length > 1 && (
+              <div className="image-indicators">
+                {Array.from({ length: travel.travelVideos.length }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={`indicator-dot ${index === (currentVideoIndex[travel.id] || 0) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleVideoNavigation(travel.id, index);
                     }}
                   />
                 ))}
@@ -1578,20 +2016,6 @@ const Home = () => {
                 </p>
               )}
             </div>
-            {isMobile && (
-              <div className="feed-actions-mobile">
-                <button
-                  className={`like-btn ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
-                  onClick={(e) => handleLike(travel.id, e)}
-                >
-                  <FaHeart /> <span>{travel.likes}</span>
-                </button>
-                <button className="comments-btn" onClick={(e) => toggleComments(travel.id, e)}>
-                  <FaComment /> <span>{travel.comments.length}</span>
-                </button>
-                {/* Removido o botão de partilhar */}
-              </div>
-            )}
           </div>
         </Link>
         {showComments === travel.id && isMobile && (
@@ -1614,16 +2038,18 @@ const Home = () => {
               style={{
                 position: 'fixed',
                 left: '50%',
-                top: '35%',
+                top: '40%',
                 transform: 'translate(-50%, -50%)',
                 zIndex: 1001,
-                maxWidth: '100vw',
-                width: '100vw',
-                maxHeight: '95vh',
+                maxWidth: '95vw',
+                width: '95vw',
+                maxHeight: '80vh',
                 background: '#fff',
                 borderRadius: '16px',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
               }}
               onClick={e => e.stopPropagation()}
             >
@@ -1651,10 +2077,11 @@ const Home = () => {
               <div
                 className="comments-container-modern"
                 style={{
-                  maxHeight: '45vh',
+                  flex: '1',
                   overflowY: 'auto',
-                  paddingRight: '8px',
-                  padding: '0 20px'
+                  padding: '0 20px',
+                  marginBottom: '10px',
+                  WebkitOverflowScrolling: 'touch'
                 }}
               >
                 {travel.comments.length > 0 ? (

@@ -305,3 +305,782 @@
   padding: 0;
   cursor: pointer;
 }
+
+
+
+@media (max-width: 768px) {
+.user-profile-page, .profile-page {
+    padding: 10px;
+}
+
+/* Mobile Profile Header Improvements */
+.user-profile-page .profile-header {
+  padding: 1rem !important;
+  margin-bottom: 1rem !important;
+  border-radius: 12px !important;
+  margin-top: 20px;
+}
+
+.user-profile-page .profile-header-main {
+  margin-top: 20px;
+  flex-direction: column !important;
+  gap: 1rem !important;
+  text-align: center !important;
+}
+
+.user-profile-page .profile-avatar-section {
+  order: -1; /* Avatar comes first on mobile */
+}
+
+.user-profile-page .profile-info-section {
+  width: 100% !important;
+}
+
+.user-profile-page .profile-header-top {
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  align-items: center !important;
+}
+
+.user-profile-page .profile-name-container {
+  width: 100% !important;
+}
+
+.user-profile-page .profile-name {
+  font-size: 1.8rem !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+  text-align: center !important;
+}
+
+.user-profile-page .profile-username {
+  font-size: 1rem !important;
+  text-align: center !important;
+}
+
+.user-profile-page .profile-actions-section {
+  width: 100% !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+}
+
+.user-profile-page .action-button {
+  flex: 1 !important;
+  min-width: 120px !important;
+  max-width: 140px !important;
+  padding: 0.6rem 0.8rem !important;
+  font-size: 0.85rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.user-profile-page .menu-btn {
+  width: 40px !important;
+  height: 40px !important;
+  flex: none !important;
+}
+
+/* Mobile Stats Grid Improvements */
+.user-profile-page .stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.75rem !important;
+  justify-content: center !important;
+  margin: 0.5rem auto !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+}
+
+.user-profile-page .stat-card {
+  padding: 0.75rem 0.5rem !important;
+  min-width: 70px !important;
+  max-width: 90px !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.user-profile-page .stat-number {
+  font-size: 1.4rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.user-profile-page .stat-label {
+  font-size: 0.75rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Mobile Profile Details */
+.user-profile-page .profile-details-section {
+  gap: 0.75rem !important;
+}
+
+.user-profile-page .bio-container {
+  padding: 0.75rem !important;
+  border-radius: 10px !important;
+}
+
+.user-profile-page .bio {
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+}
+
+.user-profile-page .location-container {
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 8px !important;
+  align-self: center !important;
+  font-size: 0.85rem !important;
+}
+
+/* Mobile Content Sections */
+.user-profile-page .profile-content {
+  margin-top: 1rem !important;
+}
+
+.user-profile-page .travels-section {
+  padding: 1rem !important;
+  margin-bottom: 1rem !important;
+  border-radius: 12px !important;
+}
+
+.user-profile-page .travels-grid {
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+}
+
+.user-profile-page .travel-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.user-profile-page .travel-content {
+  padding: 1rem !important;
+}
+
+.user-profile-page .travel-text h2 {
+  font-size: 1.2rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.user-profile-page .travel-text p {
+  font-size: 0.85rem !important;
+  margin: 0.25rem 0 !important;
+}
+
+/* Mobile Stats Sections */
+.user-profile-page .traveler-stats-section,
+.user-profile-page .engagement-stats-section,
+.user-profile-page .top-destinations-section {
+  padding: 1rem !important;
+  margin-bottom: 1rem !important;
+  border-radius: 12px !important;
+}
+
+.user-profile-page .traveler-stats-section h2,
+.user-profile-page .engagement-stats-section h2,
+.user-profile-page .top-destinations-section h2 {
+  font-size: 1.4rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.user-profile-page .stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+.user-profile-page .stat-item-box {
+  padding: 1rem !important;
+  border-radius: 10px !important;
+  text-align: center !important;
+}
+
+.user-profile-page .stat-item-box h3 {
+  font-size: 0.9rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.user-profile-page .stat-item-box p {
+  font-size: 1.8rem !important;
+  margin: 0 !important;
+}
+
+.user-profile-page .destinations-grid {
+  grid-template-columns: 1fr !important;
+  gap: 0.75rem !important;
+}
+
+.user-profile-page .destination-box {
+  padding: 1rem !important;
+  border-radius: 10px !important;
+}
+
+.user-profile-page .destination-box h3 {
+  font-size: 1.1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.user-profile-page .destination-box ul {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.user-profile-page .destination-box li {
+  font-size: 0.9rem !important;
+  margin: 0.5rem 0 !important;
+  padding: 0.25rem 0 !important;
+}
+
+/* Mobile Private Profile Message */
+.user-profile-page .private-profile-message {
+  padding: 2rem 1rem !important;
+  margin: 1rem 0 !important;
+  border-radius: 12px !important;
+  font-size: 1rem !important;
+}
+
+.user-profile-page .private-profile-message p {
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
+/* Mobile Blocked User Interface */
+.user-profile-page .blocked-user-container {
+  padding: 2rem 1rem !important;
+  margin: 1rem 0 !important;
+  border-radius: 12px !important;
+  text-align: center !important;
+}
+
+.user-profile-page .blocked-user-avatar {
+  width: 120px !important;
+  height: 120px !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.user-profile-page .blocked-user-container h2 {
+  font-size: 1.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.user-profile-page .blocked-user-container p {
+  font-size: 1rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.user-profile-page .blocked-user-container .button {
+  padding: 0.75rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  margin: 0.25rem !important;
+  border-radius: 8px !important;
+}
+
+/* Mobile Modal Improvements */
+.follow-modal-content,
+.stats-modal-content,
+.request-modal-content {
+  width: 95% !important;
+  max-width: 95% !important;
+  margin: 1rem !important;
+  padding: 1.5rem !important;
+  border-radius: 12px !important;
+  max-height: 85vh !important;
+}
+
+.follow-modal-content h2,
+.stats-modal-content h2,
+.request-modal-content h2 {
+  font-size: 1.4rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.follow-user-list-item {
+  padding: 0.75rem 0 !important;
+}
+
+.follow-user-link {
+  padding: 0.5rem !important;
+  border-radius: 8px !important;
+}
+
+.follow-user-avatar {
+  width: 35px !important;
+  height: 35px !important;
+}
+
+.follow-user-link span {
+  font-size: 0.9rem !important;
+}
+
+.follow-modal-close-button,
+.stats-modal-close-button {
+  top: 1rem !important;
+  right: 1rem !important;
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 1.2rem !important;
+}
+
+/* Mobile Report/Block Modals */
+.modal-content-users {
+  width: 95% !important;
+  max-width: 95% !important;
+  margin: 1rem !important;
+  padding: 1.5rem !important;
+  border-radius: 12px !important;
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+}
+
+.modal-content-users h2 {
+  font-size: 1.4rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.modal-content-users p {
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+}
+
+.modal-content-users .modal-buttons {
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+}
+
+.modal-content-users .modal-buttons button {
+  width: 100% !important;
+  padding: 0.75rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 8px !important;
+}
+
+/* Mobile Form Improvements */
+.modal-content-users input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 8px !important;
+}
+
+.modal-content-users label {
+  font-size: 0.85rem !important;
+  line-height: 1.4 !important;
+}
+
+.modal-content-users textarea {
+  font-size: 0.9rem !important;
+  padding: 0.75rem !important;
+  border-radius: 8px !important;
+  min-height: 80px !important;
+}
+
+/* Mobile Travel Cards in Profile */
+.user-profile-page .travel-card {
+  margin-bottom: 1rem !important;
+}
+
+.user-profile-page .travel-card .highlight-image {
+  height: 180px !important;
+  border-radius: 8px !important;
+}
+
+.user-profile-page .travel-card .travel-text {
+  padding: 0.75rem !important;
+}
+
+.user-profile-page .travel-card .travel-text h2 {
+  font-size: 1.1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.user-profile-page .travel-card .travel-text p {
+  font-size: 0.8rem !important;
+  margin: 0.25rem 0 !important;
+}
+
+.user-profile-page .travel-card .button {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.85rem !important;
+  margin-top: 0.75rem !important;
+}
+
+/* Mobile Dropdown Menu */
+.user-profile-page .dropdown-menu {
+  min-width: 160px !important;
+  right: 0 !important;
+  left: auto !important;
+  margin-top: 0.5rem !important;
+}
+
+.user-profile-page .dropdown-item {
+  padding: 0.75rem 1rem !important;
+  font-size: 0.85rem !important;
+}
+
+/* Mobile Loading States */
+.user-profile-page .loading-spinner {
+  width: 40px !important;
+  height: 40px !important;
+  margin: 2rem auto !important;
+}
+
+/* Mobile General Improvements */
+.user-profile-page {
+  font-size: 14px !important;
+}
+
+.user-profile-page * {
+  box-sizing: border-box !important;
+}
+
+/* Ensure proper touch targets */
+.user-profile-page button,
+.user-profile-page .action-button,
+.user-profile-page .stat-card.clickable {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+/* Mobile Scroll Improvements */
+.user-profile-page .modal-content-users {
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.user-profile-page .follow-modal-content {
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Mobile Safe Area Support */
+@supports (padding: max(0px)) {
+  .user-profile-page {
+    padding-left: max(10px, env(safe-area-inset-left)) !important;
+    padding-right: max(10px, env(safe-area-inset-right)) !important;
+  }
+  
+  .user-profile-page .profile-header {
+    margin-left: max(0px, env(safe-area-inset-left)) !important;
+    margin-right: max(0px, env(safe-area-inset-right)) !important;
+  }
+}
+
+/* Extra Small Mobile Devices (480px and below) */
+@media (max-width: 480px) {
+  .user-profile-page {
+    padding: 8px !important;
+  }
+
+  .user-profile-page .profile-header {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 10px !important;
+  }
+
+  .user-profile-page .profile-picture-container {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  .user-profile-page .profile-name {
+    font-size: 1.5rem !important;
+  }
+
+  .user-profile-page .profile-username {
+    font-size: 0.9rem !important;
+  }
+
+  .user-profile-page .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+    margin: 0.5rem auto !important;
+  }
+
+  .user-profile-page .stat-card {
+    padding: 0.5rem 0.25rem !important;
+    min-width: 60px !important;
+    max-width: 80px !important;
+  }
+
+  .user-profile-page .stat-number {
+    font-size: 1.2rem !important;
+  }
+
+  .user-profile-page .stat-label {
+    font-size: 0.7rem !important;
+  }
+
+  .user-profile-page .action-button {
+    min-width: 100px !important;
+    max-width: 120px !important;
+    padding: 0.5rem 0.6rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .user-profile-page .bio-container {
+    padding: 0.6rem !important;
+  }
+
+  .user-profile-page .bio {
+    font-size: 0.85rem !important;
+  }
+
+  .user-profile-page .location-container {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .user-profile-page .travels-section {
+    padding: 0.75rem !important;
+  }
+
+  .user-profile-page .travels-grid {
+    gap: 0.75rem !important;
+  }
+
+  .user-profile-page .travel-card .highlight-image {
+    height: 150px !important;
+  }
+
+  .user-profile-page .travel-card .travel-text {
+    padding: 0.6rem !important;
+  }
+
+  .user-profile-page .travel-card .travel-text h2 {
+    font-size: 1rem !important;
+  }
+
+  .user-profile-page .travel-card .travel-text p {
+    font-size: 0.75rem !important;
+  }
+
+  .user-profile-page .travel-card .button {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .user-profile-page .traveler-stats-section,
+  .user-profile-page .engagement-stats-section,
+  .user-profile-page .top-destinations-section {
+    padding: 0.75rem !important;
+  }
+
+  .user-profile-page .traveler-stats-section h2,
+  .user-profile-page .engagement-stats-section h2,
+  .user-profile-page .top-destinations-section h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .user-profile-page .stat-item-box {
+    padding: 0.75rem !important;
+  }
+
+  .user-profile-page .stat-item-box h3 {
+    font-size: 0.8rem !important;
+  }
+
+  .user-profile-page .stat-item-box p {
+    font-size: 1.5rem !important;
+  }
+
+  .user-profile-page .destination-box {
+    padding: 0.75rem !important;
+  }
+
+  .user-profile-page .destination-box h3 {
+    font-size: 1rem !important;
+  }
+
+  .user-profile-page .destination-box li {
+    font-size: 0.8rem !important;
+  }
+
+  .user-profile-page .private-profile-message {
+    padding: 1.5rem 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  .user-profile-page .blocked-user-container {
+    padding: 1.5rem 0.75rem !important;
+  }
+
+  .user-profile-page .blocked-user-avatar {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  .user-profile-page .blocked-user-container h2 {
+    font-size: 1.3rem !important;
+  }
+
+  .user-profile-page .blocked-user-container p {
+    font-size: 0.9rem !important;
+  }
+
+  .user-profile-page .blocked-user-container .button {
+    padding: 0.6rem 1.2rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Extra small modal adjustments */
+  .follow-modal-content,
+  .stats-modal-content,
+  .request-modal-content,
+  .modal-content-users {
+    width: 98% !important;
+    margin: 0.5rem !important;
+    padding: 1rem !important;
+  }
+
+  .follow-modal-content h2,
+  .stats-modal-content h2,
+  .request-modal-content h2,
+  .modal-content-users h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .follow-user-avatar {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .follow-user-link span {
+    font-size: 0.8rem !important;
+  }
+
+  .follow-modal-close-button,
+  .stats-modal-close-button {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 1rem !important;
+  }
+
+  .modal-content-users .modal-buttons button {
+    padding: 0.6rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .modal-content-users textarea {
+    padding: 0.6rem !important;
+    min-height: 70px !important;
+  }
+
+  .user-profile-page .dropdown-menu {
+    min-width: 140px !important;
+  }
+
+  .user-profile-page .dropdown-item {
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Mobile Landscape Orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+  .user-profile-page .profile-header {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .user-profile-page .profile-header-main {
+    flex-direction: row !important;
+    gap: 1rem !important;
+    align-items: flex-start !important;
+  }
+
+  .user-profile-page .profile-avatar-section {
+    flex-shrink: 0 !important;
+  }
+
+  .user-profile-page .profile-info-section {
+    flex: 1 !important;
+    text-align: left !important;
+  }
+
+  .user-profile-page .profile-name {
+    text-align: left !important;
+  }
+
+  .user-profile-page .profile-username {
+    text-align: left !important;
+  }
+
+  .user-profile-page .profile-actions-section {
+    justify-content: flex-start !important;
+  }
+
+  .user-profile-page .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .user-profile-page .travels-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+  }
+
+  .user-profile-page .travel-card .highlight-image {
+    height: 140px !important;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .user-profile-page .action-button {
+    min-height: 48px !important;
+  }
+
+  .user-profile-page .stat-card.clickable {
+    min-height: 48px !important;
+  }
+
+  .user-profile-page .dropdown-item {
+    min-height: 48px !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .user-profile-page .travel-card .button {
+    min-height: 44px !important;
+    padding: 0.6rem 1rem !important;
+  }
+
+  .user-profile-page .modal-buttons button {
+    min-height: 48px !important;
+  }
+
+  .follow-modal-close-button,
+  .stats-modal-close-button {
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+}
+
+/* High DPI Mobile Devices */
+@media (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
+  .user-profile-page .profile-picture-container {
+    border-width: 2px !important;
+  }
+
+  .user-profile-page .stat-card {
+    border-width: 1px !important;
+  }
+
+  .user-profile-page .travel-card {
+    border-width: 1px !important;
+  }
+}
+
+/* Performance Optimizations for Mobile */
+@media (max-width: 768px) {
+  .user-profile-page * {
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    -webkit-perspective: 1000px !important;
+    perspective: 1000px !important;
+  }
+
+  .user-profile-page .travel-card,
+  .user-profile-page .stat-item-box,
+  .user-profile-page .destination-box {
+    will-change: transform !important;
+  }
+}
+}

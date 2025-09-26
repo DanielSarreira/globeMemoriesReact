@@ -10,11 +10,33 @@ import logoImg from '../images/Globe-Memories.png';
 // Modern travel-themed background video (optional, fallback to gradient if not loaded)
 const YOUTUBE_BG_URL = 'https://www.youtube.com/embed/YFhwEJosUsU?autoplay=1&mute=1&controls=0&loop=1&playlist=YFhwEJosUsU&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
 
+// Lista de países
+const countries = [
+  'Portugal', 'Brasil', 'Espanha', 'França', 'Alemanha', 'Reino Unido', 'Itália', 'Estados Unidos', 
+  'Canadá', 'Holanda', 'Bélgica', 'Suíça', 'Áustria', 'Noruega', 'Suécia', 'Dinamarca', 'Finlândia',
+  'Polônia', 'República Checa', 'Hungria', 'Grécia', 'Turquia', 'Rússia', 'Japão', 'China', 'Coreia do Sul',
+  'Austrália', 'Nova Zelândia', 'Argentina', 'Chile', 'México', 'Colômbia', 'Peru', 'Outros'
+];
+
+// Lista de cidades por país (simplificada para principais cidades)
+const citiesByCountry = {
+  'Portugal': ['Lisboa', 'Porto', 'Braga', 'Coimbra', 'Aveiro', 'Faro', 'Funchal', 'Évora'],
+  'Brasil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Belo Horizonte', 'Curitiba', 'Recife'],
+  'Espanha': ['Madrid', 'Barcelona', 'Sevilha', 'Valência', 'Bilbao', 'Granada', 'Toledo', 'Salamanca'],
+  'França': ['Paris', 'Lyon', 'Marselha', 'Nice', 'Toulouse', 'Bordeaux', 'Nantes', 'Estrasburgo'],
+  'Alemanha': ['Berlim', 'Munique', 'Hamburgo', 'Colônia', 'Frankfurt', 'Stuttgart', 'Dresden', 'Leipzig'],
+  'Reino Unido': ['Londres', 'Manchester', 'Birmingham', 'Liverpool', 'Bristol', 'Edinburgh', 'Glasgow', 'Cardiff'],
+  'Itália': ['Roma', 'Milão', 'Nápoles', 'Turim', 'Palermo', 'Génova', 'Bologna', 'Florença'],
+  'Estados Unidos': ['Nova York', 'Los Angeles', 'Chicago', 'Houston', 'Miami', 'San Francisco', 'Las Vegas', 'Boston'],
+  'Outros': ['Outra']
+};
+
 const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     nationality: '',
+    city: '',
     username: '',
     email: '',
     password: '',
@@ -189,7 +211,7 @@ const Register = () => {
   return (
     <>
       {/* Travel-themed animated background */}
-      <div className="register-travel-bg">
+      <div className="login-travel-bg">
         <iframe
           src={YOUTUBE_BG_URL}
           title="Register Background Video"
@@ -201,7 +223,7 @@ const Register = () => {
           style={{ pointerEvents: 'none' }}
         />
         {/* Gradient overlay for glassmorphism effect */}
-        <div className="register-travel-gradient" />
+        <div className="login-travel-gradient" />
         {/* Travel icons floating animation */}
         <div className="travel-icons-floating">
           <span role="img" aria-label="airplane">✈️</span>
@@ -212,20 +234,17 @@ const Register = () => {
         </div>
       </div>
       
-      <div className="register-travel-wrapper">
-        <div className="register-travel-container">
-          <div className="register-travel-form-container">
-            <div className="register-travel-header">
-              <img src={logoImg} alt="Globe Memories Logo" className="register-travel-logo" />
-              <div className="register-slogan-highlight">
-                <span role="img" aria-label="explore">🌎</span>
-                <span className="slogan-text">Viaje. Explore. Lembre. Compartilhe.</span>
-                <span role="img" aria-label="camera">📸</span>
-              </div>
-            </div>
-          <form onSubmit={handleSubmit} className="register-travel-form">
+      <div className="login-travel-wrapper">
+        <div className="login-travel-card">
+          <div className="login-travel-header">
+            <img src={logoImg} alt="Globe Memories Logo" className="travel-logo-img" /><br></br>
+            <div className="travel-slogan">Viaje. Explore. Lembre. Compartilhe.</div>
+          </div>
+          <form onSubmit={handleSubmit} className="login-travel-form">
+            
+            {/* Primeira linha: Primeiro Nome + Último Nome */}
             <div className="form-row">
-              <div className="form-group">
+              <div className="input-group">
                 <label>Primeiro Nome:</label>
                 <input
                   type="text"
@@ -236,7 +255,7 @@ const Register = () => {
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="input-group">
                 <label>Último Nome:</label>
                 <input
                   type="text"
@@ -249,8 +268,49 @@ const Register = () => {
               </div>
             </div>
 
+            {/* Segunda linha: País + Cidade */}
             <div className="form-row">
-              <div className="form-group">
+              <div className="input-group">
+                <label>Selecione o seu País:</label>
+                <select
+                  name="nationality"
+                  value={formData.nationality}
+                  onChange={handleChange}
+                  required
+                  className="select-modern"
+                >
+                  <option value="">Selecione o seu país</option>
+                  {countries.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label>Selecione a sua Cidade:</label>
+                <select
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  required
+                  className="select-modern"
+                  disabled={!formData.nationality}
+                >
+                  <option value="">Selecione a sua cidade</option>
+                  {formData.nationality && citiesByCountry[formData.nationality] && 
+                    citiesByCountry[formData.nationality].map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Terceira linha: Nome de Utilizador + Email */}
+            <div className="form-row">
+              <div className="input-group">
                 <label>Nome de Utilizador:</label>
                 <input
                   type="text"
@@ -261,35 +321,24 @@ const Register = () => {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>País:</label>
+              <div className="input-group">
+                <label>Email:</label>
                 <input
-                  type="text"
-                  name="nationality"
-                  value={formData.nationality}
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleChange}
-                  placeholder="Insira o seu País"
+                  placeholder="Insira o seu email"
                   required
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Insira o seu email"
-                required
-              />
-            </div>
-
+            {/* Quarta linha: Palavra-passe + Confirmar */}
             <div className="form-row">
-              <div className="form-group">
+              <div className="input-group">
                 <label>Palavra-passe:</label>
-                <div className="password-group">
+                <div className="password-group-inline">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
@@ -307,10 +356,9 @@ const Register = () => {
                   </button>
                 </div>
               </div>
-
-              <div className="form-group">
-                <label>Confirmar:</label>
-                <div className="password-group">
+              <div className="input-group">
+                <label>Confirmar palavra-passe:</label>
+                <div className="password-group-inline">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
@@ -341,47 +389,17 @@ const Register = () => {
               </div>
             )}
 
-            <button type="submit" className="register-travel-btn">
+            <button type="submit" className="login-travel-btn">
               <span style={{display:'inline-flex',alignItems:'center',gap:'0.5em'}}>
                 Registar
               </span>
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-              <Link 
-                to="/login" 
-                className="login-link-button"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  padding: '0.8rem 1.5rem',
-                  borderRadius: '999px',
-                  backgroundColor: 'var(--primary-color)',
-                  color: '#fff',
-                  textDecoration: 'none',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  width: '20%'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--secondary-color)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--primary-color)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <span>🌍</span>
-                Já tem conta criada? Iniciar Sessão
-              </Link>
+            <div className="login-travel-register">
+              <span>Já tem conta criada?</span>
+              <Link to="/login" className="register-btn">Iniciar Sessão</Link>
             </div>
           </form>
-        </div>
-
 
         </div>
       </div>

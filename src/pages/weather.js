@@ -7,6 +7,7 @@ import axios from 'axios';
 import TravelsData from '../data/travelsData';
 // ...existing code...
 import { useWeather } from '../context/WeatherContext';
+import '../styles/pages/globe-memories-interactive-map.css'; // Importar CSS do mapa para o modal
 
 
 // Registrar componentes do Chart.js
@@ -923,20 +924,52 @@ const WeatherPage = () => {
   return (
     <div className="weather-page max-w-6xl mx-auto p-6 bg-gray-100 min-h-screen">
       {showInitialModal && (
-        <div className="modal-overlay-weather fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="modal-content-weather bg-white p-6 rounded-xl shadow-lg max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Aviso sobre Previsões Meteorológicas</h2>
-            <p className="text-gray-600 mb-6">
-              As previsões meteorológicas não são 100% confiáveis. <br />
-              Previsões detalhadas são mais precisas até 7 dias e têm confiabilidade reduzida até 16 dias. <br />
-              Além disso, usamos estimativas climatológicas para datas futuras.
-            </p>
-            <button
-              onClick={() => setShowInitialModal(false)}
-              className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 w-full transition-colors"
-            >
-              Entendido
-            </button>
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>🌤️ Informações Meteorológicas</h2>
+              <button className="gm-map-close-btn" onClick={() => setShowInitialModal(false)}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Explore as condições meteorológicas em qualquer lugar do mundo com dados precisos e confiáveis!</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">📊</span>
+                  <div>
+                    <strong>Precisão das Previsões</strong>
+                    <p><strong>1-3 dias:</strong> Elevada precisão (85-90%)<br />
+                       <strong>4-7 dias:</strong> Boa precisão (70-80%)<br />
+                       <strong>8-16 dias:</strong> Precisão limitada (50-65%)</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🗓️</span>
+                  <div>
+                    <strong>Viagens Futuras</strong>
+                    <p>Para datas além de 16 dias, utilizamos dados climatológicos históricos baseados na localização e época do ano.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🌍</span>
+                  <div>
+                    <strong>Fonte dos Dados</strong>
+                    <p>Utilizamos dados do Open-Meteo, um serviço meteorológico europeu reconhecido pela qualidade e fiabilidade.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">⚡</span>
+                  <div>
+                    <strong>Previsões Detalhadas</strong>
+                    <p>Aceda a gráficos horários, temperaturas, precipitação e velocidade do vento.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <button className="gm-map-welcome-btn primary" onClick={() => setShowInitialModal(false)}>
+                Comece a explorar o clima!
+              </button>
+            </div>
           </div>
         </div>
       )}
