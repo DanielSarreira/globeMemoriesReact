@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import Toast from './Toast';
 
 // Avatar padrão como componente SVG
 const DefaultAvatar = ({ size = 150 }) => (
@@ -110,6 +111,19 @@ const Profile = () => {
   const [bioCharCount, setBioCharCount] = useState(0);
   const [quoteCharCount, setQuoteCharCount] = useState(0);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  
+  // Toast state
+  const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
+  
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ message, type, isVisible: true });
+    setTimeout(() => setToast({ message: '', type: '', isVisible: false }), 2600);
+  };
+  
+  const hideToast = () => {
+    setToast({ message: '', type: '', isVisible: false });
+  };
   
   // Listas para dropdowns
   const countries = [
@@ -234,6 +248,7 @@ const Profile = () => {
       const errors = validatePassword(formData.password);
       if (errors.length > 0) {
         setSaveError('Password não atende aos critérios de segurança: ' + errors.join(', '));
+        showToast('Password não atende aos critérios de segurança: ' + errors.join(', '), 'error');
         setIsSaving(false);
         return;
       }
@@ -241,6 +256,7 @@ const Profile = () => {
       // Confirmar que as novas passwords coincidem
       if (formData.password !== formData.confirmPassword) {
         setSaveError('As novas passwords não coincidem');
+        showToast('As novas passwords não coincidem', 'error');
         setIsSaving(false);
         return;
       }
@@ -254,49 +270,106 @@ const Profile = () => {
       // }
     }
 
-    try {
-      // Aqui você deve substituir pela URL correta do seu backend
-      const response = await axios.put('https://your-backend-api.com/user/profile', formData, {
-        headers: {
-          'Content-Type': 'application/json',
-          // Se necessário, adicione o token de autenticação
-          // 'Authorization': `Bearer ${user.token}`
-        }
-      });
+    // Função helper para atualizar estado/localStorage (fallback local)
+    const persistLocal = () => {
+      const updatedUser = {
+        ...user,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
+        email: formData.email,
+        bio: formData.bio,
+        quote: formData.quote,
+        nationality: formData.country,
+        city: formData.city,
+        gender: formData.gender,
+        birthDate: formData.birthday,
+        profilePicture: formData.profilePicture,
+        coverPhoto: formData.coverPhoto,
+        coverPhotoScale: formData.coverPhotoScale,
+        coverPhotoPosition: formData.coverPhotoPosition,
+        privacy: formData.privacy
+      };
 
-      if (response.status === 200) {
-        setSaveSuccess(true);
-        setUser({ ...user, ...formData });
-        setEditing(false);
-        setShowChangePassword(false);
-        
-        // Limpar campos de password
-        setFormData(prev => ({
-          ...prev,
-          currentPassword: '',
-          password: '',
-          confirmPassword: ''
-        }));
-        
-        // Feedback visual temporário
-        setTimeout(() => {
-          setSaveSuccess(false);
-        }, 3000);
+      setUser(updatedUser);
+      try {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      } catch (err) {
+        console.warn('Não foi possível gravar no localStorage:', err);
+      }
+      setSaveSuccess(true);
+      showToast('Perfil atualizado localmente!', 'success');
+      setEditing(false);
+      setShowChangePassword(false);
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        password: '',
+        confirmPassword: ''
+      }));
+      setTimeout(() => setSaveSuccess(false), 3000);
+    };
+
+    const API_URL = process.env.REACT_APP_API_URL || 'https://your-backend-api.com';
+
+    try {
+      // Só tenta chamar backend se não for o placeholder
+      if (!API_URL.includes('your-backend-api.com')) {
+        const response = await axios.put(`${API_URL}/user/profile`, formData, {
+          headers: {
+            'Content-Type': 'application/json',
+            // 'Authorization': `Bearer ${user?.token}` // descomentar quando existir token
+          }
+        });
+
+        if (response.status === 200) {
+          // Se o backend retornou dados atualizados, usar eles, senão usar formData
+          const data = response.data || {};
+            const updatedUser = {
+              ...user,
+              ...data,
+              // Garantir mapeamento consistente das chaves usadas no frontend
+              firstName: data.firstName ?? formData.firstName,
+              lastName: data.lastName ?? formData.lastName,
+              bio: data.bio ?? formData.bio,
+              quote: data.quote ?? formData.quote,
+              nationality: data.nationality ?? formData.country,
+              city: data.city ?? formData.city,
+              gender: data.gender ?? formData.gender,
+              birthDate: data.birthDate ?? formData.birthday,
+              profilePicture: data.profilePicture ?? formData.profilePicture,
+              coverPhoto: data.coverPhoto ?? formData.coverPhoto,
+              coverPhotoScale: data.coverPhotoScale ?? formData.coverPhotoScale,
+              coverPhotoPosition: data.coverPhotoPosition ?? formData.coverPhotoPosition,
+              privacy: data.privacy ?? formData.privacy
+            };
+          setUser(updatedUser);
+          try { localStorage.setItem('user', JSON.stringify(updatedUser)); } catch {}
+          setSaveSuccess(true);
+          showToast('Perfil atualizado com sucesso!', 'success');
+          setEditing(false);
+          setShowChangePassword(false);
+          setFormData(prev => ({
+            ...prev,
+            currentPassword: '',
+            password: '',
+            confirmPassword: ''
+          }));
+          setTimeout(() => setSaveSuccess(false), 3000);
+        }
+      } else {
+        // Sem backend configurado: fallback local
+        persistLocal();
       }
     } catch (error) {
-      console.error('Erro ao guardar os dados:', error);
-      setSaveError(
-        error.response?.data?.message || 
-        'Ocorreu um erro ao guardar os dados. Por favor, tente novamente.'
-      );
+      console.error('Erro ao guardar os dados no backend. A aplicar fallback local:', error);
+      // Em caso de falha no backend, ainda assim persistimos localmente
+      persistLocal();
+      setSaveError('Sem ligação ao servidor. Alterações guardadas localmente.');
       setErrorVisible(true);
-      // Limpar a mensagem de erro após 5 segundos
       setTimeout(() => {
         setErrorVisible(false);
-        // Aguardar a transição terminar antes de limpar a mensagem
-        setTimeout(() => {
-          setSaveError(null);
-        }, 300);
+        setTimeout(() => setSaveError(null), 300);
       }, 5000);
     } finally {
       setIsSaving(false);
@@ -422,6 +495,7 @@ const Profile = () => {
   }, [editing, isDragging, dragStart.x, dragStart.y, imagePosition.x, imagePosition.y]);
 
   return (
+    <React.Fragment>
     <div className="profile-page">
       <div className="profile-container">
         {user ? (
@@ -533,12 +607,27 @@ const Profile = () => {
                             onChange={(e) => {
                               const file = e.target.files[0];
                               if (file) {
+                                // Validar tamanho do ficheiro (5MB máximo)
+                                if (file.size > 5 * 1024 * 1024) {
+                                  showToast('A imagem deve ter no máximo 5MB', 'error');
+                                  e.target.value = '';
+                                  return;
+                                }
+                                
+                                // Validar tipo de ficheiro
+                                if (!file.type.startsWith('image/')) {
+                                  showToast('Por favor, selecione apenas imagens', 'error');
+                                  e.target.value = '';
+                                  return;
+                                }
+                                
                                 setFormData(prev => ({
                                   ...prev,
                                   profilePicture: URL.createObjectURL(file)
                                 }));
                                 setImageScale(1);
                                 setImagePosition({ x: 0, y: 0 });
+                                showToast('Foto de perfil carregada com sucesso', 'success');
                               }
                             }}
                             style={{ display: 'none' }}
@@ -609,33 +698,38 @@ const Profile = () => {
                   {/* Contadores de seguidores */}
 
 
-                  <div className="form-group">
-                    <div className="form-group-LeftPosition">
+                  <div className="form-group" style={{ display: 'flex', gap: '23px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '230px', position: 'relative' }}>
                       <label>👤 Primeiro Nome:</label>
                       {editing ? (
                         <input
                           type="text"
                           name="firstName"
                           value={formData.firstName}
-                          onChange={handleInputChange}
-                          placeholder="Digite seu primeiro nome"
+                          onChange={(e) => { console.debug('firstName change', e.target.value); handleInputChange(e); }}
+                          placeholder="Digite o seu primeiro nome"
+                          maxLength={50}
+                          autoFocus
+                          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 5 }}
                         />
                       ) : (
-                        <p>{user.firstName}</p>
+                        <p style={{ marginTop: 6 }}>{user.firstName}</p>
                       )}
                     </div>
-                    <div className="form-group-RightPosition">
+                    <div style={{ flex: 1, minWidth: '230px', position: 'relative' }}>
                       <label>👤 Último Nome:</label>
                       {editing ? (
                         <input
                           type="text"
                           name="lastName"
                           value={formData.lastName}
-                          onChange={handleInputChange}
-                          placeholder="Digite seu último nome"
+                          onChange={(e) => { console.debug('lastName change', e.target.value); handleInputChange(e); }}
+                          placeholder="Digite o seu último nome"
+                          maxLength={50}
+                          style={{ pointerEvents: 'auto', position: 'relative', zIndex: 5 }}
                         />
                       ) : (
-                        <p>{user.lastName}</p>
+                        <p style={{ marginTop: 6 }}>{user.lastName}</p>
                       )}
                     </div>
                   </div>
@@ -823,7 +917,22 @@ const Profile = () => {
                           onChange={e => {
                             const file = e.target.files[0];
                             if (file) {
+                              // Validar tamanho do ficheiro (10MB máximo para capa)
+                              if (file.size > 10 * 1024 * 1024) {
+                                showToast('A imagem de capa deve ter no máximo 10MB', 'error');
+                                e.target.value = '';
+                                return;
+                              }
+                              
+                              // Validar tipo de ficheiro
+                              if (!file.type.startsWith('image/')) {
+                                showToast('Por favor, selecione apenas imagens', 'error');
+                                e.target.value = '';
+                                return;
+                              }
+                              
                               setFormData(prev => ({ ...prev, coverPhoto: URL.createObjectURL(file), coverPhotoScale: 1, coverPhotoPosition: { x: 0, y: 0 } }));
+                              showToast('Foto de capa carregada com sucesso', 'success');
                             }
                           }}
                           style={{ display: 'none' }}
@@ -962,6 +1071,13 @@ const Profile = () => {
         ) : null}
       </div>
     </div>
+    <Toast
+      message={toast.message}
+      type={toast.type}
+      isVisible={toast.isVisible}
+      onClose={hideToast}
+    />
+    </React.Fragment>
   );
 };
 

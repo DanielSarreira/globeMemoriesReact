@@ -5,6 +5,8 @@ import { request } from '../axios_helper';
 import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash, FaLock, FaKey } from 'react-icons/fa';
 // ...existing code...
 import bgLoginImage from '../images/banners/bg_login.jpg';
+import Toast from '../components/Toast';
+import Toast from '../components/Toast';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +24,21 @@ const ResetPassword = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [tokenValid, setTokenValid] = useState(null); // null = checking, true = valid, false = invalid
+  
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 4000);
+  };
+
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
 
   useEffect(() => {
     // Verificar se o token é válido quando a página carrega
@@ -44,6 +61,7 @@ const ResetPassword = () => {
       } else {
         setTokenValid(false);
         setErrorMessage('Token inválido ou expirado. Solicite um novo link de recuperação.');
+        showToast('Token inválido ou expirado. Solicite um novo link de recuperação.', 'error');
       }
       
       // Em produção, seria algo como:
@@ -97,16 +115,19 @@ const ResetPassword = () => {
     // Validações
     if (!formData.token.trim()) {
       setErrorMessage('Token de recuperação é obrigatório.');
+      showToast('Token de recuperação é obrigatório.', 'error');
       return;
     }
 
     if (!formData.newPassword.trim()) {
       setErrorMessage('Nova palavra-passe é obrigatória.');
+      showToast('Nova palavra-passe é obrigatória.', 'error');
       return;
     }
 
     if (!formData.confirmPassword.trim()) {
       setErrorMessage('Confirmação da palavra-passe é obrigatória.');
+      showToast('Confirmação da palavra-passe é obrigatória.', 'error');
       return;
     }
 
@@ -114,12 +135,14 @@ const ResetPassword = () => {
     const passwordError = validatePassword(formData.newPassword);
     if (passwordError) {
       setErrorMessage(passwordError);
+      showToast(passwordError, 'error');
       return;
     }
 
     // Verificar se as palavras-passe coincidem
     if (formData.newPassword !== formData.confirmPassword) {
       setErrorMessage('As palavras-passe não coincidem.');
+      showToast('As palavras-passe não coincidem.', 'error');
       return;
     }
 
@@ -130,7 +153,7 @@ const ResetPassword = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Simular sucesso
-      setSuccessMessage('✅ Palavra-passe alterada com sucesso! Redirecionando para o login...');
+      showToast('Palavra-passe alterada com sucesso! Redirecionando para o login...', 'success');
       
       // Em produção, seria algo como:
       // await request('POST', '/reset-password', {
@@ -148,7 +171,7 @@ const ResetPassword = () => {
       }, 3000);
       
     } catch (error) {
-      setErrorMessage('❌ Erro ao alterar palavra-passe. Tente novamente.');
+      showToast('Erro ao alterar palavra-passe. Tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -238,6 +261,7 @@ const ResetPassword = () => {
   }
 
   return (
+    <React.Fragment>
     <div className="register-page" style={{
       minHeight: '100vh',
       width: '',
@@ -491,6 +515,13 @@ const ResetPassword = () => {
         </div>
       </div>
     </div>
+    <Toast
+      message={toast.message}
+      type={toast.type}
+      isVisible={toast.isVisible}
+      onClose={hideToast}
+    />
+    </React.Fragment>
   );
 };
 

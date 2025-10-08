@@ -3,19 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/components/modal.css";
 import "../styles/pages/future-travels.css";
 import "../styles/pages/future-travels-modal.css";
-// ...existing code...
-
-// Componente de Toast para feedback
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return <div className={`toast ${type}`}>{message}</div>;
-};
+import Toast from "../components/Toast";
 
 const FutureTravels = () => {
   const [futureTravels, setFutureTravels] = useState([]);
@@ -81,6 +69,18 @@ const FutureTravels = () => {
   const [multiDestinations, setMultiDestinations] = useState([]);
   const [newDestination, setNewDestination] = useState({ country: "", city: "" });
   const [selectedDestinationIndex, setSelectedDestinationIndex] = useState(0);
+
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 1000);
+  };
+
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -2051,281 +2051,86 @@ const FutureTravels = () => {
   };
 
   return (
-    <div className="my-travels-container">
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
-
-      <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-        <button className="primary-action-button" onClick={openModal}>
-          Planear Nova Viagem
-        </button>
-        <button
-          className="primary-action-button"
-          onClick={planTripWithAI}
-          style={{ backgroundColor: "#28a745" }}
-          disabled={isLoadingAI}
-        >
-          {isLoadingAI ? "A Planeaer..." : "Planeie a Minha Viagem a Globe Memories!"}
-        </button>
-      </div>
-      <br />
-      <br />
-
-      {/* Modal de Seleção de Tipo de Viagem */}
-      {isTravelTypeModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{  }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-actions">
-              <h2 style={{ 
-                textAlign: "center", 
-                color: "#2c3e50", 
-                marginBottom: "10px",
-                fontSize: "30px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                width: "100%",
-              }}>
-                ✈️ Que tipo de viagem pretende planear?
-              </h2>
-              <p style={{ 
-                textAlign: "center", 
-                color: "#666",
-                marginBottom: "30px",
-                fontSize: "16px"
-              }}>
-                
-              </p>
-              
-              <div className="modal-header-buttons">
-                <button 
-                  type="button-danger" 
-                  onClick={() => setIsTravelTypeModalOpen(false)} 
-                  className="button-danger"
-                >
-                  Fechar
-                </button>
-                <button
-                  type="button-success"
-                  onClick={confirmTravelType}
-                  className="button-success"
-                  disabled={!selectedTravelType.main}
-                >
-                  Continuar
-                </button>
-              </div>
-            </div>
-
-            <div style={{ padding: "20px 0" }}>
-              {/* Tipos principais de viagem */}
-              <div style={{ marginBottom: "30px" }}>
-                <h3 style={{ 
-                  color: "#2c3e50", 
-                  marginBottom: "20px",
-                  fontSize: "18px",
-                  textAlign: "center"
-                }}>
-                  Tipo de Destino:
-                </h3>
-                
-                <div style={{ 
-                  display: "flex", 
-                  gap: "20px", 
-                  justifyContent: "center",
-                  flexWrap: "wrap"
-                }}>
-                  {/* Viagem a Destino Único */}
-                  <div 
-                    onClick={() => handleTravelTypeSelection('single')}
-                    style={{
-                      flex: 1,
-                      minWidth: "250px",
-                      maxWidth: "300px",
-                      padding: "20px",
-                      border: selectedTravelType.main === 'single' ? "3px solid #007bff" : "2px solid #e9ecef",
-                      borderRadius: "12px",
-                      backgroundColor: selectedTravelType.main === 'single' ? "#f0f8ff" : "#fff",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      textAlign: "center",
-                      boxShadow: selectedTravelType.main === 'single' ? "0 4px 12px rgba(0,123,255,0.2)" : "0 2px 6px rgba(0,0,0,0.1)"
-                    }}
-                  >
-                    <div style={{ fontSize: "40px", marginBottom: "15px" }}>🎯</div>
-                    <h4 style={{ 
-                      color: selectedTravelType.main === 'single' ? "#007bff" : "#2c3e50",
-                      marginBottom: "10px",
-                      fontSize: "18px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px"
-                    }}>
-                      Viagem a Destino Único
-                      <span 
-                        style={{ 
-                          display: "inline-block",
-                          width: "16px", 
-                          height: "16px", 
-                          backgroundColor: "#007bff", 
-                          color: "white", 
-                          borderRadius: "50%", 
-                          textAlign: "center", 
-                          fontSize: "11px", 
-                          lineHeight: "16px", 
-                          cursor: "help"
-                        }}
-                        onMouseEnter={(e) => showTooltip(e, "🎯 Viagem a Destino Único", "Viagem focada numa única localização (um país e uma cidade). Ideal para escapadas de fim de semana, city breaks, ou quando pretende explorar profundamente um local específico.")}
-                        onMouseLeave={hideTooltip}
-                      >
-                        ?
-                      </span>
-                    </h4>
-                    <p style={{ 
-                      color: "#666", 
-                      fontSize: "14px", 
-                      lineHeight: "1.5",
-                      margin: 0
-                    }}>
-                      Uma viagem focada num único país e uma única cidade. 
-                    </p>
-                    <div style={{ 
-                      marginTop: "15px", 
-                      fontSize: "12px", 
-                      color: "#888" 
-                    }}>
-                      Exemplo: Portugal - Lisboa
-                    </div>
-                  </div>
-
-                  {/* Viagem Multidestino */}
-                  <div 
-                    onClick={() => handleTravelTypeSelection('multi')}
-                    style={{
-                      flex: 1,
-                      minWidth: "250px",
-                      maxWidth: "300px",
-                      padding: "20px",
-                      border: selectedTravelType.main === 'multi' ? "3px solid #007bff" : "2px solid #e9ecef",
-                      borderRadius: "12px",
-                      backgroundColor: selectedTravelType.main === 'multi' ? "#f0f8ff" : "#fff",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      textAlign: "center",
-                      boxShadow: selectedTravelType.main === 'multi' ? "0 4px 12px rgba(0,123,255,0.2)" : "0 2px 6px rgba(0,0,0,0.1)"
-                    }}
-                  >
-                    <div style={{ fontSize: "40px", marginBottom: "15px" }}>🗺️</div>
-                    <h4 style={{ 
-                      color: selectedTravelType.main === 'multi' ? "#007bff" : "#2c3e50",
-                      marginBottom: "10px",
-                      fontSize: "18px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px"
-                    }}>
-                      Viagem Multidestino
-                      <span 
-                        style={{ 
-                          display: "inline-block",
-                          width: "16px", 
-                          height: "16px", 
-                          backgroundColor: "#007bff", 
-                          color: "white", 
-                          borderRadius: "50%", 
-                          textAlign: "center", 
-                          fontSize: "11px", 
-                          lineHeight: "16px", 
-                          cursor: "help"
-                        }}
-                        onMouseEnter={(e) => showTooltip(e, "🗺️ Viagem Multidestino", "Viagem que inclui múltiplos países e/ou cidades. Perfeita para roteiros complexos, viagens longas, tours pela Europa, ou quando pretende visitar vários locais numa única viagem.")}
-                        onMouseLeave={hideTooltip}
-                      >
-                        ?
-                      </span>
-                    </h4>
-                    <p style={{ 
-                      color: "#666", 
-                      fontSize: "14px", 
-                      lineHeight: "1.5",
-                      margin: 0
-                    }}>
-                      Uma viagem que inclui vários países e/ou várias cidades. 
-                    </p>
-                    <div style={{ 
-                      marginTop: "15px", 
-                      fontSize: "12px", 
-                      color: "#888" 
-                    }}>
-                      Exemplo: Portugal - Lisboa, Coimbra / Espanha - Madrid
-                    </div>
-                  </div>
-                </div>
-
-                {/* Checkbox para Viagem em Grupo no modal de seleção de tipo */}
-                <div style={{ display: "flex", justifyContent: "center", marginTop: "20px", alignItems: "center", gap: "10px" }}>
-                  <input
-                    type="checkbox"
-                    id="modalGroupCheckbox"
-                    checked={selectedTravelType.isGroup || false}
-                    onChange={(e) => setSelectedTravelType(prev => ({ ...prev, isGroup: e.target.checked }))}
-                    style={{ transform: "scale(1.15)" }}
-                  />
-                  <label htmlFor="modalGroupCheckbox" style={{ fontSize: "15px", fontWeight: "600", color: "#2c3e50", cursor: "pointer" }}>
-                    👥 Viagem em Grupo
-                  </label>
-                  <span
-                    className="tooltip-icon"
-                    onMouseEnter={(e) => showTooltip(e, "Viagem em Grupo", "Ative se esta viagem for feita por um grupo. Irá permitir convidar membros e partilhar detalhes do grupo.")}
-                    onMouseLeave={hideTooltip}
-                  >
-                    ?
-                  </span>
-                </div>
-              </div>
-
-           
-
-              {/* Resumo da seleção */}
-              {(selectedTravelType.main || selectedTravelType.isGroup) && (
-                <div style={{ 
-                  marginTop: "30px", 
-                  padding: "20px", 
-                  backgroundColor: "#f8f9fa", 
-                  borderRadius: "8px",
-                  border: "1px solid #e9ecef"
-                }}>
-                  <h4 style={{ 
-                    color: "#2c3e50", 
-                    marginBottom: "10px",
-                    textAlign: "center"
-                  }}>
-                    A Sua Seleção:
-                  </h4>
-                  <div style={{ 
-                    textAlign: "center", 
-                    color: "#666" 
-                  }}>
-                    {selectedTravelType.main === 'single' && "✅ Viagem a Destino Único"}
-                    {selectedTravelType.main === 'multi' && "✅ Viagem Multidestino"}
-                    {selectedTravelType.isGroup && (
-                      <div style={{ marginTop: "5px" }}>
-                        ✅ Viagem em Grupo
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+    <React.Fragment>
+      <div className="my-travels-container">
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        textAlign: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          borderRadius: '12px',
+          padding: '3rem',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          maxWidth: '600px',
+          width: '100%'
+        }}>
+          <div style={{
+            fontSize: '4rem',
+            marginBottom: '1.5rem',
+            color: '#6c757d'
+          }}>
+            🚀
+          </div>
+          
+          <h1 style={{
+            color: '#2c3e50',
+            marginBottom: '1rem',
+            fontSize: '2.5rem'
+          }}>
+            Futuras Viagens
+          </h1>
+          
+          <h2 style={{
+            color: '#e74c3c',
+            marginBottom: '2rem',
+            fontSize: '1.5rem',
+            fontWeight: '600'
+          }}>
+            Em Breve!
+          </h2>
+          
+          <p style={{
+            color: '#555',
+            fontSize: '1.1rem',
+            lineHeight: '1.6',
+            marginBottom: '1.5rem'
+          }}>
+            Esta funcionalidade incrível está a ser desenvolvida e será lançada em breve.
+          </p>
+          
+          <p style={{
+            color: '#666',
+            fontSize: '1rem',
+            lineHeight: '1.5'
+          }}>
+            Poderás planear as tuas futuras viagens com detalhes completos, 
+            usar inteligência artificial para sugestões personalizadas e muito mais!
+          </p>
+          
+          <div style={{
+            marginTop: '2rem',
+            padding: '1rem',
+            backgroundColor: '#e3f2fd',
+            borderRadius: '8px',
+            border: '1px solid #bbdefb'
+          }}>
+            <p style={{
+              margin: '0',
+              color: '#1976d2',
+              fontSize: '0.9rem'
+            }}>
+              💡 Mantém-te atento às próximas atualizações!
+            </p>
           </div>
         </div>
-      )}
+      </div>
+      </div>
 
       {isModalOpen && (
         <div className="travel-planner-modal">
@@ -2999,7 +2804,7 @@ const FutureTravels = () => {
                               
                               // Verificar se país e cidade estão definidos
                               if (!destination?.country || !destination?.city) {
-                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                showToast("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.", "error");
                                 return;
                               }
                               
@@ -3047,7 +2852,7 @@ const FutureTravels = () => {
                               
                               // Verificar se país e cidade estão definidos
                               if (!destination?.country || !destination?.city) {
-                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                showToast("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.", "error");
                                 return;
                               }
                               
@@ -3099,7 +2904,7 @@ const FutureTravels = () => {
                               
                               // Verificar se país e cidade estão definidos
                               if (!destination?.country || !destination?.city) {
-                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                showToast("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.", "error");
                                 return;
                               }
                               
@@ -3148,7 +2953,7 @@ const FutureTravels = () => {
                               
                               // Verificar se país e cidade estão definidos
                               if (!destination?.country || !destination?.city) {
-                                alert("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.");
+                                showToast("Por favor, defina primeiro o país e a cidade para este destino antes de adicionar preços.", "error");
                                 return;
                               }
                               
@@ -5134,8 +4939,8 @@ const FutureTravels = () => {
       <div className="travels-list">
         {futureTravels.length === 0 ? (
           <p>
-            Nenhuma viagem planeada ainda. <br />
-            Comece a planear agora a sua viagem!
+            <br />
+            
           </p>
         ) : (
           futureTravels.map((travel) => {
@@ -5304,7 +5109,7 @@ const FutureTravels = () => {
           }
         }
       `}</style>
-    </div>
+    </React.Fragment>
   );
 };
 

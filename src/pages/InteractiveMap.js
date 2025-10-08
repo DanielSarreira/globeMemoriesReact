@@ -8,6 +8,7 @@ import L from "leaflet";
 import debounce from "lodash/debounce";
 
 import { useNavigate } from "react-router-dom";
+import Toast from '../components/Toast';
 
 // Corrige o probleaflet-left .leaflet-controlma de ícones padrão no Leaflet com React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -86,6 +87,9 @@ const InteractiveMap = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showStreetView, setShowStreetView] = useState(false);
   const [streetViewPerson, setStreetViewPerson] = useState(null);
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
   const [filters, setFilters] = useState({
     visited: true,
     future: true,
@@ -96,6 +100,18 @@ const InteractiveMap = () => {
   });
   const mapRef = useRef(null);
   const navigate = useNavigate();
+
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 1000);
+  };
+
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
 
   const MAPTILER_API_KEY = "G59o5q9sfWGLLQJsw3v7";
 
@@ -134,6 +150,7 @@ const InteractiveMap = () => {
       }
     } catch (error) {
       console.error(`Erro ao obter coordenadas para ${city}, ${country}:`, error);
+      showToast(`Erro ao obter coordenadas para ${city}. Tente novamente.`, 'error');
     }
     return null;
   };
@@ -205,6 +222,7 @@ const InteractiveMap = () => {
       setSearchResults(sortedResults);
     } catch (error) {
       console.error("Erro ao buscar locais:", error);
+      showToast('Erro ao buscar locais. Tente novamente.', 'error');
       setSearchResults([]);
     } finally {
       setIsLoading(false);
@@ -641,11 +659,54 @@ const MapEvents = () => {
     setSearchResults([]);
   };
 
+  // Função para sanitizar input de pesquisa
+  const sanitizeSearchInput = (input) => {
+    if (!input) return '';
+    
+    // Remove caracteres perigosos e scripts
+    return input
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .replace(/[<>]/g, '')
+      .trim();
+  };
+
+  // Função para validar input de localização
+  const validateLocationInput = (input) => {
+    if (!input) return { isValid: true, sanitized: '' };
+    
+    if (input.length > 100) {
+      showToast('Pesquisa não pode exceder 100 caracteres!', 'error');
+      return { isValid: false, sanitized: input };
+    }
+
+    const sanitized = sanitizeSearchInput(input);
+    
+    if (sanitized !== input.trim()) {
+      showToast('Pesquisa contém caracteres não permitidos que foram removidos!', 'error');
+    }
+
+    // Validar se contém apenas caracteres permitidos (letras, números, espaços, vírgulas, hífens)
+    if (!/^[a-zA-ZÀ-ÿ0-9\s,.\-''`]+$/.test(sanitized)) {
+      showToast('Pesquisa contém caracteres não permitidos!', 'error');
+      return { isValid: false, sanitized: input };
+    }
+
+    return { isValid: true, sanitized };
+  };
+
   // Handler para a mudança no campo de pesquisa
   const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    debouncedSearch(query);
+    const rawQuery = e.target.value;
+    const validation = validateLocationInput(rawQuery);
+    
+    if (!validation.isValid) {
+      return;
+    }
+    
+    setSearchQuery(validation.sanitized);
+    debouncedSearch(validation.sanitized);
   };
 
   // Função para adicionar viagem futura a partir do marcador de pesquisa
@@ -745,6 +806,7 @@ const MapEvents = () => {
                 onChange={handleSearchChange}
                 placeholder="Pesquisar países, cidades, locais de interesse..."
                 className="gm-map-search-input"
+                maxLength={100}
               />
               {isLoading && <div className="gm-map-loading-spinner">⏳</div>}
             </div>
@@ -1204,7 +1266,7 @@ const MapEvents = () => {
               const pool = (basePool || []).filter(hasValidCoords);
               if (!pool.length) {
                 console.warn('Sem viagens elegíveis com coordenadas válidas.');
-                window.alert('Não há viagens com coordenadas válidas para explorar.');
+                showToast('Não há viagens com coordenadas válidas para explorar.', 'error');
                 return;
               }
               const r = pool[Math.floor(Math.random() * pool.length)];
@@ -1223,6 +1285,14 @@ const MapEvents = () => {
           </button>
         </div>
       )}
+      
+      {/* Toast Component */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };

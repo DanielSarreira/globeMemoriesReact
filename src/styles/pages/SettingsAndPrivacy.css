@@ -1,6 +1,9 @@
 .settings-privacy-container {
   margin: 30px;
+  margin-top: 52px;
   padding: 0 1rem;
+  background-color: #fff;
+  border-radius: 10px;
 }
 
 .settings-header {
@@ -17,7 +20,8 @@
 
 .settings-navigation {
   margin-bottom: 2rem;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 20px;
+  border-bottom: 1px solid #dad8d8 !important;
 }
 
 .tab-button {
@@ -109,6 +113,7 @@
   align-items: center;
   gap: 0.5rem;
   color: #444;
+  justify-content: center;
 }
 
 .secondary-button,
@@ -142,10 +147,25 @@
 .data-management-buttons {
   display: flex;
   gap: 1rem;
+  justify-content: center;
 }
 
 /* Responsividade */
 @media (max-width: 768px) {
+
+.settings-privacy-container {
+    margin: 10px;
+    margin-top: 30px;
+    padding: 0 1rem;
+    background-color: #fff;
+    border-radius: 10px;
+}
+
+.privacy-section{
+  padding: 10px;
+}
+
+
   .settings-header h1 {
     font-size: 1.5rem;
   }

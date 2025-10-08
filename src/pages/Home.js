@@ -7,6 +7,7 @@ import { FaStar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import TravelsData from '../data/travelsData';
 import WelcomeModal from '../components/WelcomeModal';
+import Toast from '../components/Toast';
 import '../styles/pages/qanda.css';
 import '../styles/pages/home.css';
 
@@ -100,14 +101,27 @@ const Home = () => {
     other: false,
   });
   const [otherReason, setOtherReason] = useState('');
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
 
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // Estados para swipe gestures
   const [swipeStartX, setSwipeStartX] = useState(0);
+
+  const showToast = (message, type) => {
+    setToast({ message, type, show: true });
+  };
+
+  const closeToast = () => {
+    setToast({ ...toast, show: false });
+  };
   const [swipeStartY, setSwipeStartY] = useState(0);
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const [currentSwipeTravel, setCurrentSwipeTravel] = useState(null);
+
+  // Estados para double tap
+  const [lastTap, setLastTap] = useState(0);
+  const [heartAnimation, setHeartAnimation] = useState({});
 
   // Estado para a modal de boas-vindas
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -185,6 +199,7 @@ const Home = () => {
         setLoading(false);
       } catch (err) {
         setError('Erro ao carregar o feed. Tente novamente mais tarde.');
+        showToast('Erro ao carregar o feed. Tente novamente mais tarde.', 'error');
         setLoading(false);
         console.error('Erro ao buscar feed:', err);
       }
@@ -345,7 +360,7 @@ const Home = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Inicie sessão para dar gosto!');
+      showToast('Inicie sessão para dar gosto!', 'error');
       return;
     }
 
@@ -386,21 +401,64 @@ const Home = () => {
     }, 1000);
   };
 
+  // Função para sanitizar conteúdo contra XSS
+  const sanitizeContent = (content) => {
+    if (!content) return '';
+    
+    // Remove scripts, eventos e tags perigosas
+    const dangerousPatterns = [
+      /<script[^>]*>.*?<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>.*?<\/iframe>/gi,
+      /<object[^>]*>.*?<\/object>/gi,
+      /<embed[^>]*>.*?<\/embed>/gi,
+      /<link[^>]*>/gi,
+      /<meta[^>]*>/gi,
+      /<style[^>]*>.*?<\/style>/gi
+    ];
+    
+    let sanitized = content;
+    dangerousPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
+    
+    return sanitized.trim();
+  };
+
   const handleAddComment = (travelId, parentIds = [], text) => {
     if (!user) {
-      alert('Inicie sessão para comentar!');
+      showToast('Inicie sessão para comentar!', 'error');
       return;
     }
 
     const commentText = text || newComment[travelId];
     
     if (!commentText?.trim()) {
-      alert('Escreva um comentário antes de enviar!');
+      showToast('Escreva um comentário antes de enviar!', 'error');
       return;
     }
 
     if (commentText.trim().length < 3) {
-      alert('O comentário deve ter pelo menos 3 caracteres!');
+      showToast('O comentário deve ter pelo menos 3 caracteres!', 'error');
+      return;
+    }
+
+    // Validar tamanho máximo do comentário
+    if (commentText.trim().length > 250) {
+      showToast('Comentário não pode exceder 250 caracteres!', 'error');
+      return;
+    }
+
+    // Sanitizar conteúdo contra XSS
+    const sanitizedComment = sanitizeContent(commentText);
+    if (!sanitizedComment) {
+      showToast('Comentário contém conteúdo não permitido!', 'error');
+      return;
+    }
+
+    if (sanitizedComment !== commentText.trim()) {
+      showToast('Comentário contém conteúdo perigoso que foi removido!', 'error');
       return;
     }
 
@@ -417,7 +475,7 @@ const Home = () => {
               id: Date.now(),
               user: user.username,
               userProfilePicture: user.profilePicture || null,
-              text: commentText.trim(),
+              text: sanitizedComment,
               createdAt: new Date().toISOString(),
               likes: 0,
               replies: [],
@@ -455,15 +513,15 @@ const Home = () => {
 
       setCommentLoading(false);
       setCommentSuccess('Comentário publicado!');
+      showToast('Comentário publicado com sucesso!', 'success');
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setCommentSuccess(null), 3000);
+      // Clear success message after 2.6 seconds
+      setTimeout(() => setCommentSuccess(null), 2600);
     }, 1000);
   };
 
   const handleCommentLike = (travelId, commentId, parentIds = []) => {
     if (!user) {
-      alert('Inicie sessão para dar gosto aos comentários!');
       return;
     }
 
@@ -600,10 +658,15 @@ const Home = () => {
                   <div className="reply-input-wrapper">
                     <textarea
                       value={newReply[key] || ''}
-                      onChange={(e) => setNewReply({ ...newReply, [key]: e.target.value })}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 250) {
+                          setNewReply({ ...newReply, [key]: e.target.value });
+                        }
+                      }}
                       placeholder="Escreva uma resposta..."
                       className="reply-input-modern"
                       rows="2"
+                      maxLength={250}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -662,7 +725,7 @@ const Home = () => {
     e.stopPropagation();
     const travelUrl = `http://localhost:3000/travel/${travelId}`;
     navigator.clipboard.writeText(travelUrl).then(() => {
-      alert('Link da viagem copiado!');
+      showToast('Link da viagem copiado!', 'success');
     });
   };
 
@@ -701,34 +764,51 @@ const Home = () => {
     let hasDragged = false;
     let dragDistance = 0;
 
+    // Check if the travel has videos
+    const travel = feedTravels.find(t => t.id === travelId);
+    const hasVideo = travel?.travelVideos && travel.travelVideos.length > 0;
+
     const handleDragMove = (moveEvent) => {
-      moveEvent.preventDefault();
       const currentX = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientX : moveEvent.clientX;
       const currentY = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientY : moveEvent.clientY;
-      const diffX = startX - currentX;
-      const diffY = startY - currentY;
-      
+      const diffX = currentX - startX;
+      const diffY = currentY - startY; // manter sinal natural para distinguir vertical
+
       dragDistance = Math.abs(diffX);
 
-      // Only trigger horizontal swipe if movement is more horizontal than vertical
+      // Só considerar swipe horizontal se claramente predominante
       if (Math.abs(diffX) > Math.abs(diffY) && dragDistance > 30) {
+        // Prevenir scroll vertical apenas depois de confirmar gesto horizontal
+        moveEvent.preventDefault();
         hasDragged = true;
-        
-        // Add visual feedback during swipe
-        const feedItem = moveEvent.target.closest('.feed-item');
-        if (feedItem) {
-          const transform = Math.min(dragDistance / 5, 20);
-          feedItem.style.transform = diffX > 0 ? 
-            `translateX(-${transform}px)` : 
-            `translateX(${transform}px)`;
-        }
 
-        // Trigger image change when swipe distance is significant
-        if (dragDistance > 80) {
-          if (diffX > 0) {
-            handleNextImage(travelId, moveEvent);
-          } else {
-            handlePrevImage(travelId, moveEvent);
+        if (dragDistance > 50) {
+          if (hasVideo && travel.travelVideos.length > 0) {
+            // Vídeos tratados em handleVideoSwipe (não alterar aqui)
+            return;
+          } else if (!hasVideo) {
+            const currentImageIdx = currentImageIndices[travelId] || 0;
+            const images = getAllImages(travel);
+            const totalImages = images.length;
+
+            // OBJETIVO: Igual comportamento aos vídeos
+            // Vídeos: swipe direita (diffX > 0) no primeiro -> criar viagem; senão vai para anterior
+            //         swipe esquerda (diffX < 0) no último -> perfil; senão vai para próximo
+            if (diffX > 0) {
+              // Swipe direita
+              if (currentImageIdx === 0) {
+                navigate('/my-travels', { state: { openModal: true } });
+              } else {
+                handlePrevImage(travelId, moveEvent);
+              }
+            } else {
+              // Swipe esquerda
+              if (currentImageIdx === totalImages - 1) {
+                navigate(`/profile/${travel.user}`);
+              } else {
+                handleNextImage(travelId, moveEvent);
+              }
+            }
           }
           handleDragEnd();
         }
@@ -736,12 +816,6 @@ const Home = () => {
     };
 
     const handleDragEnd = () => {
-      // Reset transform
-      const feedItem = document.querySelector(`[data-travel-id="${travelId}"]`);
-      if (feedItem) {
-        feedItem.style.transform = '';
-      }
-
       document.removeEventListener('mousemove', handleDragMove);
       document.removeEventListener('touchmove', handleDragMove);
       document.removeEventListener('mouseup', handleDragEnd);
@@ -957,7 +1031,7 @@ const Home = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Inicie sessão para denunciar viagens.');
+      showToast('Inicie sessão para denunciar viagens.', 'error');
       return;
     }
     setSelectedTravel(travel);
@@ -970,10 +1044,11 @@ const Home = () => {
       const hasSelectedReason = Object.values(reportReasons).some((v) => v) ||
         (reportReasons.other && otherReason.trim());
       if (!hasSelectedReason) {
-        alert('Por favor, seleccione pelo menos um motivo para a denúncia.');
+        showToast('Por favor, seleccione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
       console.log('Travel reported:', selectedTravel.id, 'Reasons:', reportReasons, 'Other:', otherReason);
+      showToast('Viagem denunciada com sucesso!', 'success');
       setShowReportModal(false);
       setSelectedTravel(null);
       setReportReasons({
@@ -1004,6 +1079,42 @@ const Home = () => {
         [travelId]: nextIndex
       };
     });
+  };
+
+  // Função para double tap (like com animação)
+  const handleDoubleTap = (travelId, e) => {
+    if (!isMobile) return;
+
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 280;
+
+    // Se já houve um tap recente -> interpretar como double tap
+    if (lastTap && (now - lastTap) < DOUBLE_TAP_DELAY) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!likedTravels.includes(travelId)) {
+        handleLike(travelId, e);
+      }
+      setHeartAnimation(prev => ({ ...prev, [travelId]: true }));
+      setTimeout(() => {
+        setHeartAnimation(prev => ({ ...prev, [travelId]: false }));
+      }, 900);
+      setLastTap(0);
+    } else {
+      // Registar primeiro tap e agendar navegação se não vier segundo tap
+      setLastTap(now);
+      setTimeout(() => {
+        // Se passado o delay ainda é o mesmo timestamp => single tap
+        setLastTap(current => {
+          if (current === now) {
+            // Navegar para detalhes da viagem (single tap)
+            navigate(`/travel/${travelId}`);
+            return 0;
+          }
+          return current;
+        });
+      }, DOUBLE_TAP_DELAY + 20);
+    }
   };
 
   // Função para navegar manualmente nos vídeos
@@ -1038,6 +1149,70 @@ const Home = () => {
       ...prev,
       [travelId]: targetIndex
     }));
+  };
+
+  // Função dedicada para swipe de vídeos
+  const handleVideoSwipe = (travelId, e) => {
+    if (!isMobile) return;
+    
+    const travel = feedTravels.find(t => t.id === travelId);
+    if (!travel?.travelVideos || travel.travelVideos.length === 0) return;
+
+    const isTouch = e.type === 'touchstart';
+    const startX = isTouch ? e.touches[0].clientX : e.clientX;
+    const startY = isTouch ? e.touches[0].clientY : e.clientY;
+    let hasSwiped = false;
+
+    const handleMove = (moveEvent) => {
+      const currentX = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientX : moveEvent.clientX;
+      const currentY = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientY : moveEvent.clientY;
+      const diffX = currentX - startX; // CORRIGIDO: currentX - startX para direção correta
+      const diffY = startY - currentY;
+      
+      // Só processa se o movimento for mais horizontal que vertical
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50 && !hasSwiped) {
+        hasSwiped = true;
+        moveEvent.preventDefault();
+        moveEvent.stopPropagation();
+        
+        const currentVideoIdx = currentVideoIndex[travelId] || 0;
+        const totalVideos = travel.travelVideos.length;
+        
+        if (diffX > 0) {
+          // Swipe direita
+          if (currentVideoIdx === 0) {
+            // Primeiro vídeo - abrir modal criar viagem
+            navigate('/my-travels', { state: { openModal: true } });
+          } else if (totalVideos > 1) {
+            // Vídeo anterior
+            handlePrevVideo(travelId, travel.travelVideos, moveEvent);
+          }
+        } else {
+          // Swipe esquerda
+          if (currentVideoIdx === totalVideos - 1) {
+            // Último vídeo - abrir perfil do criador
+            navigate(`/profile/${travel.user}`);
+          } else if (totalVideos > 1) {
+            // Próximo vídeo
+            handleNextVideo(travelId, travel.travelVideos, moveEvent);
+          }
+        }
+        
+        cleanup();
+      }
+    };
+
+    const cleanup = () => {
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('touchend', cleanup);
+      document.removeEventListener('mouseup', cleanup);
+    };
+
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('mousemove', handleMove, { passive: false });
+    document.addEventListener('touchend', cleanup);
+    document.addEventListener('mouseup', cleanup);
   };
 
   const renderReportModal = () => (
@@ -1704,13 +1879,36 @@ const Home = () => {
         <Link to={`/travel/${travel.id}`} className="feed-link">
           <div
             className="feed-content"
-            style={isMobile && !hasVideo ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            style={{
+              ...(isMobile && !hasVideo ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+              position: 'relative'
+            }}
             onError={(e) => { e.target.style.backgroundImage = `url(https://via.placeholder.com/300)`; }}
-            onTouchStart={isMobile ? (e) => handleSwipeTouchStart(e, travel) : undefined}
+            onTouchStart={isMobile ? (e) => handleDragStart(travel.id, e) : undefined}
             onTouchMove={isMobile ? handleSwipeTouchMove : undefined}
             onTouchEnd={isMobile ? handleSwipeTouchEnd : undefined}
             onMouseDown={isMobile ? (e) => handleDragStart(travel.id, e) : undefined}
+            onClick={isMobile ? (e) => handleDoubleTap(travel.id, e) : undefined}
           >
+            {/* Animação do coração para double tap */}
+            {isMobile && heartAnimation[travel.id] && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 1000,
+                  fontSize: '80px',
+                  color: '#ff4757',
+                  animation: 'heartPulse 1s ease-out',
+                  pointerEvents: 'none'
+                }}
+              >
+                ❤️
+              </div>
+            )}
+            
             {/* Vídeo para dispositivos móveis */}
             {isMobile && hasVideo && (
               <video
@@ -1729,6 +1927,8 @@ const Home = () => {
                   objectFit: 'cover',
                   zIndex: 1,
                 }}
+                onTouchStart={travel.travelVideos.length > 1 ? (e) => handleVideoSwipe(travel.id, e) : undefined}
+                onMouseDown={travel.travelVideos.length > 1 ? (e) => handleVideoSwipe(travel.id, e) : undefined}
                 onEnded={() => {
                   if (travel.travelVideos.length > 1) {
                     handleVideoEnd(travel.id, travel.travelVideos);
@@ -1959,14 +2159,21 @@ const Home = () => {
               <div className="feed-actions-mobile">
                 <button
                   className={`like-btn ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
+                  aria-label={`Gostos: ${travel.likes}`}
                   onClick={(e) => handleLike(travel.id, e)}
+                  style={{ position:'relative' }}
                 >
                   <FaHeart />
-                  <span>{travel.likes}</span>
+                  <span className="count-badge">{typeof travel.likes === 'number' ? travel.likes : 0}</span>
                 </button>
-                <button className="comments-btn" onClick={(e) => toggleComments(travel.id, e)}>
+                <button 
+                  className="comments-btn" 
+                  aria-label={`Comentários: ${travel.comments.length}`}
+                  onClick={(e) => toggleComments(travel.id, e)}
+                  style={{ position:'relative' }}
+                >
                   <FaComment />
-                  <span>{travel.comments.length}</span>
+                  <span className="count-badge">{Array.isArray(travel.comments) ? travel.comments.length : 0}</span>
                 </button>
               </div>
             )}
@@ -2079,7 +2286,7 @@ const Home = () => {
                 style={{
                   flex: '1',
                   overflowY: 'auto',
-                  padding: '0 20px',
+                  padding: '10px 20px',
                   marginBottom: '10px',
                   WebkitOverflowScrolling: 'touch'
                 }}
@@ -2635,6 +2842,14 @@ const Home = () => {
       <WelcomeModal 
         isOpen={showWelcomeModal} 
         onClose={handleCloseWelcomeModal} 
+      />
+
+      {/* Toast Component */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
       />
     </div>
   );

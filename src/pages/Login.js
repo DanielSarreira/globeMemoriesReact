@@ -3,11 +3,27 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
-import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
 import '../styles/pages/login-travel.css';
 
 // Modern travel-themed background video (optional, fallback to gradient if not loaded)
 const YOUTUBE_BG_URL = 'https://www.youtube.com/embed/YFhwEJosUsU?autoplay=1&mute=1&controls=0&loop=1&playlist=YFhwEJosUsU&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
+
+// Componente de Toast para feedback
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className={`toast ${type}`}>
+      {message}
+    </div>
+  );
+};
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +31,12 @@ const Login = () => {
     password: '',
   });
   const [rememberMe, setRememberMe] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockTimeRemaining, setBlockTimeRemaining] = useState(0);
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -84,6 +106,119 @@ const Login = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Efeito para verificar bloqueio de tentativas
+  useEffect(() => {
+    const checkBlockStatus = () => {
+      const lastFailedAttempt = localStorage.getItem('lastFailedLoginAttempt');
+      const attemptCount = parseInt(localStorage.getItem('loginAttemptCount') || '0');
+      
+      if (lastFailedAttempt && attemptCount >= 5) {
+        const timeSinceLastAttempt = Date.now() - parseInt(lastFailedAttempt);
+        const blockDuration = 15 * 60 * 1000; // 15 minutos
+        
+        if (timeSinceLastAttempt < blockDuration) {
+          setIsBlocked(true);
+          setBlockTimeRemaining(Math.ceil((blockDuration - timeSinceLastAttempt) / 1000));
+          setLoginAttempts(attemptCount);
+        } else {
+          // Reset after block period
+          localStorage.removeItem('lastFailedLoginAttempt');
+          localStorage.removeItem('loginAttemptCount');
+          setIsBlocked(false);
+          setBlockTimeRemaining(0);
+          setLoginAttempts(0);
+        }
+      }
+    };
+
+    checkBlockStatus();
+    const interval = setInterval(checkBlockStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Funções de validação
+  const validateUsername = (value) => {
+    if (!value.trim()) return 'Nome de utilizador é obrigatório';
+    if (value.length < 3) return 'Nome de utilizador deve ter pelo menos 3 caracteres';
+    if (/\s/.test(value)) return 'Nome de utilizador não pode conter espaços';
+    if (!/^[a-zA-Z0-9._]+$/.test(value)) return 'Nome de utilizador deve conter apenas letras, números, pontos ou underscore';
+    return '';
+  };
+
+  const validatePasswordLogin = (value) => {
+    if (!value) return 'Palavra-passe é obrigatória';
+    if (value.length < 8) return 'Palavra-passe deve ter pelo menos 8 caracteres';
+    return '';
+  };
+
+  // Função para validar campo individual
+  const validateField = (name, value) => {
+    let error = '';
+    switch (name) {
+      case 'username':
+        error = validateUsername(value);
+        break;
+      case 'password':
+        error = validatePasswordLogin(value);
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
+
+  // Função para validar todos os campos
+  const validateAllFields = () => {
+    const errors = {};
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key]);
+      if (error) errors[key] = error;
+    });
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Função para mostrar toast
+  const showToast = (message, type) => {
+    setToast({ message, type, show: true });
+  };
+
+  const closeToast = () => {
+    setToast({ ...toast, show: false });
+  };
+
+  // Função para gerenciar tentativas de login
+  const handleFailedLogin = () => {
+    const currentAttempts = loginAttempts + 1;
+    setLoginAttempts(currentAttempts);
+    localStorage.setItem('loginAttemptCount', currentAttempts.toString());
+    localStorage.setItem('lastFailedLoginAttempt', Date.now().toString());
+
+    if (currentAttempts >= 5) {
+      setIsBlocked(true);
+      setBlockTimeRemaining(15 * 60); // 15 minutos
+      showToast('Muitas tentativas falhadas. Conta bloqueada por 15 minutos.', 'error');
+    } else {
+      const remainingAttempts = 5 - currentAttempts;
+      showToast(`Credenciais incorretas. ${remainingAttempts} tentativa(s) restante(s).`, 'error');
+    }
+  };
+
+  const resetLoginAttempts = () => {
+    setLoginAttempts(0);
+    setIsBlocked(false);
+    setBlockTimeRemaining(0);
+    localStorage.removeItem('loginAttemptCount');
+    localStorage.removeItem('lastFailedLoginAttempt');
+  };
+
+  // Função para formatar tempo de bloqueio
+  const formatBlockTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   useEffect(() => {
     if (isMobile && !isInstalled) {
       console.log('Mostrando o pop-up de instalação');
@@ -151,64 +286,97 @@ const Login = () => {
       ...prevState,
       [name]: value
     }));
+
+    // Validar campo em tempo real
+    const error = validateField(name, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting || isBlocked) return;
+
+    // Validar todos os campos
+    if (!validateAllFields()) {
+      showToast('Por favor, corrija os erros no formulário', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
     setErrorMessage('');
     setSuccessMessage('');
 
-    // Validação de campos vazios
-    if (!formData.username.trim()) {
-      setErrorMessage('Por favor, insira o seu nome de utilizador.');
-      setSuccessMessage('');
-      return;
+    try {
+      await onLogin(e, formData.username, formData.password);
+    } catch (error) {
+      console.error('Erro no login:', error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (!formData.password.trim()) {
-      setErrorMessage('Por favor, insira a sua palavra-passe.');
-      setSuccessMessage('');
-      return;
-    }
-
-    onLogin(e, formData.username, formData.password);
   };
 
-  const onLogin = (event, username, password) => {
+  const onLogin = async (event, username, password) => {
     event.preventDefault();
-    request(
-      "POST",
-      "/login",
-      {
-        username: username,
-        password: password,
-      }
-    )
-      .then((response) => {
-        setAuthHeader(response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data));
-        
-        // Implementar funcionalidade "Remember Me"
-        if (rememberMe) {
-          localStorage.setItem('rememberedUsername', username);
-          localStorage.setItem('rememberMe', 'true');
-          // Definir token com expiração mais longa se "Remember Me" estiver ativo
-          localStorage.setItem('rememberMeToken', response.data.token);
-        } else {
-          localStorage.removeItem('rememberedUsername');
-          localStorage.removeItem('rememberMe');
-          localStorage.removeItem('rememberMeToken');
+    
+    try {
+      const response = await request(
+        "POST",
+        "/login",
+        {
+          username: username,
+          password: password,
         }
-        
-        setUser(response.data);
-        console.log(response);
+      );
+      
+      setAuthHeader(response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data));
+      
+      // Reset login attempts on successful login
+      resetLoginAttempts();
+      
+      // Implementar funcionalidade "Remember Me"
+      if (rememberMe) {
+        localStorage.setItem('rememberedUsername', username);
+        localStorage.setItem('rememberMe', 'true');
+        // Definir token com expiração mais longa se "Remember Me" estiver ativo
+        localStorage.setItem('rememberMeToken', response.data.token);
+      } else {
+        localStorage.removeItem('rememberedUsername');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rememberMeToken');
+      }
+      
+      setUser(response.data);
+      showToast(`Bem-vindo, ${response.data.firstName || username}!`, 'success');
+      
+      // Aguardar um pouco antes de redirecionar para mostrar o toast
+      setTimeout(() => {
         navigate("/");
-      })
-      .catch((error) => {
-        setAuthHeader(null);
-        setErrorMessage('Credenciais inválidas. Tente novamente.');
-        console.log(error);
-      });
+      }, 1500);
+      
+    } catch (error) {
+      setAuthHeader(null);
+      console.error('Erro no login:', error);
+      
+      // Handle failed login attempt
+      handleFailedLogin();
+      
+      // Verificar tipos específicos de erro
+      if (error.response?.status === 401) {
+        // Não especificar qual campo está errado por segurança
+        setFieldErrors({});
+      } else if (error.response?.status === 429) {
+        showToast('Muitas tentativas. Tente novamente mais tarde.', 'error');
+      } else if (error.response?.status === 400) {
+        showToast('Dados inválidos. Verifique as informações inseridas.', 'error');
+      } else {
+        showToast('Erro no servidor. Tente novamente mais tarde.', 'error');
+      }
+    }
   };
 
   const handleForgotPassword = async () => {
@@ -389,19 +557,27 @@ const Login = () => {
           </div>
           <form onSubmit={handleSubmit} className="login-travel-form">
             <div className="input-group">
-              <label>Nome de Utilizador:</label>
+              <label>Nome de Utilizador: <span style={{color: 'red'}}>*</span></label>
               <input
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Insira o seu nome de utilizador"
+                className={fieldErrors.username ? 'input-error' : ''}
                 required
                 autoComplete="username"
+                disabled={isBlocked}
               />
+              {fieldErrors.username && (
+                <div className="field-error">
+                  <FaExclamationCircle style={{ marginRight: '5px' }} />
+                  {fieldErrors.username}
+                </div>
+              )}
             </div>
             <div className="input-group">
-              <label>Palavra-passe:</label>
+              <label>Palavra-passe: <span style={{color: 'red'}}>*</span></label>
               <div className="password-group-inline">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -409,18 +585,27 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Insira a sua palavra-passe"
+                  className={fieldErrors.password ? 'input-error' : ''}
                   required
                   autoComplete="current-password"
+                  disabled={isBlocked}
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
+                  disabled={isBlocked}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <div className="field-error">
+                  <FaExclamationCircle style={{ marginRight: '5px' }} />
+                  {fieldErrors.password}
+                </div>
+              )}
             </div>
             <div className="login-travel-options">
               <label className="remember-me">
@@ -428,6 +613,7 @@ const Login = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
+                  disabled={isBlocked}
                 />
                 Lembrar-me
               </label>
@@ -435,10 +621,42 @@ const Login = () => {
                 type="button"
                 className="forgot-password"
                 onClick={() => setShowForgotPasswordModal(true)}
+                disabled={isBlocked}
               >
                 Esqueceu a palavra-passe?
               </button>
             </div>
+
+            {/* Avisos de segurança */}
+            {loginAttempts > 0 && loginAttempts < 5 && (
+              <div style={{
+                padding: '10px',
+                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                border: '1px solid rgba(255, 193, 7, 0.3)',
+                borderRadius: '8px',
+                color: '#856404',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                margin: '10px 0'
+              }}>
+                ⚠️ {5 - loginAttempts} tentativa(s) restante(s) antes do bloqueio
+              </div>
+            )}
+
+            {isBlocked && (
+              <div style={{
+                padding: '12px',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                border: '1px solid rgba(220, 53, 69, 0.3)',
+                borderRadius: '8px',
+                color: '#721c24',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                margin: '10px 0'
+              }}>
+                🔒 Conta bloqueada por excesso de tentativas. Tempo restante: {formatBlockTime(blockTimeRemaining)}
+              </div>
+            )}
             {errorMessage && (
               <div className="error-message">
                 <FaExclamationCircle /> {errorMessage}
@@ -449,7 +667,13 @@ const Login = () => {
                 <FaCheckCircle /> {successMessage}
               </div>
             )}
-            <button type="submit" className="login-travel-btn">Entrar</button>
+            <button 
+              type="submit" 
+              className="login-travel-btn" 
+              disabled={isSubmitting || isBlocked}
+            >
+              {isSubmitting ? 'A Entrar...' : isBlocked ? `Bloqueado (${formatBlockTime(blockTimeRemaining)})` : 'Entrar'}
+            </button>
           </form>
           <div className="login-travel-register">
             <span>Ainda não tem conta?</span>
@@ -943,6 +1167,14 @@ const Login = () => {
           </div>
         </div>
       )}
+
+      {/* Toast para feedback */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </>
   );
 };

@@ -25,6 +25,7 @@ import Achievements from './pages/Achievements';
 import Weather from './pages/weather';
 import SettingsAndPrivacy from './pages/SettingsAndPrivacy';
 import FutureTravels from './pages/FutureTravels';
+import FutureTravelsComingSoon from './pages/FutureTravelsComingSoon';
 import MainLayout from './components/MainLayout';
 import AdminLayout from './components/AdminLayout';
 
@@ -78,10 +79,13 @@ const App = () => {
         <Route path="/achievements" element={<ProtectedRoute />}>
           <Route index element={<Achievements />} />
         </Route>
-        <Route path="/interactivemap" element={<ProtectedRoute />}>
+        <Route path="/interactive-map" element={<ProtectedRoute />}>
           <Route index element={<InteractiveMap />} />
         </Route>
-        <Route path="/futuretravels" element={<ProtectedRoute />}>
+        <Route path="/plan-travel" element={<ProtectedRoute />}>
+          <Route index element={<FutureTravelsComingSoon />} />
+        </Route>
+        <Route path="/future-travels" element={<ProtectedRoute />}>
           <Route index element={<FutureTravels />} />
         </Route>
         <Route path="/Weather" element={<ProtectedRoute />}>
@@ -95,9 +99,7 @@ const App = () => {
         </Route>
         {/* Redirecionar /blocked-users para /settings-and-privacy#blocked-users */}
         <Route path="/blocked-users" element={<Navigate to="/settings-and-privacy#blocked-users" replace />} />
-        <Route path="*" element={<ProtectedRoute />}>
-          <Route index element={<NotFound />} />
-        </Route>
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* Rotas do backoffice com AdminLayout */}

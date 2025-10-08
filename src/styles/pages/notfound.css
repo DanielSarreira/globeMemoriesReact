@@ -1,0 +1,615 @@
+/* notfound.css - Modern 404 Page with Globe Memories Design */
+
+/* --------------------------------------- Main Container --------------------------------------- */
+.notfound-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, 
+    #ff9900 0%, 
+    #0066cc 25%, 
+    #ff9900 50%, 
+    #0066cc 75%, 
+    #ff9900 100%);
+  background-size: 400% 400%;
+  animation: notfoundGradientShift 8s ease infinite;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Animated background gradient */
+@keyframes notfoundGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* --------------------------------------- Background Elements --------------------------------------- */
+
+/* Floating particles */
+.notfound-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.notfound-particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  animation: notfoundFloat 8s infinite ease-in-out;
+}
+
+.notfound-particle-0 { width: 4px; height: 4px; left: 5%; animation-delay: 0s; }
+.notfound-particle-1 { width: 6px; height: 6px; left: 15%; animation-delay: 0.8s; }
+.notfound-particle-2 { width: 3px; height: 3px; left: 25%; animation-delay: 1.6s; }
+.notfound-particle-3 { width: 5px; height: 5px; left: 35%; animation-delay: 2.4s; }
+.notfound-particle-4 { width: 4px; height: 4px; left: 45%; animation-delay: 3.2s; }
+.notfound-particle-5 { width: 7px; height: 7px; left: 55%; animation-delay: 4s; }
+.notfound-particle-6 { width: 3px; height: 3px; left: 65%; animation-delay: 4.8s; }
+.notfound-particle-7 { width: 5px; height: 5px; left: 75%; animation-delay: 5.6s; }
+.notfound-particle-8 { width: 4px; height: 4px; left: 85%; animation-delay: 6.4s; }
+.notfound-particle-9 { width: 6px; height: 6px; left: 95%; animation-delay: 7.2s; }
+.notfound-particle-10 { width: 3px; height: 3px; left: 10%; animation-delay: 1.2s; }
+.notfound-particle-11 { width: 5px; height: 5px; left: 30%; animation-delay: 2s; }
+.notfound-particle-12 { width: 4px; height: 4px; left: 50%; animation-delay: 2.8s; }
+.notfound-particle-13 { width: 6px; height: 6px; left: 70%; animation-delay: 3.6s; }
+.notfound-particle-14 { width: 3px; height: 3px; left: 90%; animation-delay: 4.4s; }
+
+@keyframes notfoundFloat {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+/* Floating travel icons */
+.notfound-floating-icons {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.notfound-floating-icons > div {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.3;
+  animation: notfoundFloatIcon 12s infinite ease-in-out;
+}
+
+.notfound-icon-plane { top: 10%; left: 85%; animation-delay: 0s; }
+.notfound-icon-globe { top: 20%; left: 10%; animation-delay: 2s; }
+.notfound-icon-camera { top: 60%; left: 90%; animation-delay: 4s; }
+.notfound-icon-compass { top: 75%; left: 15%; animation-delay: 6s; }
+.notfound-icon-map { top: 40%; left: 95%; animation-delay: 8s; }
+.notfound-icon-suitcase { top: 85%; left: 80%; animation-delay: 10s; }
+
+@keyframes notfoundFloatIcon {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+  25% { transform: translateY(-30px) rotate(10deg); opacity: 0.6; }
+  50% { transform: translateY(-15px) rotate(-10deg); opacity: 0.4; }
+  75% { transform: translateY(-25px) rotate(5deg); opacity: 0.5; }
+}
+
+/* --------------------------------------- Main Content --------------------------------------- */
+.notfound-content {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 1s ease-out;
+  z-index: 10;
+  max-width: 900px;
+  width: 100%;
+}
+
+.notfound-content.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --------------------------------------- 404 Error Display --------------------------------------- */
+.notfound-error-display {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.notfound-404 {
+  font-size: 8rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.1em;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.notfound-digit {
+  display: inline-block;
+  animation: notfoundDigitPulse 2s ease-in-out infinite;
+  background: linear-gradient(45deg, #fff, #f0f0f0, #fff);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: notfoundShimmer 3s ease-in-out infinite;
+}
+
+.notfound-digit:nth-child(1) { animation-delay: 0s; }
+.notfound-digit:nth-child(2) { animation-delay: 0.3s; }
+.notfound-digit:nth-child(3) { animation-delay: 0.6s; }
+
+.notfound-middle {
+  transform: scale(1.2);
+  color: #ffeb3b;
+}
+
+@keyframes notfoundDigitPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes notfoundShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Glitch effect overlay - Very subtle and rare */
+.notfound-glitch-overlay {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  animation: notfoundGlitch 20s infinite;
+}
+
+.notfound-glitch-text {
+  font-size: 8rem;
+  font-weight: 900;
+  color: rgba(255, 0, 64, 0.15);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+  filter: blur(2px);
+}
+
+@keyframes notfoundGlitch {
+  0%, 98%, 100% { opacity: 0; }
+  99% { opacity: 0.05; transform: translateX(-48%) skew(-0.5deg); }
+  99.5% { opacity: 0.08; transform: translateX(-52%) skew(0.5deg); }
+  99.8% { opacity: 0.03; transform: translateX(-50%) skew(0deg); }
+}
+
+/* --------------------------------------- Text Content --------------------------------------- */
+.notfound-text-content {
+  margin-bottom: 40px;
+  background-color: #f0f0f0;
+  padding: 30px;
+  border-radius: 20px;
+}
+
+.notfound-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.notfound-title-word {
+  display: inline-block;
+  animation: notfoundTitleBounce 1s ease-out;
+  color: #222121;
+}
+
+.notfound-title-word:nth-child(2) { animation-delay: 0.2s; }
+.notfound-title-word:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes notfoundTitleBounce {
+  0% { opacity: 0; transform: translateY(30px) rotateX(-90deg); }
+  50% { transform: translateY(-10px) rotateX(0deg); }
+  100% { opacity: 1; transform: translateY(0px) rotateX(0deg); }
+}
+
+.notfound-description {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.notfound-suggestions {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 25px;
+  margin: 30px auto;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.notfound-suggestions h3 {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #222222;
+}
+
+.notfound-suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.notfound-suggestions li {
+  padding: 8px 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.notfound-suggestions li:last-child {
+  border-bottom: none;
+}
+
+/* --------------------------------------- Action Buttons --------------------------------------- */
+.notfound-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.notfound-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.notfound-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.notfound-btn:hover::before {
+  left: 100%;
+}
+
+.notfound-btn-primary {
+  background: linear-gradient(135deg, #ff9900 0%, #ff6600 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notfound-btn-primary:hover {
+  background: linear-gradient(135deg, #ff6600 0%, #ff3300 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4);
+}
+
+.notfound-btn-secondary {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.notfound-btn-secondary:hover {
+  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.4);
+}
+
+.notfound-btn-accent {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.notfound-btn-accent:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+}
+
+/* --------------------------------------- Additional Links --------------------------------------- */
+.notfound-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.notfound-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 8px 15px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.notfound-link:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+/* --------------------------------------- Corner Decorations --------------------------------------- */
+.notfound-corner-decoration {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  z-index: 1;
+}
+
+.notfound-top-left {
+  top: 30px;
+  left: 30px;
+  border-right: none;
+  border-bottom: none;
+  animation: notfoundCornerGlow 3s ease-in-out infinite;
+}
+
+.notfound-top-right {
+  top: 30px;
+  right: 30px;
+  border-left: none;
+  border-bottom: none;
+  animation: notfoundCornerGlow 3s ease-in-out infinite 0.5s;
+}
+
+.notfound-bottom-left {
+  bottom: 30px;
+  left: 30px;
+  border-right: none;
+  border-top: none;
+  animation: notfoundCornerGlow 3s ease-in-out infinite 1s;
+}
+
+.notfound-bottom-right {
+  bottom: 30px;
+  right: 30px;
+  border-left: none;
+  border-top: none;
+  animation: notfoundCornerGlow 3s ease-in-out infinite 1.5s;
+}
+
+@keyframes notfoundCornerGlow {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* --------------------------------------- Responsive Design --------------------------------------- */
+
+/* Tablet adjustments */
+@media (max-width: 1024px) {
+  .notfound-404 {
+    font-size: 6rem;
+    gap: 15px;
+  }
+  
+  .notfound-glitch-text {
+    font-size: 6rem;
+  }
+  
+  .notfound-title {
+    font-size: 2.2rem;
+  }
+  
+  .notfound-description {
+    font-size: 1.1rem;
+  }
+  
+  .notfound-actions {
+    gap: 12px;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .notfound-container {
+    padding: 15px;
+  }
+  
+  .notfound-404 {
+    font-size: 4rem;
+    gap: 10px;
+    flex-direction: row;
+  }
+  
+  .notfound-glitch-text {
+    font-size: 4rem;
+    color: rgba(255, 0, 64, 0.2);
+  }
+  
+  .notfound-glitch-overlay {
+    animation: notfoundGlitch 30s infinite;
+  }
+  
+  .notfound-title {
+    font-size: 1.8rem;
+  }
+  
+  .notfound-description {
+    font-size: 1rem;
+    padding: 0 10px;
+  }
+  
+  .notfound-suggestions {
+    padding: 20px;
+    margin: 20px auto;
+  }
+  
+  .notfound-suggestions h3 {
+    font-size: 1rem;
+  }
+  
+  .notfound-suggestions li {
+    font-size: 0.9rem;
+  }
+  
+  .notfound-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .notfound-btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    min-width: 200px;
+  }
+  
+  .notfound-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .notfound-link {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .notfound-floating-icons > div {
+    font-size: 1.5rem;
+  }
+
+  .notfound-corner-decoration {
+    width: 40px;
+    height: 40px;
+  }
+
+  .notfound-top-left, .notfound-top-right { top: 20px; }
+  .notfound-bottom-left, .notfound-bottom-right { bottom: 20px; }
+  .notfound-top-left, .notfound-bottom-left { left: 20px; }
+  .notfound-top-right, .notfound-bottom-right { right: 20px; }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .notfound-404 {
+    font-size: 3rem;
+  }
+  
+  .notfound-glitch-text {
+    font-size: 3rem;
+    color: rgba(255, 0, 64, 0.1);
+  }
+  
+  .notfound-glitch-overlay {
+    animation: notfoundGlitch 45s infinite;
+  }
+  
+  .notfound-title {
+    font-size: 1.5rem;
+  }
+  
+  .notfound-description {
+    font-size: 0.9rem;
+  }
+  
+  .notfound-btn {
+    min-width: 180px;
+    padding: 8px 16px;
+  }
+}
+
+/* --------------------------------------- Additional Animations --------------------------------------- */
+
+/* Heart pulse animation for emojis */
+@keyframes notfoundHeartPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Fade in animation for content sections */
+@keyframes notfoundFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add some interactive hover effects for emoji */
+.notfound-description:hover {
+  animation: notfoundHeartPulse 0.6s ease;
+}
+
+/* Special animation for heart pulse in mobile double-tap */
+@keyframes heartPulse {
+  0% { 
+    transform: translate(-50%, -50%) scale(0.8); 
+    opacity: 0; 
+  }
+  15% { 
+    transform: translate(-50%, -50%) scale(1.2); 
+    opacity: 1; 
+  }
+  30% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(1.4); 
+    opacity: 0; 
+  }
+}

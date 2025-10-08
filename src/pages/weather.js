@@ -5,6 +5,7 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale } from 'chart.js';
 import axios from 'axios';
 import TravelsData from '../data/travelsData';
+import Toast from '../components/Toast';
 // ...existing code...
 import { useWeather } from '../context/WeatherContext';
 import '../styles/pages/globe-memories-interactive-map.css'; // Importar CSS do mapa para o modal
@@ -197,6 +198,19 @@ const WeatherPage = () => {
   const [climateSuggestions, setClimateSuggestions] = useState('');
   const [unit, setUnit] = useState('C'); // Celsius ou Fahrenheit
   const currentWeatherRef = useRef(null);
+  
+  // Toast state
+  const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
+  
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ message, type, isVisible: true });
+    setTimeout(() => setToast({ message: '', type: '', isVisible: false }), 2600);
+  };
+  
+  const hideToast = () => {
+    setToast({ message: '', type: '', isVisible: false });
+  };
   const [showAllDays, setShowAllDays] = useState(false);
 
   const [futureTravels, setFutureTravels] = useState(() => {
@@ -309,6 +323,7 @@ const WeatherPage = () => {
       return coords;
     } catch (error) {
       console.error('Erro ao obter coordenadas:', error.response ? error.response.data : error.message);
+      showToast('Erro ao obter coordenadas da cidade. Tente novamente.', 'error');
       return null;
     }
   };
@@ -339,6 +354,7 @@ const WeatherPage = () => {
       }
     } catch (error) {
       console.error('Erro ao obter sugestões:', error.response ? error.response.data : error.message);
+      showToast('Erro ao obter sugestões de cidades. Tente novamente.', 'error');
       setCitySuggestions([]);
     }
   };
@@ -703,6 +719,7 @@ const WeatherPage = () => {
       setSelectedTravel(null);
     } else {
       setWeatherError('Por favor, insira uma cidade válida (mínimo 2 caracteres).');
+      showToast('Por favor, insira uma cidade válida (mínimo 2 caracteres).', 'error');
     }
   };
 
@@ -710,6 +727,7 @@ const WeatherPage = () => {
   const handleSuggestionClick = (suggestion) => {
     if (!isValidCoordinate(suggestion.lat, suggestion.lon)) {
       setWeatherError('Coordenadas inválidas para a cidade selecionada.');
+      showToast('Coordenadas inválidas para a cidade selecionada.', 'error');
       return;
     }
     setUserLocation({
@@ -721,6 +739,7 @@ const WeatherPage = () => {
     setSearchCity('');
     setCitySuggestions([]);
     setSelectedTravel(null);
+    showToast(`Localização alterada para ${suggestion.name}`, 'success');
   };
 
   // Manipular localização atual
@@ -748,6 +767,7 @@ const WeatherPage = () => {
               admin1: admin1,
             });
             setSelectedTravel(null);
+            showToast('Localização atual obtida com sucesso!', 'success');
           } catch (error) {
             console.error('Erro ao obter nome da cidade:', error.message);
             setUserLocation({
@@ -922,6 +942,7 @@ const WeatherPage = () => {
       : forecastData.slice(0, 10);
 
   return (
+    <React.Fragment>
     <div className="weather-page max-w-6xl mx-auto p-6 bg-gray-100 min-h-screen">
       {showInitialModal && (
         <div className="gm-map-welcome-overlay">
@@ -981,11 +1002,39 @@ const WeatherPage = () => {
               type="text"
               value={searchCity}
               onChange={(e) => {
-                setSearchCity(e.target.value);
-                fetchCitySuggestions(e.target.value);
+                const rawValue = e.target.value;
+                
+                if (rawValue.length > 50) {
+                  showToast('Nome da cidade não pode exceder 50 caracteres!', 'error');
+                  return;
+                }
+
+                // Sanitizar input de cidade
+                const sanitized = rawValue
+                  .replace(/<script[^>]*>.*?<\/script>/gi, '')
+                  .replace(/javascript:/gi, '')
+                  .replace(/on\w+\s*=/gi, '')
+                  .replace(/[<>]/g, '')
+                  .trim();
+
+                if (sanitized !== rawValue.trim() && rawValue.trim() !== '') {
+                  showToast('Nome da cidade contém caracteres não permitidos que foram removidos!', 'error');
+                }
+
+                // Validar se contém apenas caracteres permitidos para nomes de cidade
+                if (sanitized && !/^[a-zA-ZÀ-ÿ\s,.\-''`]+$/.test(sanitized)) {
+                  showToast('Nome da cidade contém caracteres não permitidos!', 'error');
+                  return;
+                }
+
+                setSearchCity(sanitized);
+                if (sanitized) {
+                  fetchCitySuggestions(sanitized);
+                }
               }}
               placeholder="Pesquisar cidade (ex.: Torres Vedras)"
               className="weather-search-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg transition-all"
+              maxLength={50}
             />
             <button 
               type="submit" 
@@ -1213,6 +1262,13 @@ const WeatherPage = () => {
         </div>
       </div>
     </div>
+    <Toast
+      message={toast.message}
+      type={toast.type}
+      isVisible={toast.isVisible}
+      onClose={hideToast}
+    />
+    </React.Fragment>
   );
 };
 

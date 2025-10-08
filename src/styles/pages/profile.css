@@ -40,7 +40,6 @@
   margin-right: 60px;
   padding: var(--spacing-xl);
   position: relative;
-  
 }
 
 .profile-container h2 {
@@ -793,6 +792,7 @@
 }
 
 .no-travels {
+  margin-top: 25px;
   text-align: center;
   padding: var(--spacing-xl);
   color: var(--text-muted);
@@ -1025,17 +1025,34 @@ form.profile-form::before {
   flex-wrap: wrap;
   gap: var(--spacing-xl);
   margin-top: var(--spacing-lg);
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .form-left,
 .form-right {
   flex: 1;
-  min-width: 350px;
+  min-width: 300px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
   padding: var(--spacing-xl);
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--border-light);
   backdrop-filter: blur(5px);
+}
+
+@media (max-width: 1024px) {
+  .form-left,
+  .form-right {
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-left,
+  .form-right {
+    min-width: auto;
+    width: 100%;
+  }
 }
 
 .form-left h3,
@@ -1741,13 +1758,53 @@ input[type="file"] {
 }
 
 /* Mobile Responsive --------------------------------------- */
-@media (max-width: 768px) {
+
+/* Tablet (1024px and below) */
+@media (max-width: 1024px) {
+  .profile-page {
+    padding: 20px 15px;
+  }
+  
   .profile-container {
+    margin: 0 auto;
+    max-width: 900px;
+    padding: var(--spacing-lg);
+  }
+  
+  .form-section {
+    gap: var(--spacing-lg);
+    justify-content: center;
+  }
+  
+  .form-left,
+  .form-right {
+    max-width: 420px;
+  }
+  
+  .form-group-LeftPosition,
+  .form-group-RightPosition {
+    width: 48%;
+  }
+}
+
+/* Mobile Large (768px and below) */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 15px 10px;
+    margin-top: 20px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .profile-container {
+    margin: 0;
     padding: var(--spacing-md);
+    max-width: 100%;
   }
   
   .profile-container h2 {
     font-size: 2rem;
+    margin-bottom: var(--spacing-lg);
   }
   
   .profile-header {
@@ -1802,7 +1859,8 @@ input[type="file"] {
   .form-left,
   .form-right {
     min-width: auto;
-    padding: var(--spacing-md);
+    width: 100%;
+    padding: var(--spacing-lg);
   }
   
   .form-group-LeftPosition,
@@ -1810,11 +1868,18 @@ input[type="file"] {
     float: none;
     width: 100%;
     margin-right: 0;
+    margin-bottom: var(--spacing-md);
   }
   
   .button-group {
     flex-direction: column;
     gap: var(--spacing-md);
+  }
+  
+  .save-button,
+  .cancel-button {
+    padding: var(--spacing-lg);
+    font-size: 1rem;
   }
   
   .travels-grid {
@@ -1855,55 +1920,102 @@ input[type="file"] {
     font-size: 1.5rem;
   }
   
+  /* Cover photo adjustments for mobile */
+  .cover-photo-section {
+    margin-bottom: 16px;
+  }
+  
+  .cover-photo-wrapper {
+    height: 140px !important;
+  }
+  
+  .cover-photo-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .zoom-controls {
+    gap: 6px;
+  }
+  
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .zoom-value {
+    font-size: 12px;
+  }
+  
   /* Mobile-specific animations */
   .travel-card:hover {
-    transform: translateY(-5px) scale(1.01);
+    transform: translateY(-3px) scale(1.01);
   }
   
   .stat-item-box:hover,
   .destination-box:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
   }
 }
 
+/* Mobile Small (480px and below) */
 @media (max-width: 480px) {
+  .profile-page {
+    padding: 10px 5px;
+    margin-top: 15px;
+  }
+  
   .profile-container {
-    padding: var(--spacing-sm);
+    margin: 0;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
   }
   
   .profile-container h2 {
-    font-size: 1.8rem;
+    font-size: 1.7rem;
+    margin-bottom: var(--spacing-md);
   }
   
   .profile-header {
     padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
   }
   
   .profile-picture-container,
   .profile-picture-containerEdit {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
   }
   
   .stats {
     gap: var(--spacing-sm);
+    flex-direction: column;
+    align-items: center;
   }
   
   .stat-item {
-    min-width: 80px;
-    padding: var(--spacing-xs);
+    min-width: 100px;
+    width: 100%;
+    max-width: 200px;
+    padding: var(--spacing-md);
+    text-align: center;
   }
   
   .stat-item strong {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
   }
   
   .stats-grid {
     grid-template-columns: 1fr;
+    max-width: 300px;
+    margin: 0 auto;
   }
   
   .profile-actions {
     flex-direction: column;
+    width: 100%;
   }
   
   .follow-button,
@@ -1912,16 +2024,199 @@ input[type="file"] {
   .manage-travels-button {
     width: 100%;
     margin-bottom: var(--spacing-sm);
+    padding: var(--spacing-md);
+    justify-content: center;
   }
   
   .form-left,
   .form-right {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
   }
   
-  .modal-content-profile {
-    width: 98%;
+  .form-left h3,
+  .form-right h3 {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+  
+  .form-group,
+  .form-group-LeftPosition,
+  .form-group-RightPosition,
+  .form-group-CenterPosition {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
     padding: var(--spacing-md);
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: var(--border-radius);
+  }
+  
+  .button-group {
+    margin-top: var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+  
+  .save-button,
+  .cancel-button {
+    padding: var(--spacing-lg);
+    font-size: 1rem;
+    border-radius: var(--border-radius);
+  }
+  
+  /* Cover photo for mobile */
+  .cover-photo-wrapper {
+    height: 120px !important;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .cover-photo-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    width: 100%;
+  }
+  
+  .cover-photo-controls .upload-btn {
+    width: 100%;
+    max-width: 220px;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+  
+  .cover-photo-controls .zoom-controls {
+    width: 100%;
+    max-width: 280px;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+  
+  .cover-photo-controls .zoom-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 6px;
+  }
+  
+  .cover-photo-controls .zoom-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0066cc;
+    min-width: 50px;
+    text-align: center;
+  }
+  
+  .cover-photo-controls .reset-btn {
+    width: 100%;
+    max-width: 160px;
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+  
+  /* Photo editor adjustments */
+  .photo-editor {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+  }
+  
+  .zoom-controls {
+    gap: 0.5rem;
+    padding: 8px;
+  }
+  
+  .zoom-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+  
+  .upload-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    width: 100%;
+    max-width: 180px;
+    justify-content: center;
+  }
+  
+  /* Modal adjustments */
+  .modal-content-profile {
+    width: 95%;
+    max-width: 400px;
+    padding: var(--spacing-md);
+    margin: var(--spacing-sm);
+    border-radius: var(--border-radius);
+  }
+  
+  .modal-content-profile h2 {
+    font-size: 1.4rem;
+  }
+  
+  /* Ensure proper spacing */
+  form.profile-form {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+  }
+  
+  /* Text size adjustments */
+  .form-group label {
+    font-size: 0.9rem;
+  }
+  
+  .validation-message {
+    font-size: 11px;
+  }
+  
+  /* Better touch targets */
+  .control-button {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+  
+  /* Center content on mobile */
+  .profile-photo-section,
+  .cover-photo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  /* Improve form group spacing */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+  
+  .form-group label {
+    text-align: left;
+    margin-bottom: 8px;
+  }
+  
+  /* Consistent button styling */
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 300px;
+    margin: var(--spacing-lg) auto 0;
   }
 }
 
@@ -2207,14 +2502,20 @@ input[type="file"] {
 
 /* Responsive Design for Photo Section */
 @media (max-width: 768px) {
+  .profile-photo-section {
+    margin-bottom: 1.5rem;
+  }
+  
   .photo-wrapper {
     width: 120px;
     height: 120px;
   }
   
   .photo-editor {
-    max-width: 280px;
+    max-width: 100%;
+    width: 100%;
     padding: 1rem;
+    margin: 0 auto;
   }
   
   .zoom-controls {
@@ -2229,24 +2530,50 @@ input[type="file"] {
   }
   
   .upload-btn {
-    padding: 8px 16px;
+    padding: 10px 16px;
     font-size: 13px;
+    width: 100%;
+    max-width: 200px;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
+  .profile-photo-section {
+    margin-bottom: 1rem;
+  }
+  
   .photo-wrapper {
     width: 100px;
     height: 100px;
   }
   
   .photo-editor {
-    max-width: 260px;
+    max-width: 100%;
     padding: 0.875rem;
+    margin: 0;
   }
   
   .editor-tips span {
     font-size: 10px;
+  }
+  
+  .zoom-controls {
+    padding: 8px;
+    gap: 0.4rem;
+  }
+  
+  .zoom-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  
+  .upload-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    width: 100%;
+    max-width: 180px;
   }
 }
 
@@ -2256,4 +2583,162 @@ input[type="file"] {
 .reset-btn:focus {
   outline: 2px solid #0066cc;
   outline-offset: 2px;
+}
+
+/* Additional Mobile Optimizations */
+@media (max-width: 360px) {
+  .profile-page {
+    padding: 8px 5px;
+    margin-top: 10px;
+  }
+  
+  .profile-container {
+    padding: var(--spacing-sm);
+    margin: 0;
+  }
+  
+  .profile-container h2 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  .form-left,
+  .form-right {
+    padding: var(--spacing-sm);
+    margin: 0 auto;
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .form-left h3,
+  .form-right h3 {
+    font-size: 1.2rem;
+    text-align: center;
+  }
+  
+  .photo-wrapper {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto;
+  }
+  
+  .cover-photo-wrapper {
+    height: 100px !important;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+  
+  .upload-btn {
+    font-size: 12px;
+    padding: 8px 14px;
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .zoom-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px;
+  }
+  
+  .button-group {
+    max-width: 250px;
+    margin: var(--spacing-lg) auto 0;
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (max-height: 600px) and (orientation: landscape) {
+  .profile-page {
+    padding: 0px !important;
+  }
+  
+  .profile-container {
+    padding: var(--spacing-md);
+  }
+  
+  .form-section {
+    gap: var(--spacing-md);
+  }
+  
+  .photo-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .cover-photo-wrapper {
+    height: 80px !important;
+  }
+}
+
+/* Prevent horizontal scroll on very small screens */
+@media (max-width: 320px) {
+  * {
+    box-sizing: border-box;
+  }
+  
+  .profile-page,
+  .profile-container,
+  form.profile-form,
+  .form-left,
+  .form-right {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    min-width: 0;
+  }
+  
+  .button-group {
+    width: 100%;
+  }
+  
+  .save-button,
+  .cancel-button {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+/* High DPI/Retina display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .profile-photo,
+  .cover-photo {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Improve scrolling performance on mobile */
+@media (max-width: 768px) {
+  .profile-page {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+  }
+  
+  /* Reduce animations on mobile for better performance */
+  .travel-card:hover,
+  .stat-item-box:hover,
+  .destination-box:hover {
+    transform: none;
+  }
+  
+  /* Simplify shadows on mobile */
+  .photo-wrapper,
+  .photo-editor,
+  form.profile-form {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
 }

@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
 import TravelsData from '../data/travelsData';
-// ...existing code...
+import '../styles/pages/users.css';
 import { FaCheck, FaFlag, FaBan, FaEllipsisV } from 'react-icons/fa';
+import Toast from '../components/Toast';
 
 const Users = () => {
   const { user } = useAuth();
   const [usersList, setUsersList] = useState([]);
   const [following, setFollowing] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingFilters, setLoadingFilters] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [sortOption, setSortOption] = useState('all');
@@ -35,19 +37,93 @@ const Users = () => {
   });
   const [otherReason, setOtherReason] = useState('');
 
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  // Filtro de países selecionados
+  const [selectedCountries, setSelectedCountries] = useState([]);
+
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 1000);
+  };
+
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
+
+  // Gerar lista de países únicos dos usuários
+  const countryList = Array.from(new Set(usersList.map(u => u.nationality).filter(Boolean))).sort();
+
+  const handleCountryFilterChange = (country) => {
+    setSelectedCountries((prev) =>
+      prev.includes(country)
+        ? prev.filter((c) => c !== country)
+        : [...prev, country]
+    );
+  };
+
+  // Mapeamento de países para bandeiras (emoji flags)
+  const countryFlags = {
+    'Portugal': '🇵🇹',
+    'Brasil': '🇧🇷',
+    'Espanha': '🇪🇸',
+    'França': '🇫🇷',
+    'Alemanha': '🇩🇪',
+    'Reino Unido': '🇬🇧',
+    'Itália': '🇮🇹',
+    'Estados Unidos': '🇺🇸',
+    'Canadá': '🇨🇦',
+    'Holanda': '🇳🇱',
+    'Bélgica': '🇧🇪',
+    'Suíça': '🇨🇭',
+    'Áustria': '🇦🇹',
+    'Noruega': '🇳🇴',
+    'Suécia': '🇸🇪',
+    'Dinamarca': '🇩🇰',
+    'Finlândia': '🇫🇮',
+    'Polônia': '🇵🇱',
+    'República Checa': '🇨🇿',
+    'Hungria': '🇭🇺',
+    'Grécia': '🇬🇷',
+    'Turquia': '🇹🇷',
+    'Rússia': '🇷🇺',
+    'Japão': '🇯🇵',
+    'China': '🇨🇳',
+    'Coreia do Sul': '🇰🇷',
+    'Austrália': '🇦🇺',
+    'Nova Zelândia': '🇳🇿',
+    'Argentina': '🇦🇷',
+    'Chile': '🇨🇱',
+    'México': '🇲🇽',
+    'Colômbia': '🇨🇴',
+    'Peru': '🇵🇪',
+    'Outros': '🌍'
+  };
+
   const mockUsers = [
-    { id: 1, username: 'tiago', name: 'Tiago', profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg', bio: 'Amante de viagens e fotografia!', travelCount: 0, followersCount: 120, trendingScore: 80, joinDate: '2024-01-15', privacy: 'public' },
-    { id: 2, username: 'AnaSilva', name: 'Ana Silva', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.', travelCount: 0, followersCount: 200, trendingScore: 90, joinDate: '2023-06-10', privacy: 'private' },
-    { id: 3, username: 'PedroCosta', name: 'Pedro Costa', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.', travelCount: 0, followersCount: 80, trendingScore: 60, joinDate: '2024-03-22', privacy: 'public' },
-    { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.', travelCount: 0, followersCount: 150, trendingScore: 85, joinDate: '2023-09-05', privacy: 'private' },
-    { id: 5, username: 'JoaoPereira', name: 'João Pereira', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
-    { id: 6, username: 'MariaOliveira', name: 'Maria Oliveira', profilePicture: 'https://randomuser.me/api/portraits/women/6.jpg', bio: 'História e arte em cada destino.', travelCount: 0, followersCount: 110, trendingScore: 75, joinDate: '2023-11-30', privacy: 'private' },
-    { id: 7, username: 'LucasSantos', name: 'Lucas Santos', profilePicture: 'https://randomuser.me/api/portraits/men/7.jpg', bio: 'Sempre em busca do próximo voo.', travelCount: 0, followersCount: 130, trendingScore: 88, joinDate: '2024-04-01', privacy: 'public' },
-    { id: 8, username: 'BeatrizLima', name: 'Beatriz Lima', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
-    { id: 9, username: 'Teste', name: 'Teste User', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 50, trendingScore: 55, joinDate: '2024-04-20', privacy: 'private' },
+    { id: 1, username: 'tiago', name: 'Tiago', nationality: 'Bahamas', profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg', bio: 'Amante de viagens e fotografia!', travelCount: 0, followersCount: 120, trendingScore: 80, joinDate: '2024-01-15', privacy: 'public' },
+    { id: 2, username: 'AnaSilva', name: 'Ana Silva', nationality: 'Uganda', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.', travelCount: 0, followersCount: 200, trendingScore: 90, joinDate: '2023-06-10', privacy: 'private' },
+    { id: 3, username: 'PedroCosta', name: 'Pedro Costa', nationality: 'Omã', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.', travelCount: 0, followersCount: 80, trendingScore: 60, joinDate: '2024-03-22', privacy: 'public' },
+    { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', nationality: 'França', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.', travelCount: 0, followersCount: 150, trendingScore: 85, joinDate: '2023-09-05', privacy: 'private' },
+    { id: 5, username: 'JoaoPereira', name: 'João Pereira', nationality: 'Alemanha', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
+    { id: 6, username: 'MariaOliveira', name: 'Maria Oliveira', nationality: 'Reino Unido', profilePicture: 'https://randomuser.me/api/portraits/women/6.jpg', bio: 'História e arte em cada destino.', travelCount: 0, followersCount: 110, trendingScore: 75, joinDate: '2023-11-30', privacy: 'private' },
+    { id: 7, username: 'LucasSantos', name: 'Lucas Santos', nationality: 'Itália', profilePicture: 'https://randomuser.me/api/portraits/men/7.jpg', bio: 'Sempre em busca do próximo voo.', travelCount: 0, followersCount: 130, trendingScore: 88, joinDate: '2024-04-01', privacy: 'public' },
+    { id: 8, username: 'BeatrizLima', name: 'Beatriz Lima', nationality: 'Estados Unidos', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
+    { id: 9, username: 'Teste', name: 'Teste User', nationality: 'Canadá', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 50, trendingScore: 55, joinDate: '2024-04-20', privacy: 'private' },
+    { id: 10, username: 'BeatrizLima', name: 'Beatriz Lima', nationality: 'Gabão', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
+    { id: 11, username: 'cris', name: 'Cristiano', nationality: 'Croácia', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
+    { id: 12, username: 'cristisilva', name: 'Cristi silva', nationality: 'Croácia', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
   ];
 
   useEffect(() => {
+    // Primeiro carrega os filtros/controles imediatamente
+    setLoadingFilters(false);
+
+    // Depois carrega os usuários com um pequeno delay para melhor UX
     setTimeout(() => {
       const updatedUsers = mockUsers.map((mockUser) => {
         const userTravels = TravelsData.filter((travel) => travel.user === mockUser.username);
@@ -63,8 +139,8 @@ const Users = () => {
         setUsersList(updatedUsers.filter((u) => u.username !== user.username));
         setFollowing(['AnaSilva', 'PedroCosta']);
       }
-      setLoading(false);
-    }, 1000);
+      setLoadingUsers(false);
+    }, 300);
   }, [user]);
 
   useEffect(() => {
@@ -90,13 +166,15 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Inicie sessão para seguir utilizadores.');
+      showToast('Inicie sessão para seguir utilizadores.', 'error');
       return;
     }
     if (targetUser.privacy === 'public') {
       setFollowing([...following, targetUser.username]);
+      showToast(`Agora segues ${targetUser.name}!`, 'success');
     } else {
       setPendingRequests([...pendingRequests, targetUser.username]);
+      showToast(`Pedido de seguimento enviado para ${targetUser.name}!`, 'success');
       setShowModal(true);
       setTimeout(() => {
         setShowModal(false);
@@ -109,16 +187,43 @@ const Users = () => {
     e.stopPropagation();
     setFollowing(following.filter((username) => username !== targetUsername));
     setPendingRequests(pendingRequests.filter((username) => username !== targetUsername));
+    showToast('Deixaste de seguir este utilizador!', 'success');
   };
 
   const handleCancelRequest = (targetUsername, e) => {
     e.preventDefault();
     e.stopPropagation();
     setPendingRequests(pendingRequests.filter((username) => username !== targetUsername));
+    showToast('Pedido de seguimento cancelado!', 'info');
+  };
+
+  // Função para sanitizar inputs de pesquisa
+  const sanitizeSearchInput = (input) => {
+    if (!input) return '';
+    
+    return input
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .replace(/[<>]/g, '')
+      .trim();
   };
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
+    const rawValue = e.target.value;
+    
+    if (rawValue.length > 50) {
+      showToast('Pesquisa não pode exceder 50 caracteres!', 'error');
+      return;
+    }
+
+    const sanitized = sanitizeSearchInput(rawValue);
+    
+    if (sanitized !== rawValue.trim() && rawValue.trim() !== '') {
+      showToast('Pesquisa contém caracteres não permitidos que foram removidos!', 'error');
+    }
+
+    setSearchTerm(sanitized);
   };
 
   const handleSortChange = (option) => {
@@ -129,7 +234,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Inicie sessão para denunciar utilizadores.');
+      showToast('Inicie sessão para denunciar utilizadores.', 'error');
       return;
     }
     setSelectedUser(targetUser);
@@ -141,7 +246,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Inicie sessão para bloquear utilizadores.');
+      showToast('Inicie sessão para bloquear utilizadores.', 'error');
       return;
     }
     setSelectedUser(targetUser);
@@ -163,11 +268,12 @@ const Users = () => {
                                (reportReasons.other && otherReason.trim());
       
       if (!hasSelectedReason) {
-        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
 
       setReportedUsers([...reportedUsers, selectedUser.username]);
+      showToast('Utilizador denunciado com sucesso!', 'success');
       setShowReportModal(false);
       setSelectedUser(null);
       // Remove from following if currently following
@@ -192,6 +298,7 @@ const Users = () => {
   const confirmBlockUser = () => {
     if (selectedUser) {
       setBlockedUsers([...blockedUsers, selectedUser.username]);
+      showToast('Utilizador bloqueado com sucesso!', 'success');
       setShowBlockModal(false);
       setSelectedUser(null);
       // Remove from following if currently following
@@ -206,11 +313,15 @@ const Users = () => {
   };
 
   // Search by username or name and filter out blocked users
-  const filteredUsers = usersList.filter((listedUser) =>
-    (listedUser.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    listedUser.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    !blockedUsers.includes(listedUser.username)
-  );
+  // Filtro por país + busca + bloqueados
+  const filteredUsers = usersList.filter((listedUser) => {
+    const matchesSearch = listedUser.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      listedUser.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const notBlocked = !blockedUsers.includes(listedUser.username);
+    const matchesCountry =
+      selectedCountries.length === 0 || selectedCountries.includes(listedUser.nationality);
+    return matchesSearch && notBlocked && matchesCountry;
+  });
 
   // Sort users based on selected option
   const sortedUsers = [...filteredUsers].sort((a, b) => {
@@ -229,68 +340,106 @@ const Users = () => {
     }
   });
 
-  if (loading) return <div className="users-page"><div className="loading-spinner"></div></div>;
-
   return (
     <div className="users-page">
-      <div className="search-filter-container">
-        {!isMobile && (
-          <div className="users-filters">
-            <div className="search-bar" style={{ marginRight: 12 }}>
+      {loadingFilters ? (
+        <div className="users-controls">
+          <div className="loading-spinner-gradient">
+            <div className="spinner-inner"></div>
+            <p>A carregar filtros...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="users-controls">
+    
+        
+        {/* Linha principal: Pesquisa + Filtros de ordenação */}
+        <div className="main-filters-row">
+          {/* Barra de pesquisa */}
+          <div className="search-bar-inline">
+            <div className="search-input-wrapper">
+              <span className="search-icon"></span>
               <input
                 type="text"
-                placeholder="Pesquisar Viajantes por nome ou utilizador..."
+                placeholder="Pesquisar por nome ou utilizador..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="search-input"
+                maxLength={50}
               />
             </div>
+          </div>
+
+          {/* Filtros de ordenação */}
+          <div className="sort-filters-inline">
             <button
-              className={sortOption === 'all' ? 'filter-button active' : 'filter-button'}
+              className={`filter-button ${sortOption === 'all' ? 'active' : ''}`}
               onClick={() => handleSortChange('all')}
             >
               Todos os Viajantes
             </button>
             <button
-              className={sortOption === 'trending' ? 'filter-button active' : 'filter-button'}
+              className={`filter-button ${sortOption === 'trending' ? 'active' : ''}`}
               onClick={() => handleSortChange('trending')}
             >
-              Viajantes em Destaque
+              Em Destaque
             </button>
             <button
-              className={sortOption === 'mostFollowers' ? 'filter-button active' : 'filter-button'}
+              className={`filter-button ${sortOption === 'mostFollowers' ? 'active' : ''}`}
               onClick={() => handleSortChange('mostFollowers')}
             >
-              Viajantes Mais Seguidos
+              Mais Seguidos
             </button>
             <button
-              className={sortOption === 'newTravelers' ? 'filter-button active' : 'filter-button'}
+              className={`filter-button ${sortOption === 'newTravelers' ? 'active' : ''}`}
               onClick={() => handleSortChange('newTravelers')}
             >
               Novos Viajantes
             </button>
             <button
-              className={sortOption === 'mostTravels' ? 'filter-button active' : 'filter-button'}
+              className={`filter-button ${sortOption === 'mostTravels' ? 'active' : ''}`}
               onClick={() => handleSortChange('mostTravels')}
             >
-              Perfis com Mais Viagens
+              Mais Viagens
             </button>
           </div>
-        )}
-        {isMobile && (
-          <div className="search-bar">
-            <input
-              type="text"
-              placeholder="Pesquisar Viajantes por nome ou utilizador..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="search-input"
-            />
+        </div>
+
+        {/* Filtros de países por baixo */}
+        {countryList.length > 0 && (
+          <div className="country-filters-section">
+            <label className="filter-label">Filtrar pessoas por País</label>
+            <div className="country-filters">
+              {countryList.map((country) => (
+                <label key={country} className={`country-filter ${selectedCountries.includes(country) ? 'selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCountries.includes(country)}
+                    onChange={() => handleCountryFilterChange(country)}
+                    className="country-checkbox"
+                  />
+                  <img
+                    src={`https://flagcdn.com/24x18/${getCountryCode(country)}.png`}
+                    alt={country}
+                    className="country-flag-img"
+                  />
+                  <span className="country-name">{country}</span>
+                </label>
+              ))}
+            </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
-      <div className="users-grid">
+      {loadingUsers ? (
+        <div className="users-grid">
+          <div className="loading-spinner-gradient">
+            <div className="spinner-inner"></div>
+          </div>
+        </div>
+      ) : (
+        <div className="users-grid">
         {sortedUsers.length > 0 ? (
           sortedUsers.map((listedUser) => (
             <Link
@@ -421,6 +570,17 @@ const Users = () => {
                 <h3>
                   {listedUser.username}
                 </h3>
+                <div className="user-country" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', margin: '0.5rem 0' }}>
+                  <img
+                    className="country-flag"
+                    src={`https://flagcdn.com/24x18/${listedUser.nationality ? getCountryCode(listedUser.nationality) : 'un'}.png`}
+                    alt={listedUser.nationality || 'País desconhecido'}
+                    style={{ width: '24px', height: '18px', objectFit: 'cover', borderRadius: '3px', marginRight: '0.2rem', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+                  />
+                  <span className="country-name" style={{ fontWeight: '500', color: '#333', fontSize: '0.95rem' }}>
+                    {listedUser.nationality || 'País não especificado'}
+                  </span>
+                </div>
                 <p><strong>{listedUser.travelCount}</strong> Viagens</p>
               </div>
               {user && (
@@ -457,7 +617,8 @@ const Users = () => {
       ) : (
         <p className="no-users">Nenhum Viajante encontrado.</p>
       )}
-      </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -720,8 +881,234 @@ const Users = () => {
           </div>
         </div>
       )}
+      
+      {/* Toast Component */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };
+
+// Função utilitária para converter nome do país em código ISO 3166-1 alpha-2
+function getCountryCode(countryName) {
+  // Mapeamento completo dos 195 países reconhecidos pela ONU (nomes em português)
+  const map = {
+    'Afeganistão': 'af',
+    'África do Sul': 'za',
+    'Albânia': 'al',
+    'Alemanha': 'de',
+    'Andorra': 'ad',
+    'Angola': 'ao',
+    'Antígua e Barbuda': 'ag',
+    'Arábia Saudita': 'sa',
+    'Argélia': 'dz',
+    'Argentina': 'ar',
+    'Armênia': 'am',
+    'Austrália': 'au',
+    'Áustria': 'at',
+    'Azerbaijão': 'az',
+    'Bahamas': 'bs',
+    'Bangladesh': 'bd',
+    'Barbados': 'bb',
+    'Bahrein': 'bh',
+    'Bélgica': 'be',
+    'Belize': 'bz',
+    'Benin': 'bj',
+    'Bielorrússia': 'by',
+    'Bolívia': 'bo',
+    'Bósnia e Herzegovina': 'ba',
+    'Botsuana': 'bw',
+    'Brasil': 'br',
+    'Brunei': 'bn',
+    'Bulgária': 'bg',
+    'Burquina Faso': 'bf',
+    'Burundi': 'bi',
+    'Butão': 'bt',
+    'Cabo Verde': 'cv',
+    'Camarões': 'cm',
+    'Camboja': 'kh',
+    'Canadá': 'ca',
+    'Catar': 'qa',
+    'Cazaquistão': 'kz',
+    'Chade': 'td',
+    'Chile': 'cl',
+    'China': 'cn',
+    'Chipre': 'cy',
+    'Colômbia': 'co',
+    'Comores': 'km',
+    'Congo': 'cg',
+    'República Democrática do Congo': 'cd',
+    'Coreia do Norte': 'kp',
+    'Coreia do Sul': 'kr',
+    'Costa do Marfim': 'ci',
+    'Costa Rica': 'cr',
+    'Croácia': 'hr',
+    'Cuba': 'cu',
+    'Dinamarca': 'dk',
+    'Djibuti': 'dj',
+    'Dominica': 'dm',
+    'Egito': 'eg',
+    'El Salvador': 'sv',
+    'Emirados Árabes Unidos': 'ae',
+    'Equador': 'ec',
+    'Eritreia': 'er',
+    'Eslováquia': 'sk',
+    'Eslovênia': 'si',
+    'Espanha': 'es',
+    'Estados Unidos': 'us',
+    'Estônia': 'ee',
+    'Etiópia': 'et',
+    'Fiji': 'fj',
+    'Filipinas': 'ph',
+    'Finlândia': 'fi',
+    'França': 'fr',
+    'Gabão': 'ga',
+    'Gâmbia': 'gm',
+    'Gana': 'gh',
+    'Geórgia': 'ge',
+    'Granada': 'gd',
+    'Grécia': 'gr',
+    'Guatemala': 'gt',
+    'Guiana': 'gy',
+    'Guiné': 'gn',
+    'Guiné Equatorial': 'gq',
+    'Guiné-Bissau': 'gw',
+    'Haiti': 'ht',
+    'Holanda': 'nl',
+    'Honduras': 'hn',
+    'Hungria': 'hu',
+    'Iémen': 'ye',
+    'Ilhas Marshall': 'mh',
+    'Ilhas Maurício': 'mu',
+    'Ilhas Salomão': 'sb',
+    'Índia': 'in',
+    'Indonésia': 'id',
+    'Irã': 'ir',
+    'Iraque': 'iq',
+    'Irlanda': 'ie',
+    'Islândia': 'is',
+    'Israel': 'il',
+    'Itália': 'it',
+    'Jamaica': 'jm',
+    'Japão': 'jp',
+    'Jordânia': 'jo',
+    'Kiribati': 'ki',
+    'Kosovo': 'xk',
+    'Kuwait': 'kw',
+    'Laos': 'la',
+    'Lesoto': 'ls',
+    'Letônia': 'lv',
+    'Líbano': 'lb',
+    'Libéria': 'lr',
+    'Líbia': 'ly',
+    'Liechtenstein': 'li',
+    'Lituânia': 'lt',
+    'Luxemburgo': 'lu',
+    'Macedônia do Norte': 'mk',
+    'Madagáscar': 'mg',
+    'Malásia': 'my',
+    'Malawi': 'mw',
+    'Maldivas': 'mv',
+    'Mali': 'ml',
+    'Malta': 'mt',
+    'Marrocos': 'ma',
+    'Mauritânia': 'mr',
+    'México': 'mx',
+    'Micronésia': 'fm',
+    'Moçambique': 'mz',
+    'Moldávia': 'md',
+    'Mônaco': 'mc',
+    'Mongólia': 'mn',
+    'Montenegro': 'me',
+    'Myanmar': 'mm',
+    'Namíbia': 'na',
+    'Nauru': 'nr',
+    'Nepal': 'np',
+    'Nicarágua': 'ni',
+    'Níger': 'ne',
+    'Nigéria': 'ng',
+    'Noruega': 'no',
+    'Nova Zelândia': 'nz',
+    'Omã': 'om',
+    'Países Baixos': 'nl',
+    'Palau': 'pw',
+    'Palestina': 'ps',
+    'Panamá': 'pa',
+    'Papua-Nova Guiné': 'pg',
+    'Paquistão': 'pk',
+    'Paraguai': 'py',
+    'Peru': 'pe',
+    'Polônia': 'pl',
+    'Portugal': 'pt',
+    'Quênia': 'ke',
+    'Quirguistão': 'kg',
+    'Reino Unido': 'gb',
+    'República Centro-Africana': 'cf',
+    'República Checa': 'cz',
+    'República Dominicana': 'do',
+    'Romênia': 'ro',
+    'Ruanda': 'rw',
+    'Rússia': 'ru',
+    'Saara Ocidental': 'eh',
+    'Saint Kitts e Nevis': 'kn',
+    'Saint Vincent e Granadinas': 'vc',
+    'Samoa': 'ws',
+    'San Marino': 'sm',
+    'Santa Lúcia': 'lc',
+    'São Tomé e Príncipe': 'st',
+    'Senegal': 'sn',
+    'Serra Leoa': 'sl',
+    'Sérvia': 'rs',
+    'Singapura': 'sg',
+    'Síria': 'sy',
+    'Somália': 'so',
+    'Sri Lanka': 'lk',
+    'Suazilândia': 'sz',
+    'Sudão': 'sd',
+    'Sudão do Sul': 'ss',
+    'Suécia': 'se',
+    'Suíça': 'ch',
+    'Suriname': 'sr',
+    'Tailândia': 'th',
+    'Taiwan': 'tw',
+    'Tajiquistão': 'tj',
+    'Tanzânia': 'tz',
+    'Timor-Leste': 'tl',
+    'Togo': 'tg',
+    'Tonga': 'to',
+    'Trindade e Tobago': 'tt',
+    'Tunísia': 'tn',
+    'Turcomenistão': 'tm',
+    'Turquia': 'tr',
+    'Tuvalu': 'tv',
+    'Ucrânia': 'ua',
+    'Uganda': 'ug',
+    'Uruguai': 'uy',
+    'Uzbequistão': 'uz',
+    'Vanuatu': 'vu',
+    'Vaticano': 'va',
+    'Venezuela': 've',
+    'Vietnã': 'vn',
+    'Zâmbia': 'zm',
+    'Zimbábue': 'zw',
+    // fallback para outros nomes ou não reconhecidos
+    'Outros': 'un',
+    'Desconhecido': 'un'
+  };
+  // Normaliza acentuação e espaços para garantir correspondência
+  const normalized = countryName ? countryName.trim().normalize('NFD').replace(/\p{Diacritic}/gu, '') : '';
+  // Busca direta
+  if (map[countryName]) return map[countryName];
+  // Busca por nome normalizado
+  for (const key in map) {
+    const keyNorm = key.trim().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    if (keyNorm.toLowerCase() === normalized.toLowerCase()) return map[key];
+  }
+  return 'un';
+}
 
 export default Users;

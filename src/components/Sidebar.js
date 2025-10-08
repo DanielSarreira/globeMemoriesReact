@@ -71,9 +71,9 @@ const Sidebar = () => {
     { to: '/', label: 'Página Inicial', icon: <FaHome className="icon" /> },
     { to: '/travels', label: 'Descobrir Viagens', icon: <FaPlane className="icon" /> },
     { to: '/users', label: 'Seguir Viajantes', icon: <FaSearch className="icon" /> },
-    { to: '/interactivemap', label: 'Mapa Mundo', icon: <FaGlobe className="icon" /> },
+    { to: '/interactive-map', label: 'Mapa Mundo', icon: <FaGlobe className="icon" /> },
     { to: '/qanda', label: 'Forum', icon: <FaComments className="icon" /> },
-    { to: '/futuretravels', label: 'Planear Viagem', icon: <FaRoute className="icon" /> },
+    { to: '/future-travels', label: 'Planear Viagem', icon: <FaRoute className="icon" /> },
   ];
   // Determinar a posição do botão "Adicionar Viagem"
   const navItemsWithAddButton = [...navItems];

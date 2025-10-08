@@ -13,6 +13,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import InteractiveMap from './pages/InteractiveMap';
 import HelpSupport from './pages/HelpSupport';
 import FutureTravels from './pages/FutureTravels';
+import FutureTravelsComingSoon from './pages/FutureTravelsComingSoon';
 import Achievements from './pages/Achievements';
 import QandA from './pages/QandA';
 import Users from './pages/Users';
@@ -64,6 +65,11 @@ const AppRouter = () => {
             <HelpSupport />
           </ProtectedRoute>
         } />
+        <Route path="/plan-travel" element={
+          <ProtectedRoute>
+            <FutureTravelsComingSoon />
+          </ProtectedRoute>
+        } />
         <Route path="/future-travels" element={
           <ProtectedRoute>
             <FutureTravels />
@@ -92,6 +98,16 @@ const AppRouter = () => {
         <Route path="/weather" element={
           <ProtectedRoute>
             <Weather />
+          </ProtectedRoute>
+        } />
+        <Route path="/travel/:id" element={
+          <ProtectedRoute>
+            <Travels />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile/:username" element={
+          <ProtectedRoute>
+            <UserProfile />
           </ProtectedRoute>
         } />
         <Route path="*" element={<NotFound />} />

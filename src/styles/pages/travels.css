@@ -457,8 +457,29 @@ button.see-less-categories-button {
   border-radius: 10px;
 }
 
+/* Desktop travel card layout - default order */
 .travel-content {
   padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Desktop - image after text (original order) */
+@media (min-width: 769px) {
+  .travel-content {
+    flex-direction: column;
+  }
+
+  .highlight-image {
+    order: 2;
+    margin-top: 15px;
+  }
+
+  .travel-text {
+    order: 1;
+    padding: 0;
+    margin-bottom: 15px;
+  }
 }
 
 .travel-stars {
@@ -574,13 +595,23 @@ svg {
   }
 
   .filters {
-    padding: 10px;
+    padding: 8px;
     border-radius: 0px;
     margin-bottom: 0px;
   }
   .modern-filters-wrapper{
     margin-bottom: 0px;
   }
+
+  .selected-category button {
+  background: none;
+  border: solid 1px white;
+  color: white;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0px 5px !important;
+}
     
   .travels-list {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -602,19 +633,75 @@ svg {
     gap: 10px;
   }
 
-  /* Mobile Travel Card - Reverse order (image first, then text) */
+  .filters button {
+    padding: 8px 5px;
+  }
+
+  .selected-category{
+    padding: 2px 11px;
+  }
+
+  /* Mobile Travel Card - Image first, then text content */
   .travel-content {
     display: flex;
-    flex-direction: column-reverse;
-    padding: 15px;
+    flex-direction: column;
+    padding: 0;
   }
 
   .highlight-image {
-    margin-top: 15px;
+    order: 1;
+    margin: 0;
+    border-radius: 10px 10px 0 0;
   }
 
   .travel-text {
-    margin-bottom: 0;
+    order: 2;
+    padding: 15px;
+    margin: 0;
   }
 
+  /* Ensure dropdown is positioned correctly */
+  .dropdown-container {
+    order: 1;
+    z-index: 3;
+  }
+
+  /* Ensure proper spacing and alignment for mobile */
+  .travel-card {
+    margin-bottom: 15px;
+  }
+
+  .travel-text h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+
+  .travel-text p {
+    margin: 5px 0;
+  }
+
+  .travel-text .button {
+    margin-top: 10px;
+  }
+}
+
+/* Additional mobile optimizations for very small screens */
+@media (max-width: 480px) {
+  .travels-list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin: 5px;
+  }
+
+  .travel-content {
+    padding: 0;
+  }
+
+  .travel-text {
+    padding: 12px;
+  }
+
+  .highlight-image {
+    height: 180px;
+  }
 }

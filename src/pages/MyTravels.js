@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext'; 
 import { request, setAuthHeader } from '../axios_helper';
+import Toast from '../components/Toast';
 import "../styles/components/modal.css";
 import "../styles/pages/future-travels.css";
 import "../styles/pages/future-travels-modal.css";
@@ -11,22 +12,6 @@ import "../styles/pages/my-travels.css";
 import "../styles/pages/my-travels-modal.css";
 
 // ...existing code...
-
-// Componente de Toast para feedback
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className={`toast ${type}`}>
-      {message}
-    </div>
-  );
-};
 
 // Componente de avaliação por estrelas
 const StarRating = ({ rating, onRatingChange, maxStars = 5 }) => {
@@ -175,6 +160,18 @@ const MyTravels = () => {
 
   const location = useLocation();
 
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 1000);
+  };
+
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
+
   const transportOptions = [
     'Carro', 'Comboio', 'Autocarro', 'Avião', 'Bicicleta', 'A Pé', 'Barco', 'Táxi'
   ];
@@ -280,10 +277,29 @@ const MyTravels = () => {
 
   // Função para validar campos obrigatórios
   const validateForm = () => {
+    // Validação do nome da viagem
     if (!newTravel.name.trim()) {
       setToast({ message: 'O nome da viagem é obrigatório!', type: 'error', show: true });
       return false;
     }
+    
+    if (newTravel.name.length < 3) {
+      setToast({ message: 'O nome da viagem deve ter pelo menos 3 caracteres!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (newTravel.name.length > 100) {
+      setToast({ message: 'O nome da viagem não pode ter mais de 100 caracteres!', type: 'error', show: true });
+      return false;
+    }
+    
+    // Validação contra caracteres perigosos
+    if (/<script|javascript:|onload=|onerror=/i.test(newTravel.name)) {
+      setToast({ message: 'O nome contém caracteres não permitidos!', type: 'error', show: true });
+      return false;
+    }
+    
+    // Validações específicas por tipo de viagem
     if (selectedTravelType.main === 'multi') {
       if (multiDestinations.length === 0) {
         setToast({ message: 'Adicione pelo menos um destino!', type: 'error', show: true });
@@ -298,11 +314,55 @@ const MyTravels = () => {
         setToast({ message: 'A cidade é obrigatória!', type: 'error', show: true });
         return false;
       }
+      
+      if (newTravel.city.length < 2) {
+        setToast({ message: 'O nome da cidade deve ter pelo menos 2 caracteres!', type: 'error', show: true });
+        return false;
+      }
     }
+    
+    // Validação de datas
     if (!newTravel.startDate || !newTravel.endDate) {
       setToast({ message: 'As datas de início e fim são obrigatórias!', type: 'error', show: true });
       return false;
     }
+    
+    const startDate = new Date(newTravel.startDate);
+    const endDate = new Date(newTravel.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (startDate > endDate) {
+      setToast({ message: 'A data de início não pode ser posterior à data de fim!', type: 'error', show: true });
+      return false;
+    }
+    
+    // Verificação se a viagem é muito longa (mais de 1 ano)
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 365) {
+      setToast({ message: 'A duração da viagem não pode exceder 365 dias!', type: 'error', show: true });
+      return false;
+    }
+    
+    // Validação de descrição se fornecida
+    if (newTravel.description && newTravel.description.length > 500) {
+      setToast({ message: 'A descrição não pode ter mais de 500 caracteres!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (newTravel.longDescription && newTravel.longDescription.length > 2000) {
+      setToast({ message: 'A descrição detalhada não pode ter mais de 2000 caracteres!', type: 'error', show: true });
+      return false;
+    }
+    
+    // Validação de caracteres perigosos na descrição
+    if (/<script|javascript:|onload=|onerror=/i.test(newTravel.description || '') || 
+        /<script|javascript:|onload=|onerror=/i.test(newTravel.longDescription || '')) {
+      setToast({ message: 'A descrição contém caracteres não permitidos!', type: 'error', show: true });
+      return false;
+    }
+    
     return true;
   };
 
@@ -765,6 +825,7 @@ const MyTravels = () => {
     });
     setEditingFoodIndex(null);
     setNewFoodRecommendation({ name: '', description: '' });
+    showToast('Recomendação alimentar removida com sucesso!', 'success');
     setToast({ message: 'Recomendação alimentar removida com sucesso!', type: 'success', show: true });
   };
 
@@ -836,6 +897,7 @@ const MyTravels = () => {
       ...prev,
       negativePoints: prev.negativePoints.filter((_, i) => i !== index)
     }));
+    showToast('Ponto negativo removido com sucesso!', 'success');
   };
 
   const handleCancelEditNegative = (e) => {
@@ -1092,6 +1154,7 @@ const MyTravels = () => {
     }));
     setEditingItineraryDay(null);
     setNewItineraryDay({ day: '', activities: [''] });
+    showToast('Dia do itinerário removido com sucesso!', 'success');
     setItineraryError('');
     setToast({ message: 'Dia do itinerário removido com sucesso!', type: 'success', show: true });
   };
@@ -1729,13 +1792,12 @@ const MyTravels = () => {
   return (
     <div className="my-travels-container">
       {/* Exibir Toast */}
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
 <br></br>
       {isTravelTypeModalOpen && (
         <div className="travel-planner-modal travel-type-modal">
@@ -2246,7 +2308,7 @@ const MyTravels = () => {
                   </div>
 
                   <div className="LeftPosition">
-                    <label style={{textAlign: 'center', width: '100%'}}>📝 Nome da Viagem: <span className="tooltip-icon" title="Digite um nome descritivo e único para identificar a sua viagem">?</span></label>
+                    <label style={{textAlign: 'center', width: '100%'}}>📝 Nome da Viagem: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Digite um nome descritivo e único para identificar a sua viagem">?</span></label>
                     <input
                       type="text"
                       name="name"
@@ -2262,7 +2324,7 @@ const MyTravels = () => {
                     {selectedTravelType.main !== 'multi' && (
                       <div className="form-row">
                         <div className="form-group">
-                          <label style={{textAlign: 'center', width: '100%'}}>🌍 País: <span className="tooltip-icon" title="Selecione o país onde realizou a viagem">?</span></label>
+                          <label style={{textAlign: 'center', width: '100%'}}>🌍 País: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione o país onde realizou a viagem">?</span></label>
                           <select 
                             name="country" 
                             value={newTravel.country} 
@@ -2280,7 +2342,7 @@ const MyTravels = () => {
                           </select>
                         </div>
                         <div className="form-group">
-                          <label style={{textAlign: 'center', width: '100%'}}>🏙️ Cidade: <span className="tooltip-icon" title="Selecione a cidade principal da viagem">?</span></label>
+                          <label style={{textAlign: 'center', width: '100%'}}>🏙️ Cidade: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione a cidade principal da viagem">?</span></label>
                           <select
                             name="city"
                             value={newTravel.city}
@@ -2362,7 +2424,7 @@ const MyTravels = () => {
 
                     <div className="form-row">
                       <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Início: <span className="tooltip-icon" title="Selecione quando começou a viagem">?</span></label>
+                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Início: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione quando começou a viagem">?</span></label>
                         <input
                           type="date"
                           name="startDate"
@@ -2373,7 +2435,7 @@ const MyTravels = () => {
                         />
                       </div>
                       <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Fim: <span className="tooltip-icon" title="Selecione quando terminou a viagem">?</span></label>
+                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Fim: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione quando terminou a viagem">?</span></label>
                         <input
                           type="date"
                           name="endDate"
@@ -3972,6 +4034,14 @@ const MyTravels = () => {
           ))
         )}
       </div>
+      
+      {/* Toast Component */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };

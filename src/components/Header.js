@@ -8,6 +8,7 @@ import { request, setAuthHeader } from '../axios_helper';
 import axios from 'axios';
 import { useWeather } from '../context/WeatherContext';
 import InstallAppModal from './InstallAppModal';
+import Toast from './Toast';
 
 // Dados mockados para notificações
 const mockNotifications = [
@@ -36,6 +37,19 @@ const Header = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  
+  // Toast state
+  const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
+  
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ message, type, isVisible: true });
+    setTimeout(() => setToast({ message: '', type: '', isVisible: false }), 2600);
+  };
+  
+  const hideToast = () => {
+    setToast({ message: '', type: '', isVisible: false });
+  };
 
   useEffect(() => {
     setTotalTravels(TravelsData.length);
@@ -79,6 +93,7 @@ const Header = () => {
         }
       } catch (error) {
         console.error('Erro ao obter o tempo atual:', error.message);
+        showToast('Erro ao obter informações meteorológicas.', 'error');
       } finally {
         setIsLoading(false);
       }
@@ -155,7 +170,7 @@ const Header = () => {
   };
 
   return (
-    <>
+    <div>
     <header className="header">
       <div className="header-left">
         {isMobile ? (
@@ -256,6 +271,7 @@ const Header = () => {
                   className={activePage === '/login' ? 'active' : ''}
                   onClick={() => {
                     setActivePage('/login');
+                    showToast('Sessão terminada com sucesso!', 'success');
                     logout();
                   }}
                 >
@@ -274,7 +290,13 @@ const Header = () => {
       onClose={() => setIsInstallModalOpen(false)}
       deferredPrompt={deferredPrompt}
     />
-    </>
+    <Toast
+      message={toast.message}
+      type={toast.type}
+      isVisible={toast.isVisible}
+      onClose={hideToast}
+    />
+    </div>
   );
 };
 

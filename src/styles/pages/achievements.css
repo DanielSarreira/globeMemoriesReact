@@ -335,7 +335,9 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  .achievements-page { margin: 12px; padding: 14px; }
+  .achievements-page { margin: 8px; padding: 14px; margin-top: 27px;
+  border-radius: 10px;
+  }
   .achievement-details h4 { font-size: 15px; }
   .achievement-details p { font-size: 13px; }
 }

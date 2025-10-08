@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { FaHeart, FaSearch, FaFlag, FaReply, FaPaperPlane, FaTimes, FaUser, FaCalendarAlt, FaMapMarkerAlt, FaComments, FaPlus, FaFilter, FaSort, FaChevronDown, FaChevronUp, FaEye, FaSpinner } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import Toast from '../components/Toast';
 import defaultAvatar from '../images/assets/avatar.jpg';
 
 // Dados simulados de viagens realizadas
@@ -23,7 +24,7 @@ const QandA = () => {
   const [replyOpen, setReplyOpen] = useState({}); // Estado para controlar quais campos de réplica estão abertos
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ category: '', country: '', city: '', minLikes: '', answered: '' });
-  const [sortOption, setSortOption] = useState('date');
+  const [sortOption, setSortOption] = useState('date'); // Sempre ordena por data por padrão
   const [expandedSections, setExpandedSections] = useState({});
   const [currentPage, setCurrentPage] = useState({ all: 1, mine: 1 });
   const [likedQuestions, setLikedQuestions] = useState([]);
@@ -33,6 +34,7 @@ const QandA = () => {
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
   const questionsPerPage = 5;
 
   useEffect(() => {
@@ -43,6 +45,38 @@ const QandA = () => {
     }, 1000);
   }, []);
 
+  const showToast = (message, type) => {
+    setToast({ message, type, show: true });
+  };
+
+  const closeToast = () => {
+    setToast({ ...toast, show: false });
+  };
+
+  // Função para sanitizar conteúdo contra XSS
+  const sanitizeContent = (content) => {
+    if (!content) return '';
+    
+    const dangerousPatterns = [
+      /<script[^>]*>.*?<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>.*?<\/iframe>/gi,
+      /<object[^>]*>.*?<\/object>/gi,
+      /<embed[^>]*>.*?<\/embed>/gi,
+      /<link[^>]*>/gi,
+      /<meta[^>]*>/gi,
+      /<style[^>]*>.*?<\/style>/gi
+    ];
+    
+    let sanitized = content;
+    dangerousPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
+    
+    return sanitized.trim();
+  };
+
   const handleAskQuestion = useCallback((e) => {
     e.preventDefault();
     setError('');
@@ -50,21 +84,45 @@ const QandA = () => {
     // Validações melhoradas
     if (!user) {
       setError('Inicie sessão para criar uma pergunta!');
+      showToast('Inicie sessão para criar uma pergunta!', 'error');
       return;
     }
     
     if (!newQuestion.trim()) {
       setError('Escreva uma pergunta!');
+      showToast('Escreva uma pergunta!', 'error');
       return;
     }
     
     if (newQuestion.trim().length < 10) {
       setError('A pergunta deve ter pelo menos 10 caracteres!');
+      showToast('A pergunta deve ter pelo menos 10 caracteres!', 'error');
+      return;
+    }
+
+    if (newQuestion.trim().length > 500) {
+      setError('A pergunta deve ter no máximo 500 caracteres!');
+      showToast('A pergunta deve ter no máximo 500 caracteres!', 'error');
+      return;
+    }
+
+    // Sanitizar conteúdo contra XSS
+    const sanitizedQuestion = sanitizeContent(newQuestion);
+    if (!sanitizedQuestion) {
+      setError('Pergunta contém conteúdo não permitido!');
+      showToast('Pergunta contém conteúdo não permitido!', 'error');
+      return;
+    }
+
+    if (sanitizedQuestion !== newQuestion.trim()) {
+      setError('Pergunta contém conteúdo perigoso que foi removido!');
+      showToast('Pergunta contém conteúdo perigoso que foi removido!', 'error');
       return;
     }
     
     if (!category) {
       setError('Selecione uma categoria!');
+      showToast('Selecione uma categoria!', 'error');
       return;
     }
 
@@ -76,13 +134,13 @@ const QandA = () => {
         id: Date.now(),
         user: user.username,
         userProfilePicture: user.profilePicture || null,
-        question: newQuestion.trim(),
+        question: sanitizedQuestion,
         category,
         country: country || 'Não especificado',
         city: city || 'Não especificado',
         tripId: selectedTrip || null,
         tripName: selectedTrip ? pastTripsData.find((t) => t.id === parseInt(selectedTrip))?.name : null,
-        createdAt: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
         likes: 0,
         comments: [],
       };
@@ -98,6 +156,7 @@ const QandA = () => {
       setIsAskingQuestion(false);
       setIsLoading(false);
       setError('');
+      showToast('Pergunta criada com sucesso!', 'success');
       
       // Show success message
       setTimeout(() => {
@@ -111,16 +170,39 @@ const QandA = () => {
     
     if (!user) {
       setError('Inicie sessão para comentar!');
+      showToast('Inicie sessão para comentar!', 'error');
       return;
     }
     
     if (!text?.trim()) {
       setError('Escreva um comentário!');
+      showToast('Escreva um comentário!', 'error');
       return;
     }
 
     if (text.trim().length < 3) {
       setError('O comentário deve ter pelo menos 3 caracteres!');
+      showToast('O comentário deve ter pelo menos 3 caracteres!', 'error');
+      return;
+    }
+
+    if (text.trim().length > 300) {
+      setError('O comentário deve ter no máximo 300 caracteres!');
+      showToast('O comentário deve ter no máximo 300 caracteres!', 'error');
+      return;
+    }
+
+    // Sanitizar conteúdo contra XSS
+    const sanitizedText = sanitizeContent(text);
+    if (!sanitizedText) {
+      setError('Comentário contém conteúdo não permitido!');
+      showToast('Comentário contém conteúdo não permitido!', 'error');
+      return;
+    }
+
+    if (sanitizedText !== text.trim()) {
+      setError('Comentário contém conteúdo perigoso que foi removido!');
+      showToast('Comentário contém conteúdo perigoso que foi removido!', 'error');
       return;
     }
 
@@ -137,8 +219,8 @@ const QandA = () => {
               id: Date.now(),
               user: user.username,
               userProfilePicture: user.profilePicture || null,
-              text: text.trim(),
-              createdAt: new Date().toISOString().split('T')[0],
+              text: sanitizedText,
+              createdAt: new Date().toISOString(),
               likes: 0,
               replies: [],
             },
@@ -163,15 +245,17 @@ const QandA = () => {
       // Clear inputs
       if (parentIds.length === 0) {
         setNewComment((prev) => ({ ...prev, [questionId]: '' }));
+        showToast('Comentário adicionado com sucesso!', 'success');
       } else {
         const replyKey = `${questionId}-${parentIds.join('-')}`;
         setNewReply((prev) => ({ ...prev, [replyKey]: '' }));
         setReplyOpen((prev) => ({ ...prev, [replyKey]: false }));
+        showToast('Resposta adicionada com sucesso!', 'success');
       }
       
       setError('');
     }, 500);
-  }, [user]);
+  }, [user, showToast]);
 
   const handleLike = useCallback((type, id, parentIds = []) => {
     if (!user) return setError('Inicie sessão para gostar!');
@@ -232,17 +316,27 @@ const QandA = () => {
   const myQuestions = useMemo(() => user ? questions.filter((q) => q.user === user.username).filter(applyFilters) : [], [questions, user, applyFilters]);
   const allQuestions = useMemo(() => questions.filter(applyFilters), [questions, applyFilters]);
 
-  const sortedQuestions = (list) =>
-    [...list].sort((a, b) =>
+  const paginatedMyQuestions = useMemo(() => {
+    const sorted = [...myQuestions].sort((a, b) =>
       sortOption === 'comments'
         ? b.comments.length - a.comments.length
         : sortOption === 'likes'
         ? b.likes - a.likes
         : new Date(b.createdAt) - new Date(a.createdAt)
     );
+    return sorted.slice(0, currentPage.mine * questionsPerPage);
+  }, [myQuestions, currentPage.mine, questionsPerPage, sortOption]);
 
-  const paginatedMyQuestions = sortedQuestions(myQuestions).slice(0, currentPage.mine * questionsPerPage);
-  const paginatedAllQuestions = sortedQuestions(allQuestions).slice(0, currentPage.all * questionsPerPage);
+  const paginatedAllQuestions = useMemo(() => {
+    const sorted = [...allQuestions].sort((a, b) =>
+      sortOption === 'comments'
+        ? b.comments.length - a.comments.length
+        : sortOption === 'likes'
+        ? b.likes - a.likes
+        : new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    return sorted.slice(0, currentPage.all * questionsPerPage);
+  }, [allQuestions, currentPage.all, questionsPerPage, sortOption]);
 
   const getRelativeTime = (date) => {
     const now = new Date();
@@ -334,10 +428,15 @@ const QandA = () => {
                   <div className="reply-input-wrapper">
                     <textarea
                       value={newReply[key] || ''}
-                      onChange={(e) => setNewReply({ ...newReply, [key]: e.target.value })}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 300) {
+                          setNewReply({ ...newReply, [key]: e.target.value });
+                        }
+                      }}
                       placeholder="Escreva uma resposta..."
                       className="reply-input-modern"
                       rows="2"
+                      maxLength={300}
                       autoFocus
                     />
                     <div className="reply-actions">
@@ -520,10 +619,15 @@ const QandA = () => {
                     <div className="comment-input-container">
                       <textarea
                         value={newComment[question.id] || ''}
-                        onChange={(e) => setNewComment({ ...newComment, [question.id]: e.target.value })}
+                        onChange={(e) => {
+                          if (e.target.value.length <= 300) {
+                            setNewComment({ ...newComment, [question.id]: e.target.value });
+                          }
+                        }}
                         placeholder="Escreva a sua resposta..."
                         className="comment-input-modern"
                         rows="2"
+                        maxLength={300}
                       />
                       <AnimatePresence>
                         {newComment[question.id]?.trim() && (
@@ -630,10 +734,15 @@ const QandA = () => {
                   <label>📝 Qual é a sua dúvida?</label>
                   <textarea
                     value={newQuestion}
-                    onChange={(e) => setNewQuestion(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 500) {
+                        setNewQuestion(e.target.value);
+                      }
+                    }}
                     placeholder="Descreva a sua pergunta de forma clara e detalhada..."
                     className="question-textarea"
                     rows="4"
+                    maxLength={500}
                   />
                 </div>
 
@@ -714,7 +823,7 @@ const QandA = () => {
                   >
                     {isLoading ? (
                       <>
-                        <FaSpinner className="spinning" /> Publicando...
+                        <FaSpinner className="spinning" /> A publicar...
                       </>
                     ) : (
                       <>
@@ -856,13 +965,19 @@ const QandA = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <h2>🙋‍♂️ As Minhas Perguntas</h2>
+                  <h2>As Minhas Perguntas</h2>
                   <span className="question-count">{myQuestions.length} pergunta{myQuestions.length !== 1 ? 's' : ''}</span>
                 </motion.div>
                 {paginatedMyQuestions.length > 0 ? (
                   <>
                     {paginatedMyQuestions.map((question, index) => renderQuestionItem(question, index))}
-                    {paginatedMyQuestions.length < sortedQuestions(myQuestions).length && (
+                    {paginatedMyQuestions.length < [...myQuestions].sort((a, b) =>
+                        sortOption === 'comments'
+                          ? b.comments.length - a.comments.length
+                          : sortOption === 'likes'
+                          ? b.likes - a.likes
+                          : new Date(b.createdAt) - new Date(a.createdAt)
+                      ).length && (
                       <motion.button 
                         onClick={() => setCurrentPage((prev) => ({ ...prev, mine: prev.mine + 1 }))} 
                         className="load-more-btn-modern"
@@ -884,7 +999,7 @@ const QandA = () => {
                   >
                     <div className="empty-icon">🤔</div>
                     <h3>Ainda não fez nenhuma pergunta</h3>
-                    <p>Comece a interagir com a comunidade fazendo a sua primeira pergunta!</p>
+                    <p>Comece a interagir com a comunidade. <br></br>Faça a sua primeira pergunta!</p>
                     <motion.button 
                       className="cta-btn"
                       onClick={() => setIsAskingQuestion(true)}
@@ -904,13 +1019,19 @@ const QandA = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <h2>💬 Todas as Perguntas</h2>
+                  <h2>Todas as Perguntas</h2>
                   <span className="question-count">{allQuestions.length} pergunta{allQuestions.length !== 1 ? 's' : ''}</span>
                 </motion.div>
                 {paginatedAllQuestions.length > 0 ? (
                   <>
                     {paginatedAllQuestions.map((question, index) => renderQuestionItem(question, index))}
-                    {paginatedAllQuestions.length < sortedQuestions(allQuestions).length && (
+                    {paginatedAllQuestions.length < [...allQuestions].sort((a, b) =>
+                        sortOption === 'comments'
+                          ? b.comments.length - a.comments.length
+                          : sortOption === 'likes'
+                          ? b.likes - a.likes
+                          : new Date(b.createdAt) - new Date(a.createdAt)
+                      ).length && (
                       <motion.button 
                         onClick={() => setCurrentPage((prev) => ({ ...prev, all: prev.all + 1 }))} 
                         className="load-more-btn-modern"
@@ -940,6 +1061,14 @@ const QandA = () => {
           </>
         )}
       </motion.div>
+
+      {/* Toast para feedback */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };
@@ -956,7 +1085,7 @@ const QandAData = [
     city: 'Lisboa',
     tripId: 1,
     tripName: 'Viagem a Lisboa',
-    createdAt: '2025-03-15',
+    createdAt: '2025-03-15T10:30:00.000Z',
     likes: 5,
     comments: [
       {
@@ -964,7 +1093,7 @@ const QandAData = [
         user: 'Ana Silva',
         userProfilePicture: null,
         text: 'Procure hostels no centro.',
-        createdAt: '2025-03-16',
+        createdAt: '2025-03-16T09:15:00.000Z',
         likes: 3,
         replies: [
           {
@@ -972,7 +1101,7 @@ const QandAData = [
             user: 'João Pereira',
             userProfilePicture: null,
             text: 'Concordo, os hostels são ótimos!',
-            createdAt: '2025-03-17',
+            createdAt: '2025-03-17T11:30:00.000Z',
             likes: 2,
             replies: [
               {
@@ -980,7 +1109,7 @@ const QandAData = [
                 user: 'Tiago Miranda',
                 userProfilePicture: null,
                 text: 'Sim, e têm boa localização!',
-                createdAt: '2025-03-18',
+                createdAt: '2025-03-18T16:45:00.000Z',
                 likes: 1,
                 replies: [],
               },
@@ -1000,10 +1129,10 @@ const QandAData = [
     city: 'São Paulo',
     tripId: null,
     tripName: null,
-    createdAt: '2025-03-14',
+    createdAt: '2025-03-14T15:45:00.000Z',
     likes: 8,
     comments: [
-      { id: 1, user: 'Carlos Souza', userProfilePicture: null, text: 'Depende da região.', createdAt: '2025-03-15', likes: 4, replies: [] },
+      { id: 1, user: 'Carlos Souza', userProfilePicture: null, text: 'Depende da região.', createdAt: '2025-03-15T12:00:00.000Z', likes: 4, replies: [] },
     ],
   },
 ];

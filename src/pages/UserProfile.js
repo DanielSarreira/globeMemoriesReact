@@ -6,6 +6,7 @@ import TravelsData from '../data/travelsData';
 // ...existing code...
 import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClock, FaUserPlus, FaChartBar, FaMapMarkerAlt } from 'react-icons/fa';
 import { request } from '../axios_helper';
+import Toast from '../components/Toast';
 
 // Dados fictícios para perfis de utilizador
 const mockProfiles = [
@@ -85,6 +86,10 @@ const UserProfile = () => {
     other: false,
   });
   const [otherTravelReason, setOtherTravelReason] = useState('');
+  
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
   const [reportReasons, setReportReasons] = useState({
     inappropriate: false,
     falseInfo: false,
@@ -97,6 +102,18 @@ const UserProfile = () => {
     other: false
   });
   const [otherReason, setOtherReason] = useState('');
+
+  // Toast functions
+  const showToast = (message, type) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 1000);
+  };
+
+  const closeToast = () => {
+    setToast({ show: false, message: '', type: '' });
+  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -133,6 +150,7 @@ const UserProfile = () => {
         }
       } catch (error) {
         console.error('Erro ao buscar perfil:', error);
+        showToast('Erro ao carregar perfil do utilizador. Tente novamente.', 'error');
         setProfile(null);
       } finally {
         setLoading(false);
@@ -175,14 +193,16 @@ const UserProfile = () => {
 
   const handleFollow = () => {
     if (!user) {
-      alert('Inicie sessão para seguir utilizadores.');
+      showToast('Inicie sessão para seguir utilizadores.', 'error');
       return;
     }
     if (profile.privacy === 'public') {
       setFollowing([...following, profile.username]);
       setFollowers([...followers, user.username]);
+      showToast(`Agora segues ${profile.name}!`, 'success');
     } else {
       setPendingRequests([...pendingRequests, profile.username]);
+      showToast(`Pedido de seguimento enviado para ${profile.name}!`, 'success');
       setShowRequestModal(true);
       setTimeout(() => {
         setShowRequestModal(false);
@@ -194,6 +214,7 @@ const UserProfile = () => {
     setFollowing(following.filter((u) => u !== profile.username));
     setFollowers(followers.filter((u) => u !== user.username));
     setPendingRequests(pendingRequests.filter((u) => u !== profile.username));
+    showToast('Deixaste de seguir este utilizador!', 'success');
   };
 
   const handleCancelRequest = () => {
@@ -216,7 +237,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para denunciar utilizadores.');
+      showToast('Faça login para denunciar utilizadores.', 'error');
       return;
     }
     setShowReportModal(true);
@@ -227,7 +248,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para bloquear utilizadores.');
+      showToast('Faça login para bloquear utilizadores.', 'error');
       return;
     }
     setShowBlockModal(true);
@@ -255,11 +276,12 @@ const UserProfile = () => {
                                (reportReasons.other && otherReason.trim());
       
       if (!hasSelectedReason) {
-        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
 
       setReportedUsers([...reportedUsers, profile.username]);
+      showToast('Utilizador denunciado com sucesso!', 'success');
       setShowReportModal(false);
       // Remove from following if currently following
       setFollowing(following.filter(username => username !== profile.username));
@@ -283,6 +305,7 @@ const UserProfile = () => {
   const confirmBlockUser = () => {
     if (profile) {
       setBlockedUsers([...blockedUsers, profile.username]);
+      showToast('Utilizador bloqueado com sucesso!', 'success');
       setShowBlockModal(false);
       // Remove from following if currently following
       setFollowing(following.filter(username => username !== profile.username));
@@ -293,7 +316,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para denunciar viagens.');
+      showToast('Faça login para denunciar viagens.', 'error');
       return;
     }
     setSelectedTravel(travel);
@@ -306,10 +329,11 @@ const UserProfile = () => {
       const hasSelectedReason = Object.values(reportTravelReasons).some(v => v) ||
         (reportTravelReasons.other && otherTravelReason.trim());
       if (!hasSelectedReason) {
-        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
       setReportedTravels([...reportedTravels, selectedTravel.id]);
+      showToast('Viagem denunciada com sucesso!', 'success');
       setShowReportTravelModal(false);
       setSelectedTravel(null);
       setReportTravelReasons({
@@ -653,7 +677,9 @@ const UserProfile = () => {
                   <Link to="/my-travels" className="button">
                     Gerir as minhas Viagens
                   </Link>
+                  
                 )}
+           
              
               {visibleTravels.length > 0 ? (
                 <div className="travels-grid">
@@ -744,6 +770,7 @@ const UserProfile = () => {
                     </div>
                   ))}
                 </div>
+                
               ) : (
                 <p className="no-travels">Nenhuma viagem partilhada ainda.</p>
               )}
@@ -1360,6 +1387,14 @@ const UserProfile = () => {
           </div>
         </div>
       )}
+      
+      {/* Toast Component */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };

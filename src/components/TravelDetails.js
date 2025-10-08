@@ -1,576 +1,1422 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useParams, Link } from 'react-router-dom';
-import travels from '../data/travelsData'; // Verifique se o caminho está correto
-// ...existing code...
-import { FaStar } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { FaStar, FaHeart, FaComment, FaChevronLeft, FaChevronRight, FaReply, FaPaperPlane } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import '../styles/components/TravelDetailsModern.css';
+
+// Mock data for recommended travels
+const mockRecommendedTravels = [
+  {
+    id: 1,
+    name: "Lisboa",
+    city: "Lisboa",
+    country: "Portugal",
+    highlightImage: require("../images/Globe-Memories.jpg"),
+    price: "500",
+    stars: 4,
+    category: ["Cultural", "Cidade", "História", "Gastronomia", "Arquitetura"],
+    user: "Maria Silva"
+  },
+  {
+    id: 2,
+    name: "Porto",
+    city: "Porto", 
+    country: "Portugal",
+    highlightImage: require("../images/Globe-Memories.png"),
+    price: "350",
+    stars: 5,
+    category: ["Cultural", "Cidade", "História", "Gastronomia"],
+    user: "João Santos"
+  },
+  {
+    id: 3,
+    name: "Coimbra",
+    city: "Coimbra",
+    country: "Portugal", 
+    highlightImage: require("../images/Globe-Memories.jpg"),
+    price: "300",
+    stars: 4,
+    category: ["Cultural", "História", "Arquitetura"],
+    user: "Ana Costa"
+  },
+  {
+    id: 4,
+    name: "Óbidos",
+    city: "Óbidos",
+    country: "Portugal",
+    highlightImage: require("../images/Globe-Memories.png"),
+    price: "200",
+    stars: 5,
+    category: ["Cultural", "História", "Arquitetura", "Paisagem"],
+    user: "Pedro Lima"
+  },
+  {
+    id: 5,
+    name: "Sintra",
+    city: "Sintra",
+    country: "Portugal",
+    highlightImage: require("../images/Globe-Memories.jpg"),
+    price: "400",
+    stars: 4,
+    category: ["Natureza", "História", "Arquitetura", "Paisagem"],
+    user: "Sofia Pereira"
+  }
+];
+
+// Componente para setas customizadas (igual ao Home.js)
+const ArrowLeft = () => (
+  <svg
+    width="60"
+    height="60"
+    viewBox="0 0 60 60"
+    fill="none"
+    role="img"
+    aria-label="Anterior"
+    style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))' }}
+  >
+    <path
+      d="M37 6 L14 30 L37 54 L44 47 L27 30 L44 13 Z"
+      fill="white"
+      shapeRendering="geometricPrecision"
+    />
+  </svg>
+);
+
+const ArrowRight = () => (
+  <svg
+    width="60"
+    height="60"
+    viewBox="0 0 60 60"
+    fill="none"
+    role="img"
+    aria-label="Seguinte"
+    style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))' }}
+  >
+    <path
+      d="M23 6 L46 30 L23 54 L16 47 L33 30 L16 13 Z"
+      fill="white"
+      shapeRendering="geometricPrecision"
+    />
+  </svg>
+);
+
+// Avatar padrão
+const defaultAvatar = require("../images/Globe-Memories.jpg");
 
 const TravelDetails = () => {
-  const { user, userTravels } = useAuth();
   const { id } = useParams();
-  const travel = userTravels.find((t) => t.id === parseInt(id, 10));
-  const [activeTab, setActiveTab] = useState('generalInformation');
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [comments, setComments] = useState('');
-  const [commentList, setCommentList] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showPriceDetails, setShowPriceDetails] = useState(false);
+  const { user } = useAuth();
+  const [travel, setTravel] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [itemsPerView, setItemsPerView] = useState(4);
-  const [itemWidth, setItemWidth] = useState(0);
+  const [activeTab, setActiveTab] = useState('generalInformation');
+  const [showPriceDetails, setShowPriceDetails] = useState(false);
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [showTransportModal, setShowTransportModal] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [itemsPerView, setItemsPerView] = useState(3);
   const carouselRef = useRef(null);
+  
+  // Estados para viagens recomendadas
+  const [recommendedCurrentIndex, setRecommendedCurrentIndex] = useState(0);
+  const [recommendedItemsPerView, setRecommendedItemsPerView] = useState(3);
+  const recommendedCarouselRef = useRef(null);
+  
+  // Slideshow states
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+  
+  // Like and comment states (estrutura igual ao Home.js)
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [showComments, setShowComments] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState([]);
+  const [newReply, setNewReply] = useState({});
+  const [replyOpen, setReplyOpen] = useState({});
+  const [likedComments, setLikedComments] = useState([]);
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentSuccess, setCommentSuccess] = useState(null);
 
-  // Filtrar viagens recomendadas que tenham EXATAMENTE as mesmas categorias da viagem atual
-  // e limitar a 5 viagens
-  const recommendedTravels = userTravels
-    .filter((t) => {
-      // Eliminar a viagem actual
-      if (t.id === travel.id) return false;
-      // Verificar se a viagem tem TODAS as categorias da viagem atual
-      // Adicionar verificações de segurança para categories
-      if (!travel.categories || !Array.isArray(travel.categories) || 
-          !t.categories || !Array.isArray(t.categories)) {
-        return false;
-      }
-      return travel.categories.every((category) => t.categories.some(tCat => tCat.name === category.name));
-    })
-    .slice(0, 5); // Limitar a 5 viagens
-
-  const updateItemsPerView = () => {
-    if (window.innerWidth <= 480) {
-      setItemsPerView(1);
-    } else if (window.innerWidth <= 768) {
-      setItemsPerView(2);
-    } else if (window.innerWidth <= 1024) {
-      setItemsPerView(3);
-    } else {
-      setItemsPerView(4);
-    }
-
-    if (carouselRef.current) {
-      const firstItem = carouselRef.current.querySelector('.recommended-travel-item');
-      if (firstItem) {
-        const itemStyle = window.getComputedStyle(firstItem);
-        const width = firstItem.offsetWidth + parseFloat(itemStyle.marginRight);
-        setItemWidth(width);
-      }
-    }
+  // Filtrar viagens recomendadas pela mesma categoria
+  const getRecommendedTravels = () => {
+    if (!travel || !travel.category) return mockRecommendedTravels;
+    
+    return mockRecommendedTravels.filter(recommendedTravel => 
+      recommendedTravel.category.some(cat => travel.category.includes(cat))
+    );
   };
 
+  const recommendedTravels = getRecommendedTravels();
+
+  // Funções de navegação do carrossel de viagens recomendadas (paginação por grid)
+  const handleRecommendedPrev = () => {
+    setRecommendedCurrentIndex(prev => {
+      const newIndex = prev - recommendedItemsPerView;
+      return newIndex < 0 ? 0 : newIndex;
+    });
+  };
+
+  const handleRecommendedNext = () => {
+    setRecommendedCurrentIndex(prev => {
+      const newIndex = prev + recommendedItemsPerView;
+      return newIndex >= recommendedTravels.length ? prev : newIndex;
+    });
+  };
+
+  // UseEffect para definir items por view responsivamente
   useEffect(() => {
+    const updateItemsPerView = () => {
+      if (window.innerWidth < 768) {
+        setRecommendedItemsPerView(1);
+      } else if (window.innerWidth < 1024) {
+        setRecommendedItemsPerView(2);
+      } else {
+        setRecommendedItemsPerView(4);
+      }
+    };
+
     updateItemsPerView();
     window.addEventListener('resize', updateItemsPerView);
     return () => window.removeEventListener('resize', updateItemsPerView);
-  }, [recommendedTravels]);
+  }, []);
 
-  const handleFavoriteToggle = () => {
-    setIsFavorite(!isFavorite);
+  // Render stars function
+  const renderStars = (stars) => {
+    return [...Array(5)].map((_, index) => (
+      <FaStar key={index} color={index < stars ? "#ffc107" : "#e4e5e9"} size={16} />
+    ));
   };
 
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    if (comments.trim()) {
-      setCommentList([...commentList, comments]);
-      setComments('');
-    }
-  };
-
-  const nextTravel = () => {
-    if (currentIndex < recommendedTravels.length - itemsPerView) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const prevTravel = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const openModal = (image) => {
-    setSelectedImage(image);
-  };
-
-  const closeModal = () => {
-    setSelectedImage(null);
-  };
-
+  // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (!travel) {
-    return <div><br></br><br></br>Viagem não encontrada.</div>;
+  // Open modal function
+  const openModal = (image) => {
+    setSelectedImage(image);
+  };
+
+  // Close modal function
+  const closeModal = () => {
+    setSelectedImage(null);
+  };
+
+  // Modal functions
+  const openPriceModal = () => setShowPriceModal(true);
+  const closePriceModal = () => setShowPriceModal(false);
+  
+  const openCategoriesModal = () => setShowCategoriesModal(true);
+  const closeCategoriesModal = () => setShowCategoriesModal(false);
+  
+  const openTransportModal = () => setShowTransportModal(true);
+  const closeTransportModal = () => setShowTransportModal(false);
+
+  // Like function (igual ao Home.js)
+  const handleLike = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      alert('Faça login para dar like!');
+      return;
+    }
+
+    setIsLiked(!isLiked);
+    setLikeCount(prevCount => isLiked ? prevCount - 1 : prevCount + 1);
+  };
+
+  // Comments functions (estrutura igual ao Home.js)
+  const toggleComments = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowCommentsModal(!showCommentsModal);
+  };
+
+  const handleCloseComments = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowCommentsModal(false);
+  };
+
+  // Função para sanitizar conteúdo contra XSS (igual ao Home.js)
+  const sanitizeContent = (content) => {
+    if (!content) return '';
+    
+    const dangerousPatterns = [
+      /<script[^>]*>.*?<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>.*?<\/iframe>/gi,
+      /<object[^>]*>.*?<\/object>/gi,
+      /<embed[^>]*>.*?<\/embed>/gi,
+      /<link[^>]*>/gi,
+      /<meta[^>]*>/gi,
+      /<style[^>]*>.*?<\/style>/gi
+    ];
+    
+    let sanitized = content;
+    dangerousPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
+    
+    return sanitized.trim();
+  };
+
+  const handleAddComment = (parentIds = [], text) => {
+    if (!user) {
+      alert('Faça login para comentar!');
+      return;
+    }
+
+    const commentText = text || newComment;
+    
+    if (!commentText?.trim()) {
+      alert('O comentário não pode estar vazio!');
+      return;
+    }
+
+    if (commentText.trim().length < 3) {
+      alert('O comentário deve ter pelo menos 3 caracteres!');
+      return;
+    }
+
+    if (commentText.trim().length > 250) {
+      alert('O comentário não pode ter mais de 250 caracteres!');
+      return;
+    }
+
+    const sanitizedComment = sanitizeContent(commentText);
+    if (!sanitizedComment) {
+      alert('Comentário contém conteúdo inválido!');
+      return;
+    }
+
+    if (sanitizedComment !== commentText.trim()) {
+      alert('Comentário contém conteúdo não permitido!');
+      return;
+    }
+
+    setCommentLoading(true);
+    setCommentSuccess(null);
+
+    setTimeout(() => {
+      const newCommentObj = {
+        id: Date.now(),
+        user: user.username || 'Usuario',
+        userProfilePicture: user.profilePicture || defaultAvatar,
+        text: sanitizedComment,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        replies: []
+      };
+
+      if (parentIds.length === 0) {
+        setComments(prev => [...prev, newCommentObj]);
+        setNewComment('');
+      } else {
+        const addReplyToComment = (comments, path, reply) => {
+          return comments.map(comment => {
+            if (path.length === 1 && comment.id === path[0]) {
+              return { ...comment, replies: [...(comment.replies || []), reply] };
+            } else if (path.length > 1 && comment.id === path[0]) {
+              return { ...comment, replies: addReplyToComment(comment.replies || [], path.slice(1), reply) };
+            }
+            return comment;
+          });
+        };
+
+        setComments(prev => addReplyToComment(prev, parentIds, newCommentObj));
+        setNewReply(prev => ({ ...prev, [`travel-${travel.id}-${parentIds.join('-')}`]: '' }));
+        setReplyOpen(prev => ({ ...prev, [`travel-${travel.id}-${parentIds.join('-')}`]: false }));
+      }
+
+      setCommentLoading(false);
+      setCommentSuccess('Comentário adicionado com sucesso!');
+      setTimeout(() => setCommentSuccess(null), 3000);
+    }, 1000);
+  };
+
+  const handleCommentLike = (commentId, parentIds = []) => {
+    if (!user) return;
+
+    const key = `travel-${travel.id}-${parentIds.join('-')}-${commentId}`;
+    
+    const updateLikes = (comments, path, isLiked) => {
+      return comments.map(comment => {
+        if (path.length === 0 && comment.id === commentId) {
+          return { ...comment, likes: isLiked ? comment.likes - 1 : comment.likes + 1 };
+        } else if (path.length > 0 && comment.id === path[0]) {
+          return { ...comment, replies: updateLikes(comment.replies || [], path.slice(1), isLiked) };
+        }
+        return comment;
+      });
+    };
+
+    const isLiked = likedComments.includes(key);
+    setLikedComments((prev) => (isLiked ? prev.filter((k) => k !== key) : [...prev, key]));
+    
+    setComments((prev) => updateLikes(prev, parentIds, isLiked));
+  };
+
+  const toggleReply = (key) => {
+    setReplyOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const commentDate = new Date(date);
+    const diffInSeconds = Math.floor((now - commentDate) / 1000);
+    
+    if (diffInSeconds < 60) return 'Há poucos segundos';
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `Há ${diffInMinutes} min`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Há ${diffInHours}h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `Há ${diffInDays} dias`;
+    
+    return commentDate.toLocaleDateString('pt-PT', {
+      day: 'numeric',
+      month: 'short'
+    });
+  };
+
+  // Função renderComment igual ao Home.js
+  const renderComment = (comment, parentIds = [], index = 0) => {
+    const key = `travel-${travel.id}-${parentIds.concat(comment.id).join('-')}`;
+    const likeKey = `travel-${travel.id}-${[...parentIds].join('-')}-${comment.id}`;
+    const isLiked = likedComments.includes(likeKey);
+    
+    return (
+      <motion.div 
+        key={comment.id} 
+        className="comment-item-modern-travel-details"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.1 }}
+      >
+        <div className="comment-main-travel-details">
+          <img 
+            src={comment.userProfilePicture || defaultAvatar} 
+            alt={`Avatar de ${comment.user}`} 
+            className="comment-avatar-modern-travel-details" 
+          />
+          <div className="comment-content-modern-travel-details">
+            <div className="comment-header-modern-travel-details">
+              <span className="comment-username-travel-details">{comment.user}</span>
+              <span className="comment-time-travel-details">{getRelativeTime(comment.createdAt)}</span>
+            </div>
+            <p className="comment-text-travel-details">{comment.text}</p>
+            <div className="comment-actions-modern-travel-details">
+              <motion.button
+                className={`comment-like-btn-travel-details ${isLiked ? 'liked' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCommentLike(comment.id, parentIds);
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaHeart className={`heart-icon-travel-details ${isLiked ? 'liked' : ''}`} />
+                {comment.likes > 0 && <span>{comment.likes}</span>}
+              </motion.button>
+              <motion.button
+                className="reply-btn-modern-travel-details"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleReply(key);
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaReply /> Responder
+              </motion.button>
+            </div>
+            
+            <AnimatePresence>
+              {replyOpen[key] && (
+                <motion.div 
+                  className="reply-input-container-travel-details"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img 
+                    src={user?.profilePicture || defaultAvatar} 
+                    alt="Seu avatar" 
+                    className="reply-user-avatar-travel-details" 
+                  />
+                  <div className="reply-input-wrapper-travel-details">
+                    <textarea
+                      value={newReply[key] || ''}
+                      onChange={(e) => {
+                        setNewReply(prev => ({ ...prev, [key]: e.target.value }));
+                      }}
+                      placeholder="Escreva uma resposta..."
+                      className="reply-input-modern-travel-details"
+                      rows="2"
+                      maxLength={250}
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="reply-actions-travel-details">
+                      <motion.button
+                        className="cancel-reply-btn-travel-details"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleReply(key);
+                        }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Cancelar
+                      </motion.button>
+                      <motion.button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAddComment(parentIds.concat(comment.id), newReply[key]);
+                        }}
+                        className="send-reply-btn-travel-details"
+                        disabled={!newReply[key]?.trim()}
+                        whileHover={newReply[key]?.trim() ? { scale: 1.05 } : {}}
+                        whileTap={newReply[key]?.trim() ? { scale: 0.95 } : {}}
+                      >
+                        <FaPaperPlane />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+        
+        {comment.replies?.length > 0 && (
+          <motion.div 
+            className="replies-container-modern-travel-details"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {comment.replies.map((reply, replyIndex) => 
+              renderComment(reply, parentIds.concat(comment.id), replyIndex)
+            )}
+          </motion.div>
+        )}
+      </motion.div>
+    );
+  };
+
+  // Handle image error
+  const handleImageError = (e) => {
+    e.target.src = require("../images/Globe-Memories.jpg");
+  };
+
+  // Navigation functions for images
+  const handlePrevImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentHeroIndex(prevIndex => 
+      prevIndex === 0 ? allImages.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNextImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentHeroIndex(prevIndex => 
+      (prevIndex + 1) % allImages.length
+    );
+  };
+
+  // Mock travel data (in real app, this would come from API)
+  useEffect(() => {
+    const mockTravel = {
+      id: parseInt(id),
+      name: "Viagem a Aveiro com a família",
+      city: "Aveiro",
+      country: "Portugal",
+      user: "Tiago",
+      highlightImage: require("../images/highlightImage/aveiro.jpg"),
+      price: "750",
+      days: 5,
+      views: 1250,
+      likes: 87,
+      comments: 23,
+      stars: 4.5,
+      category: ["Natureza", "Cultural", "Cidade", "História", "Gastronomia", "Arquitetura", "Paisagem"],
+      transport: "Comboio",
+      transportDetails: {
+        main: "Comboio",
+        price: "15€",
+        additional: ["Metro", "Autocarro", "Táxi", "Bicicleta"]
+      },
+      startDate: "2024-06-15",
+      endDate: "2024-06-20",
+      BookingTripPaymentDate: "2024-05-15",
+      priceDetails: {
+        hotel: "200",
+        flight: "150",
+        food: "300",
+        extras: "100"
+      },
+      description: "Uma viagem incrível pela cidade dos canais portugueses.",
+      longDescription: "Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade. Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade. Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade. Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade. Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade. Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade. Aveiro é conhecida como a 'Veneza de Portugal' devido aos seus canais e barcos moliceiros coloridos. Esta cidade encantadora oferece uma mistura perfeita de tradição e modernidade.",
+      climate: "Temperado oceânicoTemperado oceânicoTemperado oceânicoTemperado oceânicoTemperado oceânico",
+      language: "Português",
+      languages: ["Português", "Inglês"],
+      travelVideos: ["/videos/aveiro.mp4"],
+      images_generalInformation: [
+        require("../images/travels/aveiro1.jpg"),
+        require("../images/travels/aveiro2.jpg"),
+        require("../images/travels/aveiro3.jpg"),
+        require("../images/travels/aveiro4.jpg")
+      ],
+      accommodations: [
+        {
+          name: "Hotel Aveiro Center",
+          type: "Hotel",
+          description: "Hotel moderno no centro da cidade",
+          rating: 4,
+          nights: "4",
+          checkInDate: "2024-06-15",
+          checkOutDate: "2024-06-20",
+          regime: "Pequeno-almoço incluído",
+          images: [require("../images/travels/aveiro5.jpg")]
+        }
+      ],
+      foodRecommendations: [
+        {
+          name: "Ovos Moles",
+          description: "Doce tradicional de Aveiro feito com ovos e açúcar"
+        },
+        {
+          name: "Caldeirada de Enguias",
+          description: "Prato típico da região com enguias da ria"
+        }
+      ],
+      images_foodRecommendations: [
+        require("../images/travels/aveiro10.jpg"),
+        require("../images/travels/aveiro11.jpg")
+      ],
+      pointsOfInterest: [
+        {
+          name: "Museu de Aveiro",
+          description: "Antigo Convento de Jesus com rica história",
+          type: "Museu",
+        }
+      ],
+      images_referencePoints: [
+        require("../images/travels/aveiro7.jpg"),
+        require("../images/travels/aveiro8.jpg")
+      ],
+      localTransport: [
+        {
+          name: "Autocarro urbano",
+          images: [require("../images/travels/aveiro9.jpg")]
+        }
+      ],
+      itinerary: [
+        {
+          day: 1,
+          activities: ["Chegada ao hotel", "Passeio pelos canais", "Jantar típico"]
+        },
+        {
+          day: 2,
+          activities: ["Visita ao Museu de Aveiro", "Prova de ovos moles", "Passeio de moliceiro"]
+        }
+      ],
+      activities: ["Passeio de moliceiro", "Visita a museus", "Gastronomia local"],
+      negativePoints: [
+        {
+          name: "Chuva inesperada",
+          description: "Houve alguns dias de chuva que limitaram as atividades ao ar livre"
+        }
+      ],
+      safety: {
+        tips: ["Cidade muito segura", "Atenção nas zonas dos canais"],
+        vaccinations: []
+      }
+    };
+    
+    setTravel(mockTravel);
+    setLikeCount(mockTravel.likes);
+    setComments([
+      {
+        id: 1,
+        user: "Ana Silva",
+        userProfilePicture: defaultAvatar,
+        text: "Que viagem incrível! Aveiro é mesmo uma cidade encantadora.",
+        createdAt: new Date('2024-06-25').toISOString(),
+        likes: 12,
+        replies: [
+          {
+            id: 11,
+            user: "Tiago",
+            userProfilePicture: defaultAvatar,
+            text: "Obrigado Ana! Foi mesmo uma experiência fantástica.",
+            createdAt: new Date('2024-06-25T14:30:00').toISOString(),
+            likes: 3,
+            replies: []
+          }
+        ]
+      },
+      {
+        id: 2,
+        user: "João Santos",
+        userProfilePicture: defaultAvatar,
+        text: "Adorei as fotos dos canais! Vou definitivamente visitar.",
+        createdAt: new Date('2024-06-26').toISOString(),
+        likes: 8,
+        replies: []
+      },
+      {
+        id: 3,
+        user: "Maria Costa",
+        userProfilePicture: defaultAvatar,
+        text: "Os ovos moles são mesmo deliciosos! Recomendo a todos.",
+        createdAt: new Date('2024-06-27').toISOString(),
+        likes: 5,
+        replies: []
+      }
+    ]);
+    setLoading(false);
+  }, [id]);
+
+  // Função para obter todas as imagens da viagem
+  const getAllImages = () => {
+    if (!travel) return [];
+    
+    const images = [];
+    
+    // 1º - Imagem de Destaque
+    if (travel.highlightImage) {
+      images.push({
+        url: travel.highlightImage,
+        type: 'highlight',
+        caption: 'Imagem de Destaque'
+      });
+    }
+    
+    // 2º - Fotografias das Informações Gerais
+    if (travel.images_generalInformation && travel.images_generalInformation.length > 0) {
+      travel.images_generalInformation.forEach((img, index) => {
+        images.push({
+          url: img,
+          type: 'general',
+          caption: `Informações Gerais ${index + 1}`
+        });
+      });
+    }
+    
+    // 3º - Fotografias da Estadia
+    if (travel.accommodations && travel.accommodations.length > 0) {
+      travel.accommodations.forEach(acc => {
+        if (acc.images && acc.images.length > 0) {
+          acc.images.forEach((img, index) => {
+            images.push({
+              url: img,
+              type: 'accommodation',
+              caption: `Estadia: ${acc.name}`
+            });
+          });
+        }
+      });
+    }
+    
+    // 4º - Fotografias das Recomendações Alimentares
+    if (travel.images_foodRecommendations && travel.images_foodRecommendations.length > 0) {
+      travel.images_foodRecommendations.forEach((img, index) => {
+        images.push({
+          url: img,
+          type: 'food',
+          caption: `Gastronomia ${index + 1}`
+        });
+      });
+    }
+    
+    // 5º - Fotografias dos Métodos de Transporte
+    if (travel.localTransport && travel.localTransport.length > 0) {
+      travel.localTransport.forEach(transport => {
+        if (transport.images && transport.images.length > 0) {
+          transport.images.forEach((img, index) => {
+            images.push({
+              url: img,
+              type: 'transport',
+              caption: `Transporte: ${transport.name}`
+            });
+          });
+        }
+      });
+    }
+    
+    // 6º - Fotografias dos Pontos de Referência
+    if (travel.images_referencePoints && travel.images_referencePoints.length > 0) {
+      travel.images_referencePoints.forEach((img, index) => {
+        images.push({
+          url: img,
+          type: 'reference',
+          caption: `Pontos de Interesse ${index + 1}`
+        });
+      });
+    }
+    
+    return images;
+  };
+
+  // Obter vídeos da viagem (prioridade)
+  const getVideos = () => {
+    if (!travel) return [];
+    return travel.travelVideos && travel.travelVideos.length > 0 ? travel.travelVideos : [];
+  };
+
+  const allImages = getAllImages();
+  const videos = getVideos();
+  const hasVideos = videos.length > 0;
+
+  // useEffect para gerenciar o slideshow (apenas imagens no hero)
+  useEffect(() => {
+    let slideInterval;
+
+    if (allImages.length > 1) {
+      // Slideshow de imagens a cada 4.5 segundos
+      slideInterval = setInterval(() => {
+        setCurrentHeroIndex(prevIndex => (prevIndex + 1) % allImages.length);
+      }, 4500); // 4.5 segundos por imagem
+    }
+
+    return () => {
+      if (slideInterval) {
+        clearInterval(slideInterval);
+      }
+    };
+  }, [allImages.length]);
+
+  // Inicializar com primeira imagem
+  useEffect(() => {
+    setCurrentHeroIndex(0);
+  }, [allImages.length]);
+
+  // Obter imagem atual para exibir no hero
+  const getCurrentImage = () => {
+    if (allImages.length > 0) {
+      return allImages[currentHeroIndex];
+    }
+    return null;
+  };
+
+  const currentImage = getCurrentImage();
+
+  if (loading) {
+    return <div className="loading">A carregar detalhes da viagem...</div>;
   }
 
-  const renderStars = (stars) =>
-    [...Array(5)].map((_, index) => (
-      <FaStar
-        key={index}
-        color={index < stars ? '#ffc107' : '#e4e5e9'}
-        size={20}
-      />
-    ));
-
-  const translateX = `-${currentIndex * itemWidth}px`;
+  if (!travel) {
+    return <div className="error">Viagem não encontrada.</div>;
+  }
 
   return (
-    <div className="travel-details-container">
-      <div className="travel-info">
-        <div className="highlight-image">
-          <img src={travel.highlightImage} alt={`Imagem de destaque de ${travel.name}`} />
-        </div>
+    <div className="travel-details-container-travel-details">
+   
 
-        <div className="info">
-          <div className="infoLeft">
-            <h1>{travel.name}</h1>
-            <p><strong>👤 Viajante:</strong> {user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'Viajante não disponível'}</p>
-            <p>
-              <strong>🌍 País:</strong> {travel.countryName}
-              <strong> 🏙️ Cidade:</strong> {travel.city}
-            </p>
-            <p><strong>🗂️ Categoria:</strong> {travel.categories && travel.categories.length > 0 ? travel.categories.map(cat => cat.name).join(', ') : 'Nenhuma categoria'}</p>
-            <p><strong>💰 Preço Total Da Viagem:</strong> {travel.cost && travel.cost.total ? travel.cost.total : 'N/A'}€</p>
 
-            {showPriceDetails && travel.cost && (
-              <div className="price-details">
-                <p><strong>Preço da Estadia:</strong> {travel.cost.accommodation || 'N/A'}€</p>
-                <p><strong>Preço da Alimentação:</strong> {travel.cost.food || 'N/A'}€</p>
-                <p><strong>Preço Métodos de Transporte:</strong> {travel.cost.transport || 'N/A'}€</p>
-                <p><strong>Extras:</strong> {travel.cost.extra || 'N/A'}€</p>
+      {/* Hero Section */}
+      <div className="travel-hero-travel-details">
+        <div className="hero-image-container-travel-details">
+          {currentImage && (
+            <>
+              <img 
+                src={currentImage.url} 
+                alt={currentImage.caption || `Imagem de destaque de ${travel.name}`} 
+                className="hero-background-image-travel-details"
+                onError={handleImageError}
+              />
+              
+              {/* Navigation arrows (igual ao Home.js) */}
+              {allImages.length > 1 && (
+                <>
+                  <button className="hero-nav-btn-travel-details hero-nav-prev-travel-details" onClick={handlePrevImage}>
+                    <ArrowLeft />
+                  </button>
+                  <button className="hero-nav-btn-travel-details hero-nav-next-travel-details" onClick={handleNextImage}>
+                    <ArrowRight />
+                  </button>
+                </>
+              )}
+              
+              {/* Image counter */}
+              {allImages.length > 1 && (
+                <div className="hero-image-counter-travel-details">
+                  {currentHeroIndex + 1} / {allImages.length}
+                </div>
+              )}
+              
+              <div className="hero-overlay-travel-details">
+                <div className="hero-content-travel-details">
+                  {/* Travel Header */}
+                  <div className="hero-header-travel-details">
+                    <div className="travel-info-top-travel-details">
+                      <h2 className="travel-title-travel-details">{travel.name}</h2>
+                      <div className="travel-meta-top-travel-details">
+                        <div className="travel-location-travel-details">
+                          <span className="location-icon-travel-details">📍</span>
+                          <span>{travel.city}, {travel.country}</span>
+                        </div>
+                        <div className="travel-author-travel-details">
+                          <span className="author-icon-travel-details">👤</span>
+                          <span>Por: {travel.user}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Travel Rating */}
+                    <div className="travel-rating-travel-details">
+                      <div className="rating-stars-travel-details">
+                        {renderStars(Math.floor(travel.stars))}
+                        <span className="rating-value-travel-details"></span>
+                      </div>
+                      <span className="rating-label-travel-details"></span>
+                    </div>
+                  </div>
+                  
+                  {/* Travel Stats */}
+                  <div className="hero-stats-travel-details">
+                    <div className="stat-item-travel-details">
+                      <span className="stat-icon-travel-details">📅</span>
+                      <span className="stat-value-travel-details">{travel.days}</span>
+                      <span className="stat-label-travel-details">dias</span>
+                    </div>
+                    <div className="stat-item-travel-details" onClick={handleLike}>
+                      <FaHeart className={`stat-icon-travel-details ${isLiked ? 'liked' : ''}`} />
+                      <span className="stat-value-travel-details">{likeCount}</span>
+                      <span className="stat-label-travel-details">gostos</span>
+                    </div>
+                    <div className="stat-item-travel-details" onClick={toggleComments}>
+                      <FaComment className="stat-icon-travel-details" />
+                      <span className="stat-value-travel-details">{comments.length}</span>
+                      <span className="stat-label-travel-details">comentários</span>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons (removido botão partilhar) */}
+                  <div className="hero-actions-travel-details">
+                    <button 
+                      className={`action-btn-travel-details like-btn-travel-details ${isLiked ? 'liked' : ''}`}
+                      onClick={handleLike}
+                    >
+                      <FaHeart />
+                      {isLiked ? 'Gostei' : 'Gostar'}
+                    </button>
+                    <button className="action-btn-travel-details comment-btn-travel-details" onClick={toggleComments}>
+                      <FaComment />
+                      Comentar
+                    </button>
+                  </div>
+                  
+                  {/* Image Caption */}
+                  {currentImage && (
+                    <div className="hero-caption-travel-details">
+                      <span className="caption-type-travel-details">
+                        {currentImage.type === 'highlight' ? '🌟' : 
+                         currentImage.type === 'general' ? 'ℹ️' :
+                         currentImage.type === 'accommodation' ? '🏨' :
+                         currentImage.type === 'food' ? '🍽️' :
+                         currentImage.type === 'transport' ? '🚗' :
+                         currentImage.type === 'reference' ? '📍' : '📸'}
+                      </span>
+                      <span className="caption-text-travel-details">{currentImage.caption}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </>
+          )}
+        </div>
+      </div>
 
-            <button onClick={() => setShowPriceDetails(!showPriceDetails)}>
-              {showPriceDetails ? 'Ocultar Detalhes de Preço' : 'Ver Detalhes de Preço'}
-            </button>
-            <br />
-            <br />
-            <p><strong>📅 Datas:</strong> {travel.startDate} a {travel.endDate}</p>
-            <p><strong>📅 Data de Marcação:</strong> {travel.bookingDate}</p>
-            <p><strong>Avaliação Geral:</strong> {renderStars(travel.tripRating)}</p>
+      {/* Modal de Comentários (igual ao Home.js) */}
+      <AnimatePresence>
+        {showCommentsModal && (
+          <motion.div
+            className="modal-overlay-travel-details"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCloseComments}
+          >
+            <motion.div
+              className="comments-modal-travel-details"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 500 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="comments-modal-header-travel-details">
+                <h3>Comentários ({comments.length})</h3>
+                <button className="close-comments-travel-details" onClick={handleCloseComments}>×</button>
+              </div>
+              
+              {/* Add Comment */}
+              {user && (
+                <div className="add-comment-travel-details">
+                  <img 
+                    src={user.profilePicture || defaultAvatar} 
+                    alt="Seu avatar" 
+                    className="user-avatar-travel-details" 
+                  />
+                  <div className="comment-input-container-travel-details">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Escreva um comentário..."
+                      className="comment-input-travel-details"
+                      rows="3"
+                      maxLength={250}
+                    />
+                    <div className="comment-actions-container-travel-details">
+                      <span className="char-count-travel-details">{newComment.length}/250</span>
+                      <button 
+                        className="comment-submit-travel-details"
+                        onClick={() => handleAddComment()}
+                        disabled={!newComment.trim() || commentLoading}
+                      >
+                        {commentLoading ? 'Publicando...' : 'Publicar'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!user && (
+                <div className="login-prompt-travel-details">
+                  <p>Faça login para comentar nesta viagem</p>
+                </div>
+              )}
+
+              {commentSuccess && (
+                <div className="comment-success-travel-details">
+                  {commentSuccess}
+                </div>
+              )}
+              
+              {/* Comments List */}
+              <div className="comments-list-travel-details">
+                {comments.length > 0 ? (
+                  comments.map((comment, index) => renderComment(comment, [], index))
+                ) : (
+                  <div className="no-comments-travel-details">
+                    <span className="no-comments-icon-travel-details">💬</span>
+                    <p>Ainda não há comentários.</p>
+                    <p>Seja o primeiro a comentar!</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Travel Summary Cards */}
+      <div className="travel-summary-travel-details">
+        <div className="summary-cards-travel-details">
+          <div className="summary-card-travel-details price-card-travel-details">
+            <div className="card-icon-travel-details">💰</div>
+            <div className="card-content-travel-details">
+              <h3>Preço Total</h3>
+              <p className="price-travel-details">{travel.price || 'N/A'}€</p>
+              <button className="price-toggle-travel-details" onClick={openPriceModal}>
+                Ver Detalhes
+              </button>
+            </div>
           </div>
 
-          <div className="infoRight">
-            <p><strong>📖 Descrição da Viagem:</strong> <br />{travel.tripDescription}</p>
+          <div className="summary-card-travel-details category-card-travel-details" onClick={openCategoriesModal}>
+            <div className="card-icon-travel-details">🏷️</div>
+            <div className="card-content-travel-details">
+              <h3>Categorias</h3>
+              <div className="categories-display-travel-details">
+                {travel.category && travel.category.length > 0 ? (
+                  <div className="category-tags-travel-details">
+                    {travel.category.slice(0, 3).map((cat, index) => (
+                      <span key={index} className="category-tag-travel-details">{cat}</span>
+                    ))}
+                    {travel.category.length > 3 && (
+                      <span className="more-categories-travel-details">+{travel.category.length - 3}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="no-categories-travel-details">Não categorizada</span>
+                )}
+              </div>
+              <button className="view-all-btn-travel-details">Ver Todas</button>
+            </div>
+          </div>
+
+          <div className="summary-card-travel-details dates-card-travel-details">
+            <div className="card-icon-travel-details">📅</div>
+            <div className="card-content-travel-details">
+              <h3>Datas da Viagem</h3>
+              <div className="dates-info-travel-details">
+                {travel.startDate && travel.endDate ? (
+                  <>
+                    <div className="date-range-travel-details">
+                      <span className="start-date-travel-details">
+                        {new Date(travel.startDate).toLocaleDateString('pt-PT')}
+                      </span>
+                      <span className="date-separator-travel-details">→</span>
+                      <span className="end-date-travel-details">
+                        {new Date(travel.endDate).toLocaleDateString('pt-PT')}
+                      </span>
+                    </div>
+                    {travel.BookingTripPaymentDate && (
+                      <div className="booking-date-travel-details">
+                        <small>Reserva: {new Date(travel.BookingTripPaymentDate).toLocaleDateString('pt-PT')}</small>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <span className="no-dates-travel-details">Datas não definidas</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="summary-card-travel-details transport-card-travel-details" onClick={openTransportModal}>
+            <div className="card-icon-travel-details">🚗</div>
+            <div className="card-content-travel-details">
+              <h3>Transporte Principal</h3>
+              <div className="transport-info-travel-details">
+                <span className="transport-method-travel-details">{travel.transport || 'Não especificado'}</span>
+                <span className="transport-duration-travel-details">{travel.transportDetails?.duration}</span>
+              </div>
+              <button className="view-details-btn-travel-details">Ver Detalhes</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="moreDetails">
-        <div className="tabs">
+
+
+
+
+      <div className="moreDetails-travel-details">
+        <div className="tabs-travels-travel-details">
           <button
-            className={`tab-button ${activeTab === 'generalInformation' ? 'active' : ''}`}
+            className={`tab-button-travel-details ${activeTab === 'generalInformation' ? 'active' : ''}`}
             onClick={() => setActiveTab('generalInformation')}
           >
             Informações Gerais
           </button>
           <button
-            className={`tab-button ${activeTab === 'accommodations' ? 'active' : ''}`}
+            className={`tab-button-travel-details ${activeTab === 'accommodations' ? 'active' : ''}`}
             onClick={() => setActiveTab('accommodations')}
           >
             Estadia
           </button>
           <button
-            className={`tab-button ${activeTab === 'foodRecommendations' ? 'active' : ''}`}
+            className={`tab-button-travel-details ${activeTab === 'foodRecommendations' ? 'active' : ''}`}
             onClick={() => setActiveTab('foodRecommendations')}
           >
-            Alimentação
+            Gastronomia
           </button>
           <button
-            className={`tab-button ${activeTab === 'transport' ? 'active' : ''}`}
-            onClick={() => setActiveTab('transport')}
-          >
-            Métodos de Transporte
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'referencePoints' ? 'active' : ''}`}
+            className={`tab-button-travel-details ${activeTab === 'referencePoints' ? 'active' : ''}`}
             onClick={() => setActiveTab('referencePoints')}
           >
-            Pontos de Referência
+            Pontos de Interesse
           </button>
           <button
-            className={`tab-button ${activeTab === 'itinerary' ? 'active' : ''}`}
+            className={`tab-button-travel-details ${activeTab === 'itinerary' ? 'active' : ''}`}
             onClick={() => setActiveTab('itinerary')}
           >
-            Itinerário da Viagem
+            Itinerário
           </button>
+          {hasVideos && (
+            <button
+              className={`tab-button-travel-details ${activeTab === 'videos' ? 'active' : ''}`}
+              onClick={() => setActiveTab('videos')}
+            >
+              Vídeos
+            </button>
+          )}
           <button
-            className={`tab-button ${activeTab === 'negativePoints' ? 'active' : ''}`}
+            className={`tab-button-travel-details ${activeTab === 'negativePoints' ? 'active' : ''}`}
             onClick={() => setActiveTab('negativePoints')}
           >
             Pontos Negativos
           </button>
         </div>
 
-        <div className="tab-content">
+        <div className="tab-content-travels-travel-details">
           {activeTab === 'generalInformation' && (
-            <>
-              <div className="generalInfoLeft">
-                <h2>{travel.name}</h2>
-                <p><strong>Clima:<br /></strong> {travel.weather}</p>
-                <p><strong>Línguas Utilizadas:<br /></strong> {travel.languagesSpoken && travel.languagesSpoken.length > 0 ? travel.languagesSpoken.map(lang => lang.name).join(', ') : 'Nenhuma língua especificada'}<br /></p>
+            <div className="tab-content-travels-travel-details">
+              <div className="tab-header-travel-details">
+                <h2>ℹ️ Informações Gerais</h2>
+                <p>Detalhes essenciais sobre esta viagem</p>
               </div>
 
-              <div className="generalInfoRight">
-                <p><strong>📖 Descrição da Viagem:<br /></strong> {travel.tripDescription}</p>
-              </div>
-              <br />
-              <br />
-              <br />
-
-              <div className="masonry-gallery">
-                <h2>Galeria de Fotos</h2>
-                <div className="masonry-grid">
-                  {travel.images_generalInformation ? (
-                    travel.images_generalInformation.map((image, index) => (
-                      <div className="masonry-item" key={index} onClick={() => openModal(image)}>
-                        <img
-                          src={image instanceof File ? URL.createObjectURL(image) : image}
-                          alt={`Imagem da viagem ${index + 1}`}
-                          onError={(e) => (e.target.src = '/default-image.jpg')}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <p>Sem imagens disponíveis.</p>
+              {/* Conteúdo movido da seção de descrição */}
+              <div className="general-info-content-travel-details">
+                <h3>Sobre esta Viagem:</h3>
+                <div className="description-content-travel-details">
+                  {travel.longDescription && (
+                    <div className="long-description-travel-details">
+                      <p>{travel.longDescription}</p>
+                    </div>
+                  )}
+                  <br />
+                  {travel.description && travel.description !== travel.longDescription && (
+                    <div className="short-description-travel-details">
+                      <h3>Resumo:</h3>
+                      <p>{travel.description}</p>
+                    </div>
+                  )}
+                  {!travel.longDescription && !travel.description && (
+                    <p className="no-description-travel-details">Descrição não disponível.</p>
+                  )}
+                </div>
+                
+                {/* Climate and Language Info */}
+                <div className="additional-info-travel-details">
+                  {travel.climate && (
+                    <div className="climate-info-travel-details">
+                      <span className="info-icon-travel-details">🌤️</span>
+                      <span><strong>Clima:</strong> {travel.climate}</span>
+                    </div>
+                  )}
+                  {travel.language && (
+                    <div className="language-info-travel-details">
+                      <span className="info-icon-travel-details">�️</span>
+                      <span><strong>Línguas Utilizadas:</strong> {travel.language}</span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {recommendedTravels.length > 0 && (
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
-                    
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-
-                    
+              {/* Galeria de fotos mantida */}
+              {travel.images_generalInformation && travel.images_generalInformation.length > 0 && (
+                <div className="general-gallery">
+                  <h3>📷 Galeria de Fotos</h3>
+                  <div className="images-grid">
+                    {travel.images_generalInformation.map((image, index) => (
+                      <div key={index} className="image-item" onClick={() => openModal(image)}>
+                        <img src={image} alt={`Informação geral ${index + 1}`} />
+                        <div className="image-overlay">
+                          <span className="image-icon">🔍</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {activeTab === 'accommodations' && (
-            <div>
-              <div className="generalInfoLeft">
-                <h2>{travel.name} | Estadia</h2>
-                <br />
-                {travel.accommodations && travel.accommodations.length > 0 ? travel.accommodations.map((acc, index) => (
-                  <span key={index}>
-                    <strong>🏨 Nome: </strong> {acc.name}<br />
-                    <br />
-                    <strong>🏨 Tipo de Estadia: </strong> <br />
-                    {acc.accommodationTypeName} <br />
-                    <br />
-                    <strong>📖 Regime: </strong> <br />
-                    {acc.accommodationBoardName} <br />
-                    <br />
-                    <strong>📅 Check-in: </strong> <br />
-                    {acc.checkIn} <br />
-                    <br />
-                    <strong>📅 Check-out: </strong> <br />
-                    {acc.checkOut} <br />
-                    <br />
-                    <strong>📅 Data de Marcação: </strong> <br />
-                    {acc.bookingDate} <br />
-                    <br />
-                    <strong>📅 Número de Noites: </strong> <br />
-                    {acc.nrNights} <br />
-                    <br />
-                    <strong>📅 Preço: </strong> <br />
-                    {acc.price} <br />
-                    <br />
-                    <strong>📅 Rating: </strong> <br />
-                    {acc.rating} <br />
-                  </span>
-                )) : <p>Nenhuma estadia disponível.</p>}
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>🏨 Estadia</h2>
+                <p>Informações sobre onde ficaste durante a viagem</p>
               </div>
 
-              <div className="generalInfoRight">
-                {travel.accommodations && travel.accommodations.length > 0 ? travel.accommodations.map((acc, index) => (
-                  <span key={index}>
-                    <br />
-                    <strong>📖 Descrição da Estadia: </strong> <br />
-                    {acc.description} <br />
-                  </span>
-                )) : <p>Nenhuma descrição de estadia disponível.</p>}
-              </div>
-
-              <div className="masonry-gallery">
-                <h2>Galeria de Fotos da Alimentação</h2>
-                <div className="masonry-grid">
-                  {travel.images_accommodations ? (
-                    travel.images_accommodations.map((image, index) => (
-                      <div className="masonry-item" key={index} onClick={() => openModal(image)}>
-                        <img
-                          src={image instanceof File ? URL.createObjectURL(image) : image}
-                          alt={`Imagem da alimentação ${index + 1}`}
-                          onError={(e) => (e.target.src = '/default-image.jpg')}
-                        />
+              <div className="accommodations-grid">
+                {travel.accommodations && travel.accommodations.length > 0 ? (
+                  travel.accommodations.map((acc, index) => (
+                    <div key={index} className="accommodation-card">
+                      <div className="accommodation-header">
+                        <h3 className="accommodation-name">{acc.name}</h3>
+                        <div className="accommodation-rating">
+                          {renderStars(acc.rating || 0)}
+                          <span className="rating-value">({acc.rating || 0}/5)</span>
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <p>Sem imagens disponíveis.</p>
-                  )}
-                </div>
-              </div>
 
-              {recommendedTravels.length > 0 && (
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
+                      <div className="accommodation-details">
+                        <div className="detail-row">
+                          <span className="detail-icon">🏨</span>
+                          <span className="detail-label">Tipo:</span>
+                          <span className="detail-value">{acc.type || 'Não especificado'}</span>
+                        </div>
 
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
+                        <div className="detail-row">
+                          <span className="detail-icon">🍽️</span>
+                          <span className="detail-label">Regime:</span>
+                          <span className="detail-value">{acc.regime || 'Não especificado'}</span>
+                        </div>
+
+                        <div className="detail-row">
+                          <span className="detail-icon">🌙</span>
+                          <span className="detail-label">Noites:</span>
+                          <span className="detail-value">{acc.nights || 'N/A'}</span>
+                        </div>
+
+                        <div className="detail-row">
+                          <span className="detail-icon">📅</span>
+                          <span className="detail-label">Check-in:</span>
+                          <span className="detail-value">
+                            {acc.checkInDate ? new Date(acc.checkInDate).toLocaleDateString('pt-PT') : 'N/A'}
+                          </span>
+                        </div>
+
+                        <div className="detail-row">
+                          <span className="detail-icon">📅</span>
+                          <span className="detail-label">Check-out:</span>
+                          <span className="detail-value">
+                            {acc.checkOutDate ? new Date(acc.checkOutDate).toLocaleDateString('pt-PT') : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {acc.description && (
+                        <div className="accommodation-description">
+                          <p>{acc.description}</p>
+                        </div>
+                      )}
+
+                      {acc.images && acc.images.length > 0 && (
+                        <div className="accommodation-images">
+                          
+                          <div className="images-grid">
+                            {acc.images.map((image, imgIndex) => (
+                              <div key={imgIndex} className="image-item" onClick={() => openModal(image)}>
+                                <img src={image} alt={`${acc.name} - Foto ${imgIndex + 1}`} />
+                                <div className="image-overlay">
+                                  <span className="image-icon">🔍</span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </Link>
-                      ))}
+                        </div>
+                      )}
                     </div>
-
+                  ))
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">🏨</div>
+                    <h3>Nenhuma estadia registada</h3>
+                    <p>Não há informações sobre acomodações para esta viagem.</p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
 
           {activeTab === 'foodRecommendations' && (
-            <div>
-              <h2>Alimentação</h2>
-              <p>
-                <strong>🍽️ Recomendações de Comida:</strong><br />
-                {travel.recommendedFoods && travel.recommendedFoods.length > 0 ? travel.recommendedFoods.map((food, index) => (
-                  <span key={index}>
-                    {food.name} - {food.description} <br />
-                  </span>
-                )) : <span>Nenhuma recomendação de comida disponível.</span>}
-              </p>
-              <br />
-              <br />
-              <div className="masonry-gallery">
-                <h2>Galeria de Fotos da Alimentação</h2>
-                <div className="masonry-grid">
-                  {travel.images_foodRecommendations ? (
-                    travel.images_foodRecommendations.map((image, index) => (
-                      <div className="masonry-item" key={index} onClick={() => openModal(image)}>
-                        <img
-                          src={image instanceof File ? URL.createObjectURL(image) : image}
-                          alt={`Imagem da alimentação ${index + 1}`}
-                          onError={(e) => (e.target.src = '/default-image.jpg')}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <p>Sem imagens disponíveis.</p>
-                  )}
-                </div>
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>🍽️ Gastronomia</h2>
+                <p>Descobrir os sabores desta viagem</p>
               </div>
 
-              {recommendedTravels.length > 0 && (
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
+              <div className="food-recommendations">
+                {travel.foodRecommendations && travel.foodRecommendations.length > 0 ? (
+                  <div className="food-grid">
+                    {travel.foodRecommendations.map((food, index) => (
+                      <div key={index} className="food-card">
+                        <div className="food-header">
+                          <h3 className="food-name">{food.name}</h3>
+                          <span className="food-icon">🍽️</span>
+                        </div>
+                        <div className="food-description">
+                          <p>{food.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">🍽️</div>
+                    <h3>Nenhuma recomendação gastronómica</h3>
+                    <p>Não há recomendações alimentares registadas para esta viagem.</p>
+                  </div>
+                )}
+              </div>
 
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-
+              {travel.images_foodRecommendations && travel.images_foodRecommendations.length > 0 && (
+                <div className="food-gallery">
+                  <h3>Galeria de Fotos da Gastronomia</h3>
+                  <div className="images-grid">
+                    {travel.images_foodRecommendations.map((image, index) => (
+                      <div key={index} className="image-item" onClick={() => openModal(image)}>
+                        <img
+                          src={image instanceof File ? URL.createObjectURL(image) : image}
+                          alt={`Gastronomia ${index + 1}`}
+                          onError={(e) => (e.target.src = '/default-image.jpg')}
+                        />
+                        <div className="image-overlay">
+                          <span className="image-icon">🔍</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {activeTab === 'transport' && (
-            <div>
-              <h2>Métodos de Transporte</h2>
-              {travel.tripTransports && travel.tripTransports.length > 0 ? (
-                travel.tripTransports.map((transport, index) => (
-                  <div key={index} className="transport-details">
-                    <p><strong>✈️ Nome do Transporte:</strong> {transport.name}</p>
-                    <p><strong>Descrição:</strong> {transport.description}</p>
-                    <p><strong>Custo:</strong> {transport.cost}€</p>
-
-                    <div className="masonry-gallery">
-                      <h3>Galeria de Fotos do Transporte</h3>
-                      <div className="masonry-grid">
-                        {transport.images && transport.images.length > 0 ? (
-                          transport.images.map((image, imgIndex) => (
-                            <div className="masonry-item" key={imgIndex} onClick={() => openModal(image)}>
-                              <img
-                                src={image instanceof File ? URL.createObjectURL(image) : image}
-                                alt={`Imagem do transporte ${imgIndex + 1}`}
-                                onError={(e) => (e.target.src = '/default-image.jpg')}
-                              />
-                            </div>
-                          ))
-                        ) : (
-                          <p>Sem imagens disponíveis.</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p>Nenhum método de transporte disponível.</p>
-              )}
-
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
-
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-
-                  </div>
-                </div>  
-          </div>
-
-          )}
-
           {activeTab === 'referencePoints' && (
-            <div>
-              <h2>Pontos de Referência</h2>
-              <p>
-                <strong>Pontos de Referência: </strong>
-                {travel.referencePoints && travel.referencePoints.length > 0 ? travel.referencePoints.map((referencePoint, index) => (
-                  <span key={index}>
-                    {referencePoint.name} ({referencePoint.description}) -{' '}
-                    <a href={referencePoint.link} target="_blank" rel="noopener noreferrer">
-                      Link
-                    </a>
-                    <br />
-                  </span>
-                )) : <span>Nenhum ponto de referência disponível.</span>}
-              </p>
-              <br />
-              <br />
-              <div className="masonry-gallery">
-                <h2>Galeria de Fotos Pontos de Referência</h2>
-                <div className="masonry-grid">
-                  {travel.images_referencePoints ? (
-                    travel.images_referencePoints.map((image, index) => (
-                      <div className="masonry-item" key={index} onClick={() => openModal(image)}>
-                        <img
-                          src={image instanceof File ? URL.createObjectURL(image) : image}
-                          alt={`Imagem do ponto de referência ${index + 1}`}
-                          onError={(e) => (e.target.src = '/default-image.jpg')}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <p>Sem imagens disponíveis.</p>
-                  )}
-                </div>
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>📍 Pontos de Interesse</h2>
+                <p>Locais especiais visitados durante a viagem</p>
               </div>
 
-              {recommendedTravels.length > 0 && (
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
-                    
-
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
+              <div className="points-of-interest">
+                {travel.pointsOfInterest && travel.pointsOfInterest.length > 0 ? (
+                  <div className="points-grid">
+                    {travel.pointsOfInterest.map((point, index) => (
+                      <div key={index} className="point-card">
+                        <div className="point-header">
+                          <h3 className="point-name">{point.name}</h3>
+                          <span className="point-type">{point.type}</span>
+                        </div>
+                        <div className="point-description">
+                          <p>{point.description}</p>
+                        </div>
+                        {point.link && (
+                          <div className="point-link">
+                            <a href={point.link} target="_blank" rel="noopener noreferrer">
+                              🔗 Mais informações
+                            </a>
                           </div>
-                        </Link>
-                      ))}
-                    </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">📍</div>
+                    <h3>Nenhum ponto de interesse</h3>
+                    <p>Não há pontos de interesse registados para esta viagem.</p>
+                  </div>
+                )}
+              </div>
 
-                    
+              {travel.images_referencePoints && travel.images_referencePoints.length > 0 && (
+                <div className="points-gallery">
+                  <h3>Galeria dos Pontos de Interesse</h3>
+                  <div className="images-grid">
+                    {travel.images_referencePoints.map((image, index) => (
+                      <div key={index} className="image-item" onClick={() => openModal(image)}>
+                        <img src={image} alt={`Ponto de interesse ${index + 1}`} />
+                        <div className="image-overlay">
+                          <span className="image-icon">🔍</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -578,118 +1424,347 @@ const TravelDetails = () => {
           )}
 
           {activeTab === 'itinerary' && (
-            <div>
-              <h2>Itinerário da Viagem</h2>
-              {travel.tripItinerary && travel.tripItinerary.itineraryDays && travel.tripItinerary.itineraryDays.length > 0 ? travel.tripItinerary.itineraryDays.map((item, index) => (
-                <div key={index}>
-                  <h4>Dia {item.day}:</h4>
-                  <p>
-                    {item.topics.map((topic, topicIndex) => (
-                      <li key={topicIndex}><b>{topic.name}:</b> <br></br>{topic.description}</li>
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>📅 Itinerário da Viagem</h2>
+                <p>Plano dia a dia da tua aventura</p>
+              </div>
+
+              <div className="itinerary-container">
+                {travel.itinerary && travel.itinerary.length > 0 ? (
+                  <div className="itinerary-timeline">
+                    {travel.itinerary.map((day, index) => (
+                      <div key={index} className="itinerary-day">
+                        <div className="day-marker">
+                          <div className="day-number">Dia {day.day}</div>
+                          <div className="day-line"></div>
+                        </div>
+                        
+                        <div className="day-content">
+                          {day.activities && day.activities.length > 0 ? (
+                            <div className="activities-list">
+                              {day.activities.map((activity, actIndex) => (
+                                <div key={actIndex} className="activity-item">
+                                  <div className="activity-icon">📍</div>
+                                  <div className="activity-content">
+                                    <h4 className="activity-name">{activity}</h4>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="no-activities">
+                              <span className="no-activities-text">Sem atividades planeadas</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ))}
-                  </p>
-                </div>
-              )) : <p>Nenhum itinerário disponível.</p>}
+                  </div>
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">📅</div>
+                    <h3>Nenhum itinerário disponível</h3>
+                    <p>Não há plano dia a dia registado para esta viagem.</p>
+                  </div>
+                )}
+              </div>
 
-<br></br><br></br>
-{recommendedTravels.length > 0 && (
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
-                   
-
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-
-                    
+              {travel.activities && travel.activities.length > 0 && (
+                <div className="activities-summary">
+                  <h3>Resumo das Atividades</h3>
+                  <div className="activities-grid">
+                    {travel.activities.map((activity, index) => (
+                      <div key={index} className="activity-tag">
+                        <span className="activity-icon">🎯</span>
+                        <span className="activity-text">{activity}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-
             </div>
+          )}
 
+          {activeTab === 'videos' && (
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>🎥 Vídeos da Viagem</h2>
+                <p>Revive os momentos especiais através dos vídeos</p>
+              </div>
 
+              <div className="videos-section">
+                {videos && videos.length > 0 ? (
+                  <div className="videos-grid">
+                    {videos.map((video, index) => (
+                      <div key={index} className="video-card">
+                        <div className="video-header">
+                          <h3>Vídeo {index + 1}</h3>
+                          <span className="video-icon">🎬</span>
+                        </div>
+                        <div className="video-container">
+                          <video 
+                            controls 
+                            preload="metadata"
+                            className="travel-video"
+                          >
+                            <source src={video} type="video/mp4" />
+                            O seu navegador não suporta vídeos HTML5.
+                          </video>
+                        </div>
+                        <div className="video-info">
+                          <p>Vídeo da viagem - {travel.name}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">🎥</div>
+                    <h3>Nenhum vídeo disponível</h3>
+                    <p>Não há vídeos registados para esta viagem.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {activeTab === 'negativePoints' && (
-            <div>
-              <h2>Pontos Negativos</h2>
-              <p>
-                {travel.negativePoints && travel.negativePoints.length > 0 ? travel.negativePoints.map((np, npIndex) => (
-                  <li key={npIndex}><b>{np.name}:</b> <br></br>{np.description}</li>
-                )) : <span>Nenhum ponto negativo registado.</span>}
-              </p>
-<br></br><br></br>
-              {recommendedTravels.length > 0 && (
-                <div className="recommended-travels">
-                  <h2>Viagens Recomendadas</h2>
-                  <div className="carousel" ref={carouselRef}>
-                   
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>⚠️ Pontos Negativos</h2>
+                <p>Aspetos menos positivos desta experiência</p>
+              </div>
 
-                    <div
-                      className="recommended-travel-list"
-                      style={{ transform: `translateX(${translateX})` }}
-                    >
-                      {recommendedTravels.map((travel, index) => (
-                        <Link
-                          key={index}
-                          to={`/travel/${travel.id}`}
-                          className="recommended-travel-item"
-                          onClick={scrollToTop}
-                        >
-                          <div className="card">
-                            <img src={travel.highlightImage} alt={`Viagem para ${travel.name}`} />
-                            <p><strong>{travel.name}</strong></p>
-                            <p><strong>Preço:</strong> {travel.price || 'N/A'}€</p>
-                            <p>
-                              <strong>Avaliação Geral:</strong> {renderStars(travel.stars || 0)}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-
-                    
+              <div className="negative-points">
+                {travel.negativePoints && travel.negativePoints.length > 0 ? (
+                  <div className="negative-points-list">
+                    {travel.negativePoints.map((point, index) => (
+                      <div key={index} className="negative-point-card">
+                        <div className="negative-point-header">
+                          <span className="negative-icon">⚠️</span>
+                          <h3 className="negative-point-name">{point.name}</h3>
+                        </div>
+                        <div className="negative-point-description">
+                          <p>{point.description}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )}
-
-
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">✅</div>
+                    <h3>Nenhum ponto negativo reportado</h3>
+                    <p>Esta viagem não tem aspetos negativos registados!</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
 
+      {/* Seção de Viagens Recomendadas */}
+      {recommendedTravels.length > 0 && (
+        <div className="recommended-travels-section-travel-details">
+          <div className="recommended-header-travel-details">
+            <h2>🌟 Viagens Recomendadas</h2>
+            <p>Outras viagens da mesma categoria que pode interessar</p>
+          </div>
+          
+          <div className="recommended-carousel-container-travel-details">
+            <button 
+              className="carousel-nav-btn-travel-details carousel-prev-travel-details"
+              onClick={handleRecommendedPrev}
+              disabled={recommendedCurrentIndex === 0}
+            >
+              <ArrowLeft />
+            </button>
+            
+            <div className="recommended-carousel-travel-details" ref={recommendedCarouselRef}>
+              <div className="recommended-carousel-track-travel-details">
+                {recommendedTravels
+                  .slice(recommendedCurrentIndex, recommendedCurrentIndex + recommendedItemsPerView)
+                  .map((recommendedTravel) => (
+                  <div 
+                    key={recommendedTravel.id} 
+                    className="recommended-travel-card-travel-details"
+                    onClick={() => window.location.href = `/travel/${recommendedTravel.id}`}
+                  >
+                    <div className="recommended-travel-image-travel-details">
+                      <img 
+                        src={recommendedTravel.highlightImage} 
+                        alt={recommendedTravel.name}
+                        onError={handleImageError}
+                      />
+                      <div className="recommended-travel-overlay-travel-details">
+                        <div className="recommended-travel-rating-travel-details">
+                          {renderStars(recommendedTravel.stars)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="recommended-travel-info-travel-details">
+                      <h3 className="recommended-travel-name-travel-details">
+                        {recommendedTravel.name}
+                      </h3>
+                      <p className="recommended-travel-location-travel-details">
+                        📍 {recommendedTravel.city}, {recommendedTravel.country}
+                      </p>
+                      <p className="recommended-travel-author-travel-details">
+                        👤 Por: {recommendedTravel.user}
+                      </p>
+                      
+                      <div className="recommended-travel-categories-travel-details">
+                        {recommendedTravel.category.slice(0, 3).map((cat, index) => (
+                          <span key={index} className="recommended-category-tag-travel-details">
+                            {cat}
+                          </span>
+                        ))}
+                        {recommendedTravel.category.length > 3 && (
+                          <span className="recommended-more-categories-travel-details">
+                            +{recommendedTravel.category.length - 3}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <button className="recommended-view-btn-travel-details">
+                        Ver Detalhes
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <button 
+              className="carousel-nav-btn-travel-details carousel-next-travel-details"
+              onClick={handleRecommendedNext}
+              disabled={recommendedCurrentIndex >= recommendedTravels.length - recommendedItemsPerView}
+            >
+              <ArrowRight />
+            </button>
+          </div>
+          
+          {/* Indicadores de página */}
+          {recommendedTravels.length > recommendedItemsPerView && (
+            <div className="recommended-pagination-travel-details">
+              <span className="pagination-info-travel-details">
+                {Math.floor(recommendedCurrentIndex / recommendedItemsPerView) + 1} de {Math.ceil(recommendedTravels.length / recommendedItemsPerView)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Image Modal */}
       {selectedImage && (
-        <div className="image-modal" onClick={closeModal}>
-          <div className="modal-content-travel-details" onClick={(e) => e.stopPropagation()}>
-            <span className="modal-close-travel-details" onClick={closeModal}>
+        <div className="image-modal-travel-details" onClick={closeModal}>
+          <div className="modal-content-image-travel-details" onClick={(e) => e.stopPropagation()}>
+            <span className="modal-close-image-travel-details" onClick={closeModal}>
               ×
             </span>
             <img
               src={selectedImage instanceof File ? URL.createObjectURL(selectedImage) : selectedImage}
               alt="Imagem ampliada"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Price Details Modal */}
+      {showPriceModal && (
+        <div className="details-modal-travel-details" onClick={closePriceModal}>
+          <div className="modal-content-details-travel-details" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-travel-details">
+              <h3>💰 Detalhes dos Custos</h3>
+              <span className="modal-close-travel-details" onClick={closePriceModal}>×</span>
+            </div>
+            <div className="modal-body-travel-details">
+              <div className="price-breakdown-modal-travel-details">
+                <div className="breakdown-item-modal-travel-details">
+                  <span className="breakdown-icon-travel-details">🏨</span>
+                  <span className="breakdown-label-travel-details">Hotel</span>
+                  <span className="breakdown-value-travel-details">{travel.priceDetails?.hotel || '0'}€</span>
+                </div>
+                <div className="breakdown-item-modal-travel-details">
+                  <span className="breakdown-icon-travel-details">✈️</span>
+                  <span className="breakdown-label-travel-details">Voo</span>
+                  <span className="breakdown-value-travel-details">{travel.priceDetails?.flight || '0'}€</span>
+                </div>
+                <div className="breakdown-item-modal-travel-details">
+                  <span className="breakdown-icon-travel-details">🍽️</span>
+                  <span className="breakdown-label-travel-details">Comida</span>
+                  <span className="breakdown-value-travel-details">{travel.priceDetails?.food || '0'}€</span>
+                </div>
+                <div className="breakdown-item-modal-travel-details">
+                  <span className="breakdown-icon-travel-details">🎁</span>
+                  <span className="breakdown-label-travel-details">Extras</span>
+                  <span className="breakdown-value-travel-details">{travel.priceDetails?.extras || '0'}€</span>
+                </div>   
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Categories Modal */}
+      {showCategoriesModal && (
+        <div className="details-modal-travel-details" onClick={closeCategoriesModal}>
+          <div className="modal-content-details-travel-details" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-travel-details">
+              <h3>🏷️ Todas as Categorias</h3>
+              <span className="modal-close-travel-details" onClick={closeCategoriesModal}>×</span>
+            </div>
+            <div className="modal-body-travel-details">
+              <div className="categories-grid-modal-travel-details">
+                {travel.category && travel.category.map((cat, index) => (
+                  <div key={index} className="category-item-modal-travel-details">
+                    <span className="category-text-travel-details">{cat}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transport Modal */}
+      {showTransportModal && (
+        <div className="details-modal-travel-details" onClick={closeTransportModal}>
+          <div className="modal-content-details-travel-details" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-travel-details">
+              <h3>🚗 Detalhes do Transporte</h3>
+              <span className="modal-close-travel-details" onClick={closeTransportModal}>×</span>
+            </div>
+            <div className="modal-body-travel-details">
+              <div className="transport-details-modal-travel-details">
+                <div className="transport-main-travel-details">
+                  <h4>Transporte Principal</h4>
+                  <div className="transport-info-modal-travel-details">
+                    <span className="transport-name-travel-details">{travel.transportDetails?.main}</span>
+                    <span className="transport-company-travel-details">{travel.transportDetails?.details}</span>
+                    <div className="transport-stats-travel-details">
+                      <span className="duration-travel-details">⏰ {travel.transportDetails?.duration}</span>
+                      <span className="price-modal-travel-details">💰 {travel.transportDetails?.price}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {travel.transportDetails?.additional && travel.transportDetails.additional.length > 0 && (
+                  <div className="transport-additional-travel-details">
+                    <h4>Outros Transportes Utilizados</h4>
+                    <div className="additional-transport-list-travel-details">
+                      {travel.transportDetails.additional.map((transport, index) => (
+                        <div key={index} className="additional-transport-item-travel-details">
+                          <span>{transport}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

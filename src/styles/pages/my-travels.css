@@ -34,17 +34,17 @@
     border-radius: 12px;
     text-align: center;
     min-width: 80px;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgb(0 0 0 / 30%);
 }
 
 .stat-card:nth-child(2) {
     background: #fff;
-    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+    box-shadow: 0 4px 15px rgb(0 0 0 / 30%);
 }
 
 .stat-card:nth-child(3) {
     background: #fff;
-    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    box-shadow: 0 4px 15px rgb(0 0 0 / 30%);
 }
 
 .stat-number {

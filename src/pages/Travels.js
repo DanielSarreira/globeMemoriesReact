@@ -6,6 +6,7 @@ import { FaStar, FaFlag, FaEllipsisV } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import Slider from '@mui/material/Slider';
 import { useAuth } from '../context/AuthContext';
+import Toast from '../components/Toast';
 
 const Travels = () => {
   const { user } = useAuth();
@@ -15,7 +16,7 @@ const Travels = () => {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [priceRange, setPriceRange] = useState([0, 5000]);
-  const [daysRange, setDaysRange] = useState([1, 90]);
+  const [daysRange, setDaysRange] = useState([1, 365]);
   const [transportFilter, setTransportFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -37,6 +38,7 @@ const Travels = () => {
     other: false,
   });
   const [otherReason, setOtherReason] = useState('');
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
 
   useEffect(() => {
     const handleResize = () => {
@@ -65,7 +67,34 @@ const Travels = () => {
     : [];
   const uniqueTransportMethods = [...new Set(travels.map(travel => travel.transport))];
 
-  const handleSearch = (e) => setSearchTerm(e.target.value);
+  // Função para sanitizar inputs de pesquisa
+  const sanitizeSearchInput = (input) => {
+    if (!input) return '';
+    
+    return input
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .replace(/[<>]/g, '')
+      .trim();
+  };
+
+  const handleSearch = (e) => {
+    const rawValue = e.target.value;
+    
+    if (rawValue.length > 100) {
+      showToast('Pesquisa não pode exceder 100 caracteres!', 'error');
+      return;
+    }
+
+    const sanitized = sanitizeSearchInput(rawValue);
+    
+    if (sanitized !== rawValue.trim() && rawValue.trim() !== '') {
+      showToast('Pesquisa contém caracteres não permitidos que foram removidos!', 'error');
+    }
+
+    setSearchTerm(sanitized);
+  };
 
   const handleCategoryChange = (category) => {
     setCategoryFilter((prev) =>
@@ -97,11 +126,12 @@ const Travels = () => {
     setSelectedCity('');
     setSortOption('recent');
     setPriceRange([0, 5000]);
-    setDaysRange([1, 90]);
+    setDaysRange([1, 365]);
     setTransportFilter('');
     setStartDate('');
     setEndDate('');
     setSelectedMonth('');
+    showToast('Filtros limpos com sucesso!', 'info');
   };
 
   const months = [
@@ -179,11 +209,19 @@ const Travels = () => {
     setReportReasons((prev) => ({ ...prev, [reason]: !prev[reason] }));
   };
 
+  const showToast = (message, type) => {
+    setToast({ message, type, show: true });
+  };
+
+  const closeToast = () => {
+    setToast({ ...toast, show: false });
+  };
+
   const handleReportTravel = (travel, e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      alert('Faça login para denunciar viagens.');
+      showToast('Faça login para denunciar viagens.', 'error');
       return;
     }
     setSelectedTravel(travel);
@@ -196,7 +234,7 @@ const Travels = () => {
       const hasSelectedReason = Object.values(reportReasons).some((v) => v) ||
         (reportReasons.other && otherReason.trim());
       if (!hasSelectedReason) {
-        alert('Por favor, selecione pelo menos um motivo para a denúncia.');
+        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
       setReportedTravels([...reportedTravels, selectedTravel.id]);
@@ -212,6 +250,7 @@ const Travels = () => {
         other: false,
       });
       setOtherReason('');
+      showToast('Viagem denunciada com sucesso. Obrigado pelo seu feedback!', 'success');
     }
   };
 
@@ -322,6 +361,7 @@ const Travels = () => {
                   placeholder="Nome da viagem / país / cidade / viajante ..."
                   value={searchTerm}
                   onChange={handleSearch}
+                  maxLength={100}
                 />
               </div>
             </div>
@@ -380,7 +420,7 @@ const Travels = () => {
                 </select>
               </div>
               <button onClick={toggleModal} className="modern-filter-button modern-more-filters-btn">
-                Mais Filtros
+                Filtros
               </button>
             </div>
           </div>
@@ -703,6 +743,14 @@ const Travels = () => {
           </div>
         </div>
       )}
+
+      {/* Toast para feedback */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };

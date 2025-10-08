@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaGlobe, FaLock, FaBell, FaUserShield, FaHistory, FaSignOutAlt, FaTrash, FaBan, FaUnlock, FaInfoCircle, FaCog } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import Toast from '../components/Toast';
 import '../styles/pages/SettingsAndPrivacy.css';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 
@@ -10,6 +11,22 @@ import defaultAvatar from '../images/assets/avatar1.jpg';
 const SettingsAndPrivacy = () => {
   const [activeTab, setActiveTab] = useState('settings');
   const { user } = useAuth();
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
+  const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState({
+    language: 'pt',
+    notifications: {
+      newTravels: true,
+      comments: true,
+      followers: true,
+      promotions: false
+    },
+    privacy: {
+      profileVisibility: 'followers',
+      travelVisibility: 'followers',
+      showStatistics: 'all'
+    }
+  });
 
 
   // Mock data for blocked users - in real app this would come from backend
@@ -52,8 +69,170 @@ const SettingsAndPrivacy = () => {
     }, 500);
   }, [user]);
 
-  const handleUnblockUser = (userToUnblock) => {
-    setBlockedUsers(blockedUsers.filter(blockedUser => blockedUser.username !== userToUnblock.username));
+  const showToast = (message, type) => {
+    setToast({ message, type, show: true });
+  };
+
+  const closeToast = () => {
+    setToast({ ...toast, show: false });
+  };
+
+  // Função para sanitizar conteúdo contra XSS
+  const sanitizeContent = (content) => {
+    if (!content) return '';
+    
+    const dangerousPatterns = [
+      /<script[^>]*>.*?<\/script>/gi,
+      /javascript:/gi,
+      /on\w+\s*=/gi,
+      /<iframe[^>]*>.*?<\/iframe>/gi,
+      /<object[^>]*>.*?<\/object>/gi,
+      /<embed[^>]*>.*?<\/embed>/gi,
+      /<link[^>]*>/gi,
+      /<meta[^>]*>/gi,
+      /<style[^>]*>.*?<\/style>/gi
+    ];
+    
+    let sanitized = content;
+    dangerousPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
+    
+    return sanitized.trim();
+  };
+
+  // Função para validar inputs
+  const validateInput = (value, type, maxLength = 500) => {
+    if (!value) return { isValid: true, sanitized: '' };
+    
+    if (value.length > maxLength) {
+      showToast(`Texto não pode exceder ${maxLength} caracteres!`, 'error');
+      return { isValid: false, sanitized: value };
+    }
+
+    const sanitized = sanitizeContent(value);
+    
+    if (sanitized !== value.trim()) {
+      showToast('Conteúdo contém elementos não permitidos que foram removidos!', 'error');
+    }
+
+    return { isValid: true, sanitized };
+  };
+
+  const handleLanguageChange = async (newLanguage) => {
+    setIsLoading(true);
+    try {
+      setSettings(prev => ({ ...prev, language: newLanguage }));
+      // Simulação de chamada à API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      showToast('Idioma alterado com sucesso!', 'success');
+    } catch (error) {
+      showToast('Erro ao alterar idioma. Tente novamente.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNotificationChange = async (notificationType) => {
+    setIsLoading(true);
+    try {
+      setSettings(prev => ({
+        ...prev,
+        notifications: {
+          ...prev.notifications,
+          [notificationType]: !prev.notifications[notificationType]
+        }
+      }));
+      // Simulação de chamada à API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      showToast('Preferências de notificações atualizadas!', 'success');
+    } catch (error) {
+      showToast('Erro ao atualizar notificações. Tente novamente.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePrivacyChange = async (type, value) => {
+    setIsLoading(true);
+    try {
+      setSettings(prev => ({
+        ...prev,
+        privacy: {
+          ...prev.privacy,
+          [type]: value
+        }
+      }));
+      // Simulação de chamada à API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      showToast('Definições de privacidade atualizadas!', 'success');
+    } catch (error) {
+      showToast('Erro ao atualizar privacidade. Tente novamente.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogoutAllDevices = async () => {
+    if (!window.confirm('Tem a certeza que deseja terminar sessão em todos os dispositivos?')) return;
+    
+    setIsLoading(true);
+    try {
+      // Simulação de chamada à API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      showToast('Sessão terminada em todos os dispositivos!', 'success');
+    } catch (error) {
+      showToast('Erro ao terminar sessões. Tente novamente.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownloadData = async () => {
+    setIsLoading(true);
+    try {
+      // Simulação de preparação dos dados
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      showToast('Os seus dados foram preparados! Verifique os downloads.', 'success');
+    } catch (error) {
+      showToast('Erro ao preparar dados. Tente novamente.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = window.confirm('ATENÇÃO: Esta ação é irreversível! Tem a certeza que deseja eliminar a sua conta permanentemente?');
+    if (!confirmation) return;
+    
+    const finalConfirmation = window.confirm('Digite "ELIMINAR" para confirmar:');
+    if (!finalConfirmation) return;
+
+    setIsLoading(true);
+    try {
+      // Simulação de eliminação da conta
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      showToast('Conta eliminada com sucesso. Lamentamos vê-lo partir.', 'success');
+      // Aqui redirecionaria para página de logout
+    } catch (error) {
+      showToast('Erro ao eliminar conta. Contacte o suporte.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUnblockUser = async (userToUnblock) => {
+    setIsLoading(true);
+    try {
+      setBlockedUsers(blockedUsers.filter(blockedUser => blockedUser.username !== userToUnblock.username));
+      // Simulação de chamada à API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      showToast(`${userToUnblock.name} foi desbloqueado com sucesso!`, 'success');
+    } catch (error) {
+      showToast('Erro ao desbloquear utilizador. Tente novamente.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!user) {
@@ -64,6 +243,7 @@ const SettingsAndPrivacy = () => {
     <div className="settings-privacy-container">
 
       <div className="settings-header">
+        <br></br>
         <h1><FaCog style={{marginRight:8}}/>Definições e Privacidade</h1>
         <p className="settings-description"><FaInfoCircle style={{marginRight:6}}/>Personalize a sua experiência, privacidade e segurança na Globe Memories.</p>
       </div>
@@ -91,7 +271,12 @@ const SettingsAndPrivacy = () => {
               <div className="setting-details">
                 <h3>Idioma</h3>
                 <p>Escolha o idioma da aplicação. Em breve poderá alternar entre Português, Inglês e Espanhol.</p>
-                <select className="language-select" defaultValue="pt">
+                <select 
+                  className="language-select" 
+                  value={settings.language}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  disabled={isLoading}
+                >
                   <option value="pt">Português (PT)</option>
                   <option value="en" disabled>English (Em breve)</option>
                   <option value="es" disabled>Español (Em breve)</option>
@@ -106,16 +291,36 @@ const SettingsAndPrivacy = () => {
                 <p>Gerir preferências de notificações recebidas por email e na app.</p>
                 <div className="notification-options">
                   <label>
-                    <input type="checkbox" defaultChecked /> Novas viagens de viajantes que sigo
+                    <input 
+                      type="checkbox" 
+                      checked={settings.notifications.newTravels}
+                      onChange={() => handleNotificationChange('newTravels')}
+                      disabled={isLoading}
+                    /> Novas viagens de viajantes que sigo
                   </label>
                   <label>
-                    <input type="checkbox" defaultChecked /> Comentários nas minhas viagens
+                    <input 
+                      type="checkbox" 
+                      checked={settings.notifications.comments}
+                      onChange={() => handleNotificationChange('comments')}
+                      disabled={isLoading}
+                    /> Comentários nas minhas viagens
                   </label>
                   <label>
-                    <input type="checkbox" defaultChecked /> Novos seguidores
+                    <input 
+                      type="checkbox" 
+                      checked={settings.notifications.followers}
+                      onChange={() => handleNotificationChange('followers')}
+                      disabled={isLoading}
+                    /> Novos seguidores
                   </label>
                   <label>
-                    <input type="checkbox" /> Sugestões de destinos e promoções
+                    <input 
+                      type="checkbox" 
+                      checked={settings.notifications.promotions}
+                      onChange={() => handleNotificationChange('promotions')}
+                      disabled={isLoading}
+                    /> Sugestões de destinos e promoções
                   </label>
                 </div>
               </div>
@@ -126,7 +331,13 @@ const SettingsAndPrivacy = () => {
               <div className="setting-details">
                 <h3>Atividade da Conta</h3>
                 <p>Visualize o histórico de sessões, dispositivos ligados e ações recentes.</p>
-                <button className="secondary-button">Ver Histórico</button>
+                <button 
+                  className="button"
+                  onClick={() => showToast('Funcionalidade em desenvolvimento. Em breve disponível!', 'info')}
+                  disabled={isLoading}
+                >
+                  Ver Histórico
+                </button>
               </div>
             </div>
 
@@ -135,7 +346,13 @@ const SettingsAndPrivacy = () => {
               <div className="setting-details">
                 <h3>Terminar Sessão em Todos os Dispositivos</h3>
                 <p>Por segurança, pode terminar sessão em todos os dispositivos onde está autenticado.</p>
-                <button className="secondary-button">Terminar Sessão Globalmente</button>
+                <button 
+                  className="button"
+                  onClick={handleLogoutAllDevices}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'A processar...' : 'Terminar Sessão Globalmente'}
+                </button>
               </div>
             </div>
 
@@ -154,7 +371,12 @@ const SettingsAndPrivacy = () => {
               <div className="setting-details">
                 <h3>Visibilidade do Perfil</h3>
                 <p>Controlar quem pode ver o seu perfil e as suas viagens.</p>
-                <select className="privacy-select" defaultValue="followers">
+                <select 
+                  className="privacy-select" 
+                  value={settings.privacy.profileVisibility}
+                  onChange={(e) => handlePrivacyChange('profileVisibility', e.target.value)}
+                  disabled={isLoading}
+                >
                   <option value="public">Público</option>
                   <option value="followers">Apenas Seguidores</option>
                   <option value="private">Privado</option>
@@ -167,10 +389,34 @@ const SettingsAndPrivacy = () => {
               <div className="setting-details">
                 <h3>Privacidade das Viagens</h3>
                 <p>Defina a visibilidade padrão das suas viagens e memórias partilhadas.</p>
-                <select className="privacy-select" defaultValue="followers">
+                <select 
+                  className="privacy-select" 
+                  value={settings.privacy.travelVisibility}
+                  onChange={(e) => handlePrivacyChange('travelVisibility', e.target.value)}
+                  disabled={isLoading}
+                >
                   <option value="public">Público</option>
                   <option value="followers">Apenas Seguidores</option>
                   <option value="private">Privado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="setting-item">
+              <FaInfoCircle className="setting-icon" />
+              <div className="setting-details">
+                <h3>Estatísticas do Perfil</h3>
+                <p>Controle quem pode ver as suas estatísticas de viagem (número de viagens, países visitados, etc.).</p>
+                <select 
+                  className="privacy-select" 
+                  value={settings.privacy.showStatistics}
+                  onChange={(e) => handlePrivacyChange('showStatistics', e.target.value)}
+                  disabled={isLoading}
+                >
+                  <option value="all">Mostrar para Todos</option>
+                  <option value="followers">Apenas Seguidores</option>
+                  <option value="private">Apenas para Mim</option>
+                  <option value="hidden">Ocultar Completamente</option>
                 </select>
               </div>
             </div>
@@ -181,8 +427,20 @@ const SettingsAndPrivacy = () => {
                 <h3>Dados da Conta</h3>
                 <p>Faça download dos seus dados ou elimine a sua conta permanentemente.</p>
                 <div className="data-management-buttons">
-                  <button className="secondary-button">Transferir Dados</button>
-                  <button className="danger-button">Eliminar Conta</button>
+                  <button 
+                    className="button"
+                    onClick={handleDownloadData}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'A preparar dados...' : 'Transferir Dados'}
+                  </button>
+                  <button 
+                    className="danger-button"
+                    onClick={handleDeleteAccount}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'A processar...' : 'Eliminar Conta'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -222,11 +480,23 @@ const SettingsAndPrivacy = () => {
                         <div className="blocked-user-actions">
                           <button
                             onClick={() => handleUnblockUser(blockedUser)}
-                            style={{padding:'8px 16px',backgroundColor:'#28a745',color:'white',border:'none',borderRadius:'6px',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}
-                            onMouseEnter={e => e.target.style.backgroundColor = '#218838'}
-                            onMouseLeave={e => e.target.style.backgroundColor = '#28a745'}
+                            disabled={isLoading}
+                            style={{
+                              padding:'8px 16px',
+                              backgroundColor: isLoading ? '#6c757d' : '#28a745',
+                              color:'white',
+                              border:'none',
+                              borderRadius:'6px',
+                              fontSize:'13px',
+                              cursor: isLoading ? 'not-allowed' : 'pointer',
+                              display:'flex',
+                              alignItems:'center',
+                              gap:'6px'
+                            }}
+                            onMouseEnter={e => !isLoading && (e.target.style.backgroundColor = '#218838')}
+                            onMouseLeave={e => !isLoading && (e.target.style.backgroundColor = '#28a745')}
                           >
-                            <FaUnlock size={12} /> Desbloquear
+                            <FaUnlock size={12} /> {isLoading ? 'A processar...' : 'Desbloquear'}
                           </button>
                         </div>
                       </div>
@@ -254,6 +524,14 @@ const SettingsAndPrivacy = () => {
           </div>
         )}
       </div>
+
+      {/* Toast para feedback */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };

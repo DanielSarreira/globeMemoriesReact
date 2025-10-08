@@ -310,7 +310,7 @@
 @media (max-width: 768px) {
   .splash-logo {
     width: 280px; /* larger on mobile */
-    height: 150px;
+    height: 135px;
     max-width: 60vw;
     max-height: 60vw;
   }
