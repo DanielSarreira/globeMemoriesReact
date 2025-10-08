@@ -258,6 +258,13 @@
   .weather-charts {
     grid-template-columns: repeat(1, 1fr);
   }
+  .weather-page{
+    padding: 0px;
+    margin-top: 40px !important;
+  }
+  .weather-search-input {
+  width: 100% !important;
+}
 }
 
 .weather-chart-container {

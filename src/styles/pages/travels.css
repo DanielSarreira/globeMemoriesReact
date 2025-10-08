@@ -464,21 +464,21 @@ button.see-less-categories-button {
   flex-direction: column;
 }
 
-/* Desktop - image after text (original order) */
+/* Desktop and Tablet - image first, then text */
 @media (min-width: 769px) {
   .travel-content {
     flex-direction: column;
   }
 
   .highlight-image {
-    order: 2;
-    margin-top: 15px;
+    order: 1;
+    margin-bottom: 15px;
   }
 
   .travel-text {
-    order: 1;
+    order: 2;
     padding: 0;
-    margin-bottom: 15px;
+    margin-top: 0;
   }
 }
 
