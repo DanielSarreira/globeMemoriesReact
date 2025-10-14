@@ -48,7 +48,7 @@ const Users = () => {
     setToast({ show: true, message, type });
     setTimeout(() => {
       setToast({ show: false, message: '', type: '' });
-    }, 1000);
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -166,7 +166,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Inicie sessão para seguir utilizadores.', 'error');
+      showToast('Inicie sessão para seguir viajantes.', 'error');
       return;
     }
     if (targetUser.privacy === 'public') {
@@ -174,7 +174,7 @@ const Users = () => {
       showToast(`Agora segues ${targetUser.name}!`, 'success');
     } else {
       setPendingRequests([...pendingRequests, targetUser.username]);
-      showToast(`Pedido de seguimento enviado para ${targetUser.name}!`, 'success');
+      showToast(`Pedido enviado com sucesso para: ${targetUser.name}!`, 'success');
       setShowModal(true);
       setTimeout(() => {
         setShowModal(false);
@@ -187,14 +187,13 @@ const Users = () => {
     e.stopPropagation();
     setFollowing(following.filter((username) => username !== targetUsername));
     setPendingRequests(pendingRequests.filter((username) => username !== targetUsername));
-    showToast('Deixaste de seguir este utilizador!', 'success');
+    showToast('Deixaste de seguir este viajante!', 'success');
   };
 
   const handleCancelRequest = (targetUsername, e) => {
     e.preventDefault();
     e.stopPropagation();
     setPendingRequests(pendingRequests.filter((username) => username !== targetUsername));
-    showToast('Pedido de seguimento cancelado!', 'info');
   };
 
   // Função para sanitizar inputs de pesquisa
@@ -234,7 +233,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Inicie sessão para denunciar utilizadores.', 'error');
+      showToast('Inicie sessão para denunciar viajantes.', 'error');
       return;
     }
     setSelectedUser(targetUser);
@@ -246,7 +245,7 @@ const Users = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Inicie sessão para bloquear utilizadores.', 'error');
+      showToast('Inicie sessão para bloquear viajantes.', 'error');
       return;
     }
     setSelectedUser(targetUser);
@@ -273,7 +272,7 @@ const Users = () => {
       }
 
       setReportedUsers([...reportedUsers, selectedUser.username]);
-      showToast('Utilizador denunciado com sucesso!', 'success');
+      showToast('Viajante denunciado com sucesso!', 'success');
       setShowReportModal(false);
       setSelectedUser(null);
       // Remove from following if currently following
@@ -298,7 +297,7 @@ const Users = () => {
   const confirmBlockUser = () => {
     if (selectedUser) {
       setBlockedUsers([...blockedUsers, selectedUser.username]);
-      showToast('Utilizador bloqueado com sucesso!', 'success');
+      showToast('Viajante bloqueado com sucesso!', 'success');
       setShowBlockModal(false);
       setSelectedUser(null);
       // Remove from following if currently following
@@ -361,7 +360,7 @@ const Users = () => {
               <span className="search-icon"></span>
               <input
                 type="text"
-                placeholder="Pesquisar por nome ou utilizador..."
+                placeholder="Pesquisar por nome ou viajante..."
                 value={searchTerm}
                 onChange={handleSearchChange}
                 className="search-input"
@@ -620,15 +619,6 @@ const Users = () => {
         </div>
       )}
 
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content-users" onClick={(e) => e.stopPropagation()}>
-            <h2>Sucesso!</h2>
-            <p>Pedido enviado com sucesso.<br />Aguarde até que o Viajante aceite o seu pedido!</p>
-          </div>
-        </div>
-      )}
-
       {showReportModal && (
         <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
           <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
@@ -722,7 +712,7 @@ const Users = () => {
                   />
                   <div>
                     <strong>Plágio de conteúdo</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros utilizadores sem créditos)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros viajantes sem créditos)</div>
                   </div>
                 </label>
               </div>

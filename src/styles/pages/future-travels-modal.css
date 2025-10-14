@@ -241,7 +241,7 @@
   position: relative;
 }
 
-/* Layout lado a lado em telas maiores */
+/* Layout lado a lado em ecrãs maiores */
 @media (min-width: 992px) {
   .form-row {
     display: grid;
@@ -641,7 +641,7 @@
     font-size: 15px;
   }
   
-  /* Espaçamento otimizado para telas pequenas */
+  /* Espaçamento otimizado para ecrãs pequenos */
   .form-group {
     margin-bottom: 20px;
   }
@@ -815,7 +815,7 @@
     text-align: center;
   }
   
-  /* Melhor organização de conteúdo em telas muito pequenas */
+  /* Melhor organização de conteúdo em ecrãs muito pequenos */
   .modal-form-content .content-section {
     padding: 15px 0;
     border-bottom: 1px solid #f0f0f0;
@@ -937,7 +937,7 @@
 }
 
 @media (max-width: 480px) {
-  /* Melhor aproveitamento da tela pequena */
+  /* Melhor aproveitamento do ecrã pequeno */
   .modal-form-content {
     padding: 15px;
   }

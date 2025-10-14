@@ -241,7 +241,7 @@
   position: relative;
 }
 
-/* Layout lado a lado em telas maiores */
+/* Layout lado a lado em ecrãs maiores */
 @media (min-width: 992px) {
   .add-travel-form-row {
     display: grid;

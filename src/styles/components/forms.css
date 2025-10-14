@@ -770,7 +770,7 @@ input[type="checkbox"] {
   color: var(--secondary-text-color);
 }
 
-/* Estilos específicos para login e cadastro */
+/* Estilos específicos para login e registo */
 .form-groupRegister {
   margin-bottom: 1.5rem;
 }

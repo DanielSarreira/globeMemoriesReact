@@ -65,7 +65,7 @@ const WelcomeModal = ({ isOpen, onClose }) => {
   const slides = [
     {
       title: "Bem-vindo à Globe Memories",
-      subtitle: "Descubra experiências de viagem reais partilhadas por pessoas como você. Inspire-se, explore destinos e crie as suas próprias memórias pelo mundo.",
+      subtitle: "Descubra experiências de viagem reais partilhadas por pessoas como tu. Inspire-se, explore destinos e crie as suas próprias memórias pelo mundo.",
       showVideo: true
     },
     {

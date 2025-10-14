@@ -2533,7 +2533,7 @@ const Home = () => {
         {user ? (
           <p>Olá, {user.username}! Veja as viagens dos seus amigos e as viagens públicas.</p>
         ) : (
-          <p>Explore as viagens públicas ou faça login para um feed personalizado!</p>
+          <p>Explore as viagens públicas ou inicie sessão para um feed personalizado!</p>
         )}
         {user && (
           <Link to="/notifications" className="notifications-icon">

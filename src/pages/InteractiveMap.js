@@ -106,7 +106,7 @@ const InteractiveMap = () => {
     setToast({ show: true, message, type });
     setTimeout(() => {
       setToast({ show: false, message: '', type: '' });
-    }, 1000);
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -976,7 +976,7 @@ const MapEvents = () => {
                   <div className="gm-map-popup-info">
                     <div className="gm-map-info-item">
                       <span className="gm-map-info-icon">👤</span>
-                      <span>Viajante: {location.user || 'Você'}</span>
+                      <span>Viajante: {location.user || 'Tu'}</span>
                     </div>
                     <div className="gm-map-info-item">
                       <span className="gm-map-info-icon">📍</span>

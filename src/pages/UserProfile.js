@@ -8,7 +8,7 @@ import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClo
 import { request } from '../axios_helper';
 import Toast from '../components/Toast';
 
-// Dados fictícios para perfis de utilizador
+// Dados fictícios para perfis de viajante
 const mockProfiles = [
   {
     username: 'tiago',
@@ -108,7 +108,7 @@ const UserProfile = () => {
     setToast({ show: true, message, type });
     setTimeout(() => {
       setToast({ show: false, message: '', type: '' });
-    }, 1000);
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -150,7 +150,7 @@ const UserProfile = () => {
         }
       } catch (error) {
         console.error('Erro ao buscar perfil:', error);
-        showToast('Erro ao carregar perfil do utilizador. Tente novamente.', 'error');
+        showToast('Erro ao carregar perfil do viajante. Tente novamente.', 'error');
         setProfile(null);
       } finally {
         setLoading(false);
@@ -193,7 +193,7 @@ const UserProfile = () => {
 
   const handleFollow = () => {
     if (!user) {
-      showToast('Inicie sessão para seguir utilizadores.', 'error');
+      showToast('Inicie sessão para seguir viajantes.', 'error');
       return;
     }
     if (profile.privacy === 'public') {
@@ -214,7 +214,7 @@ const UserProfile = () => {
     setFollowing(following.filter((u) => u !== profile.username));
     setFollowers(followers.filter((u) => u !== user.username));
     setPendingRequests(pendingRequests.filter((u) => u !== profile.username));
-    showToast('Deixaste de seguir este utilizador!', 'success');
+    showToast('Deixaste de seguir este viajante!', 'success');
   };
 
   const handleCancelRequest = () => {
@@ -237,7 +237,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Faça login para denunciar utilizadores.', 'error');
+      showToast('Inicie sessão para denunciar viajantes.', 'error');
       return;
     }
     setShowReportModal(true);
@@ -248,7 +248,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Faça login para bloquear utilizadores.', 'error');
+      showToast('Inicie sessão para bloquear viajantes.', 'error');
       return;
     }
     setShowBlockModal(true);
@@ -281,7 +281,7 @@ const UserProfile = () => {
       }
 
       setReportedUsers([...reportedUsers, profile.username]);
-      showToast('Utilizador denunciado com sucesso!', 'success');
+      showToast('Viajante denunciado com sucesso!', 'success');
       setShowReportModal(false);
       // Remove from following if currently following
       setFollowing(following.filter(username => username !== profile.username));
@@ -305,7 +305,7 @@ const UserProfile = () => {
   const confirmBlockUser = () => {
     if (profile) {
       setBlockedUsers([...blockedUsers, profile.username]);
-      showToast('Utilizador bloqueado com sucesso!', 'success');
+      showToast('Viajante bloqueado com sucesso!', 'success');
       setShowBlockModal(false);
       // Remove from following if currently following
       setFollowing(following.filter(username => username !== profile.username));
@@ -316,7 +316,7 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Faça login para denunciar viagens.', 'error');
+      showToast('Inicie sessão para denunciar viagens.', 'error');
       return;
     }
     setSelectedTravel(travel);
@@ -1140,7 +1140,7 @@ const UserProfile = () => {
           <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
             <h2>Denunciar Viajante</h2>
             <p>Por que deseja denunciar <strong>{profile?.username}</strong>?</p>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta acção irá reportar o utilizador aos administradores.</p>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta acção irá reportar o viajante aos administradores.</p>
             
             <div style={{ textAlign: 'left', marginBottom: '20px' }}>
               <div style={{ marginBottom: '15px' }}>
@@ -1228,7 +1228,7 @@ const UserProfile = () => {
                   />
                   <div>
                     <strong>Plágio de conteúdo</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros utilizadores sem créditos)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros viajantes sem créditos)</div>
                   </div>
                 </label>
               </div>
@@ -1351,7 +1351,7 @@ const UserProfile = () => {
           <div className="modal-content-users" onClick={(e) => e.stopPropagation()}>
             <h2>Bloquear Viajante</h2>
             <p>Tem certeza de que deseja bloquear <strong>{profile?.username}</strong>?</p>
-            <p>Não verá mais este utilizador na lista e ele não poderá interagir consigo.</p>
+            <p>Não verá mais este viajante na lista e ele não poderá interagir consigo.</p>
             <div className="modal-buttons">
               <button 
                 className="cancel-button" 

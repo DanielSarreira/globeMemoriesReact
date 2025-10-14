@@ -15,7 +15,7 @@ const ContentManagement = () => {
 
   const showToast = (message, type) => {
     setToast({ message, type, isVisible: true });
-    setTimeout(() => setToast(prev => ({ ...prev, isVisible: false })), 1000);
+    setTimeout(() => setToast(prev => ({ ...prev, isVisible: false })), 2600);
   };
 
   const hideToast = () => {

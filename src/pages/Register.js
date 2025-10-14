@@ -400,7 +400,7 @@ const Register = () => {
       // Verificar tipos específicos de erro
       if (error.response?.status === 409) {
         if (error.response.data?.message?.includes('email')) {
-          showToast('Este email já está registado. Tente fazer login ou use outro email.', 'error');
+          showToast('Este email já está registado. Tente iniciar sessão ou use outro email.', 'error');
           setFieldErrors(prev => ({ ...prev, email: 'Email já registado' }));
         } else if (error.response.data?.message?.includes('username')) {
           showToast('Este nome de utilizador já existe. Escolha outro.', 'error');

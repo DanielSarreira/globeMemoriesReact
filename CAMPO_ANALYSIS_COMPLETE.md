@@ -237,7 +237,7 @@ safety: {
 ### 🚀 **Pronto Para Integração**
 O `TravelDetails.js` está **100% preparado** para receber dados reais do backend, bastando substituir o `mockTravel` pelas chamadas à API.
 
-### 🎨 **Experiência de Utilizador**
+### 🎨 **Experiência do Viajante**
 - ✅ **Tab de vídeos** funcional
 - ✅ **Galeria de imagens** completa
 - ✅ **Informações detalhadas** em todos os campos

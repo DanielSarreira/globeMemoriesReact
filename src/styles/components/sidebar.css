@@ -279,7 +279,6 @@ nav ul li a {
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 800;
-  margin: 0 12px 18px;
   padding: 12px 14px;
   display: flex; /* center icon + text */
   align-items: center;

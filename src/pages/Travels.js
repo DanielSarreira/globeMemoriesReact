@@ -221,7 +221,7 @@ const Travels = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Faça login para denunciar viagens.', 'error');
+      showToast('Inicie sessão para denunciar viagens.', 'error');
       return;
     }
     setSelectedTravel(travel);

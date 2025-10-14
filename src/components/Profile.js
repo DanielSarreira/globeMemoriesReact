@@ -261,10 +261,10 @@ const Profile = () => {
         return;
       }
       
-      // Aqui você validaria a password atual com o backend
-      // Por agora, simularemos que está correto
+      // Aqui validaria a palavra-passe actual com o backend
+      // Por agora, simularemos que está correcto
       // if (!await validateCurrentPassword(formData.currentPassword)) {
-      //   setCurrentPasswordError('Password atual incorreta');
+      //   setCurrentPasswordError('Palavra-passe actual incorrecta');
       //   setIsSaving(false);
       //   return;
       // }

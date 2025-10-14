@@ -24,7 +24,7 @@
   --gm-map-radius-2xl: 1.5rem;
 }
 
-/* Container Principal - Tela Cheia */
+/* Container Principal - Ecrã Completo */
 .gm-map-container {
   height: 100vh;
   width: 100vw;
@@ -37,7 +37,7 @@
   z-index: 1;
 }
 
-/* Container do Mapa - 100% da tela */
+/* Container do Mapa - 100% do ecrã */
 .gm-map-wrapper {
   height: 100vh;
   width: 100vw;

@@ -84,7 +84,7 @@ const LanguageManagement = () => {
         {editingLanguage ? (
           <>
             <button className="btn-primary-admin" onClick={handleUpdate}>
-              Salvar Alterações
+              Guardar Alterações
             </button>
             <button className="btn-danger-admin" onClick={handleCancelEdit}>
               Cancelar

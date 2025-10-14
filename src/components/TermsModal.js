@@ -44,28 +44,28 @@ const TermsModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
     <div>
       <h2>1. Aceitação dos Termos</h2>
       <p>
-        Ao aceder e utilizar o Globe Memories, você concorda em cumprir e estar vinculado a estes Termos e Condições de Uso. Se não concordar com qualquer parte destes termos, não deve utilizar o nosso serviço.
+        Ao aceder e utilizar o Globe Memories, concorda em cumprir e estar vinculado a estes Termos e Condições de Uso. Se não concordar com qualquer parte destes termos, não deve utilizar o nosso serviço.
       </p>
 
       <h2>2. Descrição do Serviço</h2>
       <p>
-        O Globe Memories é uma plataforma digital que permite aos utilizadores documentar, organizar e partilhar as suas memórias de viagem através de fotografias, vídeos, textos e outras formas de conteúdo multimédia.
+        O Globe Memories é uma plataforma digital que permite aos viajantes documentar, organizar e partilhar as suas memórias de viagem através de fotografias, vídeos, textos e outras formas de conteúdo multimédia.
       </p>
 
-      <h2>3. Conta do Utilizador</h2>
+      <h2>3. Conta do Viajante</h2>
       <h3>3.1 Registo</h3>
       <p>
-        Para utilizar certas funcionalidades do serviço, deve criar uma conta fornecendo informações precisas, atuais e completas durante o processo de registo.
+        Para utilizar certas funcionalidades do serviço, deve criar uma conta fornecendo informações precisas, actuais e completas durante o processo de registo.
       </p>
       <h3>3.2 Segurança da Conta</h3>
       <p>
         É responsável por manter a confidencialidade da sua palavra-passe e por todas as atividades que ocorram na sua conta. Deve notificar-nos imediatamente sobre qualquer uso não autorizado da sua conta.
       </p>
 
-      <h2>4. Conteúdo do Utilizador</h2>
+      <h2>4. Conteúdo do Viajante</h2>
       <h3>4.1 Propriedade</h3>
       <p>
-        Mantém a propriedade de todo o conteúdo que carrega, publica ou exibe no Globe Memories. No entanto, ao publicar conteúdo, concede-nos uma licença mundial, não exclusiva, livre de royalties para usar, modificar, reproduzir e distribuir esse conteúdo.
+        Mantém a propriedade de todo o conteúdo que carrega, publica ou exibe no Globe Memories. No entanto, ao publicar conteúdo, concede-nos uma licença mundial, não exclusiva, livre de direitos de autor para usar, modificar, reproduzir e distribuir esse conteúdo.
       </p>
       <h3>4.2 Responsabilidade</h3>
       <p>
@@ -78,7 +78,7 @@ const TermsModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
         <li>Publicar conteúdo ilegal, ofensivo, difamatório ou que viole direitos de terceiros</li>
         <li>Enviar spam ou conteúdo promocional não solicitado</li>
         <li>Interferir com a operação do serviço ou servidores</li>
-        <li>Tentar aceder a contas de outros utilizadores</li>
+        <li>Tentar aceder a contas de outros viajantes</li>
         <li>Usar o serviço para fins comerciais sem autorização prévia</li>
       </ul>
 

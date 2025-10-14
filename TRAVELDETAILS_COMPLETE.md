@@ -7,7 +7,7 @@ Atualizei completamente o `TravelDetails.js` para incluir **TODOS** os campos do
 
 ### ✅ **Campos Principais**
 - ✅ `name` - Nome da viagem
-- ✅ `user` - Utilizador/Viajante
+- ✅ `user` - Viajante
 - ✅ `category` - Categorias da viagem
 - ✅ `country` / `countryName` - País
 - ✅ `city` - Cidade
@@ -78,7 +78,7 @@ priceDetails: {
 
 ### ✅ **Informações Adicionais**
 - ✅ `negativePoints` - Pontos negativos/a considerar
-- ✅ `reviews` - Avaliações de outros utilizadores
+- ✅ `reviews` - Avaliações de outros viajantes
 - ✅ `longDescription` - Descrição detalhada
 - ✅ `images_generalInformation` - Galeria de fotos
 - ✅ `isSpecial` - Viagem especial
@@ -172,7 +172,7 @@ priceDetails: {
 ### ✅ **Sistema de Avaliações**
 - Estrelas visuais (★★★★★)
 - Avaliações numéricas
-- Reviews de utilizadores
+- Reviews de viajantes
 
 ### ✅ **Galeria de Imagens** 
 - Grid responsivo
@@ -194,7 +194,7 @@ priceDetails: {
 // 3. Sistema de avaliações real
 // 4. Upload e gestão de imagens
 // 5. Sistema de comentários
-// 6. Integração com utilizadores reais
+// 6. Integração com viajantes reais
 ```
 
 ## ✅ **Status Final**

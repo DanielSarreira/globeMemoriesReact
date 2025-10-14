@@ -29,7 +29,7 @@ import { Link } from 'react-router-dom';
 import '../styles/pages/achievements.css';
 // ...existing code...
 
-// Dados simulados para visualizações e gostos dados pelo utilizador (simulando o backend)
+// Dados simulados para visualizações e gostos dados pelo viajante (simulando o backend)
 const mockUserActions = {
   AnaSilva: {
     viewedTravels: ['3', '3', '3', '3', '3'], // Visualizou a viagem de ID '3' 5 vezes (para "Explorador Curioso")
@@ -153,7 +153,7 @@ const achievements = [
   {
     id: 'curious-explorer',
     name: 'Explorador Curioso',
-    description: 'Visualizar 5 viagens de outros utilizadores',
+    description: 'Ver 5 viagens de outros viajantes',
     icon: <FaEye />,
     condition: (viewedTravels) => viewedTravels.length >= 5,
   },
@@ -346,7 +346,7 @@ const Achievements = () => {
     .flatMap((travel) => travel.comments || [])
     .filter((comment) => comment.user === user.username);
 
-  // Ações do utilizador (visualizações e gostos)
+  // Ações do viajante (visualizações e gostos)
   const userActions = mockUserActions[user.username] || { viewedTravels: [], likedTravels: [] };
   const viewedTravels = userActions.viewedTravels || [];
   const likedTravels = userActions.likedTravels || [];
@@ -440,7 +440,7 @@ const Achievements = () => {
         return true;
       }
       if (achievement.id === 'curious-explorer') {
-        // Simulação: considera que todos visualizaram pelo menos 5 viagens
+        // Simulação: considera que todos viram pelo menos 5 viagens
         return true;
       }
       return false;

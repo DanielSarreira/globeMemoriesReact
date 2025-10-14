@@ -18,7 +18,7 @@ const Tooltip = ({ text, children, className = "" }) => {
 const PrivacySection = () => (
   <div className="form-section">
     <div className="privacy-section">
-      <Tooltip text="Defina quem pode ver sua viagem: Público (todos podem ver), Amigos (apenas amigos podem ver) ou Privado (apenas você pode ver)">
+      <Tooltip text="Defina quem pode ver a sua viagem: Público (todos podem ver), Amigos (apenas amigos podem ver) ou Privado (apenas tu podes ver)">
         <label>Privacidade da Viagem</label>
       </Tooltip>
       <select name="privacy">
@@ -34,7 +34,7 @@ const PrivacySection = () => (
 const DestinationSection = () => (
   <div className="form-section">
     <div className="section-header destinations">
-      <Tooltip text="Adicione todos os lugares que você visitou durante sua viagem. Você pode incluir cidades, pontos turísticos ou qualquer local relevante.">
+      <Tooltip text="Adicione todos os lugares que visitou durante a sua viagem. Pode incluir cidades, pontos turísticos ou qualquer local relevante.">
         <h3>Destinos Visitados</h3>
       </Tooltip>
     </div>
@@ -42,7 +42,7 @@ const DestinationSection = () => (
     <div className="multi-destination-section">
       <div className="destination-controls">
         <div className="form-group">
-          <Tooltip text="Selecione o país onde você viajou">
+          <Tooltip text="Selecione o país onde viajou">
             <label>País <span className="required">*</span></label>
           </Tooltip>
           <select name="country" required>
@@ -70,20 +70,20 @@ const DestinationSection = () => (
 const AccommodationSection = () => (
   <div className="form-section">
     <div className="section-header accommodation">
-      <Tooltip text="Registre onde você se hospedou durante a viagem, incluindo hotéis, pousadas, casas de amigos ou qualquer tipo de acomodação.">
-        <h3>Acomodações</h3>
+      <Tooltip text="Registe onde se hospedou durante a viagem, incluindo hotéis, pensões, casas de amigos ou qualquer tipo de alojamento.">
+        <h3>Alojamentos</h3>
       </Tooltip>
     </div>
 
     <div className="form-group">
-      <Tooltip text="Nome do hotel, pousada, Airbnb ou tipo de acomodação onde você ficou">
-        <label>Nome da Acomodação</label>
+      <Tooltip text="Nome do hotel, pensão, Airbnb ou tipo de alojamento onde ficou">
+        <label>Nome do Alojamento</label>
       </Tooltip>
       <input type="text" placeholder="Ex: Hotel Central, Casa da Vó..." />
     </div>
 
     <div className="form-group">
-      <Tooltip text="Avalie sua experiência de 1 a 5 estrelas para ajudar outros viajantes">
+      <Tooltip text="Avalie a sua experiência de 1 a 5 estrelas para ajudar outros viajantes">
         <label>Avaliação</label>
       </Tooltip>
       <div className="star-rating">
@@ -100,27 +100,27 @@ const AccommodationSection = () => (
 const PricesSection = () => (
   <div className="form-section">
     <div className="prices-section">
-      <Tooltip text="Registre todos os gastos da sua viagem para ter um controle financeiro e ajudar outros viajantes a planejarem o orçamento.">
+      <Tooltip text="Registe todos os gastos da sua viagem para ter um controlo financeiro e ajudar outros viajantes a planear o orçamento.">
         <h3>Custos da Viagem</h3>
       </Tooltip>
 
       <div className="form-grid">
         <div className="form-group">
-          <Tooltip text="Quanto você gastou com passagens aéreas, rodoviárias, trens, etc.">
+          <Tooltip text="Quanto gastou com passagens aéreas, rodoviárias, comboios, etc.">
             <label>Transporte</label>
           </Tooltip>
           <input type="number" placeholder="0.00" step="0.01" />
         </div>
 
         <div className="form-group">
-          <Tooltip text="Valor total gasto com hotéis, pousadas, Airbnb ou outras acomodações">
-            <label>Hospedagem</label>
+          <Tooltip text="Valor total gasto com hotéis, pensões, Airbnb ou outros alojamentos">
+            <label>Alojamento</label>
           </Tooltip>
           <input type="number" placeholder="0.00" step="0.01" />
         </div>
 
         <div className="form-group">
-          <Tooltip text="Gastos com refeições, lanches, bebidas e experiências gastronômicas">
+          <Tooltip text="Gastos com refeições, lanches, bebidas e experiências gastronómicas">
             <label>Alimentação</label>
           </Tooltip>
           <input type="number" placeholder="0.00" step="0.01" />
@@ -150,7 +150,7 @@ const PricesSection = () => (
 const ItinerarySection = () => (
   <div className="form-section">
     <div className="section-header itinerary">
-      <Tooltip text="Crie um roteiro detalhado da sua viagem, organizando as atividades por dia para ajudar outros viajantes a se planejarem.">
+      <Tooltip text="Crie um roteiro detalhado da sua viagem, organizando as actividades por dia para ajudar outros viajantes a planearem-se.">
         <h3>Itinerário Detalhado</h3>
       </Tooltip>
     </div>
@@ -181,14 +181,14 @@ const ItinerarySection = () => (
 const GroupSection = () => (
   <div className="form-section">
     <div className="section-header group">
-      <Tooltip text="Adicione os companheiros de viagem para compartilhar memórias e permitir que eles também contribuam com a viagem.">
+      <Tooltip text="Adicione os companheiros de viagem para partilhar memórias e permitir que eles também contribuam para a viagem.">
         <h3>Companheiros de Viagem</h3>
       </Tooltip>
     </div>
 
     <div className="add-member-controls">
       <div className="form-group">
-        <Tooltip text="Digite o email do amigo que viajou com você. Ele receberá uma notificação para confirmar a participação.">
+        <Tooltip text="Escreva o email do amigo que viajou consigo. Ele receberá uma notificação para confirmar a participação.">
           <label>Email do Companheiro</label>
         </Tooltip>
         <input type="email" placeholder="amigo@email.com" />
@@ -205,16 +205,16 @@ const GroupSection = () => (
 const PhotosSection = () => (
   <div className="form-section">
     <div className="section-header photos">
-      <Tooltip text="Adicione fotos da sua viagem para criar um álbum visual. As fotos ajudam a contar a história da sua viagem.">
-        <h3>Fotos da Viagem</h3>
+      <Tooltip text="Adicione fotografias da sua viagem para criar um álbum visual. As fotografias ajudam a contar a história da sua viagem.">
+        <h3>Fotografias da Viagem</h3>
       </Tooltip>
     </div>
 
     <div className="image-upload-section">
-      <Tooltip text="Clique para selecionar fotos do seu dispositivo. Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB por foto.">
+      <Tooltip text="Clique para selecionar fotografias do seu dispositivo. Formatos aceites: JPG, PNG, GIF. Tamanho máximo: 5MB por fotografia.">
         <div className="image-upload-area">
-          <div className="upload-text">Adicionar Fotos</div>
-          <div className="upload-hint">Arraste e solte ou clique para selecionar</div>
+          <div className="upload-text">Adicionar Fotografias</div>
+          <div className="upload-hint">Arraste e largue ou clique para selecionar</div>
         </div>
       </Tooltip>
     </div>
@@ -234,10 +234,10 @@ const MyTravelsModal = () => {
           </Tooltip>
 
           <div className="modal-header-buttons">
-            <Tooltip text="Salvar todas as informações da viagem">
-              <button className="button-success">Salvar Viagem</button>
+            <Tooltip text="Guardar todas as informações da viagem">
+              <button className="button-success">Guardar Viagem</button>
             </Tooltip>
-            <Tooltip text="Cancelar e fechar sem salvar alterações">
+            <Tooltip text="Cancelar e fechar sem guardar alterações">
               <button className="button-danger">Cancelar</button>
             </Tooltip>
           </div>
@@ -254,7 +254,7 @@ const MyTravelsModal = () => {
           
           <div className="action-buttons">
             <button type="submit" className="button-primary">
-              Salvar Viagem
+              Guardar Viagem
             </button>
             <button type="button" className="button-secondary">
               Cancelar

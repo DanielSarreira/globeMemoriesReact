@@ -165,7 +165,7 @@ const MyTravels = () => {
     setToast({ show: true, message, type });
     setTimeout(() => {
       setToast({ show: false, message: '', type: '' });
-    }, 1000);
+    }, 2600);
   };
 
   const closeToast = () => {

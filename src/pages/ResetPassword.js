@@ -33,7 +33,7 @@ const ResetPassword = () => {
     setToast({ show: true, message, type });
     setTimeout(() => {
       setToast({ show: false, message: '', type: '' });
-    }, 4000);
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -165,7 +165,7 @@ const ResetPassword = () => {
       setTimeout(() => {
         navigate('/login', { 
           state: { 
-            message: 'Palavra-passe alterada com sucesso! Faça login com a sua nova palavra-passe.' 
+            message: 'Palavra-passe alterada com sucesso! Inicie sessão com a sua nova palavra-passe.' 
           }
         });
       }, 3000);
