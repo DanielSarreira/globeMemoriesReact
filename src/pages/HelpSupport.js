@@ -177,7 +177,7 @@ const HelpSupport = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="O seu email de contacto..." 
-              className={errors.email ? 'input-error' : ''}
+              style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
               required 
             />
             {errors.email && (
@@ -199,7 +199,7 @@ const HelpSupport = () => {
               onChange={handleChange}
               placeholder="Descreva detalhadamente a sua questão ou problema..." 
               rows="6" 
-              className={errors.message ? 'input-error' : ''}
+              style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
               required
             />
             <div style={{ 

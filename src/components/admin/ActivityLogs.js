@@ -6,7 +6,7 @@ import '../../styles/Admin.css';
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([
     // Mock data
-    { _id: '1', admin: 'admin@globememories.com', action: 'Baniu usuário tiago', timestamp: '2025-03-01 10:00' },
+    { _id: '1', admin: 'admin@globememories.com', action: 'Baniu viajante tiago', timestamp: '2025-03-01 10:00' },
     { _id: '2', admin: 'admin@globememories.com', action: 'Aprovou postagem "Explorando o Rio"', timestamp: '2025-03-02 14:30' },
   ]);
 

@@ -307,7 +307,7 @@ const Profile = () => {
         password: '',
         confirmPassword: ''
       }));
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setTimeout(() => setSaveSuccess(false), 2600);
     };
 
     const API_URL = process.env.REACT_APP_API_URL || 'https://your-backend-api.com';

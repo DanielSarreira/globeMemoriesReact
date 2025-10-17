@@ -9,6 +9,7 @@ import debounce from "lodash/debounce";
 
 import { useNavigate } from "react-router-dom";
 import Toast from '../components/Toast';
+import { interactiveMapModalUtils } from '../utils/modalUtils';
 
 // Corrige o probleaflet-left .leaflet-controlma de ícones padrão no Leaflet com React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -18,39 +19,42 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Criar ícones customizados modernos
+// Criar ícones customizados modernos e precisos
 const createCustomIcon = (color, iconType = 'location') => {
-  const svgIcon = `
-    <svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      <path d="M15 2c-7.168 0-13 5.832-13 13 0 8.284 13 23 13 23s13-14.716 13-23c0-7.168-5.832-13-13-13z" 
-            fill="${color}" 
-            stroke="white" 
-            stroke-width="2" 
-            filter="url(#shadow)"/>
-      <circle cx="15" cy="15" r="6" fill="white"/>
-      <text x="15" y="20" text-anchor="middle" fill="${color}" font-size="10" font-weight="bold">
-        ${iconType === 'visited' ? '✓' : iconType === 'future' ? '⚡' : iconType === 'following' ? '👥' : iconType === 'public' ? '🌍' : '📍'}
-      </text>
-    </svg>
+  const getIconSymbol = () => {
+    switch (iconType) {
+      case 'visited': return '★';
+      case 'following': return '♥';
+      case 'public': return '◉';
+      case 'search': return '⊕';
+      default: return '●';
+    }
+  };
+
+  const iconHtml = `
+    <div class="gm-modern-marker" style="--marker-color: ${color};">
+      <div class="gm-marker-shadow"></div>
+      <div class="gm-marker-body">
+        <div class="gm-marker-inner">
+          <span class="gm-marker-icon">${getIconSymbol()}</span>
+        </div>
+        <div class="gm-marker-tip"></div>
+      </div>
+      <div class="gm-marker-pulse"></div>
+    </div>
   `;
   
   return new L.DivIcon({
-    html: svgIcon,
-    className: 'gm-map-custom-marker',
-    iconSize: [30, 40],
-    iconAnchor: [15, 40],
-    popupAnchor: [0, -40],
+    html: iconHtml,
+    className: 'gm-custom-marker-container',
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -42],
   });
 };
 
 // Ícones modernos para diferentes tipos de viagem
 const visitedIcon = createCustomIcon('#22c55e', 'visited'); // Verde
-const futureIcon = createCustomIcon('#f97316', 'future'); // Laranja
 const followingIcon = createCustomIcon('#3b82f6', 'following'); // Azul
 const publicIcon = createCustomIcon('#eab308', 'public'); // Amarelo
 const searchIcon = createCustomIcon('#8b5cf6', 'search'); // Roxo
@@ -72,10 +76,10 @@ const MapController = ({ selectedLocation }) => {
 
 const InteractiveMap = () => {
   const [locations, setLocations] = useState([]);
-  const [futureTrips, setFutureTrips] = useState([]);
   const [followingTrips, setFollowingTrips] = useState([]); // azul
   const [publicTrips, setPublicTrips] = useState([]); // amarelo
-  const [showWelcomePopup, setShowWelcomePopup] = useState(true);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(() => interactiveMapModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -90,9 +94,14 @@ const InteractiveMap = () => {
   // Toast state
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   
+  // Magic arrow states
+  const [isArrowFlying, setIsArrowFlying] = useState(false);
+  const [magicDestination, setMagicDestination] = useState(null);
+  const [showDestinationPopup, setShowDestinationPopup] = useState(false);
+  const [arrowPosition, setArrowPosition] = useState({ x: 0, y: 0 });
+  
   const [filters, setFilters] = useState({
     visited: true,
-    future: true,
     following: true,
     public: true,
     dateRange: 'all',
@@ -269,18 +278,56 @@ const InteractiveMap = () => {
     return { country: "Desconhecido", city: "Desconhecido" };
   };
 
-  // Carrega as viagens futuras e visitadas do localStorage
+  // Carrega as viagens visitadas do localStorage
   useEffect(() => {
-    const savedFutureTrips = JSON.parse(localStorage.getItem("futureTrips")) || [];
-    setFutureTrips(savedFutureTrips);
-
     const savedVisitedTrips = JSON.parse(localStorage.getItem("visitedTrips")) || [];
     setLocations(savedVisitedTrips);
 
     // Dados mock/armazenados: viagens de seguidos e públicas
-    const savedFollowingTrips = JSON.parse(localStorage.getItem("followingTrips")) || [];
+    const savedFollowingTrips = JSON.parse(localStorage.getItem("followingTrips")) || [
+      {
+        country: "França",
+        city: "Paris",
+        coordinates: [48.8566, 2.3522],
+        user: "Ana Silva",
+        price: "850",
+        startDate: "2024-05-15",
+        tripLink: "/travel/paris-ana-2024"
+      },
+      {
+        country: "Espanha",
+        city: "Barcelona", 
+        coordinates: [41.3851, 2.1734],
+        user: "João Santos",
+        price: "620",
+        startDate: "2024-06-20",
+        tripLink: "/travel/barcelona-joao-2024"
+      }
+    ];
     setFollowingTrips(savedFollowingTrips);
-    const savedPublicTrips = JSON.parse(localStorage.getItem("publicTrips")) || [];
+    
+    const savedPublicTrips = JSON.parse(localStorage.getItem("publicTrips")) || [
+      {
+        country: "Itália",
+        city: "Roma",
+        coordinates: [41.9028, 12.4964],
+        user: "Maria Costa",
+        price: "750",
+        startDate: "2024-04-10",
+        endDate: "2024-04-17",
+        tripLink: "/travel/roma-maria-2024"
+      },
+      {
+        country: "Alemanha",
+        city: "Berlim",
+        coordinates: [52.5200, 13.4050],
+        user: "Pedro Oliveira", 
+        price: "580",
+        startDate: "2024-07-05",
+        endDate: "2024-07-12",
+        tripLink: "/travel/berlim-pedro-2024"
+      }
+    ];
     setPublicTrips(savedPublicTrips);
 
     const fetchCoordinates = async () => {
@@ -414,131 +461,33 @@ const InteractiveMap = () => {
   }, [publicTrips, followingTrips]);
 
   const myVisited = useMemo(() => locations, [locations]);
-  const myFuture = useMemo(() => futureTrips, [futureTrips]);
 
   const filteredSets = useMemo(() => {
     let visited = myVisited;
-    let future = myFuture;
     let following = followingTrips || [];
     let publicTripsData = publicTrips || [];
 
     // Aplicar filtros
     if (!filters.visited) visited = [];
-    if (!filters.future) future = [];
     if (!filters.following) following = [];
     if (!filters.public) publicTripsData = [];
 
     if (mode === 'mine') {
-      // Apenas as minhas viagens (concluídas e futuras)
-      return { visited, future, following: [], public: [] };
+      // Apenas as minhas viagens concluídas
+      return { visited, following: [], public: [] };
     }
     // mode === 'all' -> Apenas viagens de outros (quem sigo e públicas)
     return {
       visited: [],
-      future: [],
       following,
       public: publicTripsData,
     };
-  }, [mode, myVisited, myFuture, followingTrips, publicTrips, filters]);
+  }, [mode, myVisited, followingTrips, publicTrips, filters]);
 
   // Componente para gerenciar eventos do mapa
 const MapEvents = () => {
   const map = useMapEvents({
-    click: async (e) => {
-      // Verifica se o clique foi em um marcador ou popup
-      const target = e.originalEvent.target;
-      if (target.closest('.leaflet-popup') || target.closest('.leaflet-marker-icon')) {
-        return;
-      }
-
-      // Verifica se o clique foi parte de um arrasto
-      if (e.originalEvent.type === 'mousedown' || e.originalEvent.type === 'mouseup') {
-        return;
-      }
-
-      // Verifica se o clique foi em um botão ou elemento interativo
-      if (target.closest('button') || target.closest('a')) {
-        return;
-      }
-
-      // Verifica se o clique foi no mapa (não em elementos sobrepostos)
-      if (!target.closest('.leaflet-container')) {
-        return;
-      }
-      
-      // Só permite adicionar viagens futuras no modo 'mine'
-      if (mode !== 'mine') {
-        return;
-      }
-
-      const { lat, lng } = e.latlng;
-      console.log(`Clique no mapa em: ${lat}, ${lng}`); // Debug
-      const location = await getLocationFromCoordinates(lat, lng);
-      console.log("Localização obtida:", location); // Debug
-      const newFutureTrip = {
-        coordinates: [lat, lng],
-        label: `Viagem Futura a ${location.city}`,
-        country: location.country,
-        city: location.city,
-      };
-      console.log("newFutureTrip criada:", newFutureTrip); // Debug
-
-      // Adicionar ao futureTrips
-      setFutureTrips((prevTrips) => {
-        const updatedTrips = [...prevTrips, newFutureTrip];
-        localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
-        return updatedTrips;
-      });
-
-      // Adicionar ao futureTravels com valores padrão
-      const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
-      // Calcular a data de início como o dia seguinte
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      
-      // Define a data de fim como 6 dias após a data de início
-      const nextWeek = new Date(tomorrow);
-      nextWeek.setDate(tomorrow.getDate() + 6);
-
-      // Formata as datas para o formato YYYY-MM-DD
-      const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-
-      const newTravel = {
-        id: Date.now(), // Usar timestamp para IDs únicos
-        name: `Viagem Futura a ${location.city}`,
-        user: "Tiago",
-        category: [],
-        country: location.country,
-        city: location.city,
-        price: "",
-        startDate: formatDate(tomorrow),
-        endDate: formatDate(nextWeek),
-        BookingTripPaymentDate: "",
-        priceDetails: { hotel: "", transport: "", food: "", extras: "" },
-        description: "",
-        accommodations: [{ name: "", type: "" }],
-        pointsOfInterest: [],
-        itinerary: [],
-        localTransport: [],
-        privacy: "public",
-        checklist: [],
-        coordinates: [lat, lng],
-        travelType: { // Adicionar estrutura de tipo de viagem
-          main: 'single', // Por padrão, viagens criadas no mapa são de destino único
-          isGroup: false
-        }
-      };
-      console.log("newTravel criada:", newTravel); // Debug
-
-      futureTravels.push(newTravel);
-      localStorage.setItem("futureTravels", JSON.stringify(futureTravels));
-    },
+    // Removido funcionalidade de clique para criar viagens futuras
   });
 
   map.setMaxBounds([[-90, -180], [90, 180]]);
@@ -546,40 +495,7 @@ const MapEvents = () => {
   return null;
 };
 
-  // Função para remover viagem futura
-  const removeFutureTrip = (trip) => {
-    // Remover do futureTrips
-    setFutureTrips((prevTrips) => {
-      const updatedTrips = prevTrips.filter(t => 
-        !(t.coordinates[0] === trip.coordinates[0] && 
-          t.coordinates[1] === trip.coordinates[1])
-      );
-      localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
-      return updatedTrips;
-    });
 
-    // Remover do futureTravels no localStorage
-    const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
-    const updatedFutureTravels = futureTravels.filter(t => 
-      !(t.coordinates[0] === trip.coordinates[0] && 
-        t.coordinates[1] === trip.coordinates[1])
-    );
-    localStorage.setItem("futureTravels", JSON.stringify(updatedFutureTravels));
-  };
-
-  // Função para verificar se o local já existe como viagem futura
-  const isLocationInFutureTrips = (coordinates) => {
-    if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
-      return false;
-    }
-    return futureTrips.some(trip => 
-      trip.coordinates && 
-      Array.isArray(trip.coordinates) && 
-      trip.coordinates.length === 2 &&
-      trip.coordinates[0] === coordinates[0] && 
-      trip.coordinates[1] === coordinates[1]
-    );
-  };
 
   // Função para fechar o popup de boas-vindas
   const closeWelcomePopup = () => setShowWelcomePopup(false);
@@ -709,68 +625,98 @@ const MapEvents = () => {
     debouncedSearch(validation.sanitized);
   };
 
-  // Função para adicionar viagem futura a partir do marcador de pesquisa
-  const addFutureTripFromSearch = (marker) => {
-    const newFutureTrip = {
-      coordinates: marker.coordinates,
-      label: `Viagem Futura a ${marker.name}`,
-      country: marker.name.split(',')[marker.name.split(',').length - 1]?.trim() || "Desconhecido",
-      city: marker.name.split(',')[0]?.trim() || "Desconhecido",
-    };
 
-    // Adicionar ao futureTrips
-    setFutureTrips((prevTrips) => {
-      const updatedTrips = [...prevTrips, newFutureTrip];
-      localStorage.setItem("futureTrips", JSON.stringify(updatedTrips));
-      return updatedTrips;
-    });
 
-    // Adicionar ao futureTravels com valores padrão
-    const futureTravels = JSON.parse(localStorage.getItem("futureTravels")) || [];
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+  // Lista de países interessantes para a seta mágica
+  const magicDestinations = [
+    { country: "Japão", city: "Tóquio", coordinates: [35.6762, 139.6503], emoji: "🏯" },
+    { country: "França", city: "Paris", coordinates: [48.8566, 2.3522], emoji: "🗼" },
+    { country: "Tailândia", city: "Banguecoque", coordinates: [13.7563, 100.5018], emoji: "🏛️" },
+    { country: "Brasil", city: "Rio de Janeiro", coordinates: [-22.9068, -43.1729], emoji: "🏖️" },
+    { country: "Islândia", city: "Reykjavik", coordinates: [64.1466, -21.9426], emoji: "🏔️" },
+    { country: "Austrália", city: "Sydney", coordinates: [-33.8688, 151.2093], emoji: "🏄‍♂️" },
+    { country: "Peru", city: "Cusco", coordinates: [-13.5319, -71.9675], emoji: "🏔️" },
+    { country: "Marrocos", city: "Marraquexe", coordinates: [31.6295, -7.9811], emoji: "🕌" },
+    { country: "Indonésia", city: "Bali", coordinates: [-8.3405, 115.0920], emoji: "🌴" },
+    { country: "Turquia", city: "Istambul", coordinates: [41.0082, 28.9784], emoji: "🕌" },
+    { country: "Grécia", city: "Santorini", coordinates: [36.3932, 25.4615], emoji: "🏛️" },
+    { country: "Egito", city: "Cairo", coordinates: [30.0444, 31.2357], emoji: "🏺" },
+    { country: "China", city: "Pequim", coordinates: [39.9042, 116.4074], emoji: "🏮" },
+    { country: "Índia", city: "Nova Deli", coordinates: [28.7041, 77.1025], emoji: "🕌" },
+    { country: "Canadá", city: "Vancouver", coordinates: [49.2827, -123.1207], emoji: "🏔️" },
+    { country: "Argentina", city: "Buenos Aires", coordinates: [-34.6118, -58.3960], emoji: "💃" },
+    { country: "Coreia do Sul", city: "Seul", coordinates: [37.5665, 126.9780], emoji: "🏮" },
+    { country: "Vietnã", city: "Ho Chi Minh", coordinates: [10.8231, 106.6297], emoji: "🏛️" },
+    { country: "Nepal", city: "Katmandu", coordinates: [27.7172, 85.3240], emoji: "🏔️" },
+    { country: "Filipinas", city: "Manila", coordinates: [14.5995, 120.9842], emoji: "🏝️" }
+  ];
+
+  // Função para lançar a seta mágica
+  const launchMagicArrow = () => {
+    if (isArrowFlying) return;
+
+    // Escolher destino aleatório
+    const randomDestination = magicDestinations[Math.floor(Math.random() * magicDestinations.length)];
     
-    // Define a data de fim como 6 dias após a data de início
-    const nextWeek = new Date(tomorrow);
-    nextWeek.setDate(tomorrow.getDate() + 6);
+    // Começar animação da seta
+    setIsArrowFlying(true);
+    setMagicDestination(randomDestination);
+    
+    // Primeiro, fazer um zoom out suave para ver o mundo
+    setSelectedLocation({
+      coordinates: [20, 0], // Centro do mapa mundial
+      name: "Procurando destino...",
+      zoom: 2,
+      radius: 0,
+    });
+    
+    // Após 1 segundo, começar a "voar" para o destino
+    setTimeout(() => {
+      setSelectedLocation({
+        coordinates: randomDestination.coordinates,
+        name: `A voar para ${randomDestination.city}, ${randomDestination.country}...`,
+        zoom: 6,
+        radius: 50000,
+      });
+    }, 1000);
+    
+    // Simular o voo da seta (3 segundos total)
+    setTimeout(() => {
+      // Parar a animação da seta
+      setIsArrowFlying(false);
+      
+      // Fazer zoom final para o destino
+      setSelectedLocation({
+        coordinates: randomDestination.coordinates,
+        name: `${randomDestination.city}, ${randomDestination.country}`,
+        zoom: 8,
+        radius: 30000,
+      });
+      
+      // Mostrar popup de destino após meio segundo
+      setTimeout(() => {
+        setShowDestinationPopup(true);
+      }, 500);
+      
+    }, 3000);
+  };
 
-    // Formata as datas para o formato YYYY-MM-DD
-    const formatDate = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
+  // Função para navegar para a página de viagens filtrada por país
+  const exploreCountryTravels = () => {
+    if (magicDestination) {
+      // Fechar o popup
+      setShowDestinationPopup(false);
+      setMagicDestination(null);
+      
+      // Navegar para a página de viagens com filtro por país
+      navigate(`/travels?country=${encodeURIComponent(magicDestination.country)}`);
+    }
+  };
 
-    const newTravel = {
-      id: Date.now(),
-      name: `Viagem Futura a ${marker.name}`,
-      user: "Tiago",
-      category: [],
-      country: newFutureTrip.country,
-      city: newFutureTrip.city,
-      price: "",
-      startDate: formatDate(tomorrow),
-      endDate: formatDate(nextWeek),
-      BookingTripPaymentDate: "",
-      priceDetails: { hotel: "", transport: "", food: "", extras: "" },
-      description: "",
-      accommodations: [{ name: "", type: "" }],
-      pointsOfInterest: [],
-      itinerary: [],
-      localTransport: [],
-      privacy: "public",
-      checklist: [],
-      coordinates: marker.coordinates,
-      travelType: { // Adicionar estrutura de tipo de viagem
-        main: 'single', // Por padrão, viagens criadas no mapa são de destino único
-        isGroup: false
-      }
-    };
-
-    futureTravels.push(newTravel);
-    localStorage.setItem("futureTravels", JSON.stringify(futureTravels));
+  // Função para fechar o popup de destino
+  const closeDestinationPopup = () => {
+    setShowDestinationPopup(false);
+    setMagicDestination(null);
   };
 
   return (
@@ -792,7 +738,17 @@ const MapEvents = () => {
             <span className="gm-map-btn-icon">🌍</span>
             Todos os Viajantes
           </button>
-       
+          
+          {/* Botão da Seta Mágica */}
+          <button
+            className={`gm-map-control-btn magic-arrow ${isArrowFlying ? 'flying' : ''}`}
+            onClick={launchMagicArrow}
+            disabled={isArrowFlying}
+            title="Descobrir destino surpresa!"
+          >
+            <span className="gm-map-btn-icon">🏹</span>
+            {isArrowFlying ? 'A procurar...' : 'Destino Surpresa'}
+          </button>
         </div>
         
         {/* Barra de pesquisa integrada no header */}
@@ -860,11 +816,6 @@ const MapEvents = () => {
             <span className="gm-map-legend-marker visited">✓</span>
             <span>Viagens Concluídas</span>
           </div>
-          <div className="gm-map-legend-item">
-            <span className="gm-map-legend-marker future">⚡</span>
-            <span>Viagens Futuras</span>
-          </div>
-         
         </div>
       </div>
 
@@ -873,45 +824,64 @@ const MapEvents = () => {
         <div className="gm-map-welcome-overlay">
           <div className="gm-map-welcome-modal">
             <div className="gm-map-welcome-header">
-              <h2>🗺️ Bem-vindo ao Mapa Interativo</h2>
+              <h2>Bem-vindo ao Mapa Interativo Globe Memories</h2>
               <button className="gm-map-close-btn" onClick={closeWelcomePopup}>×</button>
             </div>
             <div className="gm-map-welcome-content">
-              <p>Explore o mundo de forma interativa e descubra novos destinos!</p>
+              <p>Visualize as suas aventuras pelo mundo e descubra novos destinos através de um mapa interativo personalizado!</p>
               <div className="gm-map-features-grid">
                 <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">✓</span>
+                  <span className="gm-map-feature-icon">🗺️</span>
                   <div>
-                    <strong>Marcadores Verdes</strong>
-                    <p>Viagens já realizadas</p>
+                    <strong>Vários tipos de Mapa</strong>
+                    <p>Altere entre as vistas de ruas, satélite, terreno e básica para explorar diferentes perspetivas do mundo.</p>
                   </div>
                 </div>
+
                 <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">⚡</span>
+                  <span className="gm-map-feature-icon">📍</span>
                   <div>
-                    <strong>Marcadores Laranjas</strong>
-                    <p>Viagens Futuras que estão a ser planeadas</p>
+                    <strong>Marcadores Inteligentes</strong>
+                    <p>Veja as suas viagens concluídas, as de viajantes que segue e as viagens públicas, identificadas com cores distintas.</p>
                   </div>
                 </div>
                 <div className="gm-map-feature-item">
                   <span className="gm-map-feature-icon">🔍</span>
                   <div>
-                    <strong>Pesquisa Inteligente</strong>
-                    <p>Encontre qualquer lugar do mundo</p>
+                    <strong>Pesquisa Global Avançada</strong>
+                    <p>Encontre qualquer país, cidade ou ponto de interesse no mundo, com sugestões automáticas.</p>
                   </div>
                 </div>
                 <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">📊</span>
+                  <span className="gm-map-feature-icon">🏹</span>
                   <div>
-                    <strong>Estatísticas</strong>
-                    <p>Acompanhe o seu progresso de viagens</p>
+                    <strong>Destino Surpresa Mágico</strong>
+                    <p>Use a seta mágica para descobrir destinos aleatórios e explorar a sua próxima viagem.</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="gm-map-welcome-footer">
-              <button className="gm-map-welcome-btn primary" onClick={closeWelcomePopup}>
-                Comece a explorar!
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  interactiveMapModalUtils.dismiss();
+                }
+                setShowWelcomePopup(false);
+              }}>
+                Comece a explorar o mundo!
               </button>
             </div>
           </div>
@@ -969,6 +939,18 @@ const MapEvents = () => {
               key={`${location.city}-${location.country}-${location.user || ''}-${location.tripLink || idx}`}
               position={location.coordinates}
               icon={visitedIcon}
+              eventHandlers={{
+                click: (e) => {
+                  // Adiciona animação de bounce ao marcador quando clicado
+                  const markerElement = e.target._icon?.querySelector('.gm-modern-marker');
+                  if (markerElement) {
+                    markerElement.classList.add('marker-clicked');
+                    setTimeout(() => {
+                      markerElement.classList.remove('marker-clicked');
+                    }, 600);
+                  }
+                }
+              }}
             >
               <Popup>
                 <div className="gm-map-popup-content">
@@ -985,7 +967,7 @@ const MapEvents = () => {
                     {location.price && (
                       <div className="gm-map-info-item">
                         <span className="gm-map-info-icon">💰</span>
-                        <span>Custo: {location.price} €</span>
+                        <span>Preço: {location.price} €</span>
                       </div>
                     )}
                     {location.startDate && (
@@ -994,10 +976,7 @@ const MapEvents = () => {
                         <span>Visitado em: {location.startDate}</span>
                       </div>
                     )}
-                    <div className="gm-map-info-item">
-                      <span className="gm-map-info-icon">🌍</span>
-                      <span>Coordenadas: {location.coordinates[0].toFixed(4)}, {location.coordinates[1].toFixed(4)}</span>
-                    </div>
+
                   </div>
                   <div className="gm-map-popup-actions">
                     <a href={getGoogleMapsLink(location.coordinates[0], location.coordinates[1])} target="_blank" rel="noopener noreferrer">
@@ -1014,45 +993,26 @@ const MapEvents = () => {
             </Marker>
           ))}
 
-          {/* Marcadores de futuras viagens */}
-          {filteredSets.future.map((trip, index) => (
-            <Marker key={`future-${index}`} position={trip.coordinates} icon={futureIcon}>
-              <Popup>
-                <div className="gm-map-popup-content">
-                  <h3>⚡ {trip.label || `Viagem Futura para ${trip.city}`}</h3>
-                  <div className="gm-map-popup-info">
-                    <div className="gm-map-info-item">
-                      <span className="gm-map-info-icon">🌍</span>
-                      <span>País: {trip.country}</span>
-                    </div>
-                    <div className="gm-map-info-item">
-                      <span className="gm-map-info-icon">📍</span>
-                      <span>Local: {trip.city}</span>
-                    </div>
-                    <div className="gm-map-info-item">
-                      <span className="gm-map-info-icon">🧭</span>
-                      <span>Coordenadas: {trip.coordinates[0].toFixed(4)}, {trip.coordinates[1].toFixed(4)}</span>
-                    </div>
-                  </div>
-                  <div className="gm-map-popup-actions">
-                    <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
-                      <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
-                    </a>
-                    <button 
-                      className="gm-map-popup-btn danger"
-                      onClick={() => removeFutureTrip(trip)}
-                    >
-                      🗑️ Remover
-                    </button>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+
 
           {/* Marcadores de viagens de quem sigo (azuis) */}
           {mode === 'all' && filteredSets.following.map((trip, index) => (
-            <Marker key={`following-${index}`} position={trip.coordinates} icon={followingIcon}>
+            <Marker 
+              key={`following-${index}`} 
+              position={trip.coordinates} 
+              icon={followingIcon}
+              eventHandlers={{
+                click: (e) => {
+                  const markerElement = e.target._icon?.querySelector('.gm-modern-marker');
+                  if (markerElement) {
+                    markerElement.classList.add('marker-clicked');
+                    setTimeout(() => {
+                      markerElement.classList.remove('marker-clicked');
+                    }, 600);
+                  }
+                }
+              }}
+            >
               <Popup>
                 <div className="gm-map-popup-content">
                   <h3>👥 {trip.label || `${trip.country} | ${trip.city}`}</h3>
@@ -1061,10 +1021,7 @@ const MapEvents = () => {
                       <span className="gm-map-info-icon">👤</span>
                       <span>Viajante: {trip.user || 'Utilizador'}</span>
                     </div>
-                    <div className="gm-map-info-item">
-                      <span className="gm-map-info-icon">🌍</span>
-                      <span>País: {trip.country}</span>
-                    </div>
+             
                     <div className="gm-map-info-item">
                       <span className="gm-map-info-icon">📍</span>
                       <span>Local: {trip.city}</span>
@@ -1078,20 +1035,20 @@ const MapEvents = () => {
                     {trip.startDate && (
                       <div className="gm-map-info-item">
                         <span className="gm-map-info-icon">📅</span>
-                        <span>Data início: {trip.startDate}</span>
+                        <span>Visitado em: {trip.startDate}</span>
                       </div>
                     )}
-                    {trip.endDate && (
-                      <div className="gm-map-info-item">
-                        <span className="gm-map-info-icon">🏁</span>
-                        <span>Data fim: {trip.endDate}</span>
-                      </div>
-                    )}
+             
                   </div>
                   <div className="gm-map-popup-actions">
                     <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
                       <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
                     </a>
+                    {trip.tripLink && (
+                      <a href={trip.tripLink} target="_blank" rel="noopener noreferrer">
+                        <button className="gm-map-popup-btn secondary">📖 Ver Viagem</button>
+                      </a>
+                    )}
                   </div>
                 </div>
               </Popup>
@@ -1100,7 +1057,22 @@ const MapEvents = () => {
 
           {/* Marcadores de viagens públicas (amarelos) */}
           {mode === 'all' && filteredSets.public.map((trip, index) => (
-            <Marker key={`public-${index}`} position={trip.coordinates} icon={publicIcon}>
+            <Marker 
+              key={`public-${index}`} 
+              position={trip.coordinates} 
+              icon={publicIcon}
+              eventHandlers={{
+                click: (e) => {
+                  const markerElement = e.target._icon?.querySelector('.gm-modern-marker');
+                  if (markerElement) {
+                    markerElement.classList.add('marker-clicked');
+                    setTimeout(() => {
+                      markerElement.classList.remove('marker-clicked');
+                    }, 600);
+                  }
+                }
+              }}
+            >
               <Popup>
                 <div className="gm-map-popup-content">
                   <h3>🌍 {trip.label || `${trip.country} | ${trip.city}`}</h3>
@@ -1136,6 +1108,11 @@ const MapEvents = () => {
                     <a href={getGoogleMapsLink(trip.coordinates[0], trip.coordinates[1])} target="_blank" rel="noopener noreferrer">
                       <button className="gm-map-popup-btn primary">🗺️ Google Maps</button>
                     </a>
+                    {trip.tripLink && (
+                      <a href={trip.tripLink} target="_blank" rel="noopener noreferrer">
+                        <button className="gm-map-popup-btn secondary">📖 Ver Viagem</button>
+                      </a>
+                    )}
                   </div>
                 </div>
               </Popup>
@@ -1172,6 +1149,15 @@ const MapEvents = () => {
               position={searchMarker.coordinates} 
               icon={searchIcon}
               eventHandlers={{
+                click: (e) => {
+                  const markerElement = e.target._icon?.querySelector('.gm-modern-marker');
+                  if (markerElement) {
+                    markerElement.classList.add('marker-clicked');
+                    setTimeout(() => {
+                      markerElement.classList.remove('marker-clicked');
+                    }, 600);
+                  }
+                },
                 popupclose: () => {
                   // Remove o marcador quando o popup é fechado
                   setSearchMarker(null);
@@ -1200,19 +1186,13 @@ const MapEvents = () => {
                     </div>
                   </div>
                   <div className="gm-map-popup-actions">
-                    <button
-                      className="gm-map-popup-btn primary"
-                      onClick={() => addFutureTripFromSearch(searchMarker)}
-                    >
-                      ⚡ Adicionar Viagem
-                    </button>
                     <a 
                       href={getGoogleMapsLink(searchMarker.coordinates[0], searchMarker.coordinates[1])} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       style={{ display: 'block', textDecoration: 'none', flex: 1 }}
                     >
-                      <button className="gm-map-popup-btn secondary">
+                      <button className="gm-map-popup-btn primary">
                         🗺️ Google Maps
                       </button>
                     </a>
@@ -1253,39 +1233,38 @@ const MapEvents = () => {
         </MapContainer>
       </div>
 
-      {/* Botão de ação flutuante */}
-      {mode === 'all' && (
-        <div className="gm-map-floating-action-btn">
-          <button
-            className="gm-map-fab-main"
-            onClick={() => {
-              // Considera viagens públicas e de quem sigo
-              const combinedFiltered = [...(filteredSets.public || []), ...(filteredSets.following || [])];
-              const combinedAll = [...(publicTrips || []), ...(followingTrips || [])];
-              const basePool = combinedFiltered.length ? combinedFiltered : combinedAll;
-              const pool = (basePool || []).filter(hasValidCoords);
-              if (!pool.length) {
-                console.warn('Sem viagens elegíveis com coordenadas válidas.');
-                showToast('Não há viagens com coordenadas válidas para explorar.', 'error');
-                return;
-              }
-              const r = pool[Math.floor(Math.random() * pool.length)];
-              const coords = [Number(r.coordinates[0]), Number(r.coordinates[1])];
-              setSelectedLocation({
-                coordinates: coords,
-                name: `${r.city}, ${r.country}`,
-                zoom: 12,
-                radius: 8000,
-              });
-              setRandomPopup({ ...r, coordinates: coords });
-            }}
-          >
-            <span className="gm-map-fab-icon">🎲</span>
-            <span className="gm-map-fab-text">Descobrir</span>
-          </button>
+
+      {/* Popup de Destino Mágico */}
+      {showDestinationPopup && magicDestination && (
+        <div className="gm-map-magic-popup-overlay">
+          <div className="gm-map-magic-popup">
+            <div className="gm-map-magic-popup-header">
+              <div className="gm-map-magic-target">🎯</div>
+              <button className="gm-map-close-btn" onClick={closeDestinationPopup}>×</button>
+            </div>
+            <div className="gm-map-magic-popup-content">
+              <div className="gm-map-magic-emoji">{magicDestination.emoji}</div>
+              <h2>A tua próxima aventura será em:</h2>
+              <div className="gm-map-magic-destination">
+                <span className="gm-map-magic-country">{magicDestination.country}</span>
+                <span className="gm-map-magic-city">{magicDestination.city}</span>
+              </div>
+              <p className="gm-map-magic-description">
+                Vamos descobrir as memórias de quem já esteve neste destino incrível?
+              </p>
+            </div>
+            <div className="gm-map-magic-popup-actions">
+              <button 
+                className="gm-map-magic-btn primary"
+                onClick={exploreCountryTravels}
+              >
+                🔍 Ver viagens em {magicDestination.country}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      
+
       {/* Toast Component */}
       <Toast
         message={toast.message}

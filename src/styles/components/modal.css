@@ -98,6 +98,7 @@ align-items: center;
 justify-content: center;
 padding-top: 30px;
 padding-bottom: 30px;
+padding: 20px;
 }
 
 .modal-content-weather {
@@ -656,6 +657,8 @@ padding-bottom: 30px;
 .modal-content .RightPosition {
   width: 48%;
   margin-bottom: 20px;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .modal-content .LeftPosition {
@@ -665,6 +668,8 @@ padding-bottom: 30px;
 
 .modal-content .RightPosition {
   float: right;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .modal-content .fullPosition {
@@ -1387,7 +1392,7 @@ padding-bottom: 30px;
   }
 
   .modal-content.category-modal {
-    max-width: 90% !important;
+    max-width: 100% !important;
   }
 
   .stats-modal-content {
@@ -1693,4 +1698,540 @@ padding-bottom: 30px;
 .travel-planner-content input[type="checkbox"]:focus {
   outline: none;
   box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* --------------------------------------- Install App Modal Styles --------------------------------------- */
+.install-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.8) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 20px;
+}
+
+.install-modal {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.98) 100%);
+  border-radius: 24px;
+  box-shadow: 
+    0 30px 80px rgba(0, 0, 0, 0.2),
+    0 15px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.install-modal-header {
+  padding: 32px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.install-modal-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.install-modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.install-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.install-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.install-modal-body {
+  padding: 32px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: #667eea transparent;
+}
+
+.install-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.install-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.install-modal-body::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 3px;
+}
+
+.install-modal-intro {
+  font-size: 1.05rem;
+  color: #333;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+}
+
+.install-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.install-info-badge.ios {
+  background: linear-gradient(135deg, #555555 0%, #333333 100%);
+  color: white;
+}
+
+.install-info-badge.android {
+  background: linear-gradient(135deg, #3DDC84 0%, #1ab149 100%);
+  color: white;
+}
+
+.install-info-badge.generic {
+  background: linear-gradient(135deg, #FF9500 0%, #FF7500 100%);
+  color: white;
+}
+
+.install-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.install-steps li {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #f0f3ff 100%);
+  border-left: 4px solid #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.6;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.install-steps li:hover {
+  background: linear-gradient(135deg, #f0f3ff 0%, #e8ebff 100%);
+  border-left-color: #764ba2;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.install-steps li strong {
+  color: #667eea;
+  font-weight: 700;
+}
+
+.install-steps li em {
+  color: #764ba2;
+  font-style: italic;
+}
+
+.install-tips {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  margin-top: 20px;
+  line-height: 1.6;
+}
+
+.install-tips strong {
+  color: #667eea;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.install-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.install-action-btn {
+  flex: 1;
+  min-width: 150px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.install-action-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.install-action-btn.primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.install-action-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #764ba2 0%, #663399 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+}
+
+.install-action-btn.primary:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.install-action-btn.secondary {
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.install-action-btn.secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(102, 126, 234, 0.05);
+  transition: left 0.6s ease;
+}
+
+.install-action-btn.secondary:hover:not(:disabled) {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #764ba2;
+  color: #764ba2;
+  transform: translateY(-2px);
+}
+
+.install-action-btn.secondary:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.install-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* App Installed Badge */
+.app-installed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Install App Button */
+.install-app-container {
+  display: flex;
+  align-items: center;
+}
+
+.install-app-btn {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.install-app-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s ease;
+}
+
+.install-app-btn:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #663399 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.install-app-btn:hover::before {
+  left: 100%;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .install-modal {
+    max-width: 90%;
+    max-height: 95vh;
+  }
+  
+  .install-modal-header {
+    padding: 24px 16px;
+  }
+  
+  .install-modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .install-modal-body {
+    padding: 24px 16px;
+  }
+  
+  .install-steps li {
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+  
+  .install-actions {
+    flex-direction: column;
+  }
+  
+  .install-action-btn {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* --------------------------------------- Install Success Screen Styles --------------------------------------- */
+.install-success-container {
+  padding: 60px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.success-animation {
+  margin-bottom: 28px;
+}
+
+.success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  font-size: 50px;
+  color: white;
+  box-shadow: 
+    0 20px 60px rgba(40, 167, 69, 0.3),
+    0 0 0 20px rgba(40, 167, 69, 0.1);
+  animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes successBounce {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+.success-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #28a745;
+  margin: 0 0 12px 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.success-message {
+  font-size: 1.05rem;
+  color: #333;
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+  font-family: 'Poppins', sans-serif;
+}
+
+.success-message strong {
+  color: #667eea;
+  font-weight: 700;
+}
+
+.success-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 32px 0;
+  align-items: center;
+  width: 100%;
+}
+
+.success-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(32, 201, 151, 0.05) 100%);
+  border-left: 4px solid #28a745;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #333;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  animation: slideInLeft 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.success-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.success-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.success-item:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.success-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.success-next-steps {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 24px 0 0 0;
+  line-height: 1.6;
+  font-family: 'Poppins', sans-serif;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .install-success-container {
+    padding: 40px 20px;
+    min-height: 400px;
+  }
+  
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 40px;
+  }
+  
+  .success-title {
+    font-size: 1.5rem;
+  }
+  
+  .success-message {
+    font-size: 1rem;
+  }
+  
+  .success-item {
+    font-size: 0.95rem;
+    padding: 10px 14px;
+  }
 }

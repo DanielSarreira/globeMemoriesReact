@@ -166,6 +166,19 @@
   font-size: 1.2rem;
 }
 
+.author-name-link-travel-details {
+  color: inherit;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.author-name-link-travel-details:hover {
+  color: #3498db;
+  text-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+  transform: translateY(-1px);
+}
+
 /* ==================== HERO RATING ==================== */
 .travel-rating-travel-details {
     padding: 1rem 1.5rem;
@@ -462,8 +475,8 @@
 }
 
 .category-tags-travel-details {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -483,6 +496,66 @@
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.85rem;
+}
+
+/* ==================== TRANSPORT TAGS ==================== */
+.transport-display-travel-details {
+  margin-bottom: 1rem;
+}
+
+.transport-tags-travel-details {
+  display: inline-grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.transport-tag-travel-details {
+  background: #737373;
+  color: var(--text-white);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.more-transports-travel-details {
+  background: var(--text-gray);
+  color: var(--text-white);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.no-transports-travel-details {
+  color: var(--text-gray);
+  font-style: italic;
+}
+
+/* ==================== DATE TAGS ==================== */
+.dates-display-travel-details {
+  margin-bottom: 1rem;
+}
+
+.date-tags-travel-details {
+  display: inline-grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.date-tag-travel-details {
+  background: var(--primary-orange);
+  color: var(--text-white);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.no-dates-travel-details {
+  color: var(--text-gray);
+  font-style: italic;
 }
 
 /* ==================== DESCRIPTION SECTION ==================== */
@@ -1085,7 +1158,7 @@ display: none;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.318);
   backdrop-filter: var(--backdrop-blur);
   z-index: 1500;
   display: flex;
@@ -1208,6 +1281,39 @@ display: none;
 }
 
 /* ==================== TRANSPORT MODAL ==================== */
+.transport-grid-modal-travel-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.transport-item-modal-travel-details {
+  background: var(--primary-blue);
+  color: var(--text-white);
+  padding: 1rem;
+  border-radius: var(--border-radius-small);
+  text-align: center;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.transport-item-modal-travel-details:hover {
+  background: var(--primary-blue-hover);
+  transform: translateY(-2px);
+}
+
+.transport-text-travel-details {
+  font-size: 0.9rem;
+}
+
+.no-transports-modal-travel-details {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-gray);
+  background: #f8f9fa;
+  border-radius: var(--border-radius-small);
+}
+
 .transport-details-modal-travel-details {
   display: flex;
   flex-direction: column;
@@ -1272,6 +1378,56 @@ display: none;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+/* ==================== DATES MODAL ==================== */
+.dates-details-modal-travel-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.date-item-modal-travel-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: var(--border-radius-small);
+  border-left: 4px solid var(--primary-orange);
+}
+
+.date-icon-travel-details {
+  font-size: 1.5rem;
+  width: 30px;
+  text-align: center;
+}
+
+.date-info-travel-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-label-travel-details {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.date-value-travel-details {
+  color: var(--text-gray);
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.no-dates-modal-travel-details {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-gray);
+  background: #f8f9fa;
+  border-radius: var(--border-radius-small);
 }
 
 /* ==================== IMAGE MODAL ==================== */
@@ -1406,7 +1562,7 @@ display: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--primary-orange);
+  background: transparent;
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -1415,30 +1571,33 @@ display: none;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition);
-  box-shadow: var(--shadow-strong);
-  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: none;
+  z-index: 20;
   color: white;
+  padding: 10px;
 }
 
 .carousel-nav-btn-travel-details.carousel-prev-travel-details {
-  left: 0;
+  left: 10px;
 }
 
 .carousel-nav-btn-travel-details.carousel-next-travel-details {
-  right: 0;
+  right: 10px;
 }
 
 .carousel-nav-btn-travel-details:hover:not(:disabled) {
-  background: var(--primary-orange-hover);
-  transform: translateY(-50%) scale(1.1);
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+  background: transparent;
+  transform: translateY(-50%) scale(1.2);
+  box-shadow: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
 }
 
 .carousel-nav-btn-travel-details:disabled {
   opacity: 0.3;
   cursor: not-allowed;
   transform: translateY(-50%);
+  filter: none;
 }
 
 .recommended-carousel-travel-details {
@@ -1544,6 +1703,15 @@ display: none;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.recommended-travel-author-travel-details .author-name-link-travel-details {
+  color: var(--text-gray);
+  font-weight: 600;
+}
+
+.recommended-travel-author-travel-details .author-name-link-travel-details:hover {
+  color: var(--primary-blue);
 }
 
 .recommended-travel-categories-travel-details {
@@ -1768,12 +1936,65 @@ display: none;
   background: white;
   width: 100%;
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 85vh;
   border-radius: 20px 20px 0 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Container com scroll para o conteúdo da modal */
+.comments-modal-content-travel-details {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Permite que o flex container encolha */
+  max-height: calc(85vh - 70px); /* Subtrai a altura do header */
+}
+
+/* Seções da modal com padding adequado */
+.comments-modal-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.comments-modal-section:last-child {
+  border-bottom: none;
+  padding-bottom: 2rem; /* Extra padding no final */
+}
+
+/* Ajustes específicos para os comentários dentro da modal */
+.comments-modal-travel-details .add-comment-modern {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  background: #f8f9fa;
+}
+
+.comments-modal-travel-details .comments-list-modern {
+  padding: 0;
+}
+
+.comments-modal-travel-details .comment-item-modern {
+  padding: 1.2rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 0;
+}
+
+.comments-modal-travel-details .comment-item-modern:last-child {
+  border-bottom: none;
+}
+
+.comments-modal-travel-details .login-prompt-modern {
+  background: #f8f9fa;
+  margin: 0;
+}
+
+.comments-modal-travel-details .comment-success-modern {
+  margin: 0;
 }
 
 .comments-modal-header-travel-details {
@@ -1814,6 +2035,32 @@ display: none;
 .close-comments-travel-details:hover {
   background: #f0f0f0;
   color: #333;
+}
+
+/* Scroll customizado para a modal de comentários */
+.comments-modal-content-travel-details::-webkit-scrollbar {
+  width: 6px;
+}
+
+.comments-modal-content-travel-details::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.comments-modal-content-travel-details::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.comments-modal-content-travel-details::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Scroll behavior suave */
+.comments-modal-content-travel-details {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Add Comment Section */
@@ -5445,5 +5692,46 @@ display: none;
   .transport-stats {
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  /* Modal de comentários - Responsividade mobile */
+  .comments-modal-travel-details {
+    max-height: 90vh;
+    border-radius: 15px 15px 0 0;
+  }
+
+  .comments-modal-header-travel-details {
+    padding: 1rem 1.2rem;
+  }
+
+  .comments-modal-header-travel-details h3 {
+    font-size: 1.1rem;
+  }
+
+  .comments-modal-section {
+    padding: 1.2rem;
+  }
+
+  .comments-modal-travel-details .add-comment-modern {
+    gap: 0.8rem;
+  }
+
+  .comments-modal-travel-details .comment-user-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .comments-modal-travel-details .comment-item-modern {
+    padding: 1rem 0;
+  }
+
+  .comments-modal-travel-details .comment-main .comment-avatar-modern {
+    width: 35px;
+    height: 35px;
+  }
+
+  .comments-modal-travel-details .reply-user-avatar {
+    width: 28px;
+    height: 28px;
   }
 }

@@ -326,6 +326,17 @@ button-orange:disabled {
   height: 56px;
 }
 
+/* --------------------------------------- Botão Planear Nova Viagem (Laranja) --------------------------------------- */
+button.plan-new-travel {
+  background-color: var(--secondary-color) !important;
+  background: var(--secondary-color) !important;
+}
+
+button.plan-new-travel:hover {
+  background-color: var(--secondary-color-hover) !important;
+  background: var(--secondary-color-hover) !important;
+}
+
 /* --------------------------------------- Botões de Feed Interativos --------------------------------------- */
 .feed-actions {
   display: flex;

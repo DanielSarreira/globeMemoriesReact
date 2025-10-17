@@ -6,7 +6,6 @@ import TravelsData from '../data/travelsData';
 // ...existing code...
 import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClock, FaUserPlus, FaChartBar, FaMapMarkerAlt } from 'react-icons/fa';
 import { request } from '../axios_helper';
-import Toast from '../components/Toast';
 
 // Dados fictícios para perfis de viajante
 const mockProfiles = [
@@ -87,33 +86,16 @@ const UserProfile = () => {
   });
   const [otherTravelReason, setOtherTravelReason] = useState('');
   
-  // Toast state
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
-  
   const [reportReasons, setReportReasons] = useState({
     inappropriate: false,
     falseInfo: false,
     abusive: false,
     spam: false,
     identity: false,
-    plagiarism: false,
     harassment: false,
-    violation: false,
     other: false
   });
   const [otherReason, setOtherReason] = useState('');
-
-  // Toast functions
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: '' });
-    }, 2600);
-  };
-
-  const closeToast = () => {
-    setToast({ show: false, message: '', type: '' });
-  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -150,7 +132,7 @@ const UserProfile = () => {
         }
       } catch (error) {
         console.error('Erro ao buscar perfil:', error);
-        showToast('Erro ao carregar perfil do viajante. Tente novamente.', 'error');
+        console.log('Erro ao carregar perfil do viajante. Tente novamente.');
         setProfile(null);
       } finally {
         setLoading(false);
@@ -193,16 +175,13 @@ const UserProfile = () => {
 
   const handleFollow = () => {
     if (!user) {
-      showToast('Inicie sessão para seguir viajantes.', 'error');
       return;
     }
     if (profile.privacy === 'public') {
       setFollowing([...following, profile.username]);
       setFollowers([...followers, user.username]);
-      showToast(`Agora segues ${profile.name}!`, 'success');
     } else {
       setPendingRequests([...pendingRequests, profile.username]);
-      showToast(`Pedido de seguimento enviado para ${profile.name}!`, 'success');
       setShowRequestModal(true);
       setTimeout(() => {
         setShowRequestModal(false);
@@ -214,7 +193,6 @@ const UserProfile = () => {
     setFollowing(following.filter((u) => u !== profile.username));
     setFollowers(followers.filter((u) => u !== user.username));
     setPendingRequests(pendingRequests.filter((u) => u !== profile.username));
-    showToast('Deixaste de seguir este viajante!', 'success');
   };
 
   const handleCancelRequest = () => {
@@ -237,7 +215,6 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Inicie sessão para denunciar viajantes.', 'error');
       return;
     }
     setShowReportModal(true);
@@ -248,7 +225,6 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Inicie sessão para bloquear viajantes.', 'error');
       return;
     }
     setShowBlockModal(true);
@@ -276,12 +252,10 @@ const UserProfile = () => {
                                (reportReasons.other && otherReason.trim());
       
       if (!hasSelectedReason) {
-        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
 
       setReportedUsers([...reportedUsers, profile.username]);
-      showToast('Viajante denunciado com sucesso!', 'success');
       setShowReportModal(false);
       // Remove from following if currently following
       setFollowing(following.filter(username => username !== profile.username));
@@ -305,7 +279,6 @@ const UserProfile = () => {
   const confirmBlockUser = () => {
     if (profile) {
       setBlockedUsers([...blockedUsers, profile.username]);
-      showToast('Viajante bloqueado com sucesso!', 'success');
       setShowBlockModal(false);
       // Remove from following if currently following
       setFollowing(following.filter(username => username !== profile.username));
@@ -316,7 +289,6 @@ const UserProfile = () => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Inicie sessão para denunciar viagens.', 'error');
       return;
     }
     setSelectedTravel(travel);
@@ -329,11 +301,9 @@ const UserProfile = () => {
       const hasSelectedReason = Object.values(reportTravelReasons).some(v => v) ||
         (reportTravelReasons.other && otherTravelReason.trim());
       if (!hasSelectedReason) {
-        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
       setReportedTravels([...reportedTravels, selectedTravel.id]);
-      showToast('Viagem denunciada com sucesso!', 'success');
       setShowReportTravelModal(false);
       setSelectedTravel(null);
       setReportTravelReasons({
@@ -557,23 +527,58 @@ const UserProfile = () => {
           <div className="profile-info-section">
             <div className="profile-header-top">
               <div className="profile-name-container">
-                <h1 className="profile-name">
-                  {profile.name}
-                  {user && following.includes(profile.username) && (
-                    <span className="following-badge">
-                      <FaCheck className="following-icon" />
-                      A Seguir
-                    </span>
+                <div className="profile-name-info">
+                  <h1 className="profile-name">
+                    {profile.name}
+                    {/* Following badge para desktop */}
+                    {user && following.includes(profile.username) && (
+                      <span className="following-badge desktop-following-badge">
+                        <FaCheck className="following-icon" />
+                        A Seguir
+                      </span>
+                    )}
+                  </h1>
+                  <p className="profile-username">@{profile.username}</p>
+                </div>
+                
+                {/* Botões de ação dentro do profile-name-container */}
+                <div className="profile-action-buttons">
+                  {isOwnProfile && (
+                    <Link to={`/profile/edit/${profile.username}`} className="button edit-profile-btn">
+                      <FaEdit />
+                      <span>Editar</span>
+                    </Link>
                   )}
-                </h1>
-                <p className="profile-username">@{profile.username}</p>
+                  {!isOwnProfile && user && (
+                    <div className="social-actions">
+                      {isFollowing ? (
+                        <button className="unfollow-button" onClick={handleUnfollow}>
+                          <FaUserMinus />
+                          <span>Não seguir</span>
+                        </button>
+                      ) : isPending ? (
+                        <button className="pending-button" onClick={handleCancelRequest}>
+                          <FaClock />
+                          <span>Pendente</span>
+                        </button>
+                      ) : (
+                        <button className="follow-button" onClick={handleFollow}>
+                          <FaUserPlus />
+                          <span>Seguir</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
+                </div>
               </div>
 
               <div className="profile-actions-section">
+                {/* Botões para desktop/tablet - ao lado dos 3 pontos */}
                 {isOwnProfile && (
-                  <Link to={`/profile/edit/${profile.username}`} className="button">
+                  <Link to={`/profile/edit/${profile.username}`} className="button edit-profile-btn">
                     <FaEdit />
-                    <span>Editar Perfil</span>
+                    <span>Editar</span>
                   </Link>
                 )}
                 {!isOwnProfile && user && (
@@ -581,7 +586,7 @@ const UserProfile = () => {
                     {isFollowing ? (
                       <button className="unfollow-button" onClick={handleUnfollow}>
                         <FaUserMinus />
-                        <span>Deixar de Seguir</span>
+                        <span>Não seguir</span>
                       </button>
                     ) : isPending ? (
                       <button className="pending-button" onClick={handleCancelRequest}>
@@ -591,7 +596,7 @@ const UserProfile = () => {
                     ) : (
                       <button className="follow-button" onClick={handleFollow}>
                         <FaUserPlus />
-                        <span>{profile.privacy === 'public' ? 'Seguir' : 'Solicitar'}</span>
+                        <span>Seguir</span>
                       </button>
                     )}
                   </div>
@@ -625,44 +630,73 @@ const UserProfile = () => {
                 )}
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="profile-details-section">
-              {profile.bio && (
-                <div className="bio-container">
-                  <p className="bio">{profile.bio}</p>
+        {/* Profile details section separada */}
+        <div className="profile-details-section">
+          {(profile.city || profile.country) && (
+            <div className="location-container">
+              {/* Menu 3 pontos para mobile - alinhado à esquerda */}
+              {!isOwnProfile && user && (
+                <div className="mobile-menu-inline">
+                  <button
+                    className="action-button menu-btn mobile-menu-btn-inline"
+                    onClick={toggleDropdown}
+                  >
+                    <FaEllipsisV />
+                  </button>
+                  {showDropdown && (
+                    <div className="dropdown-menu mobile-dropdown-menu">
+                      <button
+                        className="dropdown-item"
+                        onClick={handleReportUser}
+                      >
+                        <FaFlag /> Denunciar
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={handleBlockUser}
+                      >
+                        <FaBan /> Bloquear
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-              {(profile.city || profile.country) && (
-                <div className="location-container">
-                  <FaMapMarkerAlt className="location-icon" />
-                  <span className="location-text">
-                    {profile.city && profile.country ? `${profile.city}, ${profile.country}` : profile.city || profile.country}
-                  </span>
-                </div>
-              )}
+              <FaMapMarkerAlt className="location-icon" />
+              <span className="location-text">
+                {profile.city && profile.country ? `${profile.city}, ${profile.country}` : profile.city || profile.country}
+              </span>
             </div>
+          )}
+          {profile.bio && (
+            <div className="bio-container">
+              <p className="bio">{profile.bio}</p>
+            </div>
+          )}
+        </div>
 
-            <div className="profile-stats-section">
-              <div className="stats-grid">
-                <div
-                  className={`stat-card ${canViewFollowStats ? 'clickable' : 'non-clickable'}`}
-                  onClick={() => canViewFollowStats && openFollowModal('Seguidores', followers)}
-                >
-                  <div className="stat-number">{followers.length}</div>
-                  <div className="stat-label">Seguidores</div>
-                </div>
-                <div
-                  className={`stat-card ${canViewFollowStats ? 'clickable' : 'non-clickable'}`}
-                  onClick={() => canViewFollowStats && openFollowModal('A Seguir', profile.following)}
-                >
-                  <div className="stat-number">{profile.following.length}</div>
-                  <div className="stat-label">A seguir</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-number">{visibleTravels.length}</div>
-                  <div className="stat-label">Viagens</div>
-                </div>
-              </div>
+        {/* Stats section separada */}
+        <div className="profile-stats-section">
+          <div className="stats-grid">
+            <div
+              className={`stat-card ${canViewFollowStats ? 'clickable' : 'non-clickable'}`}
+              onClick={() => canViewFollowStats && openFollowModal('Seguidores', followers)}
+            >
+              <div className="stat-number">{followers.length}</div>
+              <div className="stat-label">Seguidores</div>
+            </div>
+            <div
+              className={`stat-card ${canViewFollowStats ? 'clickable' : 'non-clickable'}`}
+              onClick={() => canViewFollowStats && openFollowModal('A Seguir', profile.following)}
+            >
+              <div className="stat-number">{profile.following.length}</div>
+              <div className="stat-label">A seguir</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{visibleTravels.length}</div>
+              <div className="stat-label">Viagens</div>
             </div>
           </div>
         </div>
@@ -756,13 +790,13 @@ const UserProfile = () => {
                           <img src={travel.highlightImage} alt={travel.name} className="highlight-image" />
                           <div className="travel-text">
                             <h2>{travel.name}</h2>
-                            <p><b>👤 Utilizador:</b> {travel.user}</p>
+                            <p><b>👤 Viajante:</b> {travel.user}</p>
                             <p><b>🌍 País:</b> {travel.country}</p>
                             <p><b>🏙️ Cidade:</b> {travel.city}</p>
                             <p><b>🗂️ Categoria:</b> {travel.category.join(', ')}</p>
                             <p><b>📅 Duração da Viagem:</b> {travel.days} dias</p>
                             <p><b>💰 Preço Total da Viagem:</b> {travel.price}€</p>
-                            <p><strong>A Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
+                            <p><strong>Avaliação Geral:</strong> {renderStars(travel.stars)}</p>
                             <Link to={`/travel/${travel.id}`} className="button">Ver mais detalhes</Link>
                           </div>
                         </div>
@@ -901,7 +935,7 @@ const UserProfile = () => {
           <div
             className="modal-content-users"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}
+            style={{ maxWidth: '500px', overflowY: 'auto' }}
           >
             <h2>Denunciar Viagem</h2>
             <p>
@@ -1035,7 +1069,7 @@ const UserProfile = () => {
 
             <div className="modal-buttons">
               <button
-                className="cancel-button"
+                className="button-danger"
                 onClick={() => {
                   setShowReportTravelModal(false);
                   setReportTravelReasons({
@@ -1055,14 +1089,14 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#dc3545',
+                  backgroundColor: '#6c757d',
                   color: 'white',
                 }}
               >
                 Cancelar
               </button>
               <button
-                className="confirm-button"
+                className="button-orange"
                 onClick={confirmReportTravel}
                 style={{
                   padding: '10px 20px',
@@ -1070,7 +1104,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: 'var (--danger-color)',
+                  backgroundColor: '#e74c3c',
                   color: 'white',
                 }}
               >
@@ -1137,10 +1171,15 @@ const UserProfile = () => {
 
       {showReportModal && (
         <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
-          <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+          <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', overflowY: 'auto' }}>
+            <br></br><br></br>
             <h2>Denunciar Viajante</h2>
-            <p>Por que deseja denunciar <strong>{profile?.username}</strong>?</p>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta acção irá reportar o viajante aos administradores.</p>
+            <p>Porque deseja denunciar o viajante <strong>"{profile?.username}"</strong>?</p>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta ação irá reportar o viajante aos administradores.</p>
+            
+            <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '15px' }}>Motivo da denúncia:</p>
+            
+            
             
             <div style={{ textAlign: 'left', marginBottom: '20px' }}>
               <div style={{ marginBottom: '15px' }}>
@@ -1153,7 +1192,7 @@ const UserProfile = () => {
                   />
                   <div>
                     <strong>Conteúdo inapropriado</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: imagens ofensivas, descrições inapropriadas, nudez, etc.)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(imagens, descrições ou publicações ofensivas, nudez, etc.)</div>
                   </div>
                 </label>
               </div>
@@ -1168,7 +1207,7 @@ const UserProfile = () => {
                   />
                   <div>
                     <strong>Informação falsa ou enganosa</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens inventadas, locais inexistentes, preços manipulados, etc.)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(viagens inventadas, perfis falsos, dados incorretos, etc.)</div>
                   </div>
                 </label>
               </div>
@@ -1183,7 +1222,7 @@ const UserProfile = () => {
                   />
                   <div>
                     <strong>Comportamento abusivo ou ofensivo</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: linguagem agressiva, insultos, bullying)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(linguagem agressiva, insultos, bullying, provocações)</div>
                   </div>
                 </label>
               </div>
@@ -1197,8 +1236,8 @@ const UserProfile = () => {
                     style={{ marginRight: '10px', marginTop: '2px' }}
                   />
                   <div>
-                    <strong>Spam ou autopromoção excessiva</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: promoção constante de marcas, links externos, publicidade abusiva)</div>
+                    <strong>Spam ou autopromoção</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(publicidade excessiva, links externos, promoção constante de marcas)</div>
                   </div>
                 </label>
               </div>
@@ -1213,22 +1252,7 @@ const UserProfile = () => {
                   />
                   <div>
                     <strong>Roubo de identidade</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: perfis falsos, uso de fotos de outras pessoas sem autorização)</div>
-                  </div>
-                </label>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={reportReasons.plagiarism}
-                    onChange={() => handleReasonChange('plagiarism')}
-                    style={{ marginRight: '10px', marginTop: '2px' }}
-                  />
-                  <div>
-                    <strong>Plágio de conteúdo</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros viajantes sem créditos)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(uso de fotos ou informações de outra pessoa sem autorização)</div>
                   </div>
                 </label>
               </div>
@@ -1243,22 +1267,7 @@ const UserProfile = () => {
                   />
                   <div>
                     <strong>Assédio ou comportamento inadequado</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: mensagens ou comentários inapropriados, perseguição)</div>
-                  </div>
-                </label>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={reportReasons.violation}
-                    onChange={() => handleReasonChange('violation')}
-                    style={{ marginRight: '10px', marginTop: '2px' }}
-                  />
-                  <div>
-                    <strong>Violação das regras da plataforma</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: uso da plataforma para fins ilegais ou proibidos)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(mensagens, comentários ou perseguição indesejada)</div>
                   </div>
                 </label>
               </div>
@@ -1297,7 +1306,7 @@ const UserProfile = () => {
 
             <div className="modal-buttons">
               <button 
-                className="cancel-button" 
+                className="button-danger" 
                 onClick={() => {
                   setShowReportModal(false);
                   // Reset form when canceling
@@ -1307,9 +1316,7 @@ const UserProfile = () => {
                     abusive: false,
                     spam: false,
                     identity: false,
-                    plagiarism: false,
                     harassment: false,
-                    violation: false,
                     other: false
                   });
                   setOtherReason('');
@@ -1320,14 +1327,14 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#dc3545',
+                  backgroundColor: '#6c757d',
                   color: 'white'
                 }}
               >
                 Cancelar
               </button>
               <button 
-                className="confirm-button" 
+                className="button-orange" 
                 onClick={confirmReportUser}
                 style={{
                   padding: '10px 20px',
@@ -1335,7 +1342,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  background: 'var (--danger-color)',
+                  backgroundColor: '#e74c3c',
                   color: 'white'
                 }}
               >
@@ -1354,7 +1361,7 @@ const UserProfile = () => {
             <p>Não verá mais este viajante na lista e ele não poderá interagir consigo.</p>
             <div className="modal-buttons">
               <button 
-                className="cancel-button" 
+                className="button-danger" 
                 onClick={() => setShowBlockModal(false)}
                 style={{
                   padding: '10px 20px',
@@ -1362,14 +1369,14 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  backgroundColor: '#dc3545',
+                  backgroundColor: '#6c757d',
                   color: 'white'
                 }}
               >
                 Cancelar
               </button>
               <button 
-                className="confirm-button" 
+                className="button-orange" 
                 onClick={confirmBlockUser}
                 style={{
                   padding: '10px 20px',
@@ -1377,7 +1384,7 @@ const UserProfile = () => {
                   border: 'none',
                   borderRadius: '5px',
                   cursor: 'pointer',
-                  background: 'var (--danger-color)',
+                  backgroundColor: '#e74c3c',
                   color: 'white'
                 }}
               >
@@ -1387,14 +1394,6 @@ const UserProfile = () => {
           </div>
         </div>
       )}
-      
-      {/* Toast Component */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        show={toast.show}
-        onClose={closeToast}
-      />
     </div>
   );
 };

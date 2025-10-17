@@ -1,0 +1,275 @@
+/* 🎬 GLOBE MEMORIES CINEMATIC - CSS */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+/* 🎪 CONTAINER PRINCIPAL */
+.globe-memories-cinematic {
+  font-family: 'Montserrat', sans-serif;
+  overflow: hidden;
+}
+
+/* 🎈 BALÃO CINEMATOGRÁFICO */
+.cinematic-balloon-container {
+  will-change: transform;
+  user-select: none;
+}
+
+.cinematic-balloon-container:hover {
+  filter: drop-shadow(0 15px 30px rgba(0,0,0,0.4)) brightness(1.1);
+}
+
+.cinematic-balloon-container:active {
+  transform: scale(0.95) translateX(-50%);
+}
+
+/* 🏹 SETA CINEMATOGRÁFICA */
+.cinematic-arrow-container {
+  will-change: transform;
+  overflow: visible;
+}
+
+/* 💥 IMPACTO */
+.cinematic-impact {
+  will-change: transform;
+}
+
+.impact-particle {
+  will-change: transform, opacity;
+  filter: drop-shadow(0 0 4px rgba(255, 68, 68, 0.6));
+}
+
+/* ✈️ AVIÃO CINEMATOGRÁFICO */
+.cinematic-plane {
+  will-change: transform;
+}
+
+.plane-trail {
+  will-change: transform, opacity;
+}
+
+/* 📋 MODAL CINEMATOGRÁFICO */
+.cinematic-modal-overlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.cinematic-modal-content {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* 🎨 ANIMAÇÕES PERSONALIZADAS */
+@keyframes balloonFloat {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+@keyframes balloonSway {
+  0%, 100% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+}
+
+@keyframes arrowGlow {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0)); }
+  50% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
+}
+
+@keyframes impactRipple {
+  0% { 
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes planeEngine {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 🔥 EFEITOS ESPECIAIS */
+.trail-glow {
+  filter: 
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.6))
+    drop-shadow(0 0 8px rgba(255, 255, 255, 0.4))
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.2));
+}
+
+.impact-glow {
+  filter: 
+    drop-shadow(0 0 6px rgba(255, 68, 68, 0.8))
+    drop-shadow(0 0 12px rgba(255, 68, 68, 0.6))
+    drop-shadow(0 0 18px rgba(255, 68, 68, 0.4));
+}
+
+/* 📱 RESPONSIVIDADE */
+@media (max-width: 768px) {
+  .cinematic-balloon-container svg {
+    width: 140px;
+    height: 190px;
+  }
+  
+  .cinematic-modal-content {
+    padding: 24px;
+    margin: 20px;
+  }
+  
+  .cinematic-modal-content h2 {
+    font-size: 24px !important;
+  }
+  
+  .cinematic-modal-content p {
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .cinematic-balloon-container svg {
+    width: 120px;
+    height: 160px;
+  }
+  
+  .cinematic-modal-content {
+    padding: 20px;
+    max-width: 300px;
+  }
+}
+
+/* 🎯 PERFORMANCE OTIMIZATIONS */
+.cinematic-balloon-container,
+.cinematic-arrow-container,
+.cinematic-impact,
+.cinematic-plane {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+/* 🎪 TOOLTIP DO BALÃO */
+.cinematic-balloon-container .absolute {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+}
+
+/* 🌟 EFEITOS DE HOVER NOS BOTÕES */
+.cinematic-modal-content button {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.cinematic-modal-content button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.cinematic-modal-content button:hover::before {
+  left: 100%;
+}
+
+/* 🎨 CORES E GRADIENTES GLOBAIS */
+:root {
+  --gm-primary-gradient: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  --gm-secondary-gradient: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  --gm-danger-gradient: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  --gm-success-gradient: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+  
+  --gm-shadow-light: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --gm-shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --gm-shadow-heavy: 0 16px 40px rgba(0, 0, 0, 0.2);
+  
+  --gm-blur-light: blur(4px);
+  --gm-blur-medium: blur(8px);
+  --gm-blur-heavy: blur(16px);
+}
+
+/* 🎬 LOADING STATE (para quando está a preparar a sequência) */
+.cinematic-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  animation: pulse 2s infinite;
+}
+
+/* 🔧 DEBUG STYLES (apenas em desenvolvimento) */
+.cinematic-debug {
+  font-size: 11px;
+  line-height: 1.3;
+  font-family: 'Courier New', monospace;
+}
+
+.cinematic-debug button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.cinematic-debug button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 🎪 ACCESSIBILITY */
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-balloon-container,
+  .cinematic-arrow-container,
+  .cinematic-impact,
+  .cinematic-plane {
+    animation: none !important;
+  }
+  
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* 🌙 DARK MODE SUPPORT */
+@media (prefers-color-scheme: dark) {
+  .cinematic-modal-content {
+    background: rgba(20, 20, 20, 0.95);
+    color: white;
+  }
+  
+  .cinematic-modal-content h2 {
+    color: white;
+  }
+  
+  .cinematic-modal-content p {
+    color: #ccc;
+  }
+}
+
+/* 🎯 HIGH DPI / RETINA SUPPORT */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .cinematic-balloon-container svg,
+  .cinematic-arrow-container svg,
+  .cinematic-plane svg {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}

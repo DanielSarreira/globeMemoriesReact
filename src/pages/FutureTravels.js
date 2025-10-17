@@ -4,6 +4,8 @@ import "../styles/components/modal.css";
 import "../styles/pages/future-travels.css";
 import "../styles/pages/future-travels-modal.css";
 import Toast from "../components/Toast";
+import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
+import { futureTravelsModalUtils } from '../utils/modalUtils';
 
 const FutureTravels = () => {
   const [futureTravels, setFutureTravels] = useState([]);
@@ -49,6 +51,8 @@ const FutureTravels = () => {
   const [cities, setCities] = useState([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(() => futureTravelsModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [aiPreferences, setAiPreferences] = useState({
     categories: [],
     budget: '',
@@ -75,7 +79,7 @@ const FutureTravels = () => {
     setToast({ show: true, message, type });
     setTimeout(() => {
       setToast({ show: false, message: '', type: '' });
-    }, 1000);
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -280,7 +284,7 @@ const FutureTravels = () => {
   const addDestination = () => {
     if (!newDestination.country || !newDestination.city.trim()) {
       setToast({ 
-        message: "Por favor, seleccione um país e uma cidade!", 
+        message: "Por favor, selecione um país e uma cidade!", 
         type: "error", 
         show: true 
       });
@@ -1944,7 +1948,7 @@ const FutureTravels = () => {
   const confirmTravelType = () => {
     if (!selectedTravelType.main) {
       setToast({ 
-        message: "Por favor, seleccione pelo menos um tipo de viagem (Destino Único ou Multidestino)!", 
+        message: "Por favor, selecione pelo menos um tipo de viagem (Destino Único ou Multidestino)!", 
         type: "error", 
         show: true 
       });
@@ -2052,84 +2056,172 @@ const FutureTravels = () => {
 
   return (
     <React.Fragment>
-      <div className="my-travels-container">
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        textAlign: 'center',
-        padding: '2rem'
-      }}>
-        <div style={{
-          backgroundColor: '#f8f9fa',
-          borderRadius: '12px',
-          padding: '3rem',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          maxWidth: '600px',
-          width: '100%'
-        }}>
-          <div style={{
-            fontSize: '4rem',
-            marginBottom: '1.5rem',
-            color: '#6c757d'
-          }}>
-            🚀
-          </div>
-          
-          <h1 style={{
-            color: '#2c3e50',
-            marginBottom: '1rem',
-            fontSize: '2.5rem'
-          }}>
-            Futuras Viagens
-          </h1>
-          
-          <h2 style={{
-            color: '#e74c3c',
-            marginBottom: '2rem',
-            fontSize: '1.5rem',
-            fontWeight: '600'
-          }}>
-            Em Breve!
-          </h2>
-          
-          <p style={{
-            color: '#555',
-            fontSize: '1.1rem',
-            lineHeight: '1.6',
-            marginBottom: '1.5rem'
-          }}>
-            Esta funcionalidade incrível está a ser desenvolvida e será lançada em breve.
-          </p>
-          
-          <p style={{
-            color: '#666',
-            fontSize: '1rem',
-            lineHeight: '1.5'
-          }}>
-            Poderás planear as tuas futuras viagens com detalhes completos, 
-            usar inteligência artificial para sugestões personalizadas e muito mais!
-          </p>
-          
-          <div style={{
-            marginTop: '2rem',
-            padding: '1rem',
-            backgroundColor: '#e3f2fd',
-            borderRadius: '8px',
-            border: '1px solid #bbdefb'
-          }}>
-            <p style={{
-              margin: '0',
-              color: '#1976d2',
-              fontSize: '0.9rem'
-            }}>
-              💡 Mantém-te atento às próximas atualizações!
-            </p>
+      {/* Modal de Boas-vindas */}
+      {showWelcomeModal && (
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>Planeador de Viagens Futuras</h2>
+              <button className="gm-map-close-btn" onClick={() => setShowWelcomeModal(false)}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Planeie as suas próximas aventuras com ferramentas avançadas! Organize itinerários detalhados, listas de verificação e orçamentos para viagens perfeitas.</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🗓️</span>
+                  <div>
+                    <strong>Planeamento Completo de Itinerários</strong>
+                    <p>Crie itinerários detalhados dia-a-dia com atividades, horários e pontos de interesse organizados</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">💰</span>
+                  <div>
+                    <strong>Gestão de Orçamento Inteligente</strong>
+                    <p>Controle gastos com categorias detalhadas: alojamento, transporte, alimentação e extras</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">✅</span>
+                  <div>
+                    <strong>Listas de Verificação Personalizadas</strong>
+                    <p>Crie checklists organizados para não esquecer nada importante na sua viagem</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🤖</span>
+                  <div>
+                    <strong>Assistente IA de Viagens</strong>
+                    <p>Obtenha sugestões inteligentes de destinos, atividades e dicas baseadas nas suas preferências</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  futureTravelsModalUtils.dismiss();
+                }
+                setShowWelcomeModal(false);
+              }}>
+                Começar a planear!
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <div className="my-travels-container">
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '70vh',
+          textAlign: 'center',
+          padding: window.innerWidth <= 768 ? '1rem' : '2rem'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: window.innerWidth <= 768 ? '8px' : '16px',
+            padding: window.innerWidth <= 768 ? '2rem 1.5rem' : '2rem 3rem',
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            maxWidth: window.innerWidth <= 768 ? '100%' : '950px',
+            width: '100%',
+            border: '1px solid #e0e6ed',
+            margin: window.innerWidth <= 768 ? '0' : 'auto'
+          }}>       
+          
+            <div style={{
+              backgroundColor: '#f8f9ff',
+              borderRadius: '12px',
+              padding: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+              marginBottom: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+              border: '2px solid #e3f2fd'
+            }}>
+              <h3 style={{
+                color: '#1976d2',
+                marginBottom: '1.5rem',
+                fontSize: window.innerWidth <= 768 ? '1.2rem' : '1.4rem',
+                fontWeight: '600'
+              }}>
+                🎯 O que poderás fazer:
+              </h3>
+              
+              <div style={{
+                textAlign: 'left',
+                maxWidth: window.innerWidth <= 768 ? '100%' : '600px',
+                margin: '0 auto'
+              }}>
+                <div style={{ marginBottom: '1rem', color: '#555', fontSize: window.innerWidth <= 768 ? '1rem' : '1.1rem', lineHeight: '1.6' }}>
+                  <strong style={{ color: '#2c3e50' }}>🤖 Planeamento com IA:</strong> Cria viagens personalizadas com inteligência artificial baseada nas tuas preferências
+                </div>
+                
+
+                
+                <div style={{ marginBottom: '1rem', color: '#555', fontSize: window.innerWidth <= 768 ? '1rem' : '1.1rem', lineHeight: '1.6' }}>
+                  <strong style={{ color: '#2c3e50' }}>👥 Viagens em Grupo:</strong> Convida amigos, gere convites e planeia viagens colaborativas
+                </div>
+                
+                <div style={{ marginBottom: '1rem', color: '#555', fontSize: window.innerWidth <= 768 ? '1rem' : '1.1rem', lineHeight: '1.6' }}>
+                  <strong style={{ color: '#2c3e50' }}>💰 Gestão de Orçamento:</strong> Controla gastos por categoria (hotel, transporte, comida, extras)
+                </div>
+                
+                <div style={{ marginBottom: '1rem', color: '#555', fontSize: window.innerWidth <= 768 ? '1rem' : '1.1rem', lineHeight: '1.6' }}>
+                  <strong style={{ color: '#2c3e50' }}>📋 Checklist Inteligente:</strong> Lista personalizada de itens para levar baseada no destino
+                </div>
+                
+
+              </div>
+            </div>
+            
+            <div style={{
+              backgroundColor: '#fff3cd',
+              borderRadius: '12px',
+              padding: window.innerWidth <= 768 ? '1rem' : '1.5rem',
+              border: '1px solid #ffeaa7',
+              marginBottom: window.innerWidth <= 768 ? '1rem' : '1.5rem'
+            }}>
+              <p style={{
+                margin: '0',
+                color: '#856404',
+                fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
+                fontWeight: '500'
+              }}>
+                ⏰ Esta funcionalidade está em desenvolvimento e será lançada na segunda fase da aplicação
+              </p>
+            </div>
+            
+            <div style={{
+              backgroundColor: '#d1ecf1',
+              borderRadius: '12px',
+              padding: window.innerWidth <= 768 ? '1rem' : '1.5rem',
+              border: '1px solid #bee5eb'
+            }}>
+              <p style={{
+                margin: '0',
+                color: '#0c5460',
+                fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
+                fontWeight: '500'
+              }}>
+                💡 Mantém-te atento às próximas atualizações para seres o primeiro a experimentar!
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {isModalOpen && (
@@ -2340,7 +2432,7 @@ const FutureTravels = () => {
                                   }}
                                   required
                                 >
-                                  <option value="">Seleccione um país</option>
+                                  <option value="">Selecione um país</option>
                                   <option value="Portugal">Portugal</option>
                                   <option value="Brasil">Brasil</option>
                                   <option value="United States">Estados Unidos</option>
@@ -4935,118 +5027,6 @@ const FutureTravels = () => {
           </div>
         </div>
       )}
-
-      <div className="travels-list">
-        {futureTravels.length === 0 ? (
-          <p>
-            <br />
-            
-          </p>
-        ) : (
-          futureTravels.map((travel) => {
-            const { status, label, color } = getTripStatus(travel.startDate, travel.endDate);
-            return (
-              <div key={travel.id} className="travel-card">
-                <div className="travel-content">
-                  <div className="no-image-placeholder"></div>
-                  <div className="travel-text">
-                    <span
-                      style={{
-                        display: "inline-block",
-                        backgroundColor: color,
-                        color: "#fff",
-                        padding: "5px 10px",
-                        borderRadius: "4px",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      {label}
-                    </span>
-                    <h2>{travel.name}</h2>
-                    <p>
-                      <b>👤 Utilizador:</b> {travel.user || "Desconhecido"}
-                    </p>
-                    {/* Mostrar informações do tipo de viagem */}
-                    {travel.travelType && (
-                      <p>
-                        <b>🎯 Tipo:</b> 
-                        {travel.travelType.main === 'single' && " Destino Único"}
-                        {travel.travelType.main === 'multi' && " Multidestino"}
-                        {travel.travelType.isGroup && (
-                          <span style={{ color: "#28a745", fontWeight: "bold" }}>
-                            {travel.travelType.main ? " + " : ""}👥 Viagem em Grupo
-                          </span>
-                        )}
-                      </p>
-                    )}
-                    {/* Mostrar informações do grupo se for viagem em grupo */}
-                    {travel.groupData && (
-                      <p>
-                        <b>👥 Grupo:</b> {travel.groupData.members.length} membro(s) convidado(s)
-                        <br />
-                        <small style={{ color: "#666" }}>
-                          Admin: {travel.groupData.admin}
-                        </small>
-                      </p>
-                    )}
-                    <p>
-                      <b>🌍 País:</b> {travel.country || "Não definido"}
-                    </p>
-                    <p>
-                      <b>🏙️ Cidade:</b> {travel.city || "Não definido"}
-                    </p>
-                    {/* Mostrar destinos adicionais se for viagem multidestino */}
-                    {travel.multiDestinations && travel.multiDestinations.length > 0 && (
-                      <div style={{ 
-                        marginTop: "10px", 
-                        padding: "10px", 
-                        backgroundColor: "#f8f9fa", 
-                        borderRadius: "5px" 
-                      }}>
-                        <p style={{ margin: "0 0 5px 0", fontWeight: "bold" }}>
-                          <b>🗺️ Destinos Adicionais:</b>
-                        </p>
-                        {travel.multiDestinations.map((dest, index) => (
-                          <p key={dest.id} style={{ margin: "2px 0", fontSize: "14px" }}>
-                            📍 {dest.city}, {dest.country}
-                          </p>
-                        ))}
-                        <small style={{ color: "#666" }}>
-                          Total: {travel.multiDestinations.length + 1} destino(s)
-                        </small>
-                      </div>
-                    )}
-                    <p>
-                      <b>🗂️ Categoria:</b> {Array.isArray(travel.category) && travel.category.length > 0 ? travel.category.join(", ") : "Nenhuma categoria"}
-                    </p>
-                    <p>
-                      <b>📅 Início:</b> {travel.startDate || "Não definido"}
-                    </p>
-                    <p>
-                      <b>📅 Fim:</b> {travel.endDate || "Não definido"}
-                    </p>
-                    <p>
-                      <b>💰 Preço Estimado:</b> {travel.price || "Não definido"} €
-                    </p>
-                    {status === "completed" && (
-                      <button
-                        onClick={() => openConfirmModal(travel)}
-                        className="feed-details-link"
-                      >
-                        Adicionar às minhas viagens
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="travel-actions">
-                  <button onClick={(e) => { e.stopPropagation(); handleEdit(travel.id); }}>Editar</button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(travel.id); }}>Eliminar</button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
 
       {/* Modal de Tooltip */}
       {tooltipModal.show && (

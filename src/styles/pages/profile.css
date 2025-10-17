@@ -198,7 +198,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: rgba(0, 128, 0, 0.8);;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 20px;

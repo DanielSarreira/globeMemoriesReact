@@ -3,13 +3,16 @@ import travels from '../data/travelsData.js';
 import '../styles/components/modern-filters.css';
 // ...existing code...
 import { FaStar, FaFlag, FaEllipsisV } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Slider from '@mui/material/Slider';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/Toast';
+import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
+import { travelsModalUtils } from '../utils/modalUtils';
 
 const Travels = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState([]);
   const [sortOption, setSortOption] = useState('recent');
@@ -39,6 +42,8 @@ const Travels = () => {
   });
   const [otherReason, setOtherReason] = useState('');
   const [toast, setToast] = useState({ message: '', type: '', show: false });
+  const [showWelcomeModal, setShowWelcomeModal] = useState(() => travelsModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -48,6 +53,21 @@ const Travels = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Effect para processar filtros vindos da navegação (ex: do Spin the Globe)
+  useEffect(() => {
+    if (location.state?.filterByCountry) {
+      setSelectedCountry(location.state.filterByCountry);
+      setSelectedCity(''); // Limpar cidade quando definir país
+      
+      if (location.state.message) {
+        showToast(location.state.message, 'success');
+      }
+      
+      // Limpar o state da navegação para evitar re-aplicação
+      window.history.replaceState(null, '');
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -312,6 +332,74 @@ const Travels = () => {
 
   return (
     <div className="travels-container">
+      {/* Modal de Boas-vindas */}
+      {showWelcomeModal && (
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>Explorador de Viagens Globe Memories</h2>
+              <button className="gm-map-close-btn" onClick={() => setShowWelcomeModal(false)}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Descubra experiências de viagem reais partilhadas pela comunidade global! Explore, filtre e inspire-se com milhares de aventuras autênticas.</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🔍</span>
+                  <div>
+                    <strong>Sistema de Filtros Avançado</strong>
+                    <p>Filtre por categoria, país, cidade, preço, duração e método de transporte para encontrar viagens ideais</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">📊</span>
+                  <div>
+                    <strong>Ordenação Inteligente</strong>
+                    <p>Organize viagens por data, popularidade, preço ou avaliações para descobrir as melhores experiências</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">⭐</span>
+                  <div>
+                    <strong>Sistema de Avaliações Detalhado</strong>
+                    <p>Consulte avaliações e comentários reais de viajantes para tomar decisões informadas</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🛡️</span>
+                  <div>
+                    <strong>Conteúdo Verificado e Seguro</strong>
+                    <p>Todas as viagens são moderadas e verificadas para garantir informações autênticas e úteis</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  travelsModalUtils.dismiss();
+                }
+                setShowWelcomeModal(false);
+              }}>
+                Explorar viagens!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="filters">
         <div className="checkbox-group">
           {visibleCategories.map(({ name, icon }) => (

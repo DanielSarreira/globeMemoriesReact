@@ -9,6 +9,7 @@ import Toast from '../components/Toast';
 // ...existing code...
 import { useWeather } from '../context/WeatherContext';
 import '../styles/pages/globe-memories-interactive-map.css'; // Importar CSS do mapa para o modal
+import { weatherModalUtils } from '../utils/modalUtils';
 
 
 // Registrar componentes do Chart.js
@@ -193,7 +194,8 @@ const WeatherPage = () => {
   });
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedTravel, setSelectedTravel] = useState(null);
-  const [showInitialModal, setShowInitialModal] = useState(true);
+  const [showInitialModal, setShowInitialModal] = useState(() => weatherModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [climateSuggestions, setClimateSuggestions] = useState('');
   const [unit, setUnit] = useState('C'); // Celsius ou Fahrenheit
@@ -948,47 +950,63 @@ const WeatherPage = () => {
         <div className="gm-map-welcome-overlay">
           <div className="gm-map-welcome-modal">
             <div className="gm-map-welcome-header">
-              <h2>🌤️ Informações Meteorológicas</h2>
+              <h2>Centro Meteorológico Globe Memories</h2>
               <button className="gm-map-close-btn" onClick={() => setShowInitialModal(false)}>×</button>
             </div>
             <div className="gm-map-welcome-content">
-              <p>Explore as condições meteorológicas em qualquer lugar do mundo com dados precisos e confiáveis!</p>
+              <p>Planeie cada aventura com confiança! <br></br>Obtenha informações meteorológicas precisas e dados climáticos detalhados de qualquer destino do mundo, tudo num só lugar.</p>
               <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🌡️</span>
+                  <div>
+                    <strong>Condições em Tempo Real</strong>
+                    <p>Saiba sempre o que o espera: temperatura atual, humidade, vento e condições atmosféricas constantemente atualizadas.</p>
+                  </div>
+                </div>
                 <div className="gm-map-feature-item">
                   <span className="gm-map-feature-icon">📊</span>
                   <div>
-                    <strong>Precisão das Previsões</strong>
-                    <p><strong>1-3 dias:</strong> Elevada precisão (85-90%)<br />
-                       <strong>4-7 dias:</strong> Boa precisão (70-80%)<br />
-                       <strong>8-16 dias:</strong> Precisão limitada (50-65%)</p>
+                    <strong>Gráficos Interativos Horários</strong>
+                    <p>Acompanhe a evolução da temperatura, precipitação e vento ao longo das 24 horas, através de gráficos dinâmicos e intuitivos.</p>
                   </div>
                 </div>
                 <div className="gm-map-feature-item">
                   <span className="gm-map-feature-icon">🗓️</span>
                   <div>
-                    <strong>Viagens Futuras</strong>
-                    <p>Para datas além de 16 dias, utilizamos dados climatológicos históricos baseados na localização e época do ano.</p>
+                    <strong>Previsão Alargada de 16 Dias</strong>
+                    <p>Planeie com antecedência e segurança graças a previsões fiáveis e detalhadas para os próximos dias.</p>
                   </div>
                 </div>
                 <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">🌍</span>
+                  <span className="gm-map-feature-icon">✈️</span>
                   <div>
-                    <strong>Fonte dos Dados</strong>
-                    <p>Utilizamos dados do Open-Meteo, um serviço meteorológico europeu reconhecido pela qualidade e fiabilidade.</p>
-                  </div>
-                </div>
-                <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">⚡</span>
-                  <div>
-                    <strong>Previsões Detalhadas</strong>
-                    <p>Aceda a gráficos horários, temperaturas, precipitação e velocidade do vento.</p>
+                    <strong>Clima Integrado nas Suas Viagens</strong>
+                    <p>Consulte facilmente o estado do tempo dos seus destinos passados e futuros diretamente nas suas viagens Globe Memories.</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="gm-map-welcome-footer">
-              <button className="gm-map-welcome-btn primary" onClick={() => setShowInitialModal(false)}>
-                Comece a explorar o clima!
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  weatherModalUtils.dismiss();
+                }
+                setShowInitialModal(false);
+              }}>
+                Explorar condições meteorológicas!
               </button>
             </div>
           </div>

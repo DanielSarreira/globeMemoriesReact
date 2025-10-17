@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaStar, FaHeart, FaComment, FaChevronLeft, FaChevronRight, FaReply, FaPaperPlane } from 'react-icons/fa';
+import { FaStar, FaHeart, FaComment, FaChevronLeft, FaChevronRight, FaReply, FaPaperPlane, FaFlag, FaEllipsisV } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import Toast from './Toast';
+import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
 import '../styles/components/TravelDetailsModern.css';
+import '../styles/pages/qanda.css'; // Import para estilos modernos de comentários
 
 // Mock data for recommended travels
 const mockRecommendedTravels = [
@@ -106,6 +109,7 @@ const defaultAvatar = require("../images/Globe-Memories.jpg");
 
 const TravelDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [travel, setTravel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -115,6 +119,7 @@ const TravelDetails = () => {
   const [showPriceModal, setShowPriceModal] = useState(false);
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [showTransportModal, setShowTransportModal] = useState(false);
+  const [showDatesModal, setShowDatesModal] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
   const carouselRef = useRef(null);
@@ -139,6 +144,23 @@ const TravelDetails = () => {
   const [likedComments, setLikedComments] = useState([]);
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentSuccess, setCommentSuccess] = useState(null);
+
+  // Estados para denunciar viagem
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReasons, setReportReasons] = useState({
+    inappropriate: false,
+    falseInfo: false,
+    abusive: false,
+    spam: false,
+    plagiarism: false,
+    violation: false,
+    other: false,
+  });
+  const [otherReason, setOtherReason] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedTravel, setSelectedTravel] = useState(null);
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
 
   // Filtrar viagens recomendadas pela mesma categoria
   const getRecommendedTravels = () => {
@@ -183,6 +205,29 @@ const TravelDetails = () => {
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
 
+  // useEffect para detectar mudanças no tamanho da tela (mobile)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // useEffect para fechar o dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDropdown && !event.target.closest('.dropdown-container')) {
+        setShowDropdown(false);
+      }
+    };
+    if (showDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showDropdown]);
+
   // Render stars function
   const renderStars = (stars) => {
     return [...Array(5)].map((_, index) => (
@@ -193,6 +238,13 @@ const TravelDetails = () => {
   // Scroll to top function
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Navigate to user profile
+  const handleUserClick = (username) => {
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
   };
 
   // Open modal function
@@ -214,6 +266,24 @@ const TravelDetails = () => {
   
   const openTransportModal = () => setShowTransportModal(true);
   const closeTransportModal = () => setShowTransportModal(false);
+  
+  const openDatesModal = () => setShowDatesModal(true);
+  const closeDatesModal = () => setShowDatesModal(false);
+
+  // Funções do toast (igual ao Home.js)
+  const showToast = (message, type) => {
+    setToast({ message, type, show: true });
+  };
+
+  const closeToast = () => {
+    setToast({ ...toast, show: false });
+  };
+
+  const toggleDropdown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDropdown(prev => !prev);
+  };
 
   // Like function (igual ao Home.js)
   const handleLike = (e) => {
@@ -273,29 +343,20 @@ const TravelDetails = () => {
 
     const commentText = text || newComment;
     
-    if (!commentText?.trim()) {
-      alert('O comentário não pode estar vazio!');
-      return;
-    }
-
-    if (commentText.trim().length < 3) {
-      alert('O comentário deve ter pelo menos 3 caracteres!');
-      return;
-    }
-
-    if (commentText.trim().length > 250) {
-      alert('O comentário não pode ter mais de 250 caracteres!');
+    const validation = validateComment(commentText);
+    if (!validation.valid) {
+      alert(validation.message);
       return;
     }
 
     const sanitizedComment = sanitizeContent(commentText);
     if (!sanitizedComment) {
-      alert('Comentário contém conteúdo inválido!');
+      alert(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT);
       return;
     }
 
     if (sanitizedComment !== commentText.trim()) {
-      alert('Comentário contém conteúdo não permitido!');
+      alert(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
       return;
     }
 
@@ -314,13 +375,15 @@ const TravelDetails = () => {
       };
 
       if (parentIds.length === 0) {
-        setComments(prev => [...prev, newCommentObj]);
+        // Comentários principais: novos no topo
+        setComments(prev => [newCommentObj, ...prev]);
         setNewComment('');
       } else {
         const addReplyToComment = (comments, path, reply) => {
           return comments.map(comment => {
             if (path.length === 1 && comment.id === path[0]) {
-              return { ...comment, replies: [...(comment.replies || []), reply] };
+              // Respostas também no topo
+              return { ...comment, replies: [reply, ...(comment.replies || [])] };
             } else if (path.length > 1 && comment.id === path[0]) {
               return { ...comment, replies: addReplyToComment(comment.replies || [], path.slice(1), reply) };
             }
@@ -334,8 +397,8 @@ const TravelDetails = () => {
       }
 
       setCommentLoading(false);
-      setCommentSuccess('Comentário adicionado com sucesso!');
-      setTimeout(() => setCommentSuccess(null), 3000);
+      setCommentSuccess(COMMENT_LIMITS.MESSAGES.SUCCESS);
+      setTimeout(() => setCommentSuccess(null), 2600);
     }, 1000);
   };
 
@@ -387,7 +450,7 @@ const TravelDetails = () => {
     });
   };
 
-  // Função renderComment igual ao Home.js
+  // Função renderComment - Sistema moderno unificado (Home.js/Forum)
   const renderComment = (comment, parentIds = [], index = 0) => {
     const key = `travel-${travel.id}-${parentIds.concat(comment.id).join('-')}`;
     const likeKey = `travel-${travel.id}-${[...parentIds].join('-')}-${comment.id}`;
@@ -396,26 +459,26 @@ const TravelDetails = () => {
     return (
       <motion.div 
         key={comment.id} 
-        className="comment-item-modern-travel-details"
+        className="comment-item-modern" // Classe unificada
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: index * 0.1 }}
       >
-        <div className="comment-main-travel-details">
+        <div className="comment-main">
           <img 
             src={comment.userProfilePicture || defaultAvatar} 
             alt={`Avatar de ${comment.user}`} 
-            className="comment-avatar-modern-travel-details" 
+            className="comment-avatar-modern" 
           />
-          <div className="comment-content-modern-travel-details">
-            <div className="comment-header-modern-travel-details">
-              <span className="comment-username-travel-details">{comment.user}</span>
-              <span className="comment-time-travel-details">{getRelativeTime(comment.createdAt)}</span>
+          <div className="comment-content-modern">
+            <div className="comment-header-modern">
+              <span className="comment-username">{comment.user}</span>
+              <span className="comment-time">{getRelativeTime(comment.createdAt)}</span>
             </div>
-            <p className="comment-text-travel-details">{comment.text}</p>
-            <div className="comment-actions-modern-travel-details">
+            <p className="comment-text">{comment.text}</p>
+            <div className="comment-actions-modern">
               <motion.button
-                className={`comment-like-btn-travel-details ${isLiked ? 'liked' : ''}`}
+                className={`comment-like-btn ${isLiked ? 'liked' : ''}`}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -424,11 +487,11 @@ const TravelDetails = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <FaHeart className={`heart-icon-travel-details ${isLiked ? 'liked' : ''}`} />
+                <FaHeart className={`heart-icon ${isLiked ? 'liked' : ''}`} />
                 {comment.likes > 0 && <span>{comment.likes}</span>}
               </motion.button>
               <motion.button
-                className="reply-btn-modern-travel-details"
+                className="reply-btn-modern"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -444,7 +507,7 @@ const TravelDetails = () => {
             <AnimatePresence>
               {replyOpen[key] && (
                 <motion.div 
-                  className="reply-input-container-travel-details"
+                  className="reply-input-container"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -454,24 +517,27 @@ const TravelDetails = () => {
                   <img 
                     src={user?.profilePicture || defaultAvatar} 
                     alt="Seu avatar" 
-                    className="reply-user-avatar-travel-details" 
+                    className="reply-user-avatar" 
                   />
-                  <div className="reply-input-wrapper-travel-details">
+                  <div className="reply-input-wrapper">
                     <textarea
                       value={newReply[key] || ''}
                       onChange={(e) => {
-                        setNewReply(prev => ({ ...prev, [key]: e.target.value }));
+                        if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
+                          setNewReply(prev => ({ ...prev, [key]: e.target.value }));
+                        }
                       }}
                       placeholder="Escreva uma resposta..."
-                      className="reply-input-modern-travel-details"
+                      className="reply-input-modern"
                       rows="2"
-                      maxLength={250}
+                      maxLength={COMMENT_LIMITS.MAX_LENGTH}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
-                    <div className="reply-actions-travel-details">
+                    <div className="reply-actions">
+                      <span className="char-count">{(newReply[key] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
                       <motion.button
-                        className="cancel-reply-btn-travel-details"
+                        className="cancel-reply-btn"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -488,7 +554,7 @@ const TravelDetails = () => {
                           e.stopPropagation();
                           handleAddComment(parentIds.concat(comment.id), newReply[key]);
                         }}
-                        className="send-reply-btn-travel-details"
+                        className="send-reply-btn"
                         disabled={!newReply[key]?.trim()}
                         whileHover={newReply[key]?.trim() ? { scale: 1.05 } : {}}
                         whileTap={newReply[key]?.trim() ? { scale: 0.95 } : {}}
@@ -505,7 +571,7 @@ const TravelDetails = () => {
         
         {comment.replies?.length > 0 && (
           <motion.div 
-            className="replies-container-modern-travel-details"
+            className="replies-container-modern"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -517,6 +583,65 @@ const TravelDetails = () => {
         )}
       </motion.div>
     );
+  };
+
+  // Funções para denunciar viagem
+  const handleReportTravel = (travelToReport, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!user) {
+      showToast('Inicie sessão para denunciar viagens.', 'error');
+      return;
+    }
+    setSelectedTravel(travelToReport || travel);
+    setShowReportModal(true);
+    setShowDropdown(false);
+  };
+
+  const handleReasonChange = (reason) => {
+    setReportReasons(prev => ({
+      ...prev,
+      [reason]: !prev[reason]
+    }));
+  };
+
+  const submitReport = () => {
+    const selectedReasons = Object.keys(reportReasons).filter(key => reportReasons[key]);
+    
+    if (selectedReasons.length === 0) {
+      showToast('Selecione pelo menos um motivo para a denúncia.', 'error');
+      return;
+    }
+
+    if (reportReasons.other && !otherReason.trim()) {
+      showToast('Por favor, especifique o motivo da denúncia.', 'error');
+      return;
+    }
+
+    // Aqui seria feita a chamada à API para enviar a denúncia
+    console.log('Denúncia enviada:', {
+      travelId: (selectedTravel || travel).id,
+      reasons: selectedReasons,
+      otherReason: reportReasons.other ? otherReason : null
+    });
+
+    showToast('Viagem denunciada com sucesso!', 'success');
+    
+    // Reset do modal
+    setShowReportModal(false);
+    setSelectedTravel(null);
+    setReportReasons({
+      inappropriate: false,
+      falseInfo: false,
+      abusive: false,
+      spam: false,
+      plagiarism: false,
+      violation: false,
+      other: false,
+    });
+    setOtherReason('');
   };
 
   // Handle image error
@@ -557,12 +682,7 @@ const TravelDetails = () => {
       comments: 23,
       stars: 4.5,
       category: ["Natureza", "Cultural", "Cidade", "História", "Gastronomia", "Arquitetura", "Paisagem"],
-      transport: "Comboio",
-      transportDetails: {
-        main: "Comboio",
-        price: "15€",
-        additional: ["Metro", "Autocarro", "Táxi", "Bicicleta"]
-      },
+      transports: ["Comboio", "Metro", "Autocarro", "Táxi", "Bicicleta", "A pé", "Trotineta"],
       startDate: "2024-06-15",
       endDate: "2024-06-20",
       BookingTripPaymentDate: "2024-05-15",
@@ -611,6 +731,33 @@ const TravelDetails = () => {
         require("../images/travels/aveiro10.jpg"),
         require("../images/travels/aveiro11.jpg")
       ],
+      transportMethods: [
+        {
+          name: "Comboio",
+          description: "Transporte principal utilizado para chegar a Aveiro desde Lisboa. Viagem confortável e com belas paisagens."
+        },
+         {
+          name: "teste",
+          description: "Transporte principal utilizado para chegar a Aveiro desde Lisboa. Viagem confortável e com belas paisagens."
+        },
+        {
+          name: "Metro",
+          description: "Sistema de transporte rápido e eficiente para deslocações na cidade."
+        },
+        {
+          name: "Autocarro",
+          description: "Rede de autocarros urbanos que cobrem toda a cidade e arredores."
+        },
+        {
+          name: "Bicicleta",
+          description: "Sistema de bicicletas partilhadas disponível pela cidade, ideal para passeios pela ria."
+        }
+      ],
+      images_transportMethods: [
+        require("../images/travels/aveiro1.jpg"),
+        require("../images/travels/aveiro2.jpg"),
+        require("../images/travels/aveiro3.jpg")
+      ],
       pointsOfInterest: [
         {
           name: "Museu de Aveiro",
@@ -651,24 +798,36 @@ const TravelDetails = () => {
       }
     };
     
+    console.log('Mock Travel Data:', mockTravel);
+    console.log('Transports:', mockTravel.transports);
     setTravel(mockTravel);
     setLikeCount(mockTravel.likes);
+    // Comentários ordenados do mais recente para o mais antigo
     setComments([
       {
-        id: 1,
-        user: "Ana Silva",
+        id: 4,
+        user: "Carlos Oliveira",
         userProfilePicture: defaultAvatar,
-        text: "Que viagem incrível! Aveiro é mesmo uma cidade encantadora.",
-        createdAt: new Date('2024-06-25').toISOString(),
-        likes: 12,
+        text: "Acabei de voltar de Aveiro após ler esta review! Obrigado pela inspiração 🙌",
+        createdAt: new Date().toISOString(), // Agora mesmo
+        likes: 2,
+        replies: []
+      },
+      {
+        id: 3,
+        user: "Maria Costa",
+        userProfilePicture: defaultAvatar,
+        text: "Os ovos moles são mesmo deliciosos! Recomendo a todos que provem na Casa do Bacalhau.",
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
+        likes: 5,
         replies: [
           {
-            id: 11,
+            id: 31,
             user: "Tiago",
             userProfilePicture: defaultAvatar,
-            text: "Obrigado Ana! Foi mesmo uma experiência fantástica.",
-            createdAt: new Date('2024-06-25T14:30:00').toISOString(),
-            likes: 3,
+            text: "Exato! Esse lugar tem os melhores ovos moles da cidade 😋",
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dia atrás
+            likes: 1,
             replies: []
           }
         ]
@@ -677,19 +836,29 @@ const TravelDetails = () => {
         id: 2,
         user: "João Santos",
         userProfilePicture: defaultAvatar,
-        text: "Adorei as fotos dos canais! Vou definitivamente visitar.",
-        createdAt: new Date('2024-06-26').toISOString(),
+        text: "Adorei as fotos dos canais! Vou definitivamente visitar no próximo verão.",
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 dias atrás
         likes: 8,
         replies: []
       },
       {
-        id: 3,
-        user: "Maria Costa",
+        id: 1,
+        user: "Ana Silva",
         userProfilePicture: defaultAvatar,
-        text: "Os ovos moles são mesmo deliciosos! Recomendo a todos.",
-        createdAt: new Date('2024-06-27').toISOString(),
-        likes: 5,
-        replies: []
+        text: "Que viagem incrível! Aveiro é mesmo uma cidade encantadora. As cores dos moliceiros são lindíssimas!",
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 semana atrás
+        likes: 12,
+        replies: [
+          {
+            id: 11,
+            user: "Tiago",
+            userProfilePicture: defaultAvatar,
+            text: "Obrigado Ana! Foi mesmo uma experiência fantástica. Os moliceiros são únicos!",
+            createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 dias atrás
+            likes: 3,
+            replies: []
+          }
+        ]
       }
     ]);
     setLoading(false);
@@ -748,6 +917,17 @@ const TravelDetails = () => {
     }
     
     // 5º - Fotografias dos Métodos de Transporte
+    if (travel.images_transportMethods && travel.images_transportMethods.length > 0) {
+      travel.images_transportMethods.forEach((img, index) => {
+        images.push({
+          url: img,
+          type: 'transport',
+          caption: `Métodos de Transporte ${index + 1}`
+        });
+      });
+    }
+    
+    // Também incluir imagens do localTransport se existir (compatibilidade)
     if (travel.localTransport && travel.localTransport.length > 0) {
       travel.localTransport.forEach(transport => {
         if (transport.images && transport.images.length > 0) {
@@ -876,7 +1056,13 @@ const TravelDetails = () => {
                         </div>
                         <div className="travel-author-travel-details">
                           <span className="author-icon-travel-details">👤</span>
-                          <span>Por: {travel.user}</span>
+                          <span>Por: <span 
+                            className="author-name-link-travel-details" 
+                            onClick={() => handleUserClick(travel.user)}
+                            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                          >
+                            {travel.user}
+                          </span></span>
                         </div>
                       </div>
                     </div>
@@ -893,11 +1079,11 @@ const TravelDetails = () => {
                   
                   {/* Travel Stats */}
                   <div className="hero-stats-travel-details">
-                    <div className="stat-item-travel-details">
-                      <span className="stat-icon-travel-details">📅</span>
-                      <span className="stat-value-travel-details">{travel.days}</span>
-                      <span className="stat-label-travel-details">dias</span>
-                    </div>
+                      <div className="stat-item-travel-details" onClick={openDatesModal} style={{ cursor: 'pointer' }}>
+                        <span className="stat-icon-travel-details">📅</span>
+                        <span className="stat-value-travel-details">{travel.days}</span>
+                        <span className="stat-label-travel-details">dias</span>
+                      </div>
                     <div className="stat-item-travel-details" onClick={handleLike}>
                       <FaHeart className={`stat-icon-travel-details ${isLiked ? 'liked' : ''}`} />
                       <span className="stat-value-travel-details">{likeCount}</span>
@@ -910,7 +1096,7 @@ const TravelDetails = () => {
                     </div>
                   </div>
                   
-                  {/* Action Buttons (removido botão partilhar) */}
+                  {/* Action Buttons */}
                   <div className="hero-actions-travel-details">
                     <button 
                       className={`action-btn-travel-details like-btn-travel-details ${isLiked ? 'liked' : ''}`}
@@ -923,6 +1109,32 @@ const TravelDetails = () => {
                       <FaComment />
                       Comentar
                     </button>
+                    
+                    {/* Desktop: Botão Denunciar direto */}
+                    {!isMobile && (
+                      <button 
+                        className="action-btn-travel-details report-btn-travel-details" 
+                        onClick={(e) => handleReportTravel(travel, e)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                      >
+                        <FaFlag />
+                        Denunciar
+                      </button>
+                    )}
+                    
+                    {/* Mobile: Botão Denunciar compacto */}
+                    {isMobile && (
+                      <button 
+                        className="action-btn-travel-details report-btn-travel-details" 
+                        onClick={(e) => handleReportTravel(travel, e)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '6px 10px' }}
+                      >
+                        <FaFlag />
+                        <span style={{ display: window.innerWidth > 480 ? 'inline' : 'none' }}>
+                          Denunciar
+                        </span>
+                      </button>
+                    )}
                   </div>
                   
                   {/* Image Caption */}
@@ -969,60 +1181,67 @@ const TravelDetails = () => {
                 <button className="close-comments-travel-details" onClick={handleCloseComments}>×</button>
               </div>
               
-              {/* Add Comment */}
-              {user && (
-                <div className="add-comment-travel-details">
-                  <img 
-                    src={user.profilePicture || defaultAvatar} 
-                    alt="Seu avatar" 
-                    className="user-avatar-travel-details" 
-                  />
-                  <div className="comment-input-container-travel-details">
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Escreva um comentário..."
-                      className="comment-input-travel-details"
-                      rows="3"
-                      maxLength={250}
+              {/* Modal Content com Scroll */}
+              <div className="comments-modal-content-travel-details">
+                {/* Add Comment - Sistema moderno unificado */}
+                {user && (
+                  <div className="add-comment-modern comments-modal-section">
+                    <img 
+                      src={user.profilePicture || defaultAvatar} 
+                      alt="Seu avatar" 
+                      className="comment-user-avatar" 
                     />
-                    <div className="comment-actions-container-travel-details">
-                      <span className="char-count-travel-details">{newComment.length}/250</span>
-                      <button 
-                        className="comment-submit-travel-details"
-                        onClick={() => handleAddComment()}
-                        disabled={!newComment.trim() || commentLoading}
-                      >
-                        {commentLoading ? 'Publicando...' : 'Publicar'}
-                      </button>
+                    <div className="comment-form-wrapper-modern">
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => {
+                          if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
+                            setNewComment(e.target.value);
+                          }
+                        }}
+                        placeholder="Escreva um comentário..."
+                        className="comment-input-modern"
+                        rows="3"
+                        maxLength={COMMENT_LIMITS.MAX_LENGTH}
+                      />
+                      <div className="comment-form-actions">
+                        <span className="char-count">{newComment.length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                        <button 
+                          className="comment-submit-btn-modern"
+                          onClick={() => handleAddComment()}
+                          disabled={!newComment.trim() || commentLoading}
+                        >
+                          {commentLoading ? 'Publicando...' : 'Publicar'}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {!user && (
-                <div className="login-prompt-travel-details">
-                  <p>Faça login para comentar nesta viagem</p>
-                </div>
-              )}
-
-              {commentSuccess && (
-                <div className="comment-success-travel-details">
-                  {commentSuccess}
-                </div>
-              )}
-              
-              {/* Comments List */}
-              <div className="comments-list-travel-details">
-                {comments.length > 0 ? (
-                  comments.map((comment, index) => renderComment(comment, [], index))
-                ) : (
-                  <div className="no-comments-travel-details">
-                    <span className="no-comments-icon-travel-details">💬</span>
-                    <p>Ainda não há comentários.</p>
-                    <p>Seja o primeiro a comentar!</p>
+                {!user && (
+                  <div className="login-prompt-modern comments-modal-section">
+                    <p>🔒 Faça login para comentar nesta viagem</p>
                   </div>
                 )}
+
+                {commentSuccess && (
+                  <div className="comment-success-modern comments-modal-section">
+                    ✅ {commentSuccess}
+                  </div>
+                )}
+                
+                {/* Comments List - Sistema moderno unificado */}
+                <div className="comments-list-modern comments-modal-section">
+                  {comments.length > 0 ? (
+                    comments.map((comment, index) => renderComment(comment, [], index))
+                  ) : (
+                    <div className="no-comments-modern">
+                      <span className="no-comments-icon">💬</span>
+                      <p>Ainda não há comentários.</p>
+                      <p>Seja o primeiro a comentar!</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1032,7 +1251,7 @@ const TravelDetails = () => {
       {/* Travel Summary Cards */}
       <div className="travel-summary-travel-details">
         <div className="summary-cards-travel-details">
-          <div className="summary-card-travel-details price-card-travel-details">
+          <div className="summary-card-travel-details price-card-travel-details" onClick={openPriceModal}>
             <div className="card-icon-travel-details">💰</div>
             <div className="card-content-travel-details">
               <h3>Preço Total</h3>
@@ -1065,44 +1284,52 @@ const TravelDetails = () => {
             </div>
           </div>
 
-          <div className="summary-card-travel-details dates-card-travel-details">
+          <div className="summary-card-travel-details dates-card-travel-details" onClick={openDatesModal}>
             <div className="card-icon-travel-details">📅</div>
             <div className="card-content-travel-details">
               <h3>Datas da Viagem</h3>
-              <div className="dates-info-travel-details">
+              <div className="dates-display-travel-details">
                 {travel.startDate && travel.endDate ? (
-                  <>
-                    <div className="date-range-travel-details">
-                      <span className="start-date-travel-details">
-                        {new Date(travel.startDate).toLocaleDateString('pt-PT')}
-                      </span>
-                      <span className="date-separator-travel-details">→</span>
-                      <span className="end-date-travel-details">
-                        {new Date(travel.endDate).toLocaleDateString('pt-PT')}
-                      </span>
-                    </div>
+                  <div className="date-tags-travel-details">
+                    <span className="date-tag-travel-details">
+                      Início: 📅 {new Date(travel.startDate).toLocaleDateString('pt-PT')}
+                    </span>
+                    <span className="date-tag-travel-details">
+                      Fim: 🏁 {new Date(travel.endDate).toLocaleDateString('pt-PT')}
+                    </span>
                     {travel.BookingTripPaymentDate && (
-                      <div className="booking-date-travel-details">
-                        <small>Reserva: {new Date(travel.BookingTripPaymentDate).toLocaleDateString('pt-PT')}</small>
-                      </div>
+                      <span className="date-tag-travel-details">
+                        Reserva: 💳 {new Date(travel.BookingTripPaymentDate).toLocaleDateString('pt-PT')}
+                      </span>
                     )}
-                  </>
+                  </div>
                 ) : (
                   <span className="no-dates-travel-details">Datas não definidas</span>
                 )}
               </div>
+              <button className="view-all-btn-travel-details">Ver Detalhes</button>
             </div>
           </div>
 
           <div className="summary-card-travel-details transport-card-travel-details" onClick={openTransportModal}>
             <div className="card-icon-travel-details">🚗</div>
             <div className="card-content-travel-details">
-              <h3>Transporte Principal</h3>
-              <div className="transport-info-travel-details">
-                <span className="transport-method-travel-details">{travel.transport || 'Não especificado'}</span>
-                <span className="transport-duration-travel-details">{travel.transportDetails?.duration}</span>
+              <h3>Transportes</h3>
+              <div className="transport-display-travel-details">
+                {Array.isArray(travel && travel.transports) && travel.transports.length > 0 ? (
+                  <div className="transport-tags-travel-details">
+                    {travel.transports.slice(0, 3).map((transport, index) => (
+                      <span key={index} className="transport-tag-travel-details">{transport}</span>
+                    ))}
+                    {travel.transports.length > 3 && (
+                      <span className="more-transports-travel-details">+{travel.transports.length - 3}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="no-transports-travel-details">Sem transportes</span>
+                )}
               </div>
-              <button className="view-details-btn-travel-details">Ver Detalhes</button>
+              <button className="view-all-btn-travel-details">Ver Todos</button>
             </div>
           </div>
         </div>
@@ -1130,13 +1357,19 @@ const TravelDetails = () => {
             className={`tab-button-travel-details ${activeTab === 'foodRecommendations' ? 'active' : ''}`}
             onClick={() => setActiveTab('foodRecommendations')}
           >
-            Gastronomia
+            Alimentação
+          </button>
+          <button
+            className={`tab-button-travel-details ${activeTab === 'transportMethods' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transportMethods')}
+          >
+            Transportes
           </button>
           <button
             className={`tab-button-travel-details ${activeTab === 'referencePoints' ? 'active' : ''}`}
             onClick={() => setActiveTab('referencePoints')}
           >
-            Pontos de Interesse
+            Pontos de Referência
           </button>
           <button
             className={`tab-button-travel-details ${activeTab === 'itinerary' ? 'active' : ''}`}
@@ -1367,6 +1600,59 @@ const TravelDetails = () => {
             </div>
           )}
 
+          {activeTab === 'transportMethods' && (
+            <div className="tab-content-travels">
+              <div className="tab-header">
+                <h2>🚗 Métodos de Transporte</h2>
+                <p>Descobre os meios de transporte utilizados nesta viagem</p>
+              </div>
+
+              <div className="food-recommendations">
+                {travel.transportMethods && travel.transportMethods.length > 0 ? (
+                  <div className="food-grid">
+                    {travel.transportMethods.map((transport, index) => (
+                      <div key={index} className="food-card">
+                        <div className="food-header">
+                          <h3 className="food-name">{transport.name}</h3>
+                          <span className="food-icon">🚗</span>
+                        </div>
+                        <div className="food-description">
+                          <p>{transport.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-content">
+                    <div className="no-content-icon">🚗</div>
+                    <h3>Nenhum método de transporte registado</h3>
+                    <p>Não há métodos de transporte registados para esta viagem.</p>
+                  </div>
+                )}
+              </div>
+
+              {travel.images_transportMethods && travel.images_transportMethods.length > 0 && (
+                <div className="food-gallery">
+                  <h3>Galeria de Fotos dos Métodos de Transporte</h3>
+                  <div className="images-grid">
+                    {travel.images_transportMethods.map((image, index) => (
+                      <div key={index} className="image-item" onClick={() => openModal(image)}>
+                        <img
+                          src={image instanceof File ? URL.createObjectURL(image) : image}
+                          alt={`Método de transporte ${index + 1}`}
+                          onError={(e) => (e.target.src = '/default-image.jpg')}
+                        />
+                        <div className="image-overlay">
+                          <span className="image-icon">🔍</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'referencePoints' && (
             <div className="tab-content-travels">
               <div className="tab-header">
@@ -1577,6 +1863,27 @@ const TravelDetails = () => {
               className="carousel-nav-btn-travel-details carousel-prev-travel-details"
               onClick={handleRecommendedPrev}
               disabled={recommendedCurrentIndex === 0}
+              style={{ 
+                position: 'absolute', 
+                left: 10, 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                zIndex: 20,
+                background: '#ff9900',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '10px',
+                transition: 'all 0.3s ease'
+              }}
+              aria-label="Viagem anterior"
+              onMouseEnter={(e) => {
+                
+                e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+              }}
+              onMouseLeave={(e) => {
+               
+                e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+              }}
             >
               <ArrowLeft />
             </button>
@@ -1612,7 +1919,16 @@ const TravelDetails = () => {
                         📍 {recommendedTravel.city}, {recommendedTravel.country}
                       </p>
                       <p className="recommended-travel-author-travel-details">
-                        👤 Por: {recommendedTravel.user}
+                        👤 Por: <span 
+                          className="author-name-link-travel-details" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUserClick(recommendedTravel.user);
+                          }}
+                          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          {recommendedTravel.user}
+                        </span>
                       </p>
                       
                       <div className="recommended-travel-categories-travel-details">
@@ -1641,6 +1957,27 @@ const TravelDetails = () => {
               className="carousel-nav-btn-travel-details carousel-next-travel-details"
               onClick={handleRecommendedNext}
               disabled={recommendedCurrentIndex >= recommendedTravels.length - recommendedItemsPerView}
+              style={{ 
+                position: 'absolute', 
+                right: 10, 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                zIndex: 20,
+                background: '#ff9900',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '10px',
+                transition: 'all 0.3s ease'
+              }}
+              aria-label="Próxima viagem"
+              onMouseEnter={(e) => {
+                
+                e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
+              }}
+              onMouseLeave={(e) => {
+                
+                e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
+              }}
             >
               <ArrowRight />
             </button>
@@ -1739,28 +2076,17 @@ const TravelDetails = () => {
             </div>
             <div className="modal-body-travel-details">
               <div className="transport-details-modal-travel-details">
-                <div className="transport-main-travel-details">
-                  <h4>Transporte Principal</h4>
-                  <div className="transport-info-modal-travel-details">
-                    <span className="transport-name-travel-details">{travel.transportDetails?.main}</span>
-                    <span className="transport-company-travel-details">{travel.transportDetails?.details}</span>
-                    <div className="transport-stats-travel-details">
-                      <span className="duration-travel-details">⏰ {travel.transportDetails?.duration}</span>
-                      <span className="price-modal-travel-details">💰 {travel.transportDetails?.price}</span>
-                    </div>
+                {travel.transports && travel.transports.length > 0 ? (
+                  <div className="transport-grid-modal-travel-details">
+                    {travel.transports.map((transport, index) => (
+                      <div key={index} className="transport-item-modal-travel-details">
+                        <span className="transport-text-travel-details">{transport}</span>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                
-                {travel.transportDetails?.additional && travel.transportDetails.additional.length > 0 && (
-                  <div className="transport-additional-travel-details">
-                    <h4>Outros Transportes Utilizados</h4>
-                    <div className="additional-transport-list-travel-details">
-                      {travel.transportDetails.additional.map((transport, index) => (
-                        <div key={index} className="additional-transport-item-travel-details">
-                          <span>{transport}</span>
-                        </div>
-                      ))}
-                    </div>
+                ) : (
+                  <div className="no-transports-modal-travel-details">
+                    <span>Nenhum transporte registado para esta viagem.</span>
                   </div>
                 )}
               </div>
@@ -1768,6 +2094,280 @@ const TravelDetails = () => {
           </div>
         </div>
       )}
+
+      {/* Dates Modal */}
+      {showDatesModal && (
+        <div className="details-modal-travel-details" onClick={closeDatesModal}>
+          <div className="modal-content-details-travel-details" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-travel-details">
+              <h3>📅 Todas as Datas</h3>
+              <span className="modal-close-travel-details" onClick={closeDatesModal}>×</span>
+            </div>
+            <div className="modal-body-travel-details">
+              <div className="dates-details-modal-travel-details">
+                {travel.startDate && travel.endDate ? (
+                  <>
+                    <div className="date-item-modal-travel-details">
+                      <div className="date-icon-travel-details">📅</div>
+                      <div className="date-info-travel-details">
+                        <span className="date-label-travel-details">Data de Início</span>
+                        <span className="date-value-travel-details">
+                          {new Date(travel.startDate).toLocaleDateString('pt-PT', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="date-item-modal-travel-details">
+                      <div className="date-icon-travel-details">🏁</div>
+                      <div className="date-info-travel-details">
+                        <span className="date-label-travel-details">Data de Fim</span>
+                        <span className="date-value-travel-details">
+                          {new Date(travel.endDate).toLocaleDateString('pt-PT', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="date-item-modal-travel-details">
+                      <div className="date-icon-travel-details">⏱️</div>
+                      <div className="date-info-travel-details">
+                        <span className="date-label-travel-details">Duração da Viagem</span>
+                        <span className="date-value-travel-details">
+                          {Math.ceil((new Date(travel.endDate) - new Date(travel.startDate)) / (1000 * 60 * 60 * 24))} dias
+                        </span>
+                      </div>
+                    </div>
+
+                    {travel.BookingTripPaymentDate && (
+                      <div className="date-item-modal-travel-details">
+                        <div className="date-icon-travel-details">💳</div>
+                        <div className="date-info-travel-details">
+                          <span className="date-label-travel-details">Data de Reserva</span>
+                          <span className="date-value-travel-details">
+                            {new Date(travel.BookingTripPaymentDate).toLocaleDateString('pt-PT', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="no-dates-modal-travel-details">
+                    <span>Nenhuma data foi definida para esta viagem.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Denúncia - Igual ao Home.js */}
+      {showReportModal && (
+        <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
+          <div
+            className="modal-content-users"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}
+          >
+            <h2>Denunciar Viagem</h2>
+            <p>
+              Por que deseja denunciar a viagem <strong>{travel?.name}</strong>?
+            </p>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+              Esta ação irá reportar a viagem aos administradores.
+            </p>
+
+            <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.inappropriate}
+                    onChange={() => handleReasonChange('inappropriate')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Conteúdo inapropriado</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: imagens ofensivas, descrições inapropriadas, nudez, etc.)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.falseInfo}
+                    onChange={() => handleReasonChange('falseInfo')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Informação falsa ou enganosa</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: locais inexistentes, preços manipulados, etc.)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.abusive}
+                    onChange={() => handleReasonChange('abusive')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Assédio/Abuso nos conteúdos</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: linguagem agressiva ou ofensiva)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.spam}
+                    onChange={() => handleReasonChange('spam')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Spam ou autopromoção</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: publicidade abusiva, links externos)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.plagiarism}
+                    onChange={() => handleReasonChange('plagiarism')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Plágio de conteúdo</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: fotos/textos copiados sem créditos)</div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.violation}
+                    onChange={() => handleReasonChange('violation')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Violação das regras da plataforma</strong>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={reportReasons.other}
+                    onChange={() => handleReasonChange('other')}
+                    style={{ marginRight: '10px', marginTop: '2px' }}
+                  />
+                  <div>
+                    <strong>Outro (especificar)</strong>
+                  </div>
+                </label>
+                {reportReasons.other && (
+                  <textarea
+                    value={otherReason}
+                    onChange={(e) => setOtherReason(e.target.value)}
+                    placeholder="Descreva o motivo da denúncia..."
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '5px',
+                      fontSize: '14px',
+                      resize: 'vertical',
+                      minHeight: '80px',
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                className="button-danger"
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReasons({
+                    inappropriate: false,
+                    falseInfo: false,
+                    abusive: false,
+                    spam: false,
+                    violation: false,
+                    plagiarism: false,
+                    other: false,
+                  });
+                  setOtherReason('');
+                }}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                className="button-orange"
+                onClick={submitReport}
+                style={{
+                  padding: '10px 20px',
+                  margin: '5px',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  backgroundColor: '#e74c3c',
+                  color: 'white',
+                }}
+              >
+                Denunciar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast para notificações */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 };

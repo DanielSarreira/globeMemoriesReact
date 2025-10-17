@@ -14,7 +14,7 @@ const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 3000);
+    }, 2600);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -1157,7 +1157,7 @@ const Login = () => {
               </>
             ) : isIOS ? (
               <p>
-                Toque no botão <strong>Partilhar</strong> e seleccione <strong>Adicionar ao Ecrã Principal</strong>.
+                Toque no botão <strong>Partilhar</strong> e selecione <strong>Adicionar ao Ecrã Principal</strong>.
               </p>
             ) : (
               <p>

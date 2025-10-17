@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import TravelsData from '../data/travelsData';
 import WelcomeModal from '../components/WelcomeModal';
 import Toast from '../components/Toast';
+import { shouldShowWelcomeModal, CURRENT_MODAL_VERSION } from '../utils/welcomeModalUtils';
+import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
 import '../styles/pages/qanda.css';
 import '../styles/pages/home.css';
 
@@ -141,28 +143,25 @@ const Home = () => {
   // useEffect para verificar se deve mostrar a modal de boas-vindas
   useEffect(() => {
     const checkWelcomeModal = () => {
-      // Debug: Clear localStorage para teste - TEMPORÁRIO PARA TESTAR
-      localStorage.removeItem('globeMemoriesWelcomeShown');
+      // Nova lógica: verifica se deve mostrar o modal baseado na versão
+      // Permite que novos conteúdos do backoffice sejam sempre exibidos
+      const shouldShow = shouldShowWelcomeModal(CURRENT_MODAL_VERSION);
       
-      // Verificar se é dispositivo móvel
-      const isMobileDevice = window.innerWidth <= 768;
-      console.log('Is mobile device:', isMobileDevice);
+      console.log('Welcome Modal Version Check:', {
+        currentVersion: CURRENT_MODAL_VERSION,
+        shouldShow: shouldShow
+      });
       
-      // Verificar se já foi mostrada anteriormente
-      const hasSeenWelcome = localStorage.getItem('globeMemoriesWelcomeShown');
-      console.log('Has seen welcome:', hasSeenWelcome);
-      console.log('localStorage value:', hasSeenWelcome);
-      
-      // Mostrar modal apenas se não foi vista antes
-      if (!hasSeenWelcome) {
+      // Mostrar modal se necessário
+      if (shouldShow) {
         console.log('Showing welcome modal in 1 second...');
         setTimeout(() => {
           console.log('Setting showWelcomeModal to true');
           setShowWelcomeModal(true);
         }, 1000); // Delay de 1 segundo para melhor UX
       } else {
-        console.log('Welcome modal already seen, not showing');
-        console.log('To test modal again, uncomment the localStorage.removeItem line above');
+        console.log('Welcome modal already seen for this version, not showing');
+        console.log('A new version from backoffice will show the modal again');
       }
     };
 
@@ -434,31 +433,21 @@ const Home = () => {
 
     const commentText = text || newComment[travelId];
     
-    if (!commentText?.trim()) {
-      showToast('Escreva um comentário antes de enviar!', 'error');
-      return;
-    }
-
-    if (commentText.trim().length < 3) {
-      showToast('O comentário deve ter pelo menos 3 caracteres!', 'error');
-      return;
-    }
-
-    // Validar tamanho máximo do comentário
-    if (commentText.trim().length > 250) {
-      showToast('Comentário não pode exceder 250 caracteres!', 'error');
+    const validation = validateComment(commentText);
+    if (!validation.valid) {
+      showToast(validation.message, 'error');
       return;
     }
 
     // Sanitizar conteúdo contra XSS
     const sanitizedComment = sanitizeContent(commentText);
     if (!sanitizedComment) {
-      showToast('Comentário contém conteúdo não permitido!', 'error');
+      showToast(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT, 'error');
       return;
     }
 
     if (sanitizedComment !== commentText.trim()) {
-      showToast('Comentário contém conteúdo perigoso que foi removido!', 'error');
+      showToast(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT, 'error');
       return;
     }
 
@@ -659,18 +648,19 @@ const Home = () => {
                     <textarea
                       value={newReply[key] || ''}
                       onChange={(e) => {
-                        if (e.target.value.length <= 250) {
+                        if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
                           setNewReply({ ...newReply, [key]: e.target.value });
                         }
                       }}
                       placeholder="Escreva uma resposta..."
                       className="reply-input-modern"
                       rows="2"
-                      maxLength={250}
+                      maxLength={COMMENT_LIMITS.MAX_LENGTH}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
                     <div className="reply-actions">
+                      <span style={{ fontSize: '12px', color: '#999', marginRight: 'auto' }}>{(newReply[key] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
                       <motion.button
                         className="cancel-reply-btn"
                         onClick={(e) => {
@@ -993,7 +983,7 @@ const Home = () => {
     if (Math.abs(deltaX) > Math.abs(deltaY) && distance > 50) {
       if (Math.abs(deltaX) > 100) { // Swipe com força
         if (deltaX < 0) {
-          // Swipe para esquerda - ir para perfil do usuário
+          // Swipe para esquerda - ir para perfil do viajante
           handleSwipeRight(currentSwipeTravel);
         } else {
           // Swipe para direita - abrir modal adicionar viagem
@@ -1019,7 +1009,7 @@ const Home = () => {
   };
 
   const handleSwipeRight = (travel) => {
-    // Navegar para o perfil do usuário da viagem
+    // Navegar para o perfil do viajante da viagem
     navigate(`/profile/${travel.user}`);
   };
 
@@ -1044,7 +1034,7 @@ const Home = () => {
       const hasSelectedReason = Object.values(reportReasons).some((v) => v) ||
         (reportReasons.other && otherReason.trim());
       if (!hasSelectedReason) {
-        showToast('Por favor, seleccione pelo menos um motivo para a denúncia.', 'error');
+        showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
       console.log('Travel reported:', selectedTravel.id, 'Reasons:', reportReasons, 'Other:', otherReason);
@@ -1545,11 +1535,9 @@ const Home = () => {
                   }}
                   aria-label="Imagem anterior"
                   onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
                     e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(-50%) scale(1)';
                     e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
                   }}
                 >
@@ -1641,11 +1629,9 @@ const Home = () => {
                   }}
                   aria-label="Próxima imagem"
                   onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-50%) scale(1.2)';
                     e.target.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(-50%) scale(1)';
                     e.target.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
                   }}
                 >
@@ -1745,7 +1731,7 @@ const Home = () => {
                       <textarea
                         value={newComment[travel.id] || ''}
                         onChange={(e) => {
-                          if (e.target.value.length <= 250) {
+                          if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
                             setNewComment({ ...newComment, [travel.id]: e.target.value });
                           }
                         }}
@@ -1755,28 +1741,31 @@ const Home = () => {
                         placeholder="Escreva um comentário..."
                         className="comment-input-modern"
                         rows="2"
-                        maxLength={250}
+                        maxLength={COMMENT_LIMITS.MAX_LENGTH}
                       />
-                      <AnimatePresence>
-                        {newComment[travel.id]?.trim() && (
-                          <motion.button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleAddComment(travel.id, [], newComment[travel.id]);
-                            }}
-                            className="send-comment-btn"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            disabled={commentLoading}
-                          >
-                            <FaPaperPlane />
-                          </motion.button>
-                        )}
-                      </AnimatePresence>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingRight: '10px' }}>
+                        <span style={{ fontSize: '12px', color: '#999' }}>{(newComment[travel.id] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                        <AnimatePresence>
+                          {newComment[travel.id]?.trim() && (
+                            <motion.button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleAddComment(travel.id, [], newComment[travel.id]);
+                              }}
+                              className="send-comment-btn"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              disabled={commentLoading}
+                            >
+                              <FaPaperPlane />
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -2329,7 +2318,7 @@ const Home = () => {
                     <textarea
                       value={newComment[travel.id] || ''}
                       onChange={(e) => {
-                        if (e.target.value.length <= 250) {
+                        if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
                           setNewComment({ ...newComment, [travel.id]: e.target.value });
                         }
                       }}
@@ -2339,28 +2328,31 @@ const Home = () => {
                       placeholder="Escreva um comentário..."
                       className="comment-input-modern"
                       rows="2"
-                      maxLength={250}
+                      maxLength={COMMENT_LIMITS.MAX_LENGTH}
                     />
-                    <AnimatePresence>
-                      {newComment[travel.id]?.trim() && (
-                        <motion.button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddComment(travel.id, [], newComment[travel.id]);
-                          }}
-                          className="send-comment-btn"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          disabled={commentLoading}
-                        >
-                          <FaPaperPlane />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingRight: '10px' }}>
+                      <span style={{ fontSize: '12px', color: '#999' }}>{(newComment[travel.id] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                      <AnimatePresence>
+                        {newComment[travel.id]?.trim() && (
+                          <motion.button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddComment(travel.id, [], newComment[travel.id]);
+                            }}
+                            className="send-comment-btn"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            disabled={commentLoading}
+                          >
+                            <FaPaperPlane />
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -2437,7 +2429,7 @@ const Home = () => {
                     <textarea
                       value={newComment[travel.id] || ''}
                       onChange={(e) => {
-                        if (e.target.value.length <= 250) {
+                        if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
                           setNewComment({ ...newComment, [travel.id]: e.target.value });
                         }
                       }}
@@ -2447,28 +2439,31 @@ const Home = () => {
                       placeholder="Escreva um comentário..."
                       className="comment-input-modern"
                       rows="2"
-                      maxLength={250}
+                      maxLength={COMMENT_LIMITS.MAX_LENGTH}
                     />
-                    <AnimatePresence>
-                      {newComment[travel.id]?.trim() && (
-                        <motion.button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddComment(travel.id, [], newComment[travel.id]);
-                          }}
-                          className="send-comment-btn"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          disabled={commentLoading}
-                        >
-                          <FaPaperPlane />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingRight: '10px' }}>
+                      <span style={{ fontSize: '12px', color: '#999' }}>{(newComment[travel.id] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                      <AnimatePresence>
+                        {newComment[travel.id]?.trim() && (
+                          <motion.button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddComment(travel.id, [], newComment[travel.id]);
+                            }}
+                            className="send-comment-btn"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            disabled={commentLoading}
+                          >
+                            <FaPaperPlane />
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </motion.div>
               )}

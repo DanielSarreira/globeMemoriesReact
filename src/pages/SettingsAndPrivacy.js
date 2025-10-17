@@ -71,6 +71,9 @@ const SettingsAndPrivacy = () => {
 
   const showToast = (message, type) => {
     setToast({ message, type, show: true });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -229,7 +232,7 @@ const SettingsAndPrivacy = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       showToast(`${userToUnblock.name} foi desbloqueado com sucesso!`, 'success');
     } catch (error) {
-      showToast('Erro ao desbloquear utilizador. Tente novamente.', 'error');
+      showToast('Erro ao desbloquear viajante. Tente novamente.', 'error');
     } finally {
       setIsLoading(false);
     }

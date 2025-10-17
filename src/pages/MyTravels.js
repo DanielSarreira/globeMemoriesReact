@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
@@ -104,10 +104,12 @@ const MyTravels = () => {
     reviews: [],
     negativePoints: [],
     privacy: 'public',
+    travelType: 'single',
     isSpecial: false
   });
   const { user } = useAuth(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHeaderOpen, setIsHeaderOpen] = useState(false);
   const [isTravelTypeModalOpen, setIsTravelTypeModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isTransportModalOpen, setIsTransportModalOpen] = useState(false);
@@ -142,6 +144,7 @@ const MyTravels = () => {
   const [newDestination, setNewDestination] = useState({ country: '', city: '' });
   const [selectedDestinationIndex, setSelectedDestinationIndex] = useState(0);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   // Estados para armazenar dados por destino
   const [accommodationsByDestination, setAccommodationsByDestination] = useState({});
   const [pointsOfInterestByDestination, setPointsOfInterestByDestination] = useState({});
@@ -275,55 +278,93 @@ const MyTravels = () => {
     }
   }, [selectedDestinationIndex, selectedTravelType.main]);
 
+  // Controlar a abertura do header em mobile quando o modal abre
+  useEffect(() => {
+    const handleResize = () => {
+      if (isModalOpen && window.innerWidth <= 768) {
+        // Em mobile, o header começa FECHADO - viajante deve clicar no toggle
+        setIsHeaderOpen(false);
+      } else if (isModalOpen && window.innerWidth > 768) {
+        setIsHeaderOpen(true); // Em desktop, header sempre aberto
+      } else if (!isModalOpen) {
+        setIsHeaderOpen(false);
+      }
+    };
+
+    // Verificar quando o modal abre
+    handleResize();
+    
+    // Adicionar listener para resize
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isModalOpen]);
+
   // Função para validar campos obrigatórios
   const validateForm = () => {
-    // Validação do nome da viagem
+    // ========== ORDEM CORRETA DE VALIDAÇÕES (CONFORME SOLICITADO) ==========
+    // 1. Nome da Viagem
+    // 2. País
+    // 3. Cidade
+    // 4. Datas (início e fim)
+    // 5. Avaliação geral
+    // 6. Categorias
+    // 7. Idiomas
+    // 8. Descrição Curta
+    // 9. Descrição Longa
+    // 10. Imagem de Destaque
+    // 11. Resto (opcionais)
+
+    // ====== 1. VALIDAÇÃO NOME DA VIAGEM (OBRIGATÓRIO) ======
     if (!newTravel.name.trim()) {
-      setToast({ message: 'O nome da viagem é obrigatório!', type: 'error', show: true });
+      setToast({ message: '❌ O nome da viagem é obrigatório (*)!', type: 'error', show: true });
       return false;
     }
     
     if (newTravel.name.length < 3) {
-      setToast({ message: 'O nome da viagem deve ter pelo menos 3 caracteres!', type: 'error', show: true });
+      setToast({ message: '❌ O nome da viagem deve ter pelo menos 3 caracteres!', type: 'error', show: true });
       return false;
     }
     
     if (newTravel.name.length > 100) {
-      setToast({ message: 'O nome da viagem não pode ter mais de 100 caracteres!', type: 'error', show: true });
+      setToast({ message: '❌ O nome da viagem não pode ter mais de 100 caracteres! (Atual: ' + newTravel.name.length + '/100)', type: 'error', show: true });
       return false;
     }
     
-    // Validação contra caracteres perigosos
+    // Validação contra caracteres perigosos no nome
     if (/<script|javascript:|onload=|onerror=/i.test(newTravel.name)) {
-      setToast({ message: 'O nome contém caracteres não permitidos!', type: 'error', show: true });
+      setToast({ message: '❌ O nome contém caracteres não permitidos!', type: 'error', show: true });
       return false;
     }
-    
-    // Validações específicas por tipo de viagem
+
+    // ====== 2. VALIDAÇÃO PAÍS (OBRIGATÓRIO) ======
     if (selectedTravelType.main === 'multi') {
       if (multiDestinations.length === 0) {
-        setToast({ message: 'Adicione pelo menos um destino!', type: 'error', show: true });
+        setToast({ message: '❌ Adicione pelo menos um destino (*)!', type: 'error', show: true });
         return false;
       }
     } else {
       if (!newTravel.country) {
-        setToast({ message: 'Selecione um país!', type: 'error', show: true });
+        setToast({ message: '❌ Selecione um país (*)!', type: 'error', show: true });
         return false;
       }
+
+      // ====== 3. VALIDAÇÃO CIDADE (OBRIGATÓRIO) ======
       if (!newTravel.city.trim()) {
-        setToast({ message: 'A cidade é obrigatória!', type: 'error', show: true });
+        setToast({ message: '❌ A cidade é obrigatória (*)!', type: 'error', show: true });
         return false;
       }
-      
       if (newTravel.city.length < 2) {
-        setToast({ message: 'O nome da cidade deve ter pelo menos 2 caracteres!', type: 'error', show: true });
+        setToast({ message: '❌ O nome da cidade deve ter pelo menos 2 caracteres!', type: 'error', show: true });
         return false;
       }
     }
-    
-    // Validação de datas
+
+    // ====== 4. VALIDAÇÃO DATAS (OBRIGATÓRIO) ======
     if (!newTravel.startDate || !newTravel.endDate) {
-      setToast({ message: 'As datas de início e fim são obrigatórias!', type: 'error', show: true });
+      setToast({ message: '❌ As datas de início e fim são obrigatórias (*)!', type: 'error', show: true });
       return false;
     }
     
@@ -332,35 +373,240 @@ const MyTravels = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    if (startDate > endDate) {
-      setToast({ message: 'A data de início não pode ser posterior à data de fim!', type: 'error', show: true });
+    if (startDate > today) {
+      setToast({ message: '❌ A data de início não pode ser no futuro!', type: 'error', show: true });
       return false;
     }
     
-    // Verificação se a viagem é muito longa (mais de 1 ano)
+    if (endDate > today) {
+      setToast({ message: '❌ A data de fim não pode ser no futuro!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (startDate > endDate) {
+      setToast({ message: '❌ A data de início não pode ser posterior à data de fim!', type: 'error', show: true });
+      return false;
+    }
+    
     const diffTime = Math.abs(endDate - startDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays > 365) {
-      setToast({ message: 'A duração da viagem não pode exceder 365 dias!', type: 'error', show: true });
+      setToast({ message: '❌ A duração da viagem não pode exceder 365 dias!', type: 'error', show: true });
       return false;
     }
     
-    // Validação de descrição se fornecida
-    if (newTravel.description && newTravel.description.length > 500) {
-      setToast({ message: 'A descrição não pode ter mais de 500 caracteres!', type: 'error', show: true });
+    if (startDate.getTime() === endDate.getTime()) {
+      setToast({ message: '⚠️ Aviso: A viagem tem apenas 1 dia. Confirme se está correto!', type: 'warning', show: true });
+    }
+
+    // ====== 5. VALIDAÇÃO AVALIAÇÃO GERAL (OBRIGATÓRIO) ======
+    if (!newTravel.stars || newTravel.stars === 0 || newTravel.stars === '0') {
+      setToast({ message: '❌ A avaliação geral da viagem é obrigatória (*)!', type: 'error', show: true });
+      return false;
+    }
+
+    // ====== 6. VALIDAÇÃO CATEGORIAS (OBRIGATÓRIO) ======
+    if (!newTravel.category || newTravel.category.length === 0) {
+      setToast({ message: '❌ Selecione pelo menos uma categoria (*)!', type: 'error', show: true });
+      return false;
+    }
+
+    // ====== 7. VALIDAÇÃO IDIOMAS (OBRIGATÓRIO) ======
+    if (!newTravel.languages || newTravel.languages.length === 0) {
+      setToast({ message: '❌ Selecione pelo menos uma língua utilizada (*)!', type: 'error', show: true });
+      return false;
+    }
+
+    // ====== 8. VALIDAÇÃO DESCRIÇÃO CURTA (OBRIGATÓRIO) ======
+    if (!newTravel.description || !newTravel.description.trim()) {
+      setToast({ message: '❌ A descrição curta é obrigatória (*)!', type: 'error', show: true });
       return false;
     }
     
-    if (newTravel.longDescription && newTravel.longDescription.length > 2000) {
-      setToast({ message: 'A descrição detalhada não pode ter mais de 2000 caracteres!', type: 'error', show: true });
+    if (newTravel.description.length < 10) {
+      setToast({ message: '❌ A descrição curta deve ter pelo menos 10 caracteres!', type: 'error', show: true });
       return false;
     }
     
-    // Validação de caracteres perigosos na descrição
+    if (newTravel.description.length > 350) {
+      setToast({ message: '❌ A descrição curta não pode ter mais de 350 caracteres! (Atual: ' + newTravel.description.length + '/350)', type: 'error', show: true });
+      return false;
+    }
+
+    // ====== 9. VALIDAÇÃO DESCRIÇÃO LONGA (OBRIGATÓRIO) ======
+    if (!newTravel.longDescription || !newTravel.longDescription.trim()) {
+      setToast({ message: '❌ A descrição longa é obrigatória (*)!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (newTravel.longDescription.length < 20) {
+      setToast({ message: '❌ A descrição longa deve ter pelo menos 20 caracteres!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (newTravel.longDescription.length > 6000) {
+      setToast({ message: '❌ A descrição longa não pode ter mais de 6000 caracteres! (Atual: ' + newTravel.longDescription.length + '/6000)', type: 'error', show: true });
+      return false;
+    }
+    
     if (/<script|javascript:|onload=|onerror=/i.test(newTravel.description || '') || 
         /<script|javascript:|onload=|onerror=/i.test(newTravel.longDescription || '')) {
-      setToast({ message: 'A descrição contém caracteres não permitidos!', type: 'error', show: true });
+      setToast({ message: '❌ A descrição contém caracteres não permitidos!', type: 'error', show: true });
       return false;
+    }
+
+    // ====== 10. VALIDAÇÃO IMAGEM DE DESTAQUE (OBRIGATÓRIO) ======
+    if (!newTravel.highlightImage) {
+      setToast({ message: '❌ A imagem de destaque é obrigatória (*)!', type: 'error', show: true });
+      return false;
+    }
+
+    // ====== 11. VALIDAÇÕES OPCIONAIS (Temperatura, Preços, etc) ======
+    
+    if (newTravel.climate && newTravel.climate.length > 350) {
+      setToast({ message: '❌ A descrição da temperatura não pode ter mais de 350 caracteres! (Atual: ' + newTravel.climate.length + '/350)', type: 'error', show: true });
+      return false;
+    }
+    
+    const priceDetails = newTravel.priceDetails;
+    const priceFields = ['hotel', 'flight', 'food', 'extras'];
+    
+    for (let field of priceFields) {
+      if (priceDetails[field]) {
+        const price = parseFloat(priceDetails[field]);
+        if (isNaN(price) || price < 0) {
+          setToast({ message: '❌ O preço de ' + field + ' deve ser um número positivo!', type: 'error', show: true });
+          return false;
+        }
+        if (price > 999999.99) {
+          setToast({ message: '❌ O preço de ' + field + ' é muito elevado (máximo: 999999.99€)!', type: 'error', show: true });
+          return false;
+        }
+      }
+    }
+
+    // ====== VALIDAÇÕES DE ACOMODAÇÕES ======
+    if (selectedTravelType.main === 'single') {
+      const accommodations = newTravel.accommodations || [];
+      for (let i = 0; i < accommodations.length; i++) {
+        const acc = accommodations[i];
+        
+        if (acc.name && acc.name.length > 150) {
+          setToast({ message: '❌ Nome da acomodação #' + (i+1) + ' não pode ter mais de 150 caracteres! (Atual: ' + acc.name.length + '/150)', type: 'error', show: true });
+          return false;
+        }
+        
+        if (acc.description && acc.description.length > 500) {
+          setToast({ message: '❌ Descrição da acomodação #' + (i+1) + ' não pode ter mais de 500 caracteres! (Atual: ' + acc.description.length + '/500)', type: 'error', show: true });
+          return false;
+        }
+        
+        if (acc.checkInDate && acc.checkOutDate) {
+          const checkIn = new Date(acc.checkInDate);
+          const checkOut = new Date(acc.checkOutDate);
+          
+          if (checkIn > checkOut) {
+            setToast({ message: '❌ Data de check-in não pode ser posterior a check-out na acomodação #' + (i+1) + '!', type: 'error', show: true });
+            return false;
+          }
+        }
+        
+        if (acc.nights) {
+          const nights = parseInt(acc.nights);
+          if (isNaN(nights) || nights < 0 || nights > 365) {
+            setToast({ message: '❌ Número de noites da acomodação #' + (i+1) + ' deve estar entre 0 e 365!', type: 'error', show: true });
+            return false;
+          }
+        }
+        
+        if (acc.rating) {
+          const rating = parseInt(acc.rating);
+          if (isNaN(rating) || rating < 0 || rating > 5) {
+            setToast({ message: '❌ Rating da acomodação #' + (i+1) + ' deve estar entre 0 e 5!', type: 'error', show: true });
+            return false;
+          }
+        }
+      }
+    }
+
+    // ====== VALIDAÇÕES DE ALIMENTAÇÃO ======
+    const foodRecs = newTravel.foodRecommendations || [];
+    for (let i = 0; i < foodRecs.length; i++) {
+      const food = foodRecs[i];
+      
+      if (food.name && food.name.length > 150) {
+        setToast({ message: '❌ Nome do prato #' + (i+1) + ' não pode ter mais de 150 caracteres! (Atual: ' + food.name.length + '/150)', type: 'error', show: true });
+        return false;
+      }
+      
+      if (food.description && food.description.length > 500) {
+        setToast({ message: '❌ Descrição do prato #' + (i+1) + ' não pode ter mais de 500 caracteres! (Atual: ' + food.description.length + '/500)', type: 'error', show: true });
+        return false;
+      }
+    }
+
+    // ====== VALIDAÇÕES DE TRANSPORTES ======
+    const transports = newTravel.localTransport || [];
+    if (transports.length === 0) {
+      setToast({ message: '⚠️ Aviso: Nenhum transporte local foi adicionado. Considere adicionar informações sobre os transportes utilizados.', type: 'warning', show: true });
+    }
+
+    // ====== VALIDAÇÕES DE PONTOS DE REFERÊNCIA ======
+    const points = newTravel.pointsOfInterest || [];
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      
+      if (point.name && point.name.length > 150) {
+        setToast({ message: '❌ Nome do ponto de referência #' + (i+1) + ' não pode ter mais de 150 caracteres! (Atual: ' + point.name.length + '/150)', type: 'error', show: true });
+        return false;
+      }
+      
+      if (point.description && point.description.length > 1000) {
+        setToast({ message: '❌ Descrição do ponto de referência #' + (i+1) + ' não pode ter mais de 1000 caracteres! (Atual: ' + point.description.length + '/1000)', type: 'error', show: true });
+        return false;
+      }
+      
+      if (point.type && point.type.length > 100) {
+        setToast({ message: '❌ Tipo do ponto de referência #' + (i+1) + ' não pode ter mais de 100 caracteres! (Atual: ' + point.type.length + '/100)', type: 'error', show: true });
+        return false;
+      }
+    }
+
+    // ====== VALIDAÇÕES DE ITINERÁRIO ======
+    const itinerary = newTravel.itinerary || [];
+    for (let i = 0; i < itinerary.length; i++) {
+      const item = itinerary[i];
+      
+      if (item.day && item.day.length > 100) {
+        setToast({ message: '❌ Título do dia #' + (i+1) + ' não pode ter mais de 100 caracteres! (Atual: ' + item.day.length + '/100)', type: 'error', show: true });
+        return false;
+      }
+      
+      if (item.activities && Array.isArray(item.activities)) {
+        const combinedActivities = item.activities.join('\n');
+        if (combinedActivities.length > 1500) {
+          setToast({ message: '❌ O itinerário do dia #' + (i+1) + ' não pode ter mais de 1500 caracteres no total! (Atual: ' + combinedActivities.length + '/1500)', type: 'error', show: true });
+          return false;
+        }
+      }
+    }
+
+    // ====== VALIDAÇÕES DE PONTOS NEGATIVOS ======
+    const negativePoints = newTravel.negativePoints || [];
+    if (Array.isArray(negativePoints)) {
+      for (let i = 0; i < negativePoints.length; i++) {
+        const point = negativePoints[i];
+        
+        if (point.name && point.name.length > 150) {
+          setToast({ message: '❌ Nome do ponto negativo #' + (i+1) + ' não pode ter mais de 150 caracteres! (Atual: ' + point.name.length + '/150)', type: 'error', show: true });
+          return false;
+        }
+        
+        if (point.description && point.description.length > 500) {
+          setToast({ message: '❌ Descrição do ponto negativo #' + (i+1) + ' não pode ter mais de 500 caracteres! (Atual: ' + point.description.length + '/500)', type: 'error', show: true });
+          return false;
+        }
+      }
     }
     
     return true;
@@ -1021,7 +1267,7 @@ const MyTravels = () => {
     }
     
     setEditingPointIndex(null);
-    setNewPointOfInterest({ name: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
     setToast({ message: 'Ponto de referência removido com sucesso!', type: 'success', show: true });
   };
 
@@ -1220,9 +1466,40 @@ const MyTravels = () => {
     setIsEditing(true);
     setIsModalOpen(true);
     setActiveTab('generalInfo');
+    
+    // Restaurar tipo de viagem (single ou multi)
+    if (travelToEdit.travelType) {
+      setSelectedTravelType(travelToEdit.travelType);
+    } else {
+      // Fallback: detectar pelo numero de destinos
+      setSelectedTravelType({ 
+        main: 'single',  // Default para compatibilidade com viagens antigas
+        isGroup: false 
+      });
+    }
+    
+    // Restaurar dados de multidestino se aplicável
+    if (travelToEdit.travelType?.main === 'multi' && travelToEdit.multiDestinations) {
+      setMultiDestinations(travelToEdit.multiDestinations);
+      setSelectedDestinationIndex(0);
+      
+      // Restaurar dados por destino se existirem
+      if (travelToEdit.accommodationsByDestination) {
+        setAccommodationsByDestination(travelToEdit.accommodationsByDestination);
+      }
+      if (travelToEdit.pointsOfInterestByDestination) {
+        setPointsOfInterestByDestination(travelToEdit.pointsOfInterestByDestination);
+      }
+    }
+    
+    // Restaurar membros do grupo se aplicável
+    if (travelToEdit.groupData?.members) {
+      setGroupMembers(travelToEdit.groupData.members);
+    }
+    
     setNewFoodRecommendation({ name: '', description: '' });
     setEditingFoodIndex(null);
-    setNewPointOfInterest({ name: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
     setEditingPointIndex(null);
     setNewItineraryDay({ day: '', activities: [''] });
     setEditingItineraryDay(null);
@@ -1318,7 +1595,7 @@ const MyTravels = () => {
 
   const handleDelete = (id) => {
     setTravels(travels.filter((travel) => travel.id !== id));
-    setToast({ message: 'Viagem excluída com sucesso!', type: 'success', show: true });
+    setToast({ message: 'Viagem eliminada com sucesso!', type: 'success', show: true });
   };
 
   const handleAddTravel = () => {
@@ -1335,11 +1612,12 @@ const MyTravels = () => {
       };
       if (isEditing) {
         setTravels(prev => prev.map(t => t.id === editTravelId ? multiTravel : t));
-        setToast({ message: 'Viagem multidestino editada (armazenada local).', type: 'success', show: true });
+        showToast('Viagem multidestino editada (armazenada local).', 'success');
       } else {
         setTravels(prev => [...prev, multiTravel]);
-        setToast({ message: 'Viagem multidestino adicionada (armazenada local).', type: 'success', show: true });
+        showToast('Viagem multidestino adicionada (armazenada local).', 'success');
       }
+      // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
       resetForm();
       return;
     }
@@ -1369,7 +1647,7 @@ const MyTravels = () => {
       };
       return categoryMap[cat] || 0;
     }).filter(id => id !== 0),
-    languageSpokenIds: newTravel.language.split(',').map(lang => {
+    languageSpokenIds: (newTravel.languages || []).map(lang => {
       const languageMap = { 'Português': 1, 'Inglês': 2, 'Espanhol': 3 };
       return languageMap[lang.trim()] || 0;
     }).filter(id => id !== 0),
@@ -1404,7 +1682,7 @@ const MyTravels = () => {
         travelType: selectedTravelType,
         multiDestinations: selectedTravelType.main === 'multi' ? multiDestinations : null,
         groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null,
-                highlightImage: newTravel.highlightImage, // Manter o valor existente, seja File ou string
+                highlightImage: newTravel.highlightImage,
                 images_generalInformation: newTravel.images_generalInformation || [],
                 accommodations: Array.isArray(newTravel.accommodations)
                   ? newTravel.accommodations.map(acc => ({
@@ -1441,25 +1719,38 @@ const MyTravels = () => {
             : travel
         )
       );
-      setToast({ message: 'Viagem editada com sucesso!', type: 'success', show: true });
+      showToast('Viagem editada com sucesso!', 'success');
+      // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
+      resetForm();
     } else {
+      // Para single destination, armazenar localmente também por enquanto
+      const singleTravel = {
+        ...newTravel,
+        id: isEditing ? editTravelId : Date.now(),
+        travelType: selectedTravelType,
+        multiDestinations: null,
+        groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null
+      };
+      
+      setTravels(prev => [...prev, singleTravel]);
+      showToast('Viagem adicionada com sucesso!', 'success');
+      // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
+      resetForm();
+      
+      // ✅ OTIMIZADO: Enviar ao backend em background (async, não bloqueia)
       request(
               "POST",
               "/trips",
               tripData
             ).then(
               (response) => {
-                console.log(response)
-                setToast({ message: 'Viagem adicionada com sucesso!', type: 'success', show: true });
+                console.log('✅ Viagem sincronizada com backend:', response);
               }).catch(
               (error) => {
-                console.log(error)
+                console.error('⚠️ Erro ao sincronizar com backend (armazenada localmente):', error);
               }
             );
-      //setTravels((prevTravels) => [...prevTravels, addedTravel]);
-      
     }
-    resetForm();
   };
 
   // Nova função para adicionar ou editar apenas os pontos negativos
@@ -1532,7 +1823,7 @@ const MyTravels = () => {
     setEditingFoodIndex(null);
     setNewFoodRecommendation({ name: '', description: '' });
     setEditingPointIndex(null);
-    setNewPointOfInterest({ name: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
     setEditingItineraryDay(null);
     setNewItineraryDay({ day: '', activities: [''] });
     setItineraryError('');
@@ -1675,7 +1966,19 @@ const MyTravels = () => {
   // Função para obter acomodações do destino atual
   const getCurrentAccommodations = () => {
     const destinationKey = getCurrentDestinationKey();
-    if (!destinationKey) return newTravel.accommodations;
+    if (!destinationKey) return newTravel.accommodations || [
+      {
+        name: '',
+        type: '',
+        description: '',
+        rating: 0,
+        nights: '',
+        checkInDate: '',
+        checkOutDate: '',
+        regime: '',
+        images: []
+      }
+    ];
     
     if (selectedTravelType.main === 'multi') {
       return accommodationsByDestination[destinationKey] || [
@@ -1692,18 +1995,30 @@ const MyTravels = () => {
         }
       ];
     }
-    return newTravel.accommodations;
+    return newTravel.accommodations || [
+      {
+        name: '',
+        type: '',
+        description: '',
+        rating: 0,
+        nights: '',
+        checkInDate: '',
+        checkOutDate: '',
+        regime: '',
+        images: []
+      }
+    ];
   };
 
   // Função para obter pontos de interesse do destino atual
   const getCurrentPointsOfInterest = () => {
     const destinationKey = getCurrentDestinationKey();
-    if (!destinationKey) return newTravel.pointsOfInterest;
+    if (!destinationKey) return newTravel.pointsOfInterest || [];
     
     if (selectedTravelType.main === 'multi') {
       return pointsOfInterestByDestination[destinationKey] || [];
     }
-    return newTravel.pointsOfInterest;
+    return newTravel.pointsOfInterest || [];
   };
 
   // Função para guardar dados do destino actual
@@ -1743,6 +2058,48 @@ const MyTravels = () => {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setItineraryError('');
+
+    // Função auxiliar: rola para o topo do container relevante
+    const scrollToTop = () => {
+      // Se o modal de planejamento estiver aberto, rolar o conteúdo do modal
+      const modalContent = document.querySelector('.travel-planner-content');
+      const modalForm = document.querySelector('.modal-form-content');
+      if (modalContent) {
+        const target = modalForm || modalContent;
+        if (target && typeof target.scrollTo === 'function') {
+          target.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        if (target) {
+          target.scrollTop = 0;
+          return;
+        }
+      }
+
+      // Caso não haja modal, rolar a janela principal
+      if (typeof window.scrollTo === 'function') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    };
+
+    // Executar o centramento da nav em mobile e, em seguida, rolar para topo
+    setTimeout(() => {
+      const tabNav = document.querySelector('.tab-nav');
+      const activeButton = document.querySelector(`.tab-nav button.active`);
+      if (tabNav && activeButton && window.innerWidth <= 768) {
+        const buttonLeft = activeButton.offsetLeft;
+        const buttonWidth = activeButton.offsetWidth;
+        const navWidth = tabNav.offsetWidth;
+        const scrollLeft = buttonLeft - (navWidth / 2) + (buttonWidth / 2);
+        tabNav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      }
+
+      // finalmente, rolar para o topo do conteúdo da aba selecionada
+      scrollToTop();
+    }, 100);
   };
 
   // Função para filtrar viagens
@@ -1778,14 +2135,18 @@ const MyTravels = () => {
   const handlePrevTab = () => {
     const currentIndex = tabs.indexOf(activeTab);
     if (currentIndex > 0) {
-      setActiveTab(tabs[currentIndex - 1]);
+      const newTab = tabs[currentIndex - 1];
+      setActiveTab(newTab);
+      handleTabChange(newTab);
     }
   };
 
   const handleNextTab = () => {
     const currentIndex = tabs.indexOf(activeTab);
     if (currentIndex < tabs.length - 1) {
-      setActiveTab(tabs[currentIndex + 1]);
+      const newTab = tabs[currentIndex + 1];
+      setActiveTab(newTab);
+      handleTabChange(newTab);
     }
   };
 
@@ -1802,12 +2163,76 @@ const MyTravels = () => {
       {isTravelTypeModalOpen && (
         <div className="travel-planner-modal travel-type-modal">
           <div className="travel-planner-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-actions">
-              <h1>Que tipo de viagem realizou?</h1>
+            <div 
+              className="modal-header-actions"
+              style={{
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '15px',
+                padding: '20px 25px'
+              }}
+            >
+              <h1 style={{ margin: '0', fontSize: '1.5em', fontWeight: '700' }}>
+                Que tipo de viagem realizou?
+              </h1>
               
-              <div className="modal-header-buttons">
-                <button type="button" className="button-danger" onClick={resetForm}>Fechar</button>
-                <button type="button" className="button-success" onClick={confirmTravelType}>Continuar</button>
+              <div 
+                className="modal-header-buttons"
+                style={{ 
+                  display: 'flex', 
+                  gap: '8px', 
+                  alignItems: 'center',
+                  margin: '0',
+                  justifyContent: 'flex-end'
+                }}
+              >
+                
+                <button 
+                  type="button" 
+                  className="button-danger" 
+                  onClick={resetForm}
+                  style={{
+                    background: 'linear-gradient(135deg, #f44336, #d32f2f)',
+                    color: 'white',
+                    border: 'none',
+                    padding: window.innerWidth <= 768 ? '12px 20px' : '15px 25px',
+                    borderRadius: '10px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 3px 12px rgba(244, 67, 54, 0.4)',
+                    minWidth: 'auto',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Fechar
+                </button>
+
+<button 
+                  type="button" 
+                  className="button-success" 
+                  onClick={confirmTravelType}
+                  style={{
+                    background: 'linear-gradient(135deg, #4CAF50, #45a049)',
+                    color: 'white',
+                    border: 'none',
+                    padding: window.innerWidth <= 768 ? '12px 20px' : '15px 25px',
+                    borderRadius: '10px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 3px 12px rgba(76, 175, 80, 0.4)',
+                    minWidth: 'auto',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Continuar
+                </button>
+
               </div>
             </div>
             <div className="modal-form-content">
@@ -1920,7 +2345,6 @@ const MyTravels = () => {
                 </p>
                 <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
                   Poderá adicionar e gerir membros do grupo na aba dedicada
-                  <span className="tooltip-icon" title="Ao marcar esta opção, será adicionada uma aba especial onde pode adicionar outros viajantes que participaram na viagem. Eles poderão partilhar fotos e experiências.">?</span>
                 </small>
               </div>
               */}
@@ -1932,157 +2356,472 @@ const MyTravels = () => {
       {isModalOpen && (
         <div className="travel-planner-modal">
           <div className="travel-planner-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-actions">
-              <div style={{ display: "flex", alignItems: "center", gap: "20px", marginTop: "15px", flexWrap: "wrap", justifyContent: "center" }}>
-                {/* Privacidade da Viagem */}
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <label style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: "5px",
-                    fontSize: "14px",
-                    fontWeight: "500"
-                  }}>
-                    🔒 Privacidade:
-                    <span className="tooltip-icon" title="Defina quem pode ver a sua viagem: Pública (todos), Somente para Seguidores (apenas quem o segue), ou Privada (apenas si).">
-                      ?
-                    </span>
-                  </label>
-                  <select
-                    name="privacy"
-                    value={newTravel.privacy}
-                    onChange={handleChange}
-                    style={{ 
-                      padding: "8px 12px", 
-                      borderRadius: "8px", 
-                      border: "1px solid #ddd",
-                      fontSize: "14px",
-                      background: "#fff"
+            {/* Mobile Header: Toggle Button + Action Buttons - Only visible on tablet/mobile */}
+            {window.innerWidth <= 768 && (
+              <div 
+                style={{
+                  position: 'fixed',
+                  top: '15px',
+                  left: '15px',
+                  right: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  zIndex: 1002,
+                  justifyContent: 'space-between',
+                  background: 'none',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                }}
+              >
+                {/* Toggle Button - Esquerda */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setIsHeaderOpen(!isHeaderOpen)}
+                    className={`modal-header-toggle-button ${isHeaderOpen ? 'open' : ''}`}
+                    style={{
+                      background: isHeaderOpen 
+                        ? 'linear-gradient(135deg, #dc3545, #bb2d3b)' 
+                        : 'linear-gradient(135deg, #007bff, #0056b3)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      transition: 'all 0.3s ease',
+                      color: 'white',
+                      transform: isHeaderOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     }}
+                    title={isHeaderOpen ? 'Fechar configurações' : 'Abrir configurações'}
                   >
-                    <option value="public">Pública</option>
-                    <option value="followers">Somente para Seguidores</option>
-                    <option value="private">Privada</option>
-                  </select>
+                    {isHeaderOpen ? '✕' : '⚙️'}
+                  </button>
                 </div>
 
-              
-
-                {/* Checkbox Viagem em Grupo */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <input
-                    type="checkbox"
-                    id="groupTravelCheckbox"
-                    checked={selectedTravelType.isGroup}
-                    onChange={(e) => {
-                      setSelectedTravelType(prev => ({
-                        ...prev,
-                        isGroup: e.target.checked
-                      }));
-                    }}
-                    style={{ transform: "scale(1.2)" }}
-                  />
-                  <label 
-                    htmlFor="groupTravelCheckbox" 
-                    style={{ 
-                      cursor: "pointer", 
-                      fontSize: "14px", 
-                      fontWeight: "500",
-                      color: "#2c3e50",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px"
+                {/* Action Buttons - Direita - Ocultos quando toggle aberto */}
+                <div 
+                  style={{ 
+                    display: isHeaderOpen ? 'none' : 'flex', 
+                    gap: '8px', 
+                    alignItems: 'center',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={handleAddTravel}
+                    style={{
+                      background: 'linear-gradient(135deg, #4CAF50, #45a049)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      transition: 'all 0.3s ease',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    👥 Viagem em Grupo
-                    <span className="tooltip-icon" title="Marque se viajou acompanhado por outras pessoas. Poderá adicionar membros na aba Grupo.">
-                      ?
-                    </span>
-                  </label>
-                  
-                  {/* Dropdown para alternar entre Destino Único e Multidestino */}
-                  <div style={{ marginLeft: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <label style={{ fontWeight: "600", color: "#007bff", fontSize: "14px" }}>
-                      Tipo:
-                      <span className="tooltip-icon" title="Escolha entre visitar um único destino ou múltiplos destinos na mesma viagem.">
-                        ?
-                      </span>
-                    </label>
+                    {isEditing ? "💾 Guardar" : "✅ Adicionar Viagem"}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={closeModal}
+                    style={{
+                      background: 'linear-gradient(135deg, #f44336, #d32f2f)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    ✕ Fechar
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            <div 
+              className={`modal-header-actions ${isHeaderOpen && window.innerWidth <= 768 ? 'show' : ''}`}
+              style={{
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                gap: '20px',
+                padding: window.innerWidth <= 768 ? '80px 15px 30px 15px' : '20px 25px'
+              }}
+            >
+              {/* Desktop Layout */}
+              {window.innerWidth > 768 && (
+                <>
+                  <span style={{
+                    margin: '0',
+                    fontSize: '1.6em',
+                    fontWeight: '700',
+                    color: '#2c3e50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flex: '1'
+                  }}>
+                     {isEditing ? '✏️' : ''} {newTravel.name && newTravel.name.trim() ? newTravel.name : (isEditing ? 'Editar Viagem' : 'Adicionar Viagem')}
+                  </span>
+           
+                  <div 
+                    className="modal-header-buttons" 
+                    style={{ 
+                      display: 'flex', 
+                      gap: '12px', 
+                      alignItems: 'center',
+                      margin: '0',
+                      justifyContent: 'flex-end',
+                      flex: '0 0 auto'
+                    }}
+                  >
+                    <button 
+                      type="button" 
+                      onClick={() => setIsSettingsModalOpen(true)} 
+                      className="button-secondary"
+                      style={{
+                        background: 'linear-gradient(135deg, #6c757d, #5a6268)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 3px 12px rgba(108, 117, 125, 0.3)',
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap',
+                        flex: '0 0 auto'
+                      }}
+                    >
+                      ⚙️ Configurações
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddTravel}
+                      className="button-success"
+                      style={{
+                        background: 'linear-gradient(135deg, #4CAF50, #45a049)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 3px 12px rgba(76, 175, 80, 0.3)',
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap',
+                        flex: '0 0 auto'
+                      }}
+                    >
+                      {isEditing ? "💾 Guardar" : "✅ Adicionar"}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={closeModal} 
+                      className="button-danger"
+                      style={{
+                        background: 'linear-gradient(135deg, #f44336, #d32f2f)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 3px 12px rgba(244, 67, 54, 0.3)',
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap',
+                        flex: '0 0 auto'
+                      }}
+                    >
+                      ✕ Fechar
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Configurações Mobile que aparecem quando o toggle está aberto */}
+              {isHeaderOpen && window.innerWidth <= 768 && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    height: '346px',
+                    top: '70px',
+                    left: '15px',
+                    right: '15px',
+                    bottom: '20px', // Limita a altura para não cortar conteúdo
+                    borderRadius: '15px',
+                    padding: '20px',
+                    zIndex: 1001,
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    animation: 'slideDown 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                  }}
+                >
+                  <h3 style={{ 
+                    margin: '0 0 20px 0', 
+                    color: '#333', 
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    borderBottom: '2px solid #f0f0f0',
+                    paddingBottom: '10px'
+                  }}>
+                    ⚙️ Configurações da Viagem
+                  </h3>
+
+                  {/* Privacidade da Viagem */}
+                  <div style={{ marginBottom: '25px' }}>
+                    <h4 style={{ 
+                      margin: '0 0 15px 0', 
+                      color: '#555', 
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      🔒 Privacidade da Viagem
+                    </h4>
+                    
+                    <select
+                      name="privacy"
+                      value={newTravel.privacy}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px solid #e0e0e0',
+                        background: 'white',
+                        fontSize: '14px',
+                        color: '#333',
+                        marginLeft: '15px',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <option value="public">🌍 Pública (Todos podem ver)</option>
+                      <option value="followers">👥 Somente Seguidores</option>
+                      <option value="private">🔒 Privada (Só eu)</option>
+                    </select>
+                  </div>
+
+                  {/* Tipo de Viagem */}
+                  <div style={{ marginBottom: '25px' }}>
+                    <h4 style={{ 
+                      margin: '0 0 15px 0', 
+                      color: '#555', 
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      🗺️ Tipo de Viagem
+                    </h4>
+                    
                     <select
                       value={selectedTravelType.main}
-                      onChange={e => {
-                        const value = e.target.value;
+                      onChange={(e) => {
                         setSelectedTravelType(prev => ({
                           ...prev,
-                          main: value
+                          main: e.target.value
                         }));
                       }}
-                      style={{ 
-                        padding: "6px 12px", 
-                        borderRadius: "8px", 
-                        border: "2px solid #007bff", 
-                        fontWeight: "600", 
-                        color: "#007bff", 
-                        background: "#f0f8ff", 
-                        fontSize: "14px",
-                        boxShadow: "0 2px 8px rgba(0,123,255,0.08)" 
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px solid #e0e0e0',
+                        background: 'white',
+                        fontSize: '14px',
+                        color: '#333',
+                        marginLeft: '15px',
+                        boxSizing: 'border-box'
                       }}
                     >
                       <option value="single">🎯 Destino Único</option>
                       <option value="multi">🗺️ Multidestino</option>
                     </select>
+                  </div>
 
+                  {/* Viagem em Grupo */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <h4 style={{ 
+                      margin: '0 0 15px 0', 
+                      color: '#555', 
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      👥 Viagem em Grupo
+                    </h4>
+                    
+                    <div style={{ 
+                      marginLeft: '15px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '15px'
+                    }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        color: '#333'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedTravelType.isGroup}
+                          onChange={(e) => {
+                            setSelectedTravelType(prev => ({
+                              ...prev,
+                              isGroup: e.target.checked
+                            }));
+                          }}
+                          style={{
+                            transform: 'scale(1.3)',
+                            accentColor: '#007bff'
+                          }}
+                        />
+                        <span>Ativar viagem em grupo</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
-                        <div className="modal-header-buttons">
-                <button 
-                  type="button" 
-                  onClick={closeModal} 
-                  className="button-danger"
-                >
-                  ✕ Fechar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddTravel}
-                  className="button-success"
-                  title={isEditing ? "Guardar as alterações da viagem" : "Adicionar nova viagem"}
-                >
-                  {isEditing ? "💾 Guardar Alterações" : "✅ Adicionar Viagem"}
-                </button>
+            {/* Modal de Configurações */}
+            {isSettingsModalOpen && (
+              <div className="modal-overlay" onClick={() => setIsSettingsModalOpen(false)}>
+                <div className="modal-content settings-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header-actions">
+                    <h2>⚙️ Configurações da Viagem</h2>
+                    <div className="modal-header-buttons">
+                      <button 
+                        type="button" 
+                        onClick={() => setIsSettingsModalOpen(false)} 
+                        className="button-danger"
+                      >
+                        ✕ Fechar
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="settings-content">
+                    {/* Privacidade da Viagem */}
+                    <div className="setting-item">
+                      <label className="setting-label">
+                        🔒 Privacidade da Viagem
+                      </label>
+                      <select
+                        name="privacy"
+                        value={newTravel.privacy}
+                        onChange={handleChange}
+                        className="setting-select"
+                      >
+                        <option value="public">🌍 Pública (Todos podem ver)</option>
+                        <option value="followers">👥 Somente Seguidores</option>
+                        <option value="private">🔒 Privada (Só eu)</option>
+                      </select>
+                    </div>
+
+                    {/* Tipo de Viagem */}
+                    <div className="setting-item">
+                      <label className="setting-label">
+                        🗺️ Tipo de Viagem
+                      </label>
+                      <select
+                        value={selectedTravelType.main}
+                        onChange={(e) => {
+                          setSelectedTravelType(prev => ({
+                            ...prev,
+                            main: e.target.value
+                          }));
+                        }}
+                        className="setting-select"
+                      >
+                        <option value="single">🎯 Destino Único</option>
+                        <option value="multi">🗺️ Multidestino</option>
+                      </select>
+                    </div>
+
+                    {/* Viagem em Grupo */}
+                    <div className="setting-item">
+                      <label className="setting-label">
+                        👥 Viagem em Grupo
+                      </label>
+                      <div className="setting-toggle">
+                        <input
+                          type="checkbox"
+                          id="groupTravelCheckbox"
+                          checked={selectedTravelType.isGroup}
+                          onChange={(e) => {
+                            setSelectedTravelType(prev => ({
+                              ...prev,
+                              isGroup: e.target.checked
+                            }));
+                          }}
+                          className="toggle-checkbox"
+                        />
+                        <label htmlFor="groupTravelCheckbox" className="toggle-label">
+                          
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+            )}
 
-          
-            </div>
             <div className="tab-nav">
-              <button onClick={() => handleTabChange('generalInfo')} className={activeTab === 'generalInfo' ? 'active' : ''} title="Informações básicas da viagem">
+              <button onClick={() => handleTabChange('generalInfo')} className={activeTab === 'generalInfo' ? 'active' : ''}>
                 1 - Informações Gerais
               </button>
-              <button onClick={() => handleTabChange('prices')} className={activeTab === 'prices' ? 'active' : ''} title="Custos e preços da viagem">
+              <button onClick={() => handleTabChange('prices')} className={activeTab === 'prices' ? 'active' : ''}>
                 2 - Preços da Viagem
               </button>
-              <button onClick={() => handleTabChange('accommodation')} className={activeTab === 'accommodation' ? 'active' : ''} title="Informações sobre alojamento">
+              <button onClick={() => handleTabChange('accommodation')} className={activeTab === 'accommodation' ? 'active' : ''}>
                 3 - Estadia
               </button>
-              <button onClick={() => handleTabChange('food')} className={activeTab === 'food' ? 'active' : ''} title="Recomendações alimentares">
+              <button onClick={() => handleTabChange('food')} className={activeTab === 'food' ? 'active' : ''}>
                 4 - Alimentação
               </button>
-              <button onClick={() => handleTabChange('transport')} className={activeTab === 'transport' ? 'active' : ''} title="Métodos de transporte utilizados">
+              <button onClick={() => handleTabChange('transport')} className={activeTab === 'transport' ? 'active' : ''}>
                 5 - Transportes
               </button>
-              <button onClick={() => handleTabChange('pointsOfInterest')} className={activeTab === 'pointsOfInterest' ? 'active' : ''} title="Locais de interesse visitados">
+              <button onClick={() => handleTabChange('pointsOfInterest')} className={activeTab === 'pointsOfInterest' ? 'active' : ''}>
                 6 - Pontos de Referência
               </button>
-              <button onClick={() => handleTabChange('itinerary')} className={activeTab === 'itinerary' ? 'active' : ''} title="Planeamento diário da viagem">
+              <button onClick={() => handleTabChange('itinerary')} className={activeTab === 'itinerary' ? 'active' : ''}>
                 7 - Itinerário da Viagem
               </button>
-              <button onClick={() => handleTabChange('negativePoints')} className={activeTab === 'negativePoints' ? 'active' : ''} title="Aspectos negativos da viagem">
+              <button onClick={() => handleTabChange('negativePoints')} className={activeTab === 'negativePoints' ? 'active' : ''}>
                 8 - Pontos Negativos
               </button>
               {selectedTravelType.isGroup && (
-                <button onClick={() => handleTabChange('group')} className={activeTab === 'group' ? 'active' : ''} title="Informações sobre o grupo de viagem">
+                <button onClick={() => handleTabChange('group')} className={activeTab === 'group' ? 'active' : ''}>
                   {selectedTravelType.main === 'multi' ? '9' : '9'} - Viagem em Grupo
                 </button>
               )}
@@ -2090,9 +2829,410 @@ const MyTravels = () => {
             <div className="modal-form-content">
             <form onSubmit={(e) => e.preventDefault()}>
               {activeTab === 'generalInfo' && (
+
                 <>
+<br></br>
+<div className="LeftPosition">
+                    <label style={{textAlign: 'center', width: '100%'}}>📝 Nome da Viagem: <span style={{color: 'red'}}>*</span></label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={newTravel.name}
+                      onChange={handleChange}
+                      required
+                      placeholder="Ex.: Viagem à cidade de Coimbra"
+                      title="Digite um nome descritivo para a sua viagem"
+                    />
+                    <div style={{
+                      fontSize: '12px',
+                      color: newTravel.name.length > 100 ? '#d32f2f' : '#4caf50',
+                      marginTop: '5px',
+                      fontWeight: 'bold'
+                    }}>
+                      {newTravel.name.length}/100 caracteres
+                    </div>
+
+                    <br /><br />
+
+                    {selectedTravelType.main !== 'multi' && (
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label style={{textAlign: 'center', width: '100%'}}>🌍 País: <span style={{color: 'red'}}>*</span></label>
+                          <select 
+                            name="country" 
+                            value={newTravel.country} 
+                            onChange={handleChange} 
+                            required
+                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                            title="Selecione o país da sua viagem"
+                          >
+                            <option value="">Selecione um país</option>
+                            <option value="Portugal">Portugal</option>
+                            <option value="Brasil">Brasil</option>
+                            <option value="United States">Estados Unidos</option>
+                            <option value="Espanha">Espanha</option>
+                            <option value="França">França</option>
+                            <option value="Itália">Itália</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label style={{textAlign: 'center', width: '100%'}}>🏙️ Cidade: <span style={{color: 'red'}}>*</span></label>
+                          <select
+                            name="city"
+                            value={newTravel.city}
+                            onChange={handleChange}
+                            required
+                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                            disabled={!newTravel.country}
+                            title={newTravel.country ? "Selecione a cidade da sua viagem" : "Primeiro selecione um país"}
+                          >
+                            <option value="">
+                              {newTravel.country ? "Selecione uma cidade" : "Primeiro selecione um país"}
+                            </option>
+                            {getCitiesForCountry(newTravel.country).map(city => (
+                              <option key={city} value={city}>{city}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    {selectedTravelType.main === 'multi' && (
+                      <div className="multi-destination-section">
+                        
+                        <label style={{textAlign: 'center', width: '100%'}}>🌐 Destinos: <span style={{color: 'red'}}>*</span></label>
+                        <div className="destination-controls">
+                          <select 
+                            name="multiCountry" 
+                            value={newDestination.country} 
+                            onChange={(e)=>setNewDestination(prev=>({...prev,country:e.target.value, city:''}))}
+                            title="Selecione o país do destino"
+                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                          >
+                            <option value="">País</option>
+                            <option value="Portugal">Portugal</option>
+                            <option value="Brasil">Brasil</option>
+                            <option value="United States">United States</option>
+                            <option value="Espanha">Espanha</option>
+                            <option value="França">França</option>
+                            <option value="Itália">Itália</option>
+                          </select>
+                          <select 
+                            name="multiCity" 
+                            value={newDestination.city} 
+                            onChange={(e)=>setNewDestination(prev=>({...prev,city:e.target.value}))}
+                            disabled={!newDestination.country}
+                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                            title={newDestination.country ? "Selecione a cidade do destino" : "Primeiro selecione um país"}
+                          >
+                            <option value="">
+                              {newDestination.country ? "Selecione uma cidade" : "Primeiro selecione um país"}
+                            </option>
+                            {newDestination.country && getCitiesForCountry(newDestination.country).map(city => (
+                              <option key={city} value={city}>
+                                {city}
+                              </option>
+                            ))}
+                          </select>
+                          <button onClick={addDestination} type="button" className="button-success" title="Adicionar destino à lista">
+                            ➕ Adicionar
+                          </button>
+                        </div>
+                        {multiDestinations.length>0 ? (
+                          <ul className="destinations-list">
+                            {multiDestinations.map(d=> (
+                              <li key={d.id} className="destination-item">
+                                <span>📍 {d.city}, {d.country}</span>
+                                <button 
+                                  type="button" 
+                                  onClick={()=>removeDestination(d.id)} 
+                                  className="remove-button"
+                                  title="Remover este destino"
+                                >
+                                  ✕
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ): <p className="no-destinations">Nenhum destino adicionado.</p>}
+                      </div>
+                    )}
+
+                    
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Início: <span style={{color: 'red'}}>*</span></label>
+                        <input
+                          type="date"
+                          name="startDate"
+                          value={newTravel.startDate}
+                          onChange={handleChange}
+                            required
+                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Fim: <span style={{color: 'red'}}>*</span></label>
+                        <input
+                          type="date"
+                          name="endDate"
+                          value={newTravel.endDate}
+                          onChange={handleChange}
+                            required
+                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                          title="Selecione a data de fim da viagem"
+                        />
+                      </div>
+
+
+                      
+                    </div>
+
+
+
+
+
+                    <div className="form-row">
+                      <div className="form-group">
+                       
+                     <label style={{textAlign: 'center', width: '100%'}}>📅 Pagamento da Viagem:</label>
+                        <input
+                          type="date"
+                          name="BookingTripPaymentDate"
+                          value={newTravel.BookingTripPaymentDate}
+                          onChange={handleChange}
+                          required
+                          style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
+                        />
+                      </div>
+                      <div className="form-group">
+                          <div className="form-group">
+                        <label style={{textAlign: 'center', width: '100%'}}>⭐ Avaliação Geral da Viagem (1 a 5): <span style={{color: 'red'}}>*</span></label>
+                        <StarRating
+                          rating={parseInt(newTravel.stars) || 0}
+                          onRatingChange={(rating) => 
+                            setNewTravel(prev => ({ ...prev, stars: rating.toString() }))
+                          }
+                        />
+                      </div>
+                      </div>
+
+
+                      
+                    </div>
+
+<br></br>
+
+
+                     <div className="form-row">
+                      <div className="form-group">
+                        <label style={{textAlign: 'center', width: '100%'}}>🗂️ Categorias Selecionadas: <span style={{color: 'red'}}>*</span></label>
+                     <p>{newTravel.category.length > 0 ? newTravel.category.join(', ') : 'Nenhuma categoria selecionada'}</p> 
+                    <button type="button" onClick={() => setIsCategoryModalOpen(true)} title="Abrir seletor de categorias">
+                      📋 Selecionar Categorias
+                    </button>
+
+                    {isCategoryModalOpen && (
+                      <div className="modal-overlay">
+                        <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
+                          <h3>🗂️ Selecionar Categorias</h3>
+                          <div className="category-list">
+                            {categories.map((cat) => (
+                              <div 
+                                key={cat} 
+                                className={`category-item ${newTravel.category.includes(cat) ? 'selected' : ''}`}
+                                onClick={() => {
+                                  const event = {
+                                    target: {
+                                      name: 'category',
+                                      value: cat,
+                                      type: 'checkbox',
+                                      checked: !newTravel.category.includes(cat)
+                                    }
+                                  };
+                                  handleChange(event);
+                                }}
+                                style={{
+                                  padding: '12px 16px',
+                                  border: `2px solid ${newTravel.category.includes(cat) ? '#007bff' : '#e9ecef'}`,
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  backgroundColor: newTravel.category.includes(cat) ? '#f0f8ff' : 'white',
+                                  marginBottom: '8px'
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="category"
+                                  value={cat}
+                                  checked={newTravel.category.includes(cat)}
+                                  onChange={() => {}} // Controle pelo onClick do div
+                                  style={{ marginRight: '8px', pointerEvents: 'none' }}
+                                />
+                                <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{cat}</label>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="modal-actions">
+                            <button type="button-danger" onClick={() => setIsCategoryModalOpen(false)}>
+                              Fechar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                     
+                      </div>
+                      <div className="form-group">
+                          <div className="form-group">
+                      
+
+
+
+
+
+
+
+                    <label style={{textAlign: 'center', width: '100%'}}>🗣️ Línguas Utilizadas: <span style={{color: 'red'}}>*</span></label>
+                        <p>{newTravel.languages && newTravel.languages.length > 0 ? newTravel.languages.join(', ') : 'Nenhuma língua selecionada'}</p>
+                        <button type="button" onClick={() => setIsLanguageModalOpen(true)} title="Abrir seletor de idiomas">
+                          🗣️ Selecionar Idiomas
+                        </button>
+
+                        {isLanguageModalOpen && (
+                          <div className="modal-overlay">
+                            <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
+                              <h3>🗣️ Selecionar Idiomas</h3>
+                              <div className="category-list">
+                                {languages.map((lang) => (
+                                  <div 
+                                    key={lang} 
+                                    className={`category-item ${(newTravel.languages || []).includes(lang) ? 'selected' : ''}`}
+                                    onClick={() => {
+                                      const event = {
+                                        target: {
+                                          name: 'languages',
+                                          value: lang,
+                                          type: 'checkbox',
+                                          checked: !(newTravel.languages || []).includes(lang)
+                                        }
+                                      };
+                                      handleChange(event);
+                                    }}
+                                    style={{
+                                      padding: '12px 16px',
+                                      border: `2px solid ${(newTravel.languages || []).includes(lang) ? '#007bff' : '#e9ecef'}`,
+                                      borderRadius: '8px',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease',
+                                      backgroundColor: (newTravel.languages || []).includes(lang) ? '#f0f8ff' : 'white',
+                                      marginBottom: '8px'
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      name="languages"
+                                      value={lang}
+                                      checked={(newTravel.languages || []).includes(lang)}
+                                      onChange={() => {}} // Controle pelo onClick do div
+                                      style={{ marginRight: '8px', pointerEvents: 'none' }}
+                                    />
+                                    <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{lang}</label>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="modal-actions">
+                                <button type="button-danger" onClick={() => setIsLanguageModalOpen(false)}>
+                                  Fechar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                      </div>
+                      </div>
+
+
+                      
+                    </div>
+
+
+
+
+
+                   
+
+              
+
+                    {/* Seção de Descrições da Viagem */}
+                    <div className="description-section">
+                      <h4>Descrições da Viagem</h4>
+                      
+                      <div className="description-fields">
+                        <div className="description-field short">
+                          <label style={{textAlign: 'center', width: '100%'}}>
+                            📝 Descrição Curta: <span style={{color: 'red'}}>*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="description"
+                            value={newTravel.description}
+                            onChange={handleChange}
+                            placeholder="Ex.: Uma aventura incrível pelas ruas históricas de Lisboa, descobrindo sabores e tradições únicas..."
+                            maxLength="350"
+                            title="Descrição breve que aparecerá como prévia da viagem (máximo 350 caracteres)"
+                          />
+                          <div className={`char-counter ${newTravel.description.length > 280 ? 'warning' : ''} ${newTravel.description.length > 330 ? 'danger' : ''}`}>
+                            {newTravel.description.length}/350 caracteres
+                          </div>
+                        </div>
+
+                        <div className="description-field long">
+                          <label style={{textAlign: 'center', width: '100%'}}>
+                            📖 Descrição Longa: <span style={{color: 'red'}}>*</span>
+                          </label>
+                          <textarea
+                            name="longDescription"
+                            value={newTravel.longDescription}
+                            onChange={handleChange}
+                            placeholder="Conte a história completa da sua viagem! Descreva os lugares que visitou, as experiências que viveu, as pessoas que conheceu, os sabores que experimentou, os momentos mais marcantes... Seja detalhado e inspire outros viajantes com a sua experiência única!"
+                            rows="8"
+                            maxLength="6000"
+                            title="Descrição completa e detalhada da sua experiência de viagem (máximo 6000 caracteres)"
+                            style={{ resize: 'vertical', minHeight: '150px', overflow: 'hidden' }}
+                          />
+                          <div className={`char-counter ${newTravel.longDescription.length > 4500 ? 'warning' : ''} ${newTravel.longDescription.length > 5400 ? 'danger' : ''}`}>
+                            {newTravel.longDescription.length}/6000 caracteres
+                          </div>
+                        </div>
+                      </div>
+
+                    
+                    </div>
+
+                    <div className="description-section">
+                      <label style={{textAlign: 'center', width: '100%'}}>🌡️ Temperatura/Clima:</label>
+                      <input
+                        type="text"
+                        name="climate"
+                        value={newTravel.climate}
+                        onChange={handleChange}
+                        placeholder="Ex.: Média do Clima foi de 30º, apanhamos uma excelente temperatura!"
+                        maxLength="350"
+                        title="Informações sobre o clima e temperatura durante a viagem (máximo 350 caracteres)"
+                        style={{width: '100%'}}
+                      />
+                      <div className={`char-counter ${newTravel.climate.length > 280 ? 'warning' : ''} ${newTravel.climate.length > 330 ? 'danger' : ''}`}>
+                        {newTravel.climate.length}/350 caracteres
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="RightPosition">
-                    <label style={{textAlign: 'center', width: '100%'}}>🖼️ Imagem de Destaque: <span className="tooltip-icon" title="Selecione uma foto principal que represente melhor a sua viagem">?</span></label>
+                    <label style={{textAlign: 'center', width: '100%'}}>🖼️ Imagem de Destaque: <span style={{color: 'red'}}>*</span></label>
                     <div className="image-upload-container">
                       <input
                         type="file"
@@ -2103,7 +3243,7 @@ const MyTravels = () => {
                         className="image-input"
                         style={{ display: 'none' }}
                       />
-                      <label htmlFor="highlightImageInput" className="upload-button" title="Selecione uma imagem que represente a sua viagem" style={{textAlign: 'center', width: '100% !important'}}>
+                      <label htmlFor="highlightImageInput" className="upload-button" style={{textAlign: 'center', width: '100% !important'}}>
                         <span role="img" aria-label="câmera">📸</span> Adicionar Foto Principal
                       </label>
                       {imagePreview ? (
@@ -2132,7 +3272,7 @@ const MyTravels = () => {
                     </div>
 
                     <div style={{marginTop: '20px'}}>
-                      <label style={{textAlign: 'center', width: '100%'}}>🎥 Vídeos da Viagem: <span className="tooltip-icon" title="Selecione vídeos que representem melhor a sua viagem">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🎥 Vídeos da Viagem:</label>
                        <label htmlFor="travelVideosInput" className="upload-button" title="Selecione vídeos que representem a sua viagem" style={{textAlign: 'center', width: '100% !important'}}>
                           <span role="img" aria-label="video">🎬</span> Adicionar Vídeos
                         </label>
@@ -2262,7 +3402,7 @@ const MyTravels = () => {
                     </div>
 <br></br><br></br>
                     <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>📷 Fotografias das Informações Gerais: <span className="tooltip-icon" title="Adicione fotos gerais da viagem, paisagens, momentos especiais">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>📷 Fotografias das Informações Gerais:</label>
                       <div className="general-info-image-upload-container">
                         <input
                           type="file"
@@ -2307,388 +3447,7 @@ const MyTravels = () => {
                     </div>
                   </div>
 
-                  <div className="LeftPosition">
-                    <label style={{textAlign: 'center', width: '100%'}}>📝 Nome da Viagem: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Digite um nome descritivo e único para identificar a sua viagem">?</span></label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newTravel.name}
-                      onChange={handleChange}
-                      required
-                      placeholder="Ex.: Viagem à cidade de Coimbra"
-                      title="Digite um nome descritivo para a sua viagem"
-                    />
-
-                    <br /><br />
-
-                    {selectedTravelType.main !== 'multi' && (
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label style={{textAlign: 'center', width: '100%'}}>🌍 País: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione o país onde realizou a viagem">?</span></label>
-                          <select 
-                            name="country" 
-                            value={newTravel.country} 
-                            onChange={handleChange} 
-                            required
-                            title="Selecione o país da sua viagem"
-                          >
-                            <option value="">Selecione um país</option>
-                            <option value="Portugal">Portugal</option>
-                            <option value="Brasil">Brasil</option>
-                            <option value="United States">Estados Unidos</option>
-                            <option value="Espanha">Espanha</option>
-                            <option value="França">França</option>
-                            <option value="Itália">Itália</option>
-                          </select>
-                        </div>
-                        <div className="form-group">
-                          <label style={{textAlign: 'center', width: '100%'}}>🏙️ Cidade: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione a cidade principal da viagem">?</span></label>
-                          <select
-                            name="city"
-                            value={newTravel.city}
-                            onChange={handleChange}
-                            required
-                            disabled={!newTravel.country}
-                            title={newTravel.country ? "Selecione a cidade da sua viagem" : "Primeiro selecione um país"}
-                          >
-                            <option value="">
-                              {newTravel.country ? "Selecione uma cidade" : "Primeiro selecione um país"}
-                            </option>
-                            {getCitiesForCountry(newTravel.country).map(city => (
-                              <option key={city} value={city}>{city}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                    {selectedTravelType.main === 'multi' && (
-                      <div className="multi-destination-section">
-                        
-                        <label style={{textAlign: 'center', width: '100%'}}>🌐 Destinos: <span className="tooltip-icon" title="Adicione todos os destinos que visitou nesta viagem">?</span></label>
-                        <div className="destination-controls">
-                          <select 
-                            name="multiCountry" 
-                            value={newDestination.country} 
-                            onChange={(e)=>setNewDestination(prev=>({...prev,country:e.target.value, city:''}))}
-                            title="Selecione o país do destino"
-                          >
-                            <option value="">País</option>
-                            <option value="Portugal">Portugal</option>
-                            <option value="Brasil">Brasil</option>
-                            <option value="United States">United States</option>
-                            <option value="Espanha">Espanha</option>
-                            <option value="França">França</option>
-                            <option value="Itália">Itália</option>
-                          </select>
-                          <select 
-                            name="multiCity" 
-                            value={newDestination.city} 
-                            onChange={(e)=>setNewDestination(prev=>({...prev,city:e.target.value}))}
-                            disabled={!newDestination.country}
-                            title={newDestination.country ? "Selecione a cidade do destino" : "Primeiro selecione um país"}
-                          >
-                            <option value="">
-                              {newDestination.country ? "Selecione uma cidade" : "Primeiro selecione um país"}
-                            </option>
-                            {newDestination.country && getCitiesForCountry(newDestination.country).map(city => (
-                              <option key={city} value={city}>
-                                {city}
-                              </option>
-                            ))}
-                          </select>
-                          <button onClick={addDestination} type="button" className="button-success" title="Adicionar destino à lista">
-                            ➕ Adicionar
-                          </button>
-                        </div>
-                        {multiDestinations.length>0 ? (
-                          <ul className="destinations-list">
-                            {multiDestinations.map(d=> (
-                              <li key={d.id} className="destination-item">
-                                <span>📍 {d.city}, {d.country}</span>
-                                <button 
-                                  type="button" 
-                                  onClick={()=>removeDestination(d.id)} 
-                                  className="remove-button"
-                                  title="Remover este destino"
-                                >
-                                  ✕
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        ): <p className="no-destinations">Nenhum destino adicionado.</p>}
-                      </div>
-                    )}
-
-                    
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Início: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione quando começou a viagem">?</span></label>
-                        <input
-                          type="date"
-                          name="startDate"
-                          value={newTravel.startDate}
-                          onChange={handleChange}
-                          required
-                          title="Selecione a data de início da viagem"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Fim: <span style={{color: 'red'}}>*</span> <span className="tooltip-icon" title="Selecione quando terminou a viagem">?</span></label>
-                        <input
-                          type="date"
-                          name="endDate"
-                          value={newTravel.endDate}
-                          onChange={handleChange}
-                          required
-                          title="Selecione a data de fim da viagem"
-                        />
-                      </div>
-
-
-                      
-                    </div>
-
-
-
-
-
-                    <div className="form-row">
-                      <div className="form-group">
-                       
-                     <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Marcação / Pagamento da Viagem: <span className="tooltip-icon" title="Data em que fez a reserva ou pagamento da viagem">?</span></label>
-                        <input
-                          type="date"
-                          name="BookingTripPaymentDate"
-                          value={newTravel.BookingTripPaymentDate}
-                          onChange={handleChange}
-                          required
-                          title="Data da reserva ou pagamento"
-                        />
-                      </div>
-                      <div className="form-group">
-                          <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>⭐ Avaliação Geral da Viagem (1 a 5): <span className="tooltip-icon" title="Avalie a sua experiência geral da viagem de 1 a 5 estrelas">?</span></label>
-                        <StarRating
-                          rating={parseInt(newTravel.stars) || 0}
-                          onRatingChange={(rating) => 
-                            setNewTravel(prev => ({ ...prev, stars: rating.toString() }))
-                          }
-                        />
-                      </div>
-                      </div>
-
-
-                      
-                    </div>
-
-<br></br>
-
-
-                     <div className="form-row">
-                      <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>🗂️ Categorias Selecionadas: <span className="tooltip-icon" title="Categorize a sua viagem para facilitar a organização e busca">?</span></label>
-                     <p>{newTravel.category.length > 0 ? newTravel.category.join(', ') : 'Nenhuma categoria selecionada'}</p> 
-                    <button type="button" onClick={() => setIsCategoryModalOpen(true)} title="Abrir seletor de categorias">
-                      📋 Selecionar Categorias
-                    </button>
-
-                    {isCategoryModalOpen && (
-                      <div className="modal-overlay">
-                        <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
-                          <h3>🗂️ Selecionar Categorias</h3>
-                          <div className="category-list">
-                            {categories.map((cat) => (
-                              <div 
-                                key={cat} 
-                                className={`category-item ${newTravel.category.includes(cat) ? 'selected' : ''}`}
-                                onClick={() => {
-                                  const event = {
-                                    target: {
-                                      name: 'category',
-                                      value: cat,
-                                      type: 'checkbox',
-                                      checked: !newTravel.category.includes(cat)
-                                    }
-                                  };
-                                  handleChange(event);
-                                }}
-                                style={{
-                                  padding: '12px 16px',
-                                  border: `2px solid ${newTravel.category.includes(cat) ? '#007bff' : '#e9ecef'}`,
-                                  borderRadius: '8px',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  backgroundColor: newTravel.category.includes(cat) ? '#f0f8ff' : 'white',
-                                  marginBottom: '8px'
-                                }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  name="category"
-                                  value={cat}
-                                  checked={newTravel.category.includes(cat)}
-                                  onChange={() => {}} // Controle pelo onClick do div
-                                  style={{ marginRight: '8px', pointerEvents: 'none' }}
-                                />
-                                <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{cat}</label>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="modal-actions">
-                            <button type="button-danger" onClick={() => setIsCategoryModalOpen(false)}>
-                              Fechar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                     
-                      </div>
-                      <div className="form-group">
-                          <div className="form-group">
-                      
-
-
-
-
-
-
-
-                    <label style={{textAlign: 'center', width: '100%'}}>🗣️ Línguas Utilizadas: <span className="tooltip-icon" title="Que idiomas falou ou ouviu durante a viagem">?</span></label>
-                        <p>{newTravel.languages && newTravel.languages.length > 0 ? newTravel.languages.join(', ') : 'Nenhuma língua selecionada'}</p>
-                        <button type="button" onClick={() => setIsLanguageModalOpen(true)} title="Abrir seletor de idiomas">
-                          🗣️ Selecionar Idiomas
-                        </button>
-
-                        {isLanguageModalOpen && (
-                          <div className="modal-overlay">
-                            <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
-                              <h3>🗣️ Selecionar Idiomas</h3>
-                              <div className="category-list">
-                                {languages.map((lang) => (
-                                  <div 
-                                    key={lang} 
-                                    className={`category-item ${(newTravel.languages || []).includes(lang) ? 'selected' : ''}`}
-                                    onClick={() => {
-                                      const event = {
-                                        target: {
-                                          name: 'languages',
-                                          value: lang,
-                                          type: 'checkbox',
-                                          checked: !(newTravel.languages || []).includes(lang)
-                                        }
-                                      };
-                                      handleChange(event);
-                                    }}
-                                    style={{
-                                      padding: '12px 16px',
-                                      border: `2px solid ${(newTravel.languages || []).includes(lang) ? '#007bff' : '#e9ecef'}`,
-                                      borderRadius: '8px',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s ease',
-                                      backgroundColor: (newTravel.languages || []).includes(lang) ? '#f0f8ff' : 'white',
-                                      marginBottom: '8px'
-                                    }}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      name="languages"
-                                      value={lang}
-                                      checked={(newTravel.languages || []).includes(lang)}
-                                      onChange={() => {}} // Controle pelo onClick do div
-                                      style={{ marginRight: '8px', pointerEvents: 'none' }}
-                                    />
-                                    <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{lang}</label>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="modal-actions">
-                                <button type="button-danger" onClick={() => setIsLanguageModalOpen(false)}>
-                                  Fechar
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                      </div>
-                      </div>
-
-
-                      
-                    </div>
-
-
-
-
-
-                   
-
-              
-
-                    {/* Seção de Descrições da Viagem */}
-                    <div className="description-section">
-                      <h4>Descrições da Viagem</h4>
-                      
-                      <div className="description-fields">
-                        <div className="description-field short">
-                          <label style={{textAlign: 'center', width: '100%'}}>
-                            Descrição Curta: 
-                            <span className="tooltip-icon" title="Escreva um resumo breve e atrativo da sua viagem (máximo 150 caracteres). Esta descrição aparecerá como prévia nos cartões de viagem.">?</span>
-                          </label>
-                          <input
-                            type="text"
-                            name="description"
-                            value={newTravel.description}
-                            onChange={handleChange}
-                            placeholder="Ex.: Uma aventura incrível pelas ruas históricas de Lisboa, descobrindo sabores e tradições únicas..."
-                            maxLength="150"
-                            title="Descrição breve que aparecerá como prévia da viagem"
-                          />
-                          <div className={`char-counter ${newTravel.description.length > 120 ? 'warning' : ''} ${newTravel.description.length > 140 ? 'danger' : ''}`}>
-                            {newTravel.description.length}/150 caracteres
-                          </div>
-                        </div>
-
-                        <div className="description-field long">
-                          <label style={{textAlign: 'center', width: '100%'}}>
-                            Descrição Detalhada: 
-                            <span className="tooltip-icon" title="Conte a história completa da sua viagem! Inclua detalhes sobre os lugares visitados, experiências marcantes, pessoas que conheceu, desafios enfrentados e momentos especiais. Esta descrição ajudará outros viajantes a se inspirarem.">?</span>
-                          </label>
-                          <textarea
-                            name="longDescription"
-                            value={newTravel.longDescription}
-                            onChange={handleChange}
-                            placeholder="Conte a história completa da sua viagem! Descreva os lugares que visitou, as experiências que viveu, as pessoas que conheceu, os sabores que experimentou, os momentos mais marcantes... Seja detalhado e inspire outros viajantes com a sua experiência única!"
-                            rows="6"
-                            maxLength="2000"
-                            title="Descrição completa e detalhada da sua experiência de viagem"
-                          />
-                          <div className={`char-counter ${newTravel.longDescription.length > 1500 ? 'warning' : ''} ${newTravel.longDescription.length > 1800 ? 'danger' : ''}`}>
-                            {newTravel.longDescription.length}/2000 caracteres
-                          </div>
-                        </div>
-                      </div>
-
-                    
-                    </div>
-
-
-                          <label style={{textAlign: 'center', width: '100%'}}>🌡️ Temperatura (°C): <span className="tooltip-icon" title="Descreva as condições climáticas durante a viagem, incluindo temperaturas médias e observações sobre o tempo">?</span></label>
-                    <input
-                      type="text"
-                      name="climate"
-                      value={newTravel.climate}
-                      onChange={handleChange}
-                      placeholder="Ex.: Média do Clima foi de 30º, apanhamos uma excelente temperatura!"
-                      title="Informações sobre o clima e temperatura durante a viagem"
-                    />
-                    
-                    <br></br><br></br><br></br>
-                  </div>
+                  
 
           
                 </>
@@ -2696,70 +3455,100 @@ const MyTravels = () => {
 
               {activeTab === 'prices' && (
                 <div className="prices-section">
-                  <h3>Preços da Viagem </h3>
+                  <h3>💰 Preços da Viagem</h3>
                   <div className="form-row">
                     <div className="form-group">
-                      <label style={{textAlign: 'center', width: '100%'}}>🏨 Estadia (€): <span className="tooltip-icon" title="Custo total do alojamento (hotéis, hostels, Airbnb, etc.)">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🏨 Estadia (€):</label>
                       <input
                         type="number"
                         name="priceDetails.hotel"
                         value={newTravel.priceDetails.hotel}
                         onChange={handleChange}
                         placeholder="Ex.: 150"
-                        title="Valor gasto em alojamento"
+                        min="0"
+                        step="0.01"
+                        max="999999.99"
+                        title="Valor gasto em estadia (máximo 999999.99€)"
                       />
+                      <small style={{fontSize: '12px', color: '#6c757d'}}>Máximo: 999999.99€</small>
                     </div>
                     <div className="form-group">
-                      <label style={{textAlign: 'center', width: '100%'}}>🍽️ Alimentação (€): <span className="tooltip-icon" title="Custo total com refeições, lanches e bebidas">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🍽️ Alimentação (€):</label>
                       <input
                         type="number"
                         name="priceDetails.food"
                         value={newTravel.priceDetails.food}
                         onChange={handleChange}
                         placeholder="Ex.: 80"
-                        title="Valor gasto em alimentação"
+                        min="0"
+                        step="0.01"
+                        max="999999.99"
+                        title="Valor gasto em alimentação (máximo 999999.99€)"
                       />
+                      <small style={{fontSize: '12px', color: '#6c757d'}}>Máximo: 999999.99€</small>
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label>� Transportes (€): <span className="tooltip-icon" title="Custo com transportes (voos, comboios, autocarros, táxis, combustível)">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🚌 Transportes (€):</label>
                       <input
                         type="number"
                         name="priceDetails.transport"
                         value={newTravel.priceDetails.transport}
                         onChange={handleChange}
                         placeholder="Ex.: 200"
-                        title="Valor gasto em transportes"
+                        min="0"
+                        step="0.01"
+                        max="999999.99"
+                        title="Valor gasto em transportes (máximo 999999.99€)"
                       />
+                      <small style={{fontSize: '12px', color: '#6c757d'}}>Máximo: 999999.99€</small>
                     </div>
                     <div className="form-group">
-                      <label>🎁 Extras (€): <span className="tooltip-icon" title="Outros gastos (souvenirs, atividades, seguros, vistos, etc.)">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🎁 Extras (€):</label>
                       <input
                         type="number"
                         name="priceDetails.extras"
                         value={newTravel.priceDetails.extras}
                         onChange={handleChange}
                         placeholder="Ex.: 50"
-                        title="Valor gasto em extras"
+                        min="0"
+                        step="0.01"
+                        max="999999.99"
+                        title="Valor gasto em extras (máximo 999999.99€)"
                       />
+                      <small style={{fontSize: '12px', color: '#6c757d'}}>Máximo: 999999.99€</small>
                     </div>
                   </div>
                   
                   <div className="price-total-section">
                     <div className="form-group">
-                      <label style={{textAlign: 'center', width: '100%'}}>💰 Preço Total da Viagem (€): <span className="tooltip-icon" title="Soma de todos os custos da viagem ou valor total gasto">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>💰 Preço Total da Viagem (€):</label>
                       <input
                         type="number"
                         name="price"
                         value={calculateTotalPrice()}
                         readOnly
                         className="calculated-total"
-                        style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold' }}
+                        style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold', fontSize: '18px' }}
                       />
-                     
+                      <small style={{fontSize: '12px', color: '#6c757d', textAlign: 'center', display: 'block'}}>
+                        Calculado automaticamente (€{calculateTotalPrice().toFixed(2)})
+                      </small>
                     </div>
+                  </div>
+
+                  <div style={{
+                    marginTop: '20px',
+                    padding: '12px',
+                    backgroundColor: '#f0f7ff',
+                    border: '1px solid #d4e4ff',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#0056b3'
+                  }}>
+                    <strong>💡 Dica:</strong> Preencha todos os valores para ter um cálculo automático preciso do total da viagem.
                   </div>
                 </div>
               )}
@@ -2868,17 +3657,22 @@ const MyTravels = () => {
 
                           <div className="form-row">
                             <div className="form-group">
-                              <label style={{textAlign: 'center', width: '100%'}}>🏨 Nome do Alojamento: <span className="tooltip-icon" title="Digite o nome do hotel, pousada, Airbnb ou local onde se hospedou">?</span></label>
+                              <label style={{textAlign: 'center', width: '100%'}}>🏨 Nome do Alojamento:</label>
                               <input
                                 type="text"
                                 name={`accommodations${index}.name`}
                                 value={accommodation.name}
                                 onChange={handleChange}
                                 placeholder="Ex.: Hotel Pestana"
+                                maxLength="150"
+                                title="Nome do alojamento (máximo 150 caracteres)"
                               />
+                              <small style={{fontSize: '12px', color: accommodation.name.length > 120 ? '#ff9800' : '#6c757d'}}>
+                                {accommodation.name.length}/150 caracteres
+                              </small>
                             </div>
                             <div className="form-group">
-                              <label style={{textAlign: 'center', width: '100%'}}>🌙 Número de Noites: <span className="tooltip-icon" title="Quantas noites ficou hospedado neste local">?</span></label>
+                              <label style={{textAlign: 'center', width: '100%'}}>🌙 Número de Noites:</label>
                               <input
                                 type="number"
                                 name={`accommodations${index}.nights`}
@@ -2886,13 +3680,16 @@ const MyTravels = () => {
                                 onChange={handleChange}
                                 placeholder="Ex.: 3"
                                 min="1"
+                                max="365"
+                                title="Número de noites (máximo 365)"
                               />
+                              <small style={{fontSize: '12px', color: '#6c757d'}}>De 1 a 365 noites</small>
                             </div>
                           </div>
 
                           <div className="form-row">
                             <div className="form-group">
-                              <label style={{textAlign: 'center', width: '100%'}}>🏠 Tipo de Alojamento: <span className="tooltip-icon" title="Selecione o tipo de acomodação onde se hospedou">?</span></label>
+                              <label style={{textAlign: 'center', width: '100%'}}>🏠 Tipo de Alojamento:</label>
                               <select
                                 name={`accommodations${index}.type`}
                                 value={accommodation.type}
@@ -2907,7 +3704,7 @@ const MyTravels = () => {
                               </select>
                             </div>
                             <div className="form-group">
-                              <label style={{textAlign: 'center', width: '100%'}}>🍽️ Regime: <span className="tooltip-icon" title="Tipo de refeições incluídas na estadia">?</span></label>
+                              <label style={{textAlign: 'center', width: '100%'}}>🍽️ Regime:</label>
                               <select
                                 name={`accommodations${index}.regime`}
                                 value={accommodation.regime}
@@ -2922,16 +3719,22 @@ const MyTravels = () => {
                             </div>
                           </div>
 
-                          <label style={{textAlign: 'center', width: '100%'}}>📝 A sua opinião da Estadia: <span className="tooltip-icon" title="Descreva a sua experiência no alojamento: conforto, localização, serviços, pontos positivos e negativos">?</span></label>
+                          <label style={{textAlign: 'center', width: '100%'}}>📝 A sua opinião da Estadia:</label>
                           <textarea
                             name={`accommodations${index}.description`}
                             value={accommodation.description}
                             onChange={handleChange}
-                            rows="3"
+                            rows="4"
+                            maxLength="500"
                             placeholder="Ex.: Hotel 5 estrelas com vista para o mar, staff muito simpático, pequeno-almoço excelente..."
+                            style={{ resize: 'vertical', minHeight: '100px', overflow: 'hidden' }}
+                            title="A sua opinião sobre a estadia (máximo 500 caracteres)"
                           />
+                          <small style={{fontSize: '12px', color: accommodation.description && accommodation.description.length > 400 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                            {accommodation.description ? accommodation.description.length : 0}/500 caracteres
+                          </small>
 
-                          <label style={{textAlign: 'center', width: '100%'}}>⭐ Avaliação da Estadia: <span className="tooltip-icon" title="Avalie a sua experiência geral no alojamento de 1 a 5 estrelas">?</span></label>
+                          <label style={{textAlign: 'center', width: '100%'}}>⭐ Avaliação da Estadia:</label>
                           <StarRating
                             rating={accommodation.rating || 0}
                             onRatingChange={(rating) => {
@@ -2969,7 +3772,7 @@ const MyTravels = () => {
                   </div>
 
                   <div className="RightPosition">
-                    <label>📷 Fotografias da Estadia: <span className="tooltip-icon" title="Adicione fotos do alojamento, do quarto, das instalações e vistas">?</span></label>
+                    <label>📷 Fotografias da Estadia:</label>
                     <div className="image-upload-container">
                       <input
                         type="file"
@@ -3021,7 +3824,7 @@ const MyTravels = () => {
               {activeTab === 'food' && (
                 <div className="tab-content">
                   <div className="RightPosition">
-                    <h3>🍽️ Recomendações Alimentares <span className="tooltip-icon" title="Registe pratos, restaurantes e experiências gastronómicas que recomenda">?</span></h3>
+                    <h3>🍽️ Recomendações Alimentares</h3>
                     {Array.isArray(newTravel.foodRecommendations) && newTravel.foodRecommendations.length > 0 ? (
                       <ul className="recommendations-list">
                         {newTravel.foodRecommendations.map((recommendation, index) => (
@@ -3062,31 +3865,42 @@ const MyTravels = () => {
 
                   <div className="LeftPosition">
                     <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>🍽️ Nome da nova Recomendação: <span className="tooltip-icon" title="Digite o nome do prato, restaurante, lanche ou bebida que recomenda">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🍽️ Nome da nova Recomendação:</label>
                       <input
                         type="text"
                         name="name"
                         value={newFoodRecommendation.name}
                         onChange={handleFoodChange}
                         placeholder="Ex.: Bacalhau à Brás, Restaurante O Fado, Pastéis de Nata..."
+                        maxLength="150"
                         key={`name-input-${editingFoodIndex}`}
+                        title="Nome da recomendação alimentar (máximo 150 caracteres)"
                       />
+                      <small style={{fontSize: '12px', color: newFoodRecommendation.name.length > 120 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newFoodRecommendation.name.length}/150 caracteres
+                      </small>
 <br></br><br></br>
-                      <label style={{textAlign: 'center', width: '100%'}}>📝 Descrição: <span className="tooltip-icon" title="Descreva o sabor, ingredientes, onde encontrar, preço aproximado e por que recomenda">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>📝 Descrição:</label>
                       <textarea
                         name="description"
                         value={newFoodRecommendation.description}
                         onChange={handleFoodChange}
-                        rows="3"
+                        rows="4"
+                        maxLength="500"
                         placeholder="Ex.: Prato tradicional português com bacalhau desfiado, batatas, ovos e cebola. Encontrado no Restaurante Tradicional, custou cerca de 15€. Sabor autêntico e porção generosa..."
                         key={`desc-input-${editingFoodIndex}`}
+                        style={{ resize: 'vertical', minHeight: '100px', overflow: 'hidden' }}
+                        title="Descrição da recomendação alimentar (máximo 500 caracteres)"
                       />
+                      <small style={{fontSize: '12px', color: newFoodRecommendation.description.length > 400 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newFoodRecommendation.description.length}/500 caracteres
+                      </small>
 
                       <div className="action-buttons">
                         <button
                           onClick={(e) => handleAddOrEditFoodRecommendation(e)}
                           className="button-success"
-                          disabled={!newFoodRecommendation.name.trim()}
+                          disabled={!newFoodRecommendation.name.trim() || !newFoodRecommendation.description.trim()}
                         >
                           {editingFoodIndex !== null ? '💾 Guardar Alterações' : '➕ Adicionar'}
                         </button>
@@ -3102,7 +3916,7 @@ const MyTravels = () => {
                     </div>
 
                     <div className="image-upload-section">
-                      <label>📷 Fotografias das Recomendações Alimentares: <span className="tooltip-icon" title="Adicione fotos dos pratos, restaurantes, mercados ou experiências gastronômicas">?</span></label>
+                      <label>📷 Fotografias das Recomendações Alimentares:</label>
                       <div className="image-upload-container">
                         <input
                           type="file"
@@ -3154,7 +3968,7 @@ const MyTravels = () => {
                   <div className="RightPosition">
                   
  <div className="image-upload-section">
-                      <label>📷 Fotografias dos Métodos de Transporte: <span className="tooltip-icon" title="Adicione fotos dos transportes utilizados: aviões, comboios, autocarros, táxis, carros alugados, etc.">?</span></label>
+                      <label>📷 Fotografias dos Métodos de Transporte:</label>
                       <div className="general-info-image-upload-container">
                         <input
                           type="file"
@@ -3201,7 +4015,7 @@ const MyTravels = () => {
 
                   <div className="LeftPosition">
                     <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>🚗 Métodos de Transporte Selecionados: <span className="tooltip-icon" title="Selecione todos os tipos de transporte que utilizou durante a viagem">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>🚗 Métodos de Transporte Selecionados:</label>
                       <br></br>
                       <p>{newTravel.localTransport.length > 0 ? newTravel.localTransport.join(', ') : 'Nenhum método selecionado'}</p>
                       <button type="button" onClick={() => setIsTransportModalOpen(true)}>
@@ -3338,74 +4152,86 @@ const MyTravels = () => {
                   )}
 
                   <div className="RightPosition">
-                    <h3>📍 Pontos de Referência <span className="tooltip-icon" title="Lista de todos os pontos de interesse e locais visitados">?</span></h3>
-                    {Array.isArray(getCurrentPointsOfInterest()) && getCurrentPointsOfInterest().length > 0 ? (
-                      <ul className="points-list">
-                        {getCurrentPointsOfInterest().map((point, index) => (
-                          <li key={index} className="point-item">
-                            <div className="point-info">
-                              <strong>📌 {point.name || 'Sem nome'}</strong>
-                              <p style={{ margin: '5px 0', color: '#6c757d' }}>
-                                📝 {point.description || 'Sem descrição'}
-                              </p>
-                            </div>
-                            <div className="point-actions">
-                              <button
-                                onClick={(e) => handleEditPointOfInterest(e, index)}
-                                className="edit-button"
-                                title="Editar este ponto de interesse"
-                              >
-                                ✏️ Editar
-                              </button>
-                              <button
-                                onClick={(e) => handleDeletePointOfInterest(e, index)}
-                                className="delete-button"
-                                title="Remover este ponto de interesse"
-                              >
-                                🗑️ Remover
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="empty-state">
-                        <div className="empty-icon">📍</div>
-                        <p>Nenhum ponto de referência adicionado ainda</p>
-                        <small>Adicione locais de interesse que visitou durante a viagem</small>
-                      </div>
-                    )}
+                    <h3>📍 Pontos de Referência</h3>
+                    {(() => {
+                      const currentPoints = getCurrentPointsOfInterest();
+                      return Array.isArray(currentPoints) && currentPoints.length > 0 ? (
+                        <ul className="points-list">
+                          {currentPoints.map((point, index) => (
+                            <li key={index} className="point-item">
+                              <div className="point-info">
+                                <strong>📌 {point.name || 'Sem nome'}</strong>
+                                <p style={{ margin: '5px 0', color: '#6c757d' }}>
+                                  📝 {point.description || 'Sem descrição'}
+                                </p>
+                              </div>
+                              <div className="point-actions">
+                                <button
+                                  onClick={(e) => handleEditPointOfInterest(e, index)}
+                                  className="edit-button"
+                                  title="Editar este ponto de interesse"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={(e) => handleDeletePointOfInterest(e, index)}
+                                  className="delete-button"
+                                  title="Remover este ponto de interesse"
+                                >
+                                  🗑️ Remover
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="empty-state">
+                          <div className="empty-icon">📍</div>
+                          <p>Nenhum ponto de referência adicionado ainda</p>
+                          <small>Adicione locais de interesse que visitou durante a viagem</small>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="LeftPosition">
                     <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>📌 Nome do Ponto de Referência: <span className="tooltip-icon" title="Digite o nome do local ou ponto de interesse">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>📌 Nome do Ponto de Referência:</label>
                       <input
                         type="text"
                         name="name"
                         value={newPointOfInterest.name}
                         onChange={handlePointChange}
                         placeholder="Ex.: Torre de Belém"
+                        maxLength="150"
                         key={`name-input-point-${editingPointIndex}`}
-                        title="Digite o nome do ponto de interesse"
+                        title="Digite o nome do ponto de interesse (máximo 150 caracteres)"
                       />
+                      <small style={{fontSize: '12px', color: newPointOfInterest.name.length > 120 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newPointOfInterest.name.length}/150 caracteres
+                      </small>
 <br></br><br></br>
-                      <label style={{textAlign: 'center', width: '100%'}}>📝 Descrição: <span className="tooltip-icon" title="Descreva o que visitou e a sua experiência no local">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>📝 Descrição:</label>
                       <textarea
                         name="description"
                         value={newPointOfInterest.description}
                         onChange={handlePointChange}
-                        rows="3"
-                        placeholder="Ex.: Monumento histórico do século XVI, símbolo de Lisboa..."
-                        title="Descreva o ponto de interesse em detalhe"
+                        rows="8"
+                        maxLength="1000"
+                        placeholder="Ex.: Monumento histórico do século XVI, símbolo de Lisboa. Construído por Manuel I, oferece uma vista fantástica do Tejo. Aberto de segunda a domingo..."
+                        title="Descreva o ponto de interesse em detalhe (máximo 1000 caracteres)"
                         key={`desc-input-point-${editingPointIndex}`}
+                        style={{ resize: 'vertical', minHeight: '200px', overflow: 'hidden', wordWrap: 'break-word' }}
                       />
+                      <small style={{fontSize: '12px', color: newPointOfInterest.description.length > 800 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newPointOfInterest.description.length}/1000 caracteres
+                      </small>
 
                       <div className="action-buttons">
                         <button
                           onClick={(e) => handleAddOrEditPointOfInterest(e)}
                           className="button-success"
-                          disabled={!newPointOfInterest.name.trim()}
+                          disabled={!newPointOfInterest.name.trim() || !newPointOfInterest.description.trim()}
                           title={editingPointIndex !== null ? "Guardar as alterações do ponto de interesse" : "Adicionar novo ponto de interesse"}
                         >
                           {editingPointIndex !== null ? '💾 Guardar Alterações' : '➕ Adicionar'}
@@ -3423,7 +4249,7 @@ const MyTravels = () => {
                     </div>
 
                     <div className="image-upload-section">
-                      <label>📷 Fotografias dos Pontos de Referência: <span className="tooltip-icon" title="Adicione fotos dos locais de interesse visitados">?</span></label>
+                      <label>📷 Fotografias dos Pontos de Referência:</label>
                       <div className="general-info-image-upload-container">
                         <input
                           type="file"
@@ -3472,7 +4298,7 @@ const MyTravels = () => {
               {activeTab === 'itinerary' && (
                 <div className="tab-content">
                   <div className="RightPosition">
-                    <h3>🗓️ Itinerário da Viagem <span className="tooltip-icon" title="Organize as atividades de cada dia da sua viagem">?</span></h3>
+                    <h3>🗓️ Itinerário da Viagem</h3>
                     <p><strong>Duração Total:</strong> {calculateTripDays()} dias</p>
                     {Array.isArray(newTravel.itinerary) && newTravel.itinerary.length > 0 ? (
                       <ul className="itinerary-list">
@@ -3516,7 +4342,7 @@ const MyTravels = () => {
 
                   <div className="LeftPosition">
                     <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>📅 Dia: <span className="tooltip-icon" title="Selecione qual dia da viagem (1 até duração total)">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>📅 Dia:</label>
                       <input
                         type="number"
                         name="day"
@@ -3529,45 +4355,28 @@ const MyTravels = () => {
                         title="Escolha o dia da viagem para adicionar atividades"
                       />
                       {itineraryError && (
-                        <p className="error-message">{itineraryError}</p>
+                        <p className="error-message" style={{color: '#d32f2f', fontSize: '12px', marginTop: '5px'}}>{itineraryError}</p>
                       )}
 <br></br><br></br>
-                      <label style={{textAlign: 'center', width: '100%'}}>🎯 Atividades: <span className="tooltip-icon" title="Liste todas as atividades que planeia fazer neste dia">?</span></label>
-                      <div className="activities-input-section">
-                        {newItineraryDay.activities.map((activity, index) => (
-                          <div key={index} className="activity-input-row">
-                            <input
-                              type="text"
-                              name={`activity-${index}`}
-                              value={activity}
-                              onChange={(e) => handleItineraryChange(e, index)}
-                              placeholder="Ex.: Visita ao museu, Almoço no restaurante X"
-                              title="Descreva a atividade que vai fazer neste dia"
-                            />
-                            {newItineraryDay.activities.length > 1 && (
-                              <button
-                                onClick={(e) => handleRemoveActivityField(e, index)}
-                                className="remove-activity-button"
-                                title="Remover esta atividade"
-                              >
-                                ❌
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      <label style={{textAlign: 'center', width: '100%'}}>🎯 Atividades:</label>
+                      <textarea
+                        name="activities-text"
+                        value={newItineraryDay.activities.join('\n')}
+                        onChange={(e) => {
+                          const activities = e.target.value.split('\n').filter(a => a.trim() !== '');
+                          setNewItineraryDay(prev => ({...prev, activities: activities.length > 0 ? activities : ['']}));
+                        }}
+                        placeholder="Ex.: Visita ao museu, Almoço no restaurante X, Passeio pela cidade..."
+                        maxLength="1500"
+                        title="Descreva todas as atividades deste dia (máximo 1500 caracteres, uma por linha)"
+                        rows="8"
+                        style={{width: '100%', resize: 'vertical', minHeight: '200px', overflow: 'hidden', wordWrap: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap'}}
+                      />
+                      <small style={{fontSize: '12px', color: (newItineraryDay.activities.join('\n').length > 1200) ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newItineraryDay.activities.join('\n').length}/1500 caracteres
+                      </small>
                       
-                      <div className="activity-controls">
-                        <button
-                          onClick={handleAddActivityField}
-                          className="button-success"
-                          title="Adicionar mais uma atividade a este dia"
-                        >
-                          ➕ Adicionar Atividade
-                        </button>
-                      </div>
-
-                      <div className="action-buttons">
+                      <div className="action-buttons" style={{marginTop: '15px'}}>
                         <button
                           onClick={(e) => handleAddOrEditItineraryDay(e)}
                           className="button-success"
@@ -3594,7 +4403,7 @@ const MyTravels = () => {
               {activeTab === 'negativePoints' && (
                 <div className="tab-content">
                   <div className="RightPosition">
-                    <h3>⚠️ Pontos Negativos <span className="tooltip-icon" title="Registe aspetos negativos da viagem para referência futura">?</span></h3>
+                    <h3>⚠️ Pontos Negativos</h3>
                     {Array.isArray(newTravel.negativePoints) && newTravel.negativePoints.length > 0 ? (
                       <ul className="points-list">
                         {newTravel.negativePoints.map((point, index) => (
@@ -3635,33 +4444,42 @@ const MyTravels = () => {
 
                   <div className="LeftPosition">
                     <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>⚠️ Nome do Ponto Negativo: <span className="tooltip-icon" title="Digite o aspeto negativo que encontrou na viagem">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>⚠️ Nome do Ponto Negativo:</label>
                       <input
                         type="text"
                         name="name"
                         value={newNegativePoint.name}
                         onChange={handleNegativeChange}
                         placeholder="Ex.: Trânsito intenso, Preços elevados"
+                        maxLength="150"
                         key={`name-input-negative-${editingNegativeIndex}`}
-                        title="Digite o aspecto negativo da viagem"
+                        title="Digite o aspecto negativo da viagem (máximo 150 caracteres)"
                       />
+                      <small style={{fontSize: '12px', color: newNegativePoint.name.length > 120 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newNegativePoint.name.length}/150 caracteres
+                      </small>
 <br></br><br></br>
-                      <label style={{textAlign: 'center', width: '100%'}}>📝 Descrição: <span className="tooltip-icon" title="Descreva detalhadamente o problema encontrado">?</span></label>
+                      <label style={{textAlign: 'center', width: '100%'}}>📝 Descrição:</label>
                       <textarea
                         name="description"
                         value={newNegativePoint.description}
                         onChange={handleNegativeChange}
-                        rows="3"
-                        placeholder="Ex.: O trânsito da cidade estava muito congestionado durante todo o dia, causando atrasos..."
-                        title="Descreva detalhadamente o aspecto negativo"
+                        rows="5"
+                        maxLength="500"
+                        placeholder="Ex.: O trânsito da cidade estava muito congestionado durante todo o dia, causando atrasos nos transportes e cansaço dos viajantes..."
+                        title="Descreva detalhadamente o aspecto negativo (máximo 500 caracteres)"
                         key={`desc-input-negative-${editingNegativeIndex}`}
+                        style={{ resize: 'vertical', minHeight: '150px', overflow: 'hidden' }}
                       />
+                      <small style={{fontSize: '12px', color: newNegativePoint.description.length > 400 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newNegativePoint.description.length}/500 caracteres
+                      </small>
 
                       <div className="action-buttons">
                         <button
                           onClick={(e) => handleAddOrEditNegativePoint(e)}
                           className="button-success"
-                          disabled={!newNegativePoint.name.trim()}
+                          disabled={!newNegativePoint.name.trim() || !newNegativePoint.description.trim()}
                           title={editingNegativeIndex !== null ? "Guardar as alterações do ponto negativo" : "Adicionar novo ponto negativo"}
                         >
                           {editingNegativeIndex !== null ? '💾 Guardar Alterações' : '➕ Adicionar'}
@@ -3682,68 +4500,30 @@ const MyTravels = () => {
               )}
               {activeTab === 'group' && selectedTravelType.isGroup && (
                 <div className="tab-content">
-                  <div className="form-section">
-                    <div className="LeftPosition">
-                      <h3>
-                        👥 Membros do Grupo
-                        <span className="tooltip-icon" title="Adicione outros viajantes que participaram nesta viagem. Eles poderão partilhar fotos e experiências.">
-                          ?
-                        </span>
-                      </h3>
-                    
-                    
-                    <div className="group-add-section">
-                      <div className="add-member-controls">
-                        <input
-                          type="email"
-                          placeholder="email@exemplo.com"
-                          value={newMemberEmail}
-                          onChange={(e) => setNewMemberEmail(e.target.value)}
-                          className="form-control"
-                        />
-                        <button
-                          type="button"
-                          onClick={addGroupMemberByEmail}
-                          disabled={!newMemberEmail.trim()}
-                          className="button-primary"
-                          title="Adicionar membro ao grupo"
-                        >
-                          ➕ Adicionar
-                        </button>
-                      </div>
-                      
-                      <div className="integration-note">
-                        💡 <strong>Integração futura:</strong> pesquisa de utilizadores e convites automáticos.
-                      </div>
-                    </div>
-                    </div>
-
-                    {groupMembers.length > 0 ? (
-                      <div className="RightPosition">
-                        <h4>
-                          Membros Adicionados ({groupMembers.length})
-                          <span className="tooltip-icon" title="Lista de todos os membros que fazem parte desta viagem em grupo.">
-                            ?
-                          </span>
-                        </h4>
-                        <ul className="group-members-list">
-                          {groupMembers.map((m) => (
-                            <li key={m.id} className="group-member-item">
-                              <span className="member-info">
-                                👤 {m.email}
-                              </span>
+                  <div className="RightPosition">
+                    <h3>👥 Membros do Grupo</h3>
+                    {Array.isArray(groupMembers) && groupMembers.length > 0 ? (
+                      <ul className="points-list">
+                        {groupMembers.map((member, index) => (
+                          <li key={member.id} className="point-item">
+                            <div className="point-info">
+                              <strong>👤 {member.email || 'Sem email'}</strong>
+                              <p style={{ margin: '5px 0', color: '#6c757d' }}>
+                                🔗 {member.status || 'Pendente'}
+                              </p>
+                            </div>
+                            <div className="point-actions">
                               <button
-                                type="button"
-                                onClick={() => removeGroupMember(m.id)}
-                                className="remove-member-button"
+                                onClick={() => removeGroupMember(member.id)}
+                                className="delete-button"
                                 title="Remover membro do grupo"
                               >
-                                ✕
+                                🗑️ Remover
                               </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
                       <div className="empty-state">
                         <div className="empty-icon">👥</div>
@@ -3751,43 +4531,56 @@ const MyTravels = () => {
                         <small>Adicione outros viajantes por email para partilharem esta experiência</small>
                       </div>
                     )}
+                  </div>
 
-                    <div className="group-benefits">
-                      <h4>
-                        ✨ Benefícios das Viagens em Grupo
-                        <span className="tooltip-icon" title="Vantagens de viajar acompanhado e partilhar experiências.">
-                          ?
-                        </span>
-                      </h4>
-                      <div className="benefits-grid">
-                        <div className="benefit-card">
-                          <div className="benefit-icon">📸</div>
-                          <div className="benefit-text">
-                            <strong>Partilha de Fotos</strong>
-                            <p>Todos os membros podem contribuir com as suas fotos da viagem</p>
-                          </div>
-                        </div>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">💰</div>
-                          <div className="benefit-text">
-                            <strong>Divisão de Custos</strong>
-                            <p>Partilhem despesas e economizem juntos</p>
-                          </div>
-                        </div>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">🗺️</div>
-                          <div className="benefit-text">
-                            <strong>Planeamento Colaborativo</strong>
-                            <p>Planeiem atividades e itinerários em conjunto</p>
-                          </div>
-                        </div>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">🎯</div>
-                          <div className="benefit-text">
-                            <strong>Experiências Únicas</strong>
-                            <p>Criem memórias especiais que durarão para sempre</p>
-                          </div>
-                        </div>
+                  <div className="LeftPosition">
+                    <div>
+                      <label style={{textAlign: 'center', width: '100%'}}>✉️ Email do Membro:</label>
+                      <input
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        value={newMemberEmail}
+                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                        maxLength="150"
+                        title="Digite o email do membro (máximo 150 caracteres)"
+                        style={{
+                          padding: '12px 15px',
+                          border: '2px solid #e9ecef',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#007bff'}
+                        onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+                      />
+                      <small style={{fontSize: '12px', color: newMemberEmail.length > 120 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                        {newMemberEmail.length}/150 caracteres
+                      </small>
+
+                      <div className="action-buttons">
+                        <button
+                          onClick={addGroupMemberByEmail}
+                          className="button-success"
+                          disabled={!newMemberEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newMemberEmail)}
+                          title="Adicionar novo membro ao grupo"
+                        >
+                          ➕ Adicionar Membro
+                        </button>
+                      </div>
+
+                      {/* Nota de Integração Futura */}
+                      <div style={{
+                        marginTop: '20px',
+                        padding: '15px',
+                        background: 'rgba(255, 193, 7, 0.1)',
+                        border: '1px solid #ffc107',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: '#856404'
+                      }}>
+                        � <strong>Integração futura:</strong> Os convites serão enviados por email aos membros adicionados. Eles poderão aceitar ou rejeitar o convite.
                       </div>
                     </div>
                   </div>
@@ -3807,13 +4600,13 @@ const MyTravels = () => {
               </button>
               
               <button
-                onClick={activeTab === 'group' ? handleAddTravel : handleNextTab}
+                onClick={(activeTab === 'group' || activeTab === 'negativePoints') ? handleAddTravel : handleNextTab}
                 disabled={tabs.indexOf(activeTab) === tabs.length - 1 && activeTab !== 'group'}
                 className="nav-button next-button"
-                title={activeTab === 'group' ? "Guardar viagem" : "Avançar para próxima aba"}
+                title={(activeTab === 'group' || activeTab === 'negativePoints') ? "Guardar viagem" : "Avançar para próxima aba"}
               >
-                {activeTab === 'group' 
-                  ? (isEditing ? "💾 Guardar Alterações" : "✅ Adicionar Viagem") 
+                {(activeTab === 'group' || activeTab === 'negativePoints')
+                  ? (isEditing ? "💾 Guardar Alterações" : "✅ Adicionar") 
                   : "Avançar →"}
               </button>
             </div>
@@ -3873,7 +4666,7 @@ const MyTravels = () => {
         {getFilteredTravels().length === 0 ? (
           filterType === 'all' ? (
             <div className="empty-travels-message">
-              <div className="empty-icon">✈️</div>
+              <div className="empty-icon"></div>
               <h3>Nenhuma viagem adicionada ainda</h3>
               <p>Comece por adicionar uma nova viagem e partilhe as suas experiências!</p>
             </div>
@@ -4025,9 +4818,9 @@ const MyTravels = () => {
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleDelete(travel.id); }}
                   className="action-btn delete-btn"
-                  title="Excluir viagem"
+                  title="Eliminar viagem"
                 >
-                  🗑️ Excluir
+                  🗑️ Eliminar
                 </button>
               </div>
             </div>

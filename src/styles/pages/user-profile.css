@@ -299,249 +299,620 @@
   padding: 2px;
 }
 
+svg.location-icon {
+    color: #fff;
+}
+
 .profile-icon {
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
 }
+.user-profile-page .bio{
+  color: #fff;
+  font-weight: 600;
+}
 
 
+/* --------------------------------------- Desktop/Tablet Profile Styles --------------------------------------- */
+
+/* Desktop Profile Header - Botão de seguir ao pé dos 3 pontos */
+@media (min-width: 769px) {
+  /* Desktop: Ocultar mobile-menu-inline e profile-action-buttons */
+  .user-profile-page .mobile-menu-inline,
+  .user-profile-page .profile-action-buttons {
+    display: none !important;
+  }
+  
+  /* Desktop: Mostrar desktop-following-badge e profile-actions-section */
+  .user-profile-page .desktop-following-badge {
+    display: inline-flex !important;
+  }
+  
+  .user-profile-page .profile-actions-section {
+    position: absolute !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+    align-items: center !important;
+    z-index: 10 !important;
+  }
+  
+  .user-profile-page .profile-actions-section .dropdown-container {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+  }
+  
+  /* Estilos para os botões de seguir no desktop */
+  .user-profile-page .profile-actions-section .edit-profile-btn,
+  .user-profile-page .profile-actions-section .follow-button,
+  .user-profile-page .profile-actions-section .unfollow-button,
+  .user-profile-page .profile-actions-section .pending-button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    cursor: pointer !important;
+  }
+  
+  .user-profile-page .profile-actions-section .menu-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* Desktop Profile Header - Mais espaço depois da foto */
+@media (min-width: 769px) {
+  .user-profile-page .profile-header {
+    padding-bottom: 3rem !important; /* Mais espaço depois da foto */
+  }
+  
+  .user-profile-page .profile-header-main {
+    margin-bottom: 2rem !important; /* Espaço adicional entre foto e detalhes */
+  }
+}
+
+/* Desktop Profile Details Section - Ocupar 100% da largura */
+.profile-details-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem; /* Mais espaço na versão desktop */
+
+  
+  border-radius: 16px;
+
+}
+
+.location-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  font-size: 1rem;
+  align-self: flex-start;
+}
+
+.location-icon {
+  color: #666;
+  font-size: 1rem;
+}
+
+.bio-container {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+}
+
+.bio {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #333;
+  margin: 0;
+}
+
+/* Desktop Profile Stats Section - Ocupar 100% da largura */
+.profile-stats-section {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1.rem;
+  border-radius: 16px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  justify-content: center;
+}
+
+.stat-card {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #666;
+  line-height: 1.3;
+}
 
 @media (max-width: 768px) {
 .user-profile-page, .profile-page {
     padding: 10px;
 }
 
-/* Mobile Profile Header Improvements */
-.user-profile-page .profile-header {
-  padding: 1rem !important;
-  margin-bottom: 1rem !important;
-  border-radius: 12px !important;
-  margin-top: 20px;
+
+
+
+/* Mobile: Ocultar profile-actions-section e desktop-following-badge */
+.user-profile-page .profile-actions-section,
+.user-profile-page .desktop-following-badge {
+  display: none !important;
 }
 
-.user-profile-page .profile-header-main {
+/* Mobile: Mostrar mobile-menu-inline dentro da location-container */
+.user-profile-page .mobile-menu-inline {
+  display: inline-flex !important;
+  align-items: center !important;
+  position: relative !important;
+  margin-right: 0.5rem !important;
+  z-index: 10000 !important;
+}
+
+.user-profile-page .mobile-menu-btn-inline {
+  background: none !important;
+  border: none !important;
+  color: white !important;
+  font-size: 1rem !important;
+  padding: 0.5rem !important;
+  cursor: pointer !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.user-profile-page .mobile-menu-btn-inline:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transform: scale(1.1) !important;
+}
+
+.user-profile-page .mobile-dropdown-menu {
+  position: fixed !important;
+  top: -45px !important;
+  right: 60px !important;
+  background: white !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+  z-index: 99999 !important;
+  min-width: 200px !important;
+  margin-top: 0.5rem !important;
+  overflow: hidden !important;
+}
+
+/* Mobile Profile Header Improvements */
+.user-profile-page .profile-header {
+  padding: 1.5rem 1rem !important;
+  margin-bottom: 1.5rem !important;
+  border-radius: 16px !important;
   margin-top: 20px;
-  flex-direction: column !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  position: relative;
+  z-index: 1 !important;
+}
+
+.stat-item-box strong{
+  font-size: 18px !important;
+}
+
+
+/* Menu 3 pontos já configurado via profile-actions-section */
+
+.user-profile-page .profile-header-main {
+  margin-top: 0;
+  flex-direction: row !important;
   gap: 1rem !important;
-  text-align: center !important;
+  text-align: left !important;
+  align-items: flex-start !important;
 }
 
 .user-profile-page .profile-avatar-section {
-  order: -1; /* Avatar comes first on mobile */
+  display: flex;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.user-profile-page .profile-picture-container {
+  width: 80px !important;
+  height: 80px !important;
+  border: 3px solid #fff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .user-profile-page .profile-info-section {
   width: 100% !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .user-profile-page .profile-header-top {
   flex-direction: column !important;
   gap: 0.75rem !important;
-  align-items: center !important;
+  align-items: flex-start !important;
+  width: 100%;
 }
 
+/* Profile Name Container - Estilo Instagram */
 .user-profile-page .profile-name-container {
   width: 100% !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.user-profile-page .profile-name-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .user-profile-page .profile-name {
-  font-size: 1.8rem !important;
-  flex-direction: column !important;
+  font-size: 1.0rem !important;
+  flex-direction: row !important;
   gap: 0.5rem !important;
-  text-align: center !important;
+  text-align: left !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  margin-bottom: 0 !important;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .user-profile-page .profile-username {
-  font-size: 1rem !important;
-  text-align: center !important;
+  font-size: 0.9rem !important;
+  text-align: left !important;
+  opacity: 0.8;
+  font-weight: 500 !important;
+  margin: 0;
 }
 
-.user-profile-page .profile-actions-section {
-  width: 100% !important;
-  justify-content: center !important;
-  flex-wrap: wrap !important;
-  gap: 0.5rem !important;
+.user-profile-page .following-badge {
+  font-size: 0.7rem !important;
+  padding: 0.25rem 0.5rem !important;
+  margin-left: 0.5rem !important;
+  border-radius: 4px !important;
 }
 
-.user-profile-page .action-button {
-  flex: 1 !important;
-  min-width: 120px !important;
-  max-width: 140px !important;
-  padding: 0.6rem 0.8rem !important;
-  font-size: 0.85rem !important;
+/* Botões de ação no lado direito */
+.user-profile-page .profile-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Removido: agora tudo está configurado nas media queries específicas */
+
+.user-profile-page .edit-profile-btn,
+.user-profile-page .follow-button,
+.user-profile-page .unfollow-button,
+.user-profile-page .pending-button {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.8rem !important;
   white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.3rem !important;
+  min-width: 80px !important;
+  height: 32px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 .user-profile-page .menu-btn {
-  width: 40px !important;
-  height: 40px !important;
+  width: 36px !important;
+  height: 36px !important;
   flex: none !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
+/* Removido: mobile-menu-btn não é mais usado */
+
 /* Mobile Stats Grid Improvements */
+.user-profile-page .profile-stats-section {
+  width: 100% !important;
+  margin-top: 1rem !important;
+}
+
 .user-profile-page .stats-grid {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
   gap: 0.75rem !important;
   justify-content: center !important;
-  margin: 0.5rem auto !important;
-  width: fit-content !important;
+  margin: 0 !important;
+  width: 100% !important;
   max-width: 100% !important;
 }
 
 .user-profile-page .stat-card {
-  padding: 0.75rem 0.5rem !important;
-  min-width: 70px !important;
-  max-width: 90px !important;
+  padding: 1rem 0.75rem !important;
+  min-width: auto !important;
+  max-width: none !important;
   border-radius: 12px !important;
   backdrop-filter: blur(10px) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.user-profile-page .stat-card.clickable:active {
+  transform: scale(0.97) !important;
 }
 
 .user-profile-page .stat-number {
-  font-size: 1.4rem !important;
-  margin-bottom: 0.25rem !important;
+  font-size: 1.6rem !important;
+  margin-bottom: 0.35rem !important;
+  font-weight: 700 !important;
 }
 
 .user-profile-page .stat-label {
-  font-size: 0.75rem !important;
-  line-height: 1.2 !important;
+  font-size: 0.8rem !important;
+  line-height: 1.3 !important;
+  font-weight: 500 !important;
 }
 
 /* Mobile Profile Details */
 .user-profile-page .profile-details-section {
   gap: 0.75rem !important;
-}
-
-.user-profile-page .bio-container {
-  padding: 0.75rem !important;
-  border-radius: 10px !important;
-}
-
-.user-profile-page .bio {
-  font-size: 0.9rem !important;
-  line-height: 1.5 !important;
+  width: 100% !important;
+  margin-top: 0.75rem !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .user-profile-page .location-container {
   padding: 0.5rem 0.75rem !important;
   border-radius: 8px !important;
-  align-self: center !important;
   font-size: 0.85rem !important;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  align-self: flex-start;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.user-profile-page .location-icon {
+  font-size: 0.9rem !important;
+}
+
+.user-profile-page .bio-container {
+  padding: 0.75rem !important;
+  border-radius: 10px !important;
+  width: 100% !important;
+  text-align: left;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.user-profile-page .bio {
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  color: inherit;
 }
 
 /* Mobile Content Sections */
 .user-profile-page .profile-content {
-  margin-top: 1rem !important;
+  margin-top: 1.5rem !important;
 }
 
 .user-profile-page .travels-section {
-  padding: 1rem !important;
-  margin-bottom: 1rem !important;
+  padding: 1.25rem !important;
+  margin-bottom: 1.5rem !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.user-profile-page .travels-section > .button {
+  margin-bottom: 1.25rem !important;
+  width: 100% !important;
+  padding: 0.8rem !important;
+  font-size: 0.95rem !important;
   border-radius: 12px !important;
+  font-weight: 600 !important;
 }
 
 .user-profile-page .travels-grid {
   grid-template-columns: 1fr !important;
-  gap: 1rem !important;
+  gap: 1.25rem !important;
 }
 
 .user-profile-page .travel-card {
-  border-radius: 12px !important;
+  border-radius: 16px !important;
   overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.user-profile-page .travel-card:active {
+  transform: scale(0.98) !important;
 }
 
 .user-profile-page .travel-content {
-  padding: 1rem !important;
+  padding: 0 !important;
+}
+
+.user-profile-page .travel-text {
+  padding: 1.25rem !important;
 }
 
 .user-profile-page .travel-text h2 {
-  font-size: 1.2rem !important;
-  margin-bottom: 0.5rem !important;
+  font-size: 1.3rem !important;
+  margin-bottom: 0.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
 }
 
 .user-profile-page .travel-text p {
-  font-size: 0.85rem !important;
-  margin: 0.25rem 0 !important;
+  font-size: 0.9rem !important;
+  margin: 0.4rem 0 !important;
+  line-height: 1.5 !important;
+}
+
+.user-profile-page .no-travels {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 1rem;
+  opacity: 0.7;
 }
 
 /* Mobile Stats Sections */
 .user-profile-page .traveler-stats-section,
 .user-profile-page .engagement-stats-section,
 .user-profile-page .top-destinations-section {
-  padding: 1rem !important;
-  margin-bottom: 1rem !important;
-  border-radius: 12px !important;
+  padding: 1.25rem !important;
+  margin-bottom: 1.5rem !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .user-profile-page .traveler-stats-section h2,
 .user-profile-page .engagement-stats-section h2,
 .user-profile-page .top-destinations-section h2 {
-  font-size: 1.4rem !important;
-  margin-bottom: 1rem !important;
+  font-size: 1.5rem !important;
+  margin-bottom: 1.25rem !important;
+  font-weight: 700 !important;
+  text-align: center;
 }
 
-.user-profile-page .stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
-  gap: 0.75rem !important;
+.user-profile-page .traveler-stats-section .stats-grid,
+.user-profile-page .engagement-stats-section .stats-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1rem !important;
 }
 
 .user-profile-page .stat-item-box {
-  padding: 1rem !important;
-  border-radius: 10px !important;
+  padding: 1.25rem 1rem !important;
+  border-radius: 12px !important;
   text-align: center !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .user-profile-page .stat-item-box h3 {
   font-size: 0.9rem !important;
-  margin-bottom: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
 }
 
 .user-profile-page .stat-item-box p {
-  font-size: 1.8rem !important;
+  font-size: 2rem !important;
   margin: 0 !important;
+  font-weight: 700 !important;
+}
+
+.user-profile-page .stat-clickable {
+  cursor: pointer;
+}
+
+.user-profile-page .stat-item-box:active {
+  transform: scale(0.97) !important;
 }
 
 .user-profile-page .destinations-grid {
   grid-template-columns: 1fr !important;
-  gap: 0.75rem !important;
+  gap: 1rem !important;
 }
 
 .user-profile-page .destination-box {
-  padding: 1rem !important;
-  border-radius: 10px !important;
+  padding: 1.25rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }
 
 .user-profile-page .destination-box h3 {
-  font-size: 1.1rem !important;
-  margin-bottom: 0.75rem !important;
+  font-size: 1.2rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 700 !important;
 }
 
 .user-profile-page .destination-box ul {
   margin: 0 !important;
   padding: 0 !important;
+  list-style: none;
 }
 
 .user-profile-page .destination-box li {
-  font-size: 0.9rem !important;
-  margin: 0.5rem 0 !important;
-  padding: 0.25rem 0 !important;
+  font-size: 0.95rem !important;
+  margin: 0.6rem 0 !important;
+  padding: 0.5rem 0 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  line-height: 1.4 !important;
+}
+
+.user-profile-page .destination-box li:last-child {
+  border-bottom: none;
 }
 
 /* Mobile Private Profile Message */
 .user-profile-page .private-profile-message {
-  padding: 2rem 1rem !important;
-  margin: 1rem 0 !important;
-  border-radius: 12px !important;
-  font-size: 1rem !important;
+  padding: 2.5rem 1.5rem !important;
+  margin: 1.5rem 0 !important;
+  border-radius: 16px !important;
+  font-size: 1.05rem !important;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .user-profile-page .private-profile-message p {
   margin: 0 !important;
-  line-height: 1.5 !important;
+  line-height: 1.6 !important;
+  font-weight: 500;
 }
 
 /* Mobile Blocked User Interface */
@@ -579,141 +950,237 @@
 .follow-modal-content,
 .stats-modal-content,
 .request-modal-content {
-  width: 95% !important;
-  max-width: 95% !important;
-  margin: 1rem !important;
+  width: 92% !important;
+  max-width: 420px !important;
+  margin: 1rem auto !important;
   padding: 1.5rem !important;
-  border-radius: 12px !important;
-  max-height: 85vh !important;
+  border-radius: 16px !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 .follow-modal-content h2,
 .stats-modal-content h2,
 .request-modal-content h2 {
-  font-size: 1.4rem !important;
-  margin-bottom: 1rem !important;
+  font-size: 1.5rem !important;
+  margin-bottom: 1.25rem !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+.follow-user-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .follow-user-list-item {
-  padding: 0.75rem 0 !important;
+  padding: 0.5rem 0 !important;
 }
 
 .follow-user-link {
-  padding: 0.5rem !important;
-  border-radius: 8px !important;
+  padding: 0.75rem !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
 }
 
 .follow-user-avatar {
-  width: 35px !important;
-  height: 35px !important;
+  width: 40px !important;
+  height: 40px !important;
+  flex-shrink: 0;
 }
 
 .follow-user-link span {
-  font-size: 0.9rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
 }
 
 .follow-modal-close-button,
 .stats-modal-close-button {
-  top: 1rem !important;
-  right: 1rem !important;
-  width: 35px !important;
-  height: 35px !important;
-  font-size: 1.2rem !important;
+  width: 100% !important;
+  padding: 0.8rem !important;
+  margin: 1rem auto 0 auto !important;
+  font-size: 1rem !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+.stats-modal-content ul {
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stats-modal-content li a {
+  display: block;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.stats-modal-content h3 {
+  font-size: 1.1rem !important;
+  margin-top: 1rem !important;
+  font-weight: 600 !important;
 }
 
 /* Mobile Report/Block Modals */
 .modal-content-users {
-  width: 95% !important;
-  max-width: 95% !important;
-  margin: 1rem !important;
+  width: 92% !important;
+  max-width: 420px !important;
+  margin: 1rem auto !important;
   padding: 1.5rem !important;
-  border-radius: 12px !important;
+  border-radius: 16px !important;
   max-height: 85vh !important;
   overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 .modal-content-users h2 {
-  font-size: 1.4rem !important;
+  font-size: 1.5rem !important;
   margin-bottom: 1rem !important;
+  font-weight: 700 !important;
+  text-align: center;
 }
 
 .modal-content-users p {
-  font-size: 0.9rem !important;
-  line-height: 1.5 !important;
+  font-size: 0.95rem !important;
+  line-height: 1.6 !important;
+  text-align: center;
+}
+
+.modal-content-users > div[style*="textAlign: left"] {
+  margin-top: 1rem;
 }
 
 .modal-content-users .modal-buttons {
   flex-direction: column !important;
   gap: 0.75rem !important;
+  margin-top: 1.5rem !important;
 }
 
 .modal-content-users .modal-buttons button {
   width: 100% !important;
-  padding: 0.75rem !important;
-  font-size: 0.9rem !important;
-  border-radius: 8px !important;
+  padding: 0.85rem !important;
+  font-size: 1rem !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-content-users .modal-buttons button:active {
+  transform: scale(0.97);
 }
 
 /* Mobile Form Improvements */
 .modal-content-users input[type="checkbox"] {
-  width: 16px !important;
-  height: 16px !important;
-  margin-right: 8px !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin-right: 10px !important;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
 .modal-content-users label {
-  font-size: 0.85rem !important;
-  line-height: 1.4 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: flex-start !important;
+}
+
+.modal-content-users label > div {
+  flex: 1;
+}
+
+.modal-content-users label strong {
+  font-weight: 600;
 }
 
 .modal-content-users textarea {
-  font-size: 0.9rem !important;
-  padding: 0.75rem !important;
-  border-radius: 8px !important;
-  min-height: 80px !important;
+  font-size: 0.95rem !important;
+  padding: 0.85rem !important;
+  border-radius: 10px !important;
+  min-height: 100px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
 }
 
 /* Mobile Travel Cards in Profile */
 .user-profile-page .travel-card {
-  margin-bottom: 1rem !important;
+  margin-bottom: 1.25rem !important;
 }
 
 .user-profile-page .travel-card .highlight-image {
-  height: 180px !important;
-  border-radius: 8px !important;
+  height: 200px !important;
+  border-radius: 0 !important;
+  object-fit: cover !important;
+  width: 100% !important;
 }
 
 .user-profile-page .travel-card .travel-text {
-  padding: 0.75rem !important;
+  padding: 1.25rem !important;
 }
 
 .user-profile-page .travel-card .travel-text h2 {
-  font-size: 1.1rem !important;
-  margin-bottom: 0.5rem !important;
+  font-size: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
 }
 
 .user-profile-page .travel-card .travel-text p {
-  font-size: 0.8rem !important;
-  margin: 0.25rem 0 !important;
+  font-size: 0.9rem !important;
+  margin: 0.4rem 0 !important;
+  line-height: 1.5 !important;
+}
+
+.user-profile-page .travel-card .travel-text p strong,
+.user-profile-page .travel-card .travel-text p b {
+  font-weight: 600;
 }
 
 .user-profile-page .travel-card .button {
-  padding: 0.5rem 1rem !important;
-  font-size: 0.85rem !important;
-  margin-top: 0.75rem !important;
+  padding: 0.7rem 1.2rem !important;
+  font-size: 0.9rem !important;
+  margin-top: 1rem !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+  display: block !important;
+  text-align: center !important;
 }
 
 /* Mobile Dropdown Menu */
 .user-profile-page .dropdown-menu {
-  min-width: 160px !important;
-  right: 0 !important;
-  left: auto !important;
+  min-width: 200px !important;
+  right: 60px !important;
+  left: 0 !important;
   margin-top: 0.5rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+  overflow: hidden;
+  z-index: 99999 !important;
+  position: fixed !important;
+  background: white !important;
 }
 
 .user-profile-page .dropdown-item {
-  padding: 0.75rem 1rem !important;
-  font-size: 0.85rem !important;
+  padding: 0.85rem 1.25rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  transition: all 0.2s ease !important;
+  background: white !important;
+  position: relative !important;
+  z-index: 99999 !important;
 }
 
 /* Mobile Loading States */
@@ -749,12 +1216,11 @@
   -webkit-overflow-scrolling: touch !important;
 }
 
+} /* End of @media (max-width: 768px) */
+
 /* Mobile Safe Area Support */
 @supports (padding: max(0px)) {
-  .user-profile-page {
-    padding-left: max(10px, env(safe-area-inset-left)) !important;
-    padding-right: max(10px, env(safe-area-inset-right)) !important;
-  }
+
   
   .user-profile-page .profile-header {
     margin-left: max(0px, env(safe-area-inset-left)) !important;
@@ -769,136 +1235,186 @@
   }
 
   .user-profile-page .profile-header {
-    padding: 0.75rem !important;
-    margin-bottom: 0.75rem !important;
-    border-radius: 10px !important;
+    padding: 1.25rem 0.85rem !important;
+    margin-bottom: 1.25rem !important;
+    border-radius: 14px !important;
   }
 
   .user-profile-page .profile-picture-container {
-    width: 100px !important;
-    height: 100px !important;
+    width: 70px !important;
+    height: 70px !important;
+    border-width: 2px !important;
   }
 
   .user-profile-page .profile-name {
-    font-size: 1.5rem !important;
+    font-size: 1.0rem !important;
+    margin-bottom: 0.25rem !important;
   }
 
   .user-profile-page .profile-username {
-    font-size: 0.9rem !important;
+    font-size: 0.85rem !important;
   }
 
-  .user-profile-page .stats-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 0.5rem !important;
-    margin: 0.5rem auto !important;
-  }
-
-  .user-profile-page .stat-card {
-    padding: 0.5rem 0.25rem !important;
-    min-width: 60px !important;
-    max-width: 80px !important;
-  }
-
-  .user-profile-page .stat-number {
-    font-size: 1.2rem !important;
-  }
-
-  .user-profile-page .stat-label {
+  .user-profile-page .following-badge {
     font-size: 0.7rem !important;
+    padding: 0.3rem 0.6rem !important;
   }
 
-  .user-profile-page .action-button {
+  .user-profile-page .menu-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .user-profile-page .action-button,
+  .user-profile-page .follow-button,
+  .user-profile-page .unfollow-button,
+  .user-profile-page .pending-button {
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.8rem !important;
+    min-width: 90px !important;
+  }
+
+  .user-profile-page .profile-stats-section .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.6rem !important;
+    margin: 0 !important;
+  }
+
+  .user-profile-page .profile-stats-section .stat-card {
+    padding: 0.85rem 0.5rem !important;
+  }
+
+  .user-profile-page .profile-stats-section .stat-number {
+    font-size: 1.4rem !important;
+  }
+
+  .user-profile-page .profile-stats-section .stat-label {
+    font-size: 0.75rem !important;
+  }
+
+  .user-profile-page .action-button,
+  .user-profile-page .follow-button,
+  .user-profile-page .unfollow-button,
+  .user-profile-page .pending-button {
     min-width: 100px !important;
-    max-width: 120px !important;
-    padding: 0.5rem 0.6rem !important;
+    max-width: 130px !important;
+    padding: 0.6rem 0.85rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .user-profile-page .menu-btn {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .user-profile-page .location-container {
+    padding: 0.45rem 0.7rem !important;
     font-size: 0.8rem !important;
   }
 
   .user-profile-page .bio-container {
-    padding: 0.6rem !important;
+    padding: 0.7rem !important;
   }
 
   .user-profile-page .bio {
     font-size: 0.85rem !important;
   }
 
-  .user-profile-page .location-container {
-    padding: 0.4rem 0.6rem !important;
-    font-size: 0.8rem !important;
+  .user-profile-page .travels-section {
+    padding: 1rem !important;
   }
 
-  .user-profile-page .travels-section {
-    padding: 0.75rem !important;
+  .user-profile-page .travels-section > .button {
+    padding: 0.7rem !important;
+    font-size: 0.9rem !important;
   }
 
   .user-profile-page .travels-grid {
-    gap: 0.75rem !important;
+    gap: 1rem !important;
   }
 
   .user-profile-page .travel-card .highlight-image {
-    height: 150px !important;
+    height: 170px !important;
   }
 
   .user-profile-page .travel-card .travel-text {
-    padding: 0.6rem !important;
+    padding: 1rem !important;
   }
 
   .user-profile-page .travel-card .travel-text h2 {
-    font-size: 1rem !important;
+    font-size: 1.15rem !important;
+    margin-bottom: 0.6rem !important;
   }
 
   .user-profile-page .travel-card .travel-text p {
-    font-size: 0.75rem !important;
+    font-size: 0.85rem !important;
+    margin: 0.35rem 0 !important;
   }
+.travel-text p{
+  color: #000 !important;
+}
+
 
   .user-profile-page .travel-card .button {
-    padding: 0.4rem 0.8rem !important;
-    font-size: 0.8rem !important;
+    padding: 0.65rem 1rem !important;
+    font-size: 0.85rem !important;
+    margin-top: 0.85rem !important;
   }
 
   .user-profile-page .traveler-stats-section,
   .user-profile-page .engagement-stats-section,
   .user-profile-page .top-destinations-section {
-    padding: 0.75rem !important;
+    padding: 1rem !important;
+    margin-bottom: 1.25rem !important;
   }
 
   .user-profile-page .traveler-stats-section h2,
   .user-profile-page .engagement-stats-section h2,
   .user-profile-page .top-destinations-section h2 {
-    font-size: 1.2rem !important;
+    font-size: 1.35rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .user-profile-page .traveler-stats-section .stats-grid,
+  .user-profile-page .engagement-stats-section .stats-grid {
+    gap: 0.85rem !important;
   }
 
   .user-profile-page .stat-item-box {
-    padding: 0.75rem !important;
+    padding: 1rem 0.85rem !important;
   }
 
   .user-profile-page .stat-item-box h3 {
-    font-size: 0.8rem !important;
+    font-size: 0.85rem !important;
+    margin-bottom: 0.6rem !important;
   }
 
   .user-profile-page .stat-item-box p {
-    font-size: 1.5rem !important;
+    font-size: 1.75rem !important;
   }
 
   .user-profile-page .destination-box {
-    padding: 0.75rem !important;
+    padding: 1rem !important;
   }
 
   .user-profile-page .destination-box h3 {
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 0.85rem !important;
   }
 
   .user-profile-page .destination-box li {
-    font-size: 0.8rem !important;
+    font-size: 0.85rem !important;
+    margin: 0.5rem 0 !important;
+    padding: 0.4rem 0 !important;
   }
 
   .user-profile-page .private-profile-message {
-    padding: 1.5rem 0.75rem !important;
-    font-size: 0.9rem !important;
+    padding: 2rem 1.25rem !important;
+    font-size: 0.95rem !important;
   }
 
   .user-profile-page .blocked-user-container {
-    padding: 1.5rem 0.75rem !important;
+    padding: 2rem 1.25rem !important;
   }
 
   .user-profile-page .blocked-user-avatar {
@@ -907,16 +1423,16 @@
   }
 
   .user-profile-page .blocked-user-container h2 {
-    font-size: 1.3rem !important;
+    font-size: 1.4rem !important;
   }
 
   .user-profile-page .blocked-user-container p {
-    font-size: 0.9rem !important;
+    font-size: 0.95rem !important;
   }
 
   .user-profile-page .blocked-user-container .button {
-    padding: 0.6rem 1.2rem !important;
-    font-size: 0.85rem !important;
+    padding: 0.65rem 1.25rem !important;
+    font-size: 0.9rem !important;
   }
 
   /* Extra small modal adjustments */
@@ -924,51 +1440,73 @@
   .stats-modal-content,
   .request-modal-content,
   .modal-content-users {
-    width: 98% !important;
-    margin: 0.5rem !important;
-    padding: 1rem !important;
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 0.75rem auto !important;
+    padding: 1.25rem !important;
   }
 
   .follow-modal-content h2,
   .stats-modal-content h2,
   .request-modal-content h2,
   .modal-content-users h2 {
-    font-size: 1.2rem !important;
+    font-size: 1.35rem !important;
+    margin-bottom: 1rem !important;
   }
 
   .follow-user-avatar {
-    width: 30px !important;
-    height: 30px !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .follow-user-link {
+    padding: 0.65rem !important;
   }
 
   .follow-user-link span {
-    font-size: 0.8rem !important;
+    font-size: 0.85rem !important;
   }
 
   .follow-modal-close-button,
   .stats-modal-close-button {
-    width: 30px !important;
-    height: 30px !important;
-    font-size: 1rem !important;
+    padding: 0.7rem !important;
+    font-size: 0.95rem !important;
   }
 
   .modal-content-users .modal-buttons button {
-    padding: 0.6rem !important;
+    padding: 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  .modal-content-users input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .modal-content-users label {
     font-size: 0.85rem !important;
   }
 
   .modal-content-users textarea {
-    padding: 0.6rem !important;
-    min-height: 70px !important;
+    padding: 0.75rem !important;
+    min-height: 90px !important;
+    font-size: 0.9rem !important;
   }
 
   .user-profile-page .dropdown-menu {
-    min-width: 140px !important;
+    min-width: 160px !important;
+    border-radius: 10px !important;
+    right: 40px !important;
+    left: 110px !important;
   }
 
   .user-profile-page .dropdown-item {
-    padding: 0.6rem 0.8rem !important;
-    font-size: 0.8rem !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .stats-modal-content h3 {
+    font-size: 1rem !important;
   }
 }
 
@@ -1066,6 +1604,8 @@
   }
 }
 
+
+
 /* Performance Optimizations for Mobile */
 @media (max-width: 768px) {
   .user-profile-page * {
@@ -1075,6 +1615,7 @@
     backface-visibility: hidden !important;
     -webkit-perspective: 1000px !important;
     perspective: 1000px !important;
+    font-size: 12px !important;
   }
 
   .user-profile-page .travel-card,
@@ -1082,5 +1623,4 @@
   .user-profile-page .destination-box {
     will-change: transform !important;
   }
-}
 }

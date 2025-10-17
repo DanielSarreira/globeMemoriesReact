@@ -37,7 +37,7 @@ const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 3000);
+    }, 2600);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -644,35 +644,78 @@ const Register = () => {
 
             {/* Quinta linha: Checkbox de Termos */}
             <div className="terms-section">
-              <div className="checkbox-group">
-                <input
-                  type="checkbox"
-                  id="acceptTerms"
-                  name="acceptTerms"
-                  checked={formData.acceptTerms}
-                  onChange={handleChange}
-                  required
-                />
-                <label htmlFor="acceptTerms">
-                  <span className="required-star">*</span> Aceito os{' '}
-                  <span 
-                    className="terms-link" 
-                    onClick={() => openTermsModal('terms')}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => e.key === 'Enter' && openTermsModal('terms')}
-                  >
-                    Termos e Condições
-                  </span>{' '}
-                  e a{' '}
-                  <span 
-                    className="terms-link" 
-                    onClick={() => openTermsModal('privacy')}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => e.key === 'Enter' && openTermsModal('privacy')}
-                  >
-                    Política de Privacidade
+              <div className="checkbox-group" style={{display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px'}}>
+                <label htmlFor="acceptTerms" style={{cursor: 'pointer', lineHeight: '1.4', fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
+                  <div style={{position: 'relative', display: 'inline-block'}}>
+                    <input
+                      type="checkbox"
+                      id="acceptTerms"
+                      name="acceptTerms"
+                      checked={formData.acceptTerms}
+                      onChange={handleChange}
+                      required
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        height: 0,
+                        width: 0
+                      }}
+                    />
+                    <span style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      width: '20px',
+                      height: '20px',
+                      backgroundColor: formData.acceptTerms ? '#007bff' : 'rgba(255, 255, 255, 0.15)',
+                      border: formData.acceptTerms ? '2px solid #007bff' : '2px solid rgba(255, 255, 255, 0.5)',
+                      borderRadius: '4px',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      boxShadow: formData.acceptTerms ? '0 0 10px rgba(0, 123, 255, 0.5)' : '0 2px 4px rgba(0, 0, 0, 0.2)'
+                    }}>
+                      {formData.acceptTerms && (
+                        <svg 
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '12px',
+                            height: '12px',
+                            fill: 'white',
+                            pointerEvents: 'none'
+                          }}
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                      )}
+                    </span>
+                  </div>
+                  <span>
+                    <span style={{color: 'red'}}>*</span> Aceito os{' '}
+                    <span 
+                      className="terms-link" 
+                      onClick={() => openTermsModal('terms')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyPress={(e) => e.key === 'Enter' && openTermsModal('terms')}
+                      style={{color: '#007bff', textDecoration: 'underline', cursor: 'pointer'}}
+                    >
+                      Termos e Condições
+                    </span>{' '}
+                    e a{' '}
+                    <span 
+                      className="terms-link" 
+                      onClick={() => openTermsModal('privacy')}
+                      role="button"
+                      tabIndex={0}
+                      onKeyPress={(e) => e.key === 'Enter' && openTermsModal('privacy')}
+                      style={{color: '#007bff', textDecoration: 'underline', cursor: 'pointer'}}
+                    >
+                      Política de Privacidade
+                    </span>
                   </span>
                 </label>
               </div>
@@ -728,7 +771,7 @@ const Register = () => {
               </>
             ) : isIOS ? (
               <p>
-                Toque no botão <strong>Partilhar</strong> e seleccione <strong>Adicionar ao Ecrã Principal</strong>.
+                Toque no botão <strong>Partilhar</strong> e selecione <strong>Adicionar ao Ecrã Principal</strong>.
               </p>
             ) : (
               <p>

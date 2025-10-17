@@ -4,8 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
 import TravelsData from '../data/travelsData';
 import '../styles/pages/users.css';
+import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
 import { FaCheck, FaFlag, FaBan, FaEllipsisV } from 'react-icons/fa';
 import Toast from '../components/Toast';
+import { usersModalUtils } from '../utils/modalUtils';
 
 const Users = () => {
   const { user } = useAuth();
@@ -30,15 +32,17 @@ const Users = () => {
     abusive: false,
     spam: false,
     identity: false,
-    plagiarism: false,
     harassment: false,
-    violation: false,
     other: false
   });
   const [otherReason, setOtherReason] = useState('');
 
   // Toast state
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
+  // Welcome modal state  
+  const [showWelcomeModal, setShowWelcomeModal] = useState(() => usersModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   // Filtro de países selecionados
   const [selectedCountries, setSelectedCountries] = useState([]);
@@ -55,7 +59,7 @@ const Users = () => {
     setToast({ show: false, message: '', type: '' });
   };
 
-  // Gerar lista de países únicos dos usuários
+  // Gerar lista de países únicos dos viajantes
   const countryList = Array.from(new Set(usersList.map(u => u.nationality).filter(Boolean))).sort();
 
   const handleCountryFilterChange = (country) => {
@@ -109,7 +113,7 @@ const Users = () => {
     { id: 2, username: 'AnaSilva', name: 'Ana Silva', nationality: 'Uganda', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.', travelCount: 0, followersCount: 200, trendingScore: 90, joinDate: '2023-06-10', privacy: 'private' },
     { id: 3, username: 'PedroCosta', name: 'Pedro Costa', nationality: 'Omã', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.', travelCount: 0, followersCount: 80, trendingScore: 60, joinDate: '2024-03-22', privacy: 'public' },
     { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', nationality: 'França', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.', travelCount: 0, followersCount: 150, trendingScore: 85, joinDate: '2023-09-05', privacy: 'private' },
-    { id: 5, username: 'JoaoPereira', name: 'João Pereira', nationality: 'Alemanha', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
+    { id: 5, username: 'JoaoPereira', name: 'João Pereira', nationality: 'Portugal', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
     { id: 6, username: 'MariaOliveira', name: 'Maria Oliveira', nationality: 'Reino Unido', profilePicture: 'https://randomuser.me/api/portraits/women/6.jpg', bio: 'História e arte em cada destino.', travelCount: 0, followersCount: 110, trendingScore: 75, joinDate: '2023-11-30', privacy: 'private' },
     { id: 7, username: 'LucasSantos', name: 'Lucas Santos', nationality: 'Itália', profilePicture: 'https://randomuser.me/api/portraits/men/7.jpg', bio: 'Sempre em busca do próximo voo.', travelCount: 0, followersCount: 130, trendingScore: 88, joinDate: '2024-04-01', privacy: 'public' },
     { id: 8, username: 'BeatrizLima', name: 'Beatriz Lima', nationality: 'Estados Unidos', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
@@ -123,7 +127,7 @@ const Users = () => {
     // Primeiro carrega os filtros/controles imediatamente
     setLoadingFilters(false);
 
-    // Depois carrega os usuários com um pequeno delay para melhor UX
+    // Depois carrega os viajantes com um pequeno delay para melhor UX
     setTimeout(() => {
       const updatedUsers = mockUsers.map((mockUser) => {
         const userTravels = TravelsData.filter((travel) => travel.user === mockUser.username);
@@ -285,9 +289,7 @@ const Users = () => {
         abusive: false,
         spam: false,
         identity: false,
-        plagiarism: false,
         harassment: false,
-        violation: false,
         other: false
       });
       setOtherReason('');
@@ -341,6 +343,74 @@ const Users = () => {
 
   return (
     <div className="users-page">
+      {/* Modal de Boas-vindas */}
+      {showWelcomeModal && (
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>Rede Social de Viajantes Globe Memories</h2>
+              <button className="gm-map-close-btn" onClick={() => setShowWelcomeModal(false)}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Conecte-se a uma comunidade global de exploradores, descubra novos companheiros de viagem e partilhe experiências verdadeiramente únicas!</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🌎</span>
+                  <div>
+                    <strong>Pesquisa Global de Viajantes</strong>
+                    <p>Encontre outros utilizadores pelo nome, nacionalidade ou interesses de viagem em comum.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">👥</span>
+                  <div>
+                    <strong>Sistema de Seguir Inteligente</strong>
+                    <p>Siga viajantes inspiradores e receba notificações sempre que partilhem novas aventuras.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🔍</span>
+                  <div>
+                    <strong>Filtros Avançados de Descoberta</strong>
+                    <p>Procure pessoas com afinidades semelhantes filtrando por país, tipo de viagem ou experiência vivida.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🛡️</span>
+                  <div>
+                    <strong>Ambiente Seguro e Moderado</strong>
+                    <p>Desfrute de uma comunidade saudável com um sistema completo de denúncias e bloqueios, pensado para garantir a sua segurança.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  usersModalUtils.dismiss();
+                }
+                setShowWelcomeModal(false);
+              }}>
+                Descobrir viajantes!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {loadingFilters ? (
         <div className="users-controls">
           <div className="loading-spinner-gradient">
@@ -621,10 +691,14 @@ const Users = () => {
 
       {showReportModal && (
         <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
-          <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto' }}>
+          <div className="modal-content-users" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', overflowY: 'auto' }}>
+            <br></br><br></br>
             <h2>Denunciar Viajante</h2>
-            <p>Por que deseja denunciar <strong>{selectedUser?.username}</strong>?</p>
+
+            <p>Porque deseja denunciar o viajante <strong>"{selectedUser?.username}"</strong>?</p>
             <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>Esta ação irá reportar o viajante aos administradores.</p>
+            
+           
             
             <div style={{ textAlign: 'left', marginBottom: '20px' }}>
               <div style={{ marginBottom: '15px' }}>
@@ -637,7 +711,7 @@ const Users = () => {
                   />
                   <div>
                     <strong>Conteúdo inapropriado</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: imagens ofensivas, descrições inapropriadas, nudez, etc.)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(imagens, descrições ou publicações ofensivas, nudez, etc.)</div>
                   </div>
                 </label>
               </div>
@@ -652,7 +726,7 @@ const Users = () => {
                   />
                   <div>
                     <strong>Informação falsa ou enganosa</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens inventadas, locais inexistentes, preços manipulados, etc.)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(viagens inventadas, perfis falsos, dados incorretos, etc.)</div>
                   </div>
                 </label>
               </div>
@@ -667,7 +741,7 @@ const Users = () => {
                   />
                   <div>
                     <strong>Comportamento abusivo ou ofensivo</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: linguagem agressiva, insultos, bullying)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(linguagem agressiva, insultos, bullying, provocações)</div>
                   </div>
                 </label>
               </div>
@@ -681,8 +755,8 @@ const Users = () => {
                     style={{ marginRight: '10px', marginTop: '2px' }}
                   />
                   <div>
-                    <strong>Spam ou autopromoção excessiva</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: promoção constante de marcas, links externos, publicidade abusiva)</div>
+                    <strong>Spam ou autopromoção</strong>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(publicidade excessiva, links externos, promoção constante de marcas)</div>
                   </div>
                 </label>
               </div>
@@ -697,22 +771,7 @@ const Users = () => {
                   />
                   <div>
                     <strong>Roubo de identidade</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: perfis falsos, uso de fotos de outras pessoas sem autorização)</div>
-                  </div>
-                </label>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={reportReasons.plagiarism}
-                    onChange={() => handleReasonChange('plagiarism')}
-                    style={{ marginRight: '10px', marginTop: '2px' }}
-                  />
-                  <div>
-                    <strong>Plágio de conteúdo</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: viagens copiadas de outros viajantes sem créditos)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(uso de fotos ou informações de outra pessoa sem autorização)</div>
                   </div>
                 </label>
               </div>
@@ -727,22 +786,7 @@ const Users = () => {
                   />
                   <div>
                     <strong>Assédio ou comportamento inadequado</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: mensagens ou comentários inapropriados, perseguição)</div>
-                  </div>
-                </label>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer', fontSize: '14px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={reportReasons.violation}
-                    onChange={() => handleReasonChange('violation')}
-                    style={{ marginRight: '10px', marginTop: '2px' }}
-                  />
-                  <div>
-                    <strong>Violação das regras da plataforma</strong>
-                    <div style={{ color: '#666', fontSize: '12px' }}>(ex: uso da plataforma para fins ilegais ou proibidos)</div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>(mensagens, comentários ou perseguição indesejada)</div>
                   </div>
                 </label>
               </div>
@@ -791,9 +835,7 @@ const Users = () => {
                     abusive: false,
                     spam: false,
                     identity: false,
-                    plagiarism: false,
                     harassment: false,
-                    violation: false,
                     other: false
                   });
                   setOtherReason('');

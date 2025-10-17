@@ -146,7 +146,7 @@ const Sidebar = () => {
         <div className="profile-avatar">
           <img
             src={user?.profilePicture || '/static/media/avatar.55c3eb5641681d05db07.jpg'}
-            alt="Avatar do usuário"
+            alt="Avatar do viajante"
             className="avatar"
           />
         </div>

@@ -15,8 +15,9 @@ import {
 } from 'react-icons/fa';
 
 import '../styles/pages/WelcomeModal.css';
+import { CURRENT_MODAL_VERSION, markWelcomeModalAsViewed } from '../utils/welcomeModalUtils';
 
-const WelcomeModal = ({ isOpen, onClose }) => {
+const WelcomeModal = ({ isOpen, onClose, modalVersion = CURRENT_MODAL_VERSION }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
@@ -92,8 +93,8 @@ const WelcomeModal = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     if (dontShowAgain) {
-      localStorage.setItem('globeMemoriesWelcomeShown', 'true');
-      console.log('Modal set to not show again');
+      // Armazena a versão atual do modal que foi visualizada
+      markWelcomeModalAsViewed(modalVersion);
     }
     onClose();
   };

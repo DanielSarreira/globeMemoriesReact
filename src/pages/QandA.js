@@ -4,6 +4,9 @@ import { FaHeart, FaSearch, FaFlag, FaReply, FaPaperPlane, FaTimes, FaUser, FaCa
 import { motion, AnimatePresence } from 'framer-motion';
 import Toast from '../components/Toast';
 import defaultAvatar from '../images/assets/avatar.jpg';
+import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
+import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
+import { qandaModalUtils } from '../utils/modalUtils';
 
 // Dados simulados de viagens realizadas
 const pastTripsData = [
@@ -35,6 +38,8 @@ const QandA = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', show: false });
+  const [showWelcomeModal, setShowWelcomeModal] = useState(() => qandaModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const questionsPerPage = 5;
 
   useEffect(() => {
@@ -47,6 +52,9 @@ const QandA = () => {
 
   const showToast = (message, type) => {
     setToast({ message, type, show: true });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 2600);
   };
 
   const closeToast = () => {
@@ -174,35 +182,24 @@ const QandA = () => {
       return;
     }
     
-    if (!text?.trim()) {
-      setError('Escreva um comentário!');
-      showToast('Escreva um comentário!', 'error');
-      return;
-    }
-
-    if (text.trim().length < 3) {
-      setError('O comentário deve ter pelo menos 3 caracteres!');
-      showToast('O comentário deve ter pelo menos 3 caracteres!', 'error');
-      return;
-    }
-
-    if (text.trim().length > 300) {
-      setError('O comentário deve ter no máximo 300 caracteres!');
-      showToast('O comentário deve ter no máximo 300 caracteres!', 'error');
+    const validation = validateComment(text);
+    if (!validation.valid) {
+      setError(validation.message);
+      showToast(validation.message, 'error');
       return;
     }
 
     // Sanitizar conteúdo contra XSS
     const sanitizedText = sanitizeContent(text);
     if (!sanitizedText) {
-      setError('Comentário contém conteúdo não permitido!');
-      showToast('Comentário contém conteúdo não permitido!', 'error');
+      setError(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT);
+      showToast(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT, 'error');
       return;
     }
 
     if (sanitizedText !== text.trim()) {
-      setError('Comentário contém conteúdo perigoso que foi removido!');
-      showToast('Comentário contém conteúdo perigoso que foi removido!', 'error');
+      setError(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
+      showToast(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT, 'error');
       return;
     }
 
@@ -429,17 +426,18 @@ const QandA = () => {
                     <textarea
                       value={newReply[key] || ''}
                       onChange={(e) => {
-                        if (e.target.value.length <= 300) {
+                        if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
                           setNewReply({ ...newReply, [key]: e.target.value });
                         }
                       }}
                       placeholder="Escreva uma resposta..."
                       className="reply-input-modern"
                       rows="2"
-                      maxLength={300}
+                      maxLength={COMMENT_LIMITS.MAX_LENGTH}
                       autoFocus
                     />
                     <div className="reply-actions">
+                      <span style={{ fontSize: '12px', color: '#999', marginRight: 'auto' }}>{(newReply[key] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
                       <motion.button
                         className="cancel-reply-btn"
                         onClick={() => toggleReply(key)}
@@ -620,30 +618,33 @@ const QandA = () => {
                       <textarea
                         value={newComment[question.id] || ''}
                         onChange={(e) => {
-                          if (e.target.value.length <= 300) {
+                          if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
                             setNewComment({ ...newComment, [question.id]: e.target.value });
                           }
                         }}
                         placeholder="Escreva a sua resposta..."
                         className="comment-input-modern"
                         rows="2"
-                        maxLength={300}
+                        maxLength={COMMENT_LIMITS.MAX_LENGTH}
                       />
-                      <AnimatePresence>
-                        {newComment[question.id]?.trim() && (
-                          <motion.button
-                            onClick={() => handleCommentOrReply(question.id, [], newComment[question.id])}
-                            className="send-comment-btn"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <FaPaperPlane />
-                          </motion.button>
-                        )}
-                      </AnimatePresence>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingRight: '10px' }}>
+                        <span style={{ fontSize: '12px', color: '#999' }}>{(newComment[question.id] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                        <AnimatePresence>
+                          {newComment[question.id]?.trim() && (
+                            <motion.button
+                              onClick={() => handleCommentOrReply(question.id, [], newComment[question.id])}
+                              className="send-comment-btn"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <FaPaperPlane />
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -657,6 +658,74 @@ const QandA = () => {
 
   return (
     <div className="qanda-page-modern">
+      {/* Modal de Boas-vindas */}
+      {showWelcomeModal && (
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>Comunidade Q&A de Viajantes</h2>
+              <button className="gm-map-close-btn" onClick={() => setShowWelcomeModal(false)}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Tire as suas dúvidas e partilhe conhecimentos com uma comunidade experiente de viajantes! Faça perguntas, responda e ajude outros exploradores.</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">❓</span>
+                  <div>
+                    <strong>Sistema de Perguntas Inteligente</strong>
+                    <p>Faça perguntas categorizadas por país, cidade ou tipo de viagem para respostas mais precisas</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">💬</span>
+                  <div>
+                    <strong>Respostas da Comunidade</strong>
+                    <p>Receba respostas de viajantes experientes que já estiveram nos seus destinos de interesse</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">❤️</span>
+                  <div>
+                    <strong>Sistema de Likes e Classificações</strong>
+                    <p>Vote nas melhores respostas e identifique rapidamente o conteúdo mais útil e confiável</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🔍</span>
+                  <div>
+                    <strong>Pesquisa e Filtros Avançados</strong>
+                    <p>Encontre rapidamente perguntas similares por categoria, destino ou número de respostas</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  qandaModalUtils.dismiss();
+                }
+                setShowWelcomeModal(false);
+              }}>
+                Começar a perguntar!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header com estatísticas */}
 
 

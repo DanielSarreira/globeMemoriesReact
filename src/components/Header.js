@@ -37,6 +37,8 @@ const Header = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+  const [showInstallButton, setShowInstallButton] = useState(false);
   
   // Toast state
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
@@ -64,14 +66,35 @@ const Header = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Detectar se está em modo standalone (PWA instalada)
+  useEffect(() => {
+    const isStandalone = 
+      window.matchMedia('(display-mode: standalone)').matches ||
+      navigator.standalone === true ||
+      document.referrer.includes('android-app://');
+    setIsAppInstalled(isStandalone);
+  }, []);
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
       setDeferredPrompt(event);
+      setShowInstallButton(true); // Mostrar botão apenas quando há deferredPrompt
     };
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      setShowInstallButton(false);
+      setDeferredPrompt(null);
+      showToast('✨ App instalada com sucesso!', 'success');
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -173,16 +196,29 @@ const Header = () => {
     <div>
     <header className="header">
       <div className="header-left">
-        {isMobile ? (
+        {isMobile && !isAppInstalled && showInstallButton ? (
           <div className="install-app-container">
             <button
               className="install-app-btn"
               onClick={handleInstallClick}
+              title="Instale o app para melhor experiência"
             >
-              Instalar App
+              📱 Instalar App
             </button>
           </div>
-        ) : (
+        ) : isMobile && isAppInstalled ? (
+          <div className="install-app-container">
+            <span className="app-installed-badge" title="App instalada no seu dispositivo">
+              ✓ App Instalada
+            </span>
+          </div>
+        ) : isMobile && isAppInstalled ? (
+          <div className="install-app-container">
+            <span className="app-installed-badge" title="App instalada no seu dispositivo">
+              ✓ App Instalada
+            </span>
+          </div>
+        ) : !isMobile ? (
           <div className="social-icons">
             <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
               <FaFacebook />
@@ -197,7 +233,7 @@ const Header = () => {
               <FaLinkedin />
             </a>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="header-center">
@@ -289,6 +325,7 @@ const Header = () => {
       open={isInstallModalOpen}
       onClose={() => setIsInstallModalOpen(false)}
       deferredPrompt={deferredPrompt}
+      showToast={showToast}
     />
     <Toast
       message={toast.message}

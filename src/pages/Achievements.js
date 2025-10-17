@@ -27,7 +27,8 @@ import {
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import '../styles/pages/achievements.css';
-// ...existing code...
+import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
+import { achievementsModalUtils } from '../utils/modalUtils';
 
 // Dados simulados para visualizações e gostos dados pelo viajante (simulando o backend)
 const mockUserActions = {
@@ -311,6 +312,8 @@ const achievements = [
 const Achievements = () => {
   const { user, loading } = useAuth();
   const [showPointsModal, setShowPointsModal] = React.useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = React.useState(() => achievementsModalUtils.shouldShow());
+  const [dontShowAgain, setDontShowAgain] = React.useState(false);
 
   if (loading) {
     return (
@@ -543,6 +546,74 @@ const Achievements = () => {
 
   return (
     <div className="achievements-page">
+      {/* Modal de Boas-vindas */}
+      {showWelcomeModal && (
+        <div className="gm-map-welcome-overlay">
+          <div className="gm-map-welcome-modal">
+            <div className="gm-map-welcome-header">
+              <h2>Sistema de Conquistas Globe Memories</h2>
+              <button className="gm-map-close-btn" onClick={() => setShowWelcomeModal(false)}>×</button>
+            </div>
+            <div className="gm-map-welcome-content">
+              <p>Transforme as suas aventuras em realizações! <br></br>Desbloqueie conquistas, ganhe pontos e suba no ranking global da comunidade de viajantes Globe Memories.</p>
+              <div className="gm-map-features-grid">
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🏆</span>
+                  <div>
+                    <strong>Conquistas Dinâmicas</strong>
+                    <p>Obtenha novas conquistas ao viajar, partilhar fotos, interagir com outros exploradores e completar desafios únicos.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">🎯</span>
+                  <div>
+                    <strong>Pontuação e Ranking Global</strong>
+                    <p>Acumule pontos por cada conquista alcançada e veja o seu nome subir na tabela de liderança mundial.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">📊</span>
+                  <div>
+                    <strong>Progresso Visual Personalizado</strong>
+                    <p>Acompanhe o seu desempenho através de gráficos, barras de progresso e estatísticas detalhadas.</p>
+                  </div>
+                </div>
+                <div className="gm-map-feature-item">
+                  <span className="gm-map-feature-icon">👥</span>
+                  <div>
+                    <strong>Competição Saudável e Motivadora</strong>
+                    <p>Compare as suas conquistas com outros viajantes, desafie amigos e mantenha-se sempre inspirado a explorar mais.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="gm-map-welcome-footer">
+              <div className="dont-show-again">
+                <label className="checkbox-container">
+                  <input
+                    type="checkbox"
+                    checked={dontShowAgain}
+                    onChange={(e) => setDontShowAgain(e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-text">
+                    Não mostrar novamente esta mensagem
+                  </span>
+                </label>
+              </div>
+              <button className="gm-map-welcome-btn primary" onClick={() => {
+                if (dontShowAgain) {
+                  achievementsModalUtils.dismiss();
+                }
+                setShowWelcomeModal(false);
+              }}>
+                Começar a conquistar!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div 
         className="progress-bar-A-container" 
         aria-hidden={false} 

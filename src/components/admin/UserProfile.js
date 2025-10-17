@@ -24,7 +24,7 @@ const UserProfile = () => {
 
   return (
     <div>
-      <h2>Perfil do Usuário</h2>
+      <h2>Perfil do Viajante</h2>
       {profileData ? (
         <>
           <p>Username: {profileData.username}</p>

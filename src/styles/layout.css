@@ -106,8 +106,9 @@ footer p {
 }
 
 /* Estilo do botão Planear Nova Viagem */
-.plan-new-travel {
-  background-color: var(--secondary-color);
+button.plan-new-travel {
+  background-color: var(--secondary-color) !important;
+  background: var(--secondary-color) !important;
   color: white;
   border: none;
   border-radius: 50%;
@@ -121,7 +122,8 @@ footer p {
   transition: background-color 0.3s;
 }
 
-.plan-new-travel:hover {
-  background-color: var(--secondary-color-hover);
+button.plan-new-travel:hover {
+  background-color: var(--secondary-color-hover) !important;
+  background: var(--secondary-color-hover) !important;
 }
 
