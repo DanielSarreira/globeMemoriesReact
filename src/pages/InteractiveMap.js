@@ -575,17 +575,17 @@ const MapEvents = () => {
     setSearchResults([]);
   };
 
-  // Função para sanitizar input de pesquisa
+  // Função para sanitizar input de pesquisa (SEM remover espaços)
   const sanitizeSearchInput = (input) => {
     if (!input) return '';
     
-    // Remove caracteres perigosos e scripts
+    // Remove caracteres perigosos e scripts, MAS MANTÉM ESPAÇOS
     return input
       .replace(/<script[^>]*>.*?<\/script>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')
-      .replace(/[<>]/g, '')
-      .trim();
+      .replace(/[<>]/g, '');
+    // REMOVIDO .trim() para permitir espaços
   };
 
   // Função para validar input de localização
@@ -599,7 +599,8 @@ const MapEvents = () => {
 
     const sanitized = sanitizeSearchInput(input);
     
-    if (sanitized !== input.trim()) {
+    // Verificar apenas se caracteres perigosos foram removidos (não comparar trim)
+    if (sanitized !== input) {
       showToast('Pesquisa contém caracteres não permitidos que foram removidos!', 'error');
     }
 

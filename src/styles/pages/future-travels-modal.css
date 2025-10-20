@@ -188,6 +188,7 @@
   background: #ffffff;
   scrollbar-width: thin;
   scrollbar-color: #007bff #f8f9fa;
+  padding-bottom: 30px;
 }
 
 .modal-form-content::-webkit-scrollbar {
@@ -346,12 +347,17 @@
 /* --------------------------------------- Navegação Inferior --------------------------------------- */
 .fixed-nav-buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 20px;
   padding: 20px 40px;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0 0 20px 20px;
+  border-radius: 0;
+  margin-top: auto;
+  width: calc(100% + 80px);
+  margin-left: -40px;
+  margin-right: -40px;
+  box-sizing: border-box;
 }
 
 .nav-button {
@@ -423,10 +429,22 @@
     max-height: 92vh;
   }
   
+  .fixed-nav-buttons {
+    justify-content: flex-end;
+    padding: 15px 25px;
+    gap: 12px;
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+  
+  .nav-button {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+  
   .modal-header-actions,
   .tab-nav,
-  .modal-form-content,
-  .fixed-nav-buttons {
+  .modal-form-content {
     padding-left: 25px;
     padding-right: 25px;
   }

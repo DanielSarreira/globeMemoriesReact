@@ -332,7 +332,8 @@ const TravelDetails = () => {
       sanitized = sanitized.replace(pattern, '');
     });
     
-    return sanitized.trim();
+    // REMOVIDO .trim() para permitir espaços nos comentários
+    return sanitized;
   };
 
   const handleAddComment = (parentIds = [], text) => {
@@ -355,7 +356,8 @@ const TravelDetails = () => {
       return;
     }
 
-    if (sanitizedComment !== commentText.trim()) {
+    // Verificar se conteúdo perigoso foi removido (não comparar trim)
+    if (sanitizedComment !== commentText) {
       alert(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
       return;
     }
@@ -576,7 +578,7 @@ const TravelDetails = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {comment.replies.map((reply, replyIndex) => 
+            {[...comment.replies].reverse().map((reply, replyIndex) => 
               renderComment(reply, parentIds.concat(comment.id), replyIndex)
             )}
           </motion.div>

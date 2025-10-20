@@ -20,10 +20,12 @@
     border-radius: 16px;
     max-width: 90vw;
     max-height: 95vh;
-    overflow-y: auto;
+    overflow: hidden;
     position: relative;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
 }
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -2106,19 +2108,22 @@ label.upload-button{
   }
 /* Fixed Navigation Buttons */
 .fixed-nav-buttons {
-  position: fixed;
-  bottom: 0px;
-  left: 90%;
-  transform: translateX(-50%);
+  position: relative;
+  margin-top: auto;
   display: flex;
+  justify-content: flex-end;
   gap: 15px;
   z-index: 100000000000000001;
-  background: none !important;
-  padding: 15px 25px;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 20px 40px;
+  border-radius: 0;
   box-shadow: none;
   backdrop-filter: none;
-  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  width: calc(100% + 80px);
+  margin-left: -40px;
+  margin-right: -40px;
+  box-sizing: border-box;
 }
 .nav-button {
   padding: 12px 24px;
@@ -2853,6 +2858,16 @@ margin-left: 10px !important;
 /* ===== ENHANCED MOBILE & TABLET OPTIMIZATIONS FOR MY-TRAVELS MODAL ===== */
 /* Tablet Optimization (1024px) */
 @media (max-width: 1024px) {
+  .fixed-nav-buttons {
+    justify-content: flex-end;
+    padding: 15px 25px;
+    gap: 12px;
+  }
+  .nav-button {
+    padding: 10px 20px;
+    font-size: 13px;
+    min-width: 110px;
+  }
   .modal-content {
     max-width: 95vw;
     max-height: 90vh;
@@ -2991,6 +3006,12 @@ margin-left: 10px !important;
 .modal-content.settings-modal {
     width: 100%;
     border-radius: 20px !important;
+}
+
+/* Modal form content scrollable */
+.modal-form-content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 

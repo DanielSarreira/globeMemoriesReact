@@ -1,9 +1,10 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FaGlobe, FaLock, FaBell, FaUserShield, FaHistory, FaSignOutAlt, FaTrash, FaBan, FaUnlock, FaInfoCircle, FaCog } from 'react-icons/fa';
+import { FaGlobe, FaLock, FaBell, FaUserShield, FaHistory, FaSignOutAlt, FaTrash, FaBan, FaUnlock, FaInfoCircle, FaCog, FaFileAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/Toast';
+import TermsModal from '../components/TermsModal';
 import '../styles/pages/SettingsAndPrivacy.css';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 
@@ -13,6 +14,8 @@ const SettingsAndPrivacy = () => {
   const { user } = useAuth();
   const [toast, setToast] = useState({ message: '', type: '', show: false });
   const [isLoading, setIsLoading] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsModalTab, setTermsModalTab] = useState('terms');
   const [settings, setSettings] = useState({
     language: 'pt',
     notifications: {
@@ -259,8 +262,8 @@ const SettingsAndPrivacy = () => {
           Definições
         </button>
         <button
-          className={`tab-button ${activeTab === 'privacy' ? 'active' : ''}`}
-          onClick={() => setActiveTab('privacy')}
+          className={`tab-button ${activeTab === 'terms' ? 'active' : ''}`}
+          onClick={() => setActiveTab('terms')}
         >
           Privacidade
         </button>
@@ -527,6 +530,60 @@ const SettingsAndPrivacy = () => {
           </div>
         )}
       </div>
+
+      {/* Aba de Termos e Documentos */}
+      {activeTab === 'terms' && (
+        <div className="terms-documents-section">
+          <div className="terms-container">
+            <div className="document-card">
+              <div className="document-header">
+                <FaFileAlt className="document-icon" style={{color: '#008cba'}} />
+                <div>
+                  <h3>Termos e Condições</h3>
+                  <p>Lê os termos e condições de uso do Globe Memories</p>
+                </div>
+              </div>
+              <button 
+                className="button"
+                onClick={() => {
+                  setTermsModalTab('terms');
+                  setShowTermsModal(true);
+                }}
+              >
+                Ver Termos Completos
+              </button>
+            </div>
+
+            <div className="document-card">
+              <div className="document-header">
+                <FaLock className="document-icon" style={{color: '#28a745'}} />
+                <div>
+                  <h3>Política de Privacidade</h3>
+                  <p>Entende como proteges os teus dados e privacidade</p>
+                </div>
+              </div>
+              <button 
+                className="button"
+                onClick={() => {
+                  setTermsModalTab('privacy');
+                  setShowTermsModal(true);
+                }}
+              >
+                Ver Política Completa
+              </button>
+            </div>
+
+            
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Termos */}
+      <TermsModal 
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        initialTab={termsModalTab}
+      />
 
       {/* Toast para feedback */}
       <Toast

@@ -470,7 +470,7 @@ const QandA = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {comment.replies.map((reply, replyIndex) => 
+            {[...comment.replies].reverse().map((reply, replyIndex) => 
               renderComment(reply, questionId, parentIds.concat(comment.id), replyIndex)
             )}
           </motion.div>
@@ -587,7 +587,7 @@ const QandA = () => {
               <div className="comments-container-modern">
                 {question.comments.length > 0 ? (
                   <div className="comments-list-modern">
-                    {question.comments.map((comment, commentIndex) => 
+                    {[...question.comments].reverse().map((comment, commentIndex) => 
                       renderComment(comment, question.id, [], commentIndex)
                     )}
                   </div>

@@ -12,6 +12,7 @@ import { shouldShowWelcomeModal, CURRENT_MODAL_VERSION } from '../utils/welcomeM
 import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
 import '../styles/pages/qanda.css';
 import '../styles/pages/home.css';
+import '../styles/components/TravelDetailsModern.css';
 
 // Dados mockados para notificações (simulando o backend)
 const mockNotifications = [];
@@ -90,6 +91,8 @@ const Home = () => {
   const [isFeedRefreshed, setIsFeedRefreshed] = useState(false);
   const [viewMode, setViewMode] = useState('list');
   const [expandedDescriptions, setExpandedDescriptions] = useState({});
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [currentTravelIdForComments, setCurrentTravelIdForComments] = useState(null);
   const [showDropdown, setShowDropdown] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedTravel, setSelectedTravel] = useState(null);
@@ -422,7 +425,8 @@ const Home = () => {
       sanitized = sanitized.replace(pattern, '');
     });
     
-    return sanitized.trim();
+    // REMOVIDO .trim() para permitir espaços nos comentários
+    return sanitized;
   };
 
   const handleAddComment = (travelId, parentIds = [], text) => {
@@ -446,7 +450,8 @@ const Home = () => {
       return;
     }
 
-    if (sanitizedComment !== commentText.trim()) {
+    // Verificar se conteúdo perigoso foi removido (não comparar trim)
+    if (sanitizedComment !== commentText) {
       showToast(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT, 'error');
       return;
     }
@@ -701,7 +706,7 @@ const Home = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {comment.replies.map((reply, replyIndex) => 
+            {[...comment.replies].reverse().map((reply, replyIndex) => 
               renderComment(reply, travelId, parentIds.concat(comment.id), replyIndex)
             )}
           </motion.div>
@@ -879,17 +884,31 @@ const Home = () => {
   const toggleComments = (travelId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (showComments === travelId) {
-      setShowComments(null);
+    
+    // Se for mobile, usar modal
+    if (isMobile) {
+      setCurrentTravelIdForComments(travelId);
+      setShowCommentsModal(true);
     } else {
-      setShowComments(travelId);
+      // Desktop: usar sistema inline tradicional
+      if (showComments === travelId) {
+        setShowComments(null);
+      } else {
+        setShowComments(travelId);
+      }
     }
   };
 
   const handleCloseComments = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Fechar ambos os sistemas
     setShowComments(null);
+    setShowCommentsModal(false);
+    setCurrentTravelIdForComments(null);
   };
 
   const stopPropagation = (e) => {
@@ -1699,7 +1718,7 @@ const Home = () => {
                 {travel.comments.length > 0 ? (
                   <div className="comments-list-modern">
                     <AnimatePresence>
-                      {travel.comments.map((comment, commentIndex) => 
+                      {[...travel.comments].reverse().map((comment, commentIndex) => 
                         renderComment(comment, travel.id, [], commentIndex)
                       )}
                     </AnimatePresence>
@@ -2237,8 +2256,8 @@ const Home = () => {
                 top: '40%',
                 transform: 'translate(-50%, -50%)',
                 zIndex: 1001,
-                maxWidth: '95vw',
-                width: '95vw',
+                maxWidth: '100vw',
+                width: '100vw',
                 maxHeight: '80vh',
                 background: '#fff',
                 borderRadius: '16px',
@@ -2283,7 +2302,7 @@ const Home = () => {
                 {travel.comments.length > 0 ? (
                   <div className="comments-list-modern">
                     <AnimatePresence>
-                      {travel.comments.map((comment, commentIndex) => 
+                      {[...travel.comments].reverse().map((comment, commentIndex) => 
                         renderComment(comment, travel.id, [], commentIndex)
                       )}
                     </AnimatePresence>
@@ -2397,7 +2416,7 @@ const Home = () => {
               {travel.comments.length > 0 ? (
                 <div className="comments-list-modern">
                   <AnimatePresence>
-                    {travel.comments.map((comment, commentIndex) => 
+                    {[...travel.comments].reverse().map((comment, commentIndex) => 
                       renderComment(comment, travel.id, [], commentIndex)
                     )}
                   </AnimatePresence>
@@ -2832,6 +2851,103 @@ const Home = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Comentários (Mobile Only) - Estilo TravelDetails */}
+      <AnimatePresence>
+        {showCommentsModal && isMobile && currentTravelIdForComments && (
+          <motion.div
+            className="modal-overlay-travel-details"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCloseComments}
+          >
+            <motion.div
+              className="comments-modal-travel-details"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 500 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="comments-modal-header-travel-details">
+                <h3>Comentários ({feedTravels.find(t => t.id === currentTravelIdForComments)?.comments?.length || 0})</h3>
+                <button className="close-comments-travel-details" onClick={handleCloseComments}>×</button>
+              </div>
+              
+              {/* Modal Content com Scroll */}
+              <div className="comments-modal-content-travel-details">
+                {/* Add Comment - Sistema moderno unificado */}
+                {user && (
+                  <div className="add-comment-modern comments-modal-section">
+                    <img 
+                      src={user.profilePicture || defaultAvatar} 
+                      alt="Seu avatar" 
+                      className="comment-user-avatar" 
+                    />
+                    <div className="comment-form-wrapper-modern">
+                      <textarea
+                        value={newComment[currentTravelIdForComments] || ''}
+                        onChange={(e) => {
+                          if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
+                            setNewComment(prev => ({ ...prev, [currentTravelIdForComments]: e.target.value }));
+                          }
+                        }}
+                        placeholder="Escreva um comentário..."
+                        className="comment-input-modern"
+                        rows="3"
+                        maxLength={COMMENT_LIMITS.MAX_LENGTH}
+                      />
+                      <div className="comment-form-actions">
+                        <span className="char-count">{(newComment[currentTravelIdForComments] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                        <button 
+                          className="comment-submit-btn-modern"
+                          onClick={() => handleAddComment(currentTravelIdForComments)}
+                          disabled={!(newComment[currentTravelIdForComments]?.trim()) || commentLoading}
+                        >
+                          {commentLoading ? 'Publicando...' : 'Publicar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!user && (
+                  <div className="login-prompt-modern comments-modal-section">
+                    <p>🔒 Faça login para comentar nesta viagem</p>
+                  </div>
+                )}
+
+                {commentSuccess && (
+                  <div className="comment-success-modern comments-modal-section">
+                    ✅ {commentSuccess}
+                  </div>
+                )}
+                
+                {/* Comments List - Sistema moderno unificado */}
+                <div className="comments-list-modern comments-modal-section">
+                  {(() => {
+                    const currentTravel = feedTravels.find(t => t.id === currentTravelIdForComments);
+                    const travelComments = currentTravel?.comments || [];
+                    
+                    return travelComments.length > 0 ? (
+                      [...travelComments].reverse().map((comment, index) => 
+                        renderComment(comment, currentTravelIdForComments, [], index)
+                      )
+                    ) : (
+                      <div className="no-comments-modern">
+                        <span className="no-comments-icon">💬</span>
+                        <p>Ainda não há comentários.</p>
+                        <p>Seja o primeiro a comentar!</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal de Boas-vindas */}
       <WelcomeModal 

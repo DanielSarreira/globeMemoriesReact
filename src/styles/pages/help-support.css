@@ -8,7 +8,7 @@
   margin-top: 55px;
   margin-bottom: 85px;
   color: #333;
-  background-color: #fff;
+  background-color: #f8f9fa;
   border-radius: 10px;
 }
 
@@ -18,29 +18,87 @@
 
 .faq-section h2,
 .contact-section h2 {
-  border-bottom: 2px solid #008cba;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-  color: #555;
+  border-bottom: 3px solid #008cba;
+  padding-bottom: 12px;
+  margin-bottom: 30px;
+  color: #1a1a1a;
+  font-size: 28px;
+  font-weight: 700;
 }
 
+/* Estilo do accordion para FAQ */
 .faq-item {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
 .faq-item h3 {
+  font-size: 17px;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 16px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-bottom: 1px solid #e9ecef;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.faq-item h3:before {
+  content: '▸';
+  margin-right: 10px;
+  color: #008cba;
+  font-weight: bold;
   font-size: 18px;
-  color: #333;
+  transition: transform 0.3s ease;
+}
+
+.faq-item.active h3 {
+  background: linear-gradient(135deg, #008cba 0%, #0099d8 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.faq-item.active h3:before {
+  transform: rotate(90deg);
+  color: white;
 }
 
 .faq-item p {
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 16px 18px;
+  margin: 0;
+  color: #555;
+  background: #ffffff;
+}
+
+.contact-section {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .contact-section p {
-  font-size: 16px;
+  font-size: 15px;
   margin-bottom: 20px;
+  color: #666;
+  line-height: 1.6;
 }
 
 .contact-form {
@@ -50,38 +108,95 @@
 
 .contact-form label {
   font-size: 14px;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .contact-form input,
 .contact-form textarea {
-  font-size: 16px;
-  padding: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  font-size: 15px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: #008cba;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(0, 139, 186, 0.1);
+}
+
+.contact-form input.input-error {
+  border-color: #e74c3c;
+  background-color: #fff5f5;
 }
 
 .contact-form button {
-  font-size: 16px;
-  background-color: #008cba;
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #008cba 0%, #0099d8 100%);
   color: white;
-  padding: 10px 20px;
+  padding: 13px 24px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.contact-form button:hover {
-  background-color: #005f7a;
+.contact-form button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #006f96 0%, #0088c3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 139, 186, 0.3);
 }
 
+.contact-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
+.field-error {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: -14px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .help-support-container {
     margin: 10px;
     margin-top: 30px;
-    padding: 10px;
+    padding: 12px;
+  }
+
+  .faq-section h2,
+  .contact-section h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .faq-item h3 {
+    font-size: 15px;
+    padding: 14px 14px;
+  }
+
+  .faq-item p {
+    font-size: 14px;
+    padding: 14px 14px;
   }
 }

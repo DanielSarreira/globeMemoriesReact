@@ -87,16 +87,17 @@ const Travels = () => {
     : [];
   const uniqueTransportMethods = [...new Set(travels.map(travel => travel.transport))];
 
-  // Função para sanitizar inputs de pesquisa
+  // Função para sanitizar inputs de pesquisa (SEM remover espaços)
   const sanitizeSearchInput = (input) => {
     if (!input) return '';
     
+    // Remove apenas conteúdo perigoso, MAS MANTÉM ESPAÇOS
     return input
       .replace(/<script[^>]*>.*?<\/script>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')
-      .replace(/[<>]/g, '')
-      .trim();
+      .replace(/[<>]/g, '');
+    // REMOVIDO .trim() para permitir espaços
   };
 
   const handleSearch = (e) => {
@@ -109,7 +110,8 @@ const Travels = () => {
 
     const sanitized = sanitizeSearchInput(rawValue);
     
-    if (sanitized !== rawValue.trim() && rawValue.trim() !== '') {
+    // Verificar apenas se caracteres perigosos foram removidos (não comparar trim)
+    if (sanitized !== rawValue && rawValue !== '') {
       showToast('Pesquisa contém caracteres não permitidos que foram removidos!', 'error');
     }
 

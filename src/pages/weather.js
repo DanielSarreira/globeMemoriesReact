@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaMapMarkerAlt, FaHistory, FaPlane, FaCalendarAlt, FaInfoCircle, FaTrash } from 'react-icons/fa';
-import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiFog, WiThunderstorm, WiNightClear, WiNightCloudy, WiDayCloudy, WiWindy, WiDayRain, WiNightRain } from 'react-icons/wi';
+import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiFog, WiThunderstorm, WiNightClear, WiNightCloudy, WiDayCloudy, WiWindy, WiDayRain, WiNightRain, WiDayHail } from 'react-icons/wi';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, Title, Tooltip, Legend, CategoryScale } from 'chart.js';
 import axios from 'axios';
 import TravelsData from '../data/travelsData';
 import Toast from '../components/Toast';
+import WeatherAnimation from '../components/WeatherAnimation';
 // ...existing code...
 import { useWeather } from '../context/WeatherContext';
 import '../styles/pages/globe-memories-interactive-map.css'; // Importar CSS do mapa para o modal
+import '../styles/pages/weather.css'; // Weather styles
+import '../styles/pages/weather-mobile.css'; // Mobile optimized styles
+import '../styles/pages/weather-animations.css'; // Weather animations
 import { weatherModalUtils } from '../utils/modalUtils';
 
 
@@ -29,6 +33,7 @@ const iconMap = {
   WiWindy,
   WiDayRain,
   WiNightRain,
+  WiDayHail,
 };
 
 // Normalizar nome da cidade
@@ -184,7 +189,6 @@ const WeatherPage = () => {
   const [hourlyData, setHourlyData] = useState([]);
   const [forecastData, setForecastData] = useState([]);
   const [futureWeather, setFutureWeather] = useState(null);
-  const [weatherError, setWeatherError] = useState(null);
   const [userLocation, setUserLocation] = useState({ city: 'Lisboa', lat: 38.7167, lon: -9.1333 });
   const [searchCity, setSearchCity] = useState('');
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -269,11 +273,11 @@ const WeatherPage = () => {
         },
         (error) => {
           console.error('Erro de geolocalização:', error.message);
-          setWeatherError('Não foi possível obter a localização. Usando Lisboa como padrão.');
+          showToast('Não foi possível obter a localização. Usando Lisboa como padrão.', 'warning');
         }
       );
     } else {
-      setWeatherError('Geolocalização não suportada pelo navegador.');
+      showToast('Geolocalização não suportada pelo navegador.', 'error');
     }
   }, []);
 
@@ -383,7 +387,7 @@ const WeatherPage = () => {
       81: { description: 'Chuva moderada esporádica', icon: 'WiRain' },
       82: { description: 'Chuva forte esporádica', icon: 'WiRain' },
       95: { description: 'Trovoada leve', icon: 'WiThunderstorm' },
-      96: { description: 'Trovoada com granizo', icon: 'WiThunderstorm' },
+      96: { description: 'Trovoada com granizo', icon: 'WiDayHail' },
       99: { description: 'Trovoada intensa', icon: 'WiThunderstorm' },
       // Adicionar código para ventoso (simulado, já que Open-Meteo não tem código específico para vento)
       15: { description: 'Ventoso', icon: 'WiWindy' }, // Código fictício para vento
@@ -415,7 +419,6 @@ const WeatherPage = () => {
   // Buscar dados meteorológicos com cache
   const fetchWeather = async (location, selectedTravel = null) => {
     setIsLoading(true);
-    setWeatherError(null);
     try {
       let lat, lon, cityName, admin1, isGeolocation = false;
       
@@ -449,6 +452,7 @@ const WeatherPage = () => {
         setWeatherData({
           ...cachedData.weatherData,
           icon: iconMap[cachedData.weatherData.icon] || WiCloudy,
+          iconName: cachedData.weatherData.icon, // Restaurar icon name do cache
         });
         setWeather({ ...cachedData.weatherData });
         setHourlyData(
@@ -463,7 +467,6 @@ const WeatherPage = () => {
             icon: iconMap[item.icon] || WiCloudy,
           }))
         );
-        setWeatherError(null);
         setIsLoading(false);
         return;
       }
@@ -517,19 +520,23 @@ const WeatherPage = () => {
           const weatherInfo = getWeatherDescription(currentWeatherCode, isDay);
 
           const weatherData = {
-            city: isGeolocation ? cityName : admin1 ? `${cityName}, ${admin1}` : cityName,
+            city: isGeolocation ? cityName : (admin1 && admin1.toLowerCase() !== cityName.toLowerCase()) ? `${cityName}, ${admin1}` : cityName,
             temperature: parseFloat(current.temperature_2m.toFixed(1)),
+            maxTemp: daily.temperature_2m_max[0],
+            minTemp: daily.temperature_2m_min[0],
             apparentTemp: parseFloat(current.apparent_temperature.toFixed(1)),
             humidity: current.relative_humidity_2m,
             windSpeed: current.wind_speed_10m,
             precipitationProbability: current.precipitation_probability,
             condition: weatherInfo.description,
             icon: weatherInfo.icon,
+            iconName: weatherInfo.icon, // Store original icon name for animation
           };
 
           setWeatherData({
             ...weatherData,
             icon: iconMap[weatherInfo.icon] || WiCloudy,
+            iconName: weatherInfo.icon, // Keep original name
           });
           setWeather({ ...weatherData });
 
@@ -577,10 +584,15 @@ const WeatherPage = () => {
             };
           });
 
-          // Salvar no cache
+          // Salvar no cache (store icon name string so retrieval can remap to components)
           const cacheData = getFromLocalStorage(STORAGE_KEYS.WEATHER_CACHE, {});
+          const cacheWeather = {
+            ...weatherData,
+            // ensure the cached icon is the original name string (iconName) when available
+            icon: weatherData.iconName || weatherData.icon,
+          };
           cacheData[cacheKey] = {
-            weatherData: { ...weatherData, icon: weatherData.icon },
+            weatherData: cacheWeather,
             hourlyData: hourlySlice,
             forecastData: forecast,
             timestamp: Date.now(),
@@ -598,33 +610,39 @@ const WeatherPage = () => {
           // Fallback para dados climatológicos
           const climate = estimateClimate(cityName, lat, targetMonth);
           setWeatherData({
-            city: isGeolocation ? cityName : admin1 ? `${cityName}, ${admin1}` : cityName,
+            city: isGeolocation ? cityName : (admin1 && admin1.toLowerCase() !== cityName.toLowerCase()) ? `${cityName}, ${admin1}` : cityName,
             temperature: parseFloat(((climate.maxTemp + climate.minTemp) / 2).toFixed(1)),
+            maxTemp: climate.maxTemp,
+            minTemp: climate.minTemp,
             apparentTemp: parseFloat(climate.apparentTemp.toFixed(1)),
             humidity: climate.humidity,
             windSpeed: climate.windSpeed,
             precipitationProbability: climate.precipitation,
             condition: climate.condition,
             icon: iconMap[climate.icon] || WiCloudy,
+            iconName: climate.icon, // Adicionar icon name para animação
           });
           setWeather({ ...weatherData });
-          setWeatherError('Usando dados climatológicos estimados devido a erro na API.');
+          showToast('Usando dados climatológicos estimados devido a erro na API.', 'warning');
         }
       } else {
         // Usar dados climatológicos para datas futuras
         const climate = estimateClimate(cityName, lat, targetMonth);
         setWeatherData({
-          city: isGeolocation ? cityName : admin1 ? `${cityName}, ${admin1}` : cityName,
+          city: isGeolocation ? cityName : (admin1 && admin1.toLowerCase() !== cityName.toLowerCase()) ? `${cityName}, ${admin1}` : cityName,
           temperature: parseFloat(((climate.maxTemp + climate.minTemp) / 2).toFixed(1)),
+          maxTemp: climate.maxTemp,
+          minTemp: climate.minTemp,
           apparentTemp: parseFloat(climate.apparentTemp.toFixed(1)),
           humidity: climate.humidity,
           windSpeed: climate.windSpeed,
           precipitationProbability: climate.precipitation,
           condition: climate.condition,
           icon: iconMap[climate.icon] || WiCloudy,
+          iconName: climate.icon, // Adicionar icon name para animação
         });
         setWeather({ ...weatherData });
-        setWeatherError(`Usando dados climatológicos estimados para ${cityName} (${targetMonth}º mês).`);
+        showToast(`Usando dados climatológicos estimados para ${cityName} (${targetMonth}º mês).`, 'info');
       }
 
       // Processar dados de viagem selecionada
@@ -693,7 +711,7 @@ const WeatherPage = () => {
       } else if (error.response && error.response.status === 400) {
         errorMessage = `Requisição inválida para "${location.city || 'desconhecida'}". Verifique o nome da cidade ou tente novamente.`;
       }
-      setWeatherError(errorMessage);
+      showToast(errorMessage, 'error');
       setWeatherData(null);
       setHourlyData([]);
       setForecastData([]);
@@ -720,7 +738,6 @@ const WeatherPage = () => {
       setCitySuggestions([]);
       setSelectedTravel(null);
     } else {
-      setWeatherError('Por favor, insira uma cidade válida (mínimo 2 caracteres).');
       showToast('Por favor, insira uma cidade válida (mínimo 2 caracteres).', 'error');
     }
   };
@@ -728,7 +745,6 @@ const WeatherPage = () => {
   // Manipular clique em sugestão
   const handleSuggestionClick = (suggestion) => {
     if (!isValidCoordinate(suggestion.lat, suggestion.lon)) {
-      setWeatherError('Coordenadas inválidas para a cidade selecionada.');
       showToast('Coordenadas inválidas para a cidade selecionada.', 'error');
       return;
     }
@@ -751,7 +767,7 @@ const WeatherPage = () => {
         async (position) => {
           const { latitude, longitude } = position.coords;
           if (!isValidCoordinate(latitude, longitude)) {
-            setWeatherError('Coordenadas de geolocalização inválidas.');
+            showToast('Coordenadas de geolocalização inválidas.', 'error');
             return;
           }
           try {
@@ -782,18 +798,18 @@ const WeatherPage = () => {
         },
         (error) => {
           console.error('Erro de geolocalização:', error.message);
-          setWeatherError('Não foi possível obter a localização. Tente novamente.');
+          showToast('Não foi possível obter a localização. Tente novamente.', 'error');
         }
       );
     } else {
-      setWeatherError('Geolocalização não suportada pelo navegador.');
+      showToast('Geolocalização não suportada pelo navegador.', 'error');
     }
   };
 
   // Manipular clique no histórico
   const handleHistoryClick = (historyItem) => {
     if (!isValidCoordinate(historyItem.lat, historyItem.lon)) {
-      setWeatherError('Coordenadas inválidas no histórico.');
+      showToast('Coordenadas inválidas no histórico.', 'error');
       return;
     }
     setUserLocation(historyItem);
@@ -830,7 +846,7 @@ const WeatherPage = () => {
       fetchWeather(userLocation, selectedTravel);
     } else {
       setFutureWeather(null);
-      setWeatherError('Data futura inválida.');
+      showToast('Data futura inválida.', 'error');
     }
   };
 
@@ -857,6 +873,18 @@ const WeatherPage = () => {
     ? hourlyData.filter((data) => data.date === selectedDay).slice(0, 24)
     : hourlyData.filter((data) => data.date === new Date().toISOString().split('T')[0]).slice(0, 24);
 
+  // Obter índice da hora atual
+  const getCurrentHourIndex = () => {
+    if (selectedDay === new Date().toISOString().split('T')[0] || !selectedDay) {
+      const now = new Date();
+      const currentTime = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+      return filteredHourlyData.findIndex((data) => data.time === currentTime);
+    }
+    return -1;
+  };
+
+  const currentHourIndex = getCurrentHourIndex();
+
   // Dados do gráfico de temperatura
   const temperatureChartData = {
     labels: filteredHourlyData.map((data) => data.time),
@@ -870,6 +898,18 @@ const WeatherPage = () => {
         tension: 0.4,
         pointRadius: 0,
       },
+      ...(currentHourIndex >= 0 ? [{
+        label: 'Agora',
+        data: filteredHourlyData.map((_, idx) => idx === currentHourIndex ? convertTemperature(filteredHourlyData[currentHourIndex].temperature) : null),
+        fill: false,
+        borderColor: 'rgba(255, 0, 0, 0)',
+        backgroundColor: 'rgba(255, 0, 0, 0)',
+        pointRadius: 8,
+        pointBackgroundColor: '#ef4444',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        showLine: false,
+      }] : []),
     ],
   };
 
@@ -886,6 +926,18 @@ const WeatherPage = () => {
         tension: 0.4,
         pointRadius: 0,
       },
+      ...(currentHourIndex >= 0 ? [{
+        label: 'Agora',
+        data: filteredHourlyData.map((_, idx) => idx === currentHourIndex ? filteredHourlyData[currentHourIndex].precipitationProbability : null),
+        fill: false,
+        borderColor: 'rgba(255, 0, 0, 0)',
+        backgroundColor: 'rgba(255, 0, 0, 0)',
+        pointRadius: 8,
+        pointBackgroundColor: '#ef4444',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        showLine: false,
+      }] : []),
     ],
   };
 
@@ -902,6 +954,18 @@ const WeatherPage = () => {
         tension: 0.4,
         pointRadius: 0,
       },
+      ...(currentHourIndex >= 0 ? [{
+        label: 'Agora',
+        data: filteredHourlyData.map((_, idx) => idx === currentHourIndex ? filteredHourlyData[currentHourIndex].windSpeed : null),
+        fill: false,
+        borderColor: 'rgba(255, 0, 0, 0)',
+        backgroundColor: 'rgba(255, 0, 0, 0)',
+        pointRadius: 8,
+        pointBackgroundColor: '#ef4444',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        showLine: false,
+      }] : []),
     ],
   };
 
@@ -911,6 +975,9 @@ const WeatherPage = () => {
     scales: {
       x: {
         grid: { display: false },
+        ticks: {
+          maxTicksLimit: 24, // Mostrar todas as horas (de hora em hora)
+        },
       },
       y: {
         beginAtZero: true,
@@ -934,7 +1001,9 @@ const WeatherPage = () => {
   // Título dinâmico da previsão
   const forecastTitle = selectedTravel
     ? `Previsão de ${new Date(selectedTravel.startDate).toLocaleDateString('pt-PT')} a ${new Date(selectedTravel.endDate).toLocaleDateString('pt-PT')}`
-    : 'Previsão para os Próximos 10 Dias';
+    : showAllDays 
+      ? 'Previsão para os Próximos 15 Dias'
+      : 'Previsão para os Próximos 10 Dias';
 
   // Filtrar dados da previsão baseado no estado showAllDays
   const displayedForecastData = selectedTravel 
@@ -1013,9 +1082,9 @@ const WeatherPage = () => {
         </div>
       )}
 
-      <div className="weather-search-section mb-8 flex flex-col sm:flex-row gap-4">
-        <form onSubmit={handleCitySearch} className="weather-search-form flex-1">
-          <div className="search-container relative">
+      <div className="weather-search-section">
+        <form onSubmit={handleCitySearch} className="weather-search-form">
+          <div className="search-container">
             <input
               type="text"
               value={searchCity}
@@ -1027,20 +1096,19 @@ const WeatherPage = () => {
                   return;
                 }
 
-                // Sanitizar input de cidade
+                // Sanitizar input de cidade (PERMITE ESPAÇOS)
                 const sanitized = rawValue
                   .replace(/<script[^>]*>.*?<\/script>/gi, '')
                   .replace(/javascript:/gi, '')
                   .replace(/on\w+\s*=/gi, '')
-                  .replace(/[<>]/g, '')
-                  .trim();
+                  .replace(/[<>]/g, '');
 
-                if (sanitized !== rawValue.trim() && rawValue.trim() !== '') {
+                if (sanitized !== rawValue && rawValue !== '') {
                   showToast('Nome da cidade contém caracteres não permitidos que foram removidos!', 'error');
                 }
 
                 // Validar se contém apenas caracteres permitidos para nomes de cidade
-                if (sanitized && !/^[a-zA-ZÀ-ÿ\s,.\-''`]+$/.test(sanitized)) {
+                if (sanitized && !/^[a-zA-ZÀ-ÿ\s,.\-']+$/.test(sanitized)) {
                   showToast('Nome da cidade contém caracteres não permitidos!', 'error');
                   return;
                 }
@@ -1051,24 +1119,24 @@ const WeatherPage = () => {
                 }
               }}
               placeholder="Pesquisar cidade (ex.: Torres Vedras)"
-              className="weather-search-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg transition-all"
+              className="weather-search-input"
               maxLength={50}
             />
             <button 
               type="submit" 
-              className="weather-search-button absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500 transition-colors"
+              className="weather-search-button"
             >
               <FaSearch size={20} />
             </button>
             {citySuggestions.length > 0 && (
-              <ul className="city-suggestions absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-2 max-h-80 overflow-y-auto">
+              <ul className="city-suggestions">
                 {citySuggestions.map((suggestion, index) => (
                   <li
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="suggestion-item p-3 hover:bg-gray-100 cursor-pointer text-gray-700 transition-colors"
+                    className="suggestion-item"
                   >
-                    {suggestion.name}, {suggestion.admin1} ({suggestion.country})
+                    {suggestion.name}{suggestion.admin1 && suggestion.admin1.toLowerCase() !== suggestion.name.toLowerCase() && `, ${suggestion.admin1}`} ({suggestion.country})
                   </li>
                 ))}
               </ul>
@@ -1084,70 +1152,77 @@ const WeatherPage = () => {
       </div>
 
       {isLoading && (
-        <div className="weather-loading text-center py-8">
+        <div className="weather-loading">
           <div className="spinner border-t-4 border-blue-500 rounded-full w-12 h-12 animate-spin mx-auto"></div>
           <p className="text-gray-600 text-xl mt-4">A carregar dados meteorológicos...</p>
         </div>
       )}
 
-      {weatherError && (
-        <div className="weather-error text-center py-4 px-6 bg-red-50 border border-red-200 rounded-lg mb-6">
-          <p className="text-red-600 text-lg">{weatherError}</p>
-        </div>
-      )}
-
       {weatherData && !isLoading && (
-        <div className="weather-content space-y-8">
-          <div className="weather-current-forecast flex flex-col lg:flex-row gap-6">
-            <div ref={currentWeatherRef} className="weather-current bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <h1>Temperatura Atual:</h1>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">{weatherData.city}</h2>
-              <div className="weather-current-details flex items-center space-x-6">
-                <span className="weather-icon text-6xl">{weatherData.icon && <weatherData.icon className="weather-icon-large" size={72} />}</span>
-                <div className="weather-stats">
-                  <p className="weather-temperature text-5xl font-bold text-gray-800">{convertTemperature(weatherData.temperature)}°{unit}</p>
-                  <p className="weather-condition text-xl text-gray-600">{weatherData.condition}</p>
-                  <div className="weather-details mt-4 space-y-2">
-                    <p className="text-gray-600 text-lg flex items-center">
-                      <span className="mr-2">💧</span> Chuva: {weatherData.precipitationProbability}%
-                    </p>
-                    <br></br>
-                    <p className="text-gray-600 text-lg flex items-center">
-                      <span className="mr-2">💨</span> Vento: {weatherData.windSpeed} km/h
-                    </p>
-                    <br></br>
-                    <p className="text-gray-600 text-lg flex items-center">
-                      <span className="mr-2">💦</span> Humidade: {weatherData.humidity}%
-                    </p>
+        <div className="weather-content">
+          <div className="weather-current-forecast">
+            {/* MOBILE CURRENT WEATHER */}
+            <div ref={currentWeatherRef} className="weather-current">
+              <WeatherAnimation 
+                weatherIconName={weatherData.iconName}
+                isDay={new Date().getHours() >= 6 && new Date().getHours() <= 18}
+              />
+              <div className="weather-current-overlay">
+                <h1>Temperatura Atual:</h1>
+                <h2>{weatherData.city}</h2>
+                <div className="weather-current-details">
+                  <div className="weather-stats">
+                    <p className="weather-temperature">{convertTemperature(weatherData.temperature)}°{unit}</p>
+                    <p className="weather-condition">{weatherData.condition}</p>
+                    {weatherData.maxTemp && weatherData.minTemp && (
+                      <div className="weather-minmax">
+                        <span>↑ Máx: {convertTemperature(weatherData.maxTemp)}°</span>
+                        <span>↓ Mín: {convertTemperature(weatherData.minTemp)}°</span>
+                      </div>
+                    )}
+                    <div className="weather-details">
+                      <p>
+                        <span>💧 </span>
+                        {weatherData.precipitationProbability}%
+                      </p>
+                      <p>
+                        <span>💨 </span>
+                        {weatherData.windSpeed} km/h
+                      </p>
+                      <p>
+                        <span>💦 </span>
+                        {weatherData.humidity}%
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="weather-forecast bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">{forecastTitle}</h3>
-              <div className="forecast-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="weather-forecast">
+              <h3>{forecastTitle}</h3>
+              <div className="forecast-list">
                 {displayedForecastData.map((day, index) => (
                   <div
                     key={index}
                     onClick={() => handleDayClick(day)}
-                    className={`forecast-item p-4 bg-gray-50 rounded-lg text-center cursor-pointer transition-all hover:bg-gray-100 ${
-                      selectedDay === day.dateISO ? 'bg-blue-100 border-2 border-blue-500' : 'border border-gray-200'
+                    className={`forecast-item ${
+                      selectedDay === day.dateISO ? 'bg-blue-100' : ''
                     }`}
                   >
-                    <span className="block text-gray-700 font-medium">{day.date}</span>
-                    <span className="block my-2">{day.icon && <day.icon className="weather-icon-large" size={48} />}</span>
-                    <span className="block text-gray-700 font-semibold">{convertTemperature(day.maxTemp)}° / {convertTemperature(day.minTemp)}°</span>
-                    <div className="weather-details mt-2 space-y-1">
-                      <p className="text-gray-600 text-sm flex items-center justify-center">
-                        <span className="mr-1">💧 Chuva: {day.precipitation}%</span>
+                    <span>{day.date}</span>
+                    <span>{day.icon && <day.icon className="weather-icon-large" size={48} />}</span>
+                    <span>{convertTemperature(day.maxTemp)}° / {convertTemperature(day.minTemp)}°</span>
+                    <div className="weather-details">
+                      <p>
+                        <span>💧 {day.precipitation}%</span>
                       </p>
-                      <p className="text-gray-600 text-sm flex items-center justify-center">
-                        <span className="mr-1">💨 Vento: {day.windSpeed} km/h</span> 
+                      <p>
+                        <span>💨 {day.windSpeed} km/h</span> 
                       </p>
                     </div>
                     {day.alert && (
-                      <span className="block text-red-500 text-sm mt-2 bg-red-50 p-1 rounded">
+                      <span className="weather-alert">
                         {day.alert}
                       </span>
                     )}
@@ -1168,11 +1243,11 @@ const WeatherPage = () => {
           </div>
 
           {hourlyData.length > 0 && (
-            <div className="weather-hourly bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Previsão Horária</h3>
-              <div className="weather-charts grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="weather-chart-container bg-gray-50 p-4 rounded-lg">
-                  <h4 className="text-lg font-medium text-gray-700 mb-2">Temperatura por Hora</h4>
+            <div className="weather-hourly">
+              <h3>Previsão Horária</h3>
+              <div className="weather-charts">
+                <div className="weather-chart-container">
+                  <h4>Temperatura por Hora</h4>
                   <div className="weather-chart h-80">
                     <Line
                       data={temperatureChartData}
@@ -1237,19 +1312,17 @@ const WeatherPage = () => {
         </div>
       )}
 
-      <div className="weather-history-section mt-8 space-y-8">
-        <div className="weather-travel-section flex flex-col lg:flex-row gap-6">
+      <div className="weather-history-section">
+        <div className="weather-travel-section">
           {travelCities.length > 0 && (
-            <div className="weather-travel-cities bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow flex-1">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <FaPlane className="mr-2" /> Viagens Passadas
-              </h3>
-              <ul className="space-y-2">
+            <div className="weather-travel-cities">
+              <h3><FaPlane /> Viagens Passadas</h3>
+              <ul>
                 {travelCities.map((city, index) => (
                   <li
                     key={index}
                     onClick={() => handleTravelCityClick(city)}
-                    className="travel-city-item p-3 hover:bg-gray-100 cursor-pointer rounded-lg text-gray-700 text-lg transition-colors"
+                    className="travel-city-item"
                   >
                     {city}
                   </li>
@@ -1259,16 +1332,14 @@ const WeatherPage = () => {
           )}
 
           {futureTravels.length > 0 && (
-            <div className="weather-travel-cities bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow flex-1">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <FaPlane className="mr-2" /> Viagens Futuras
-              </h3>
-              <ul className="space-y-2">
+            <div className="weather-travel-cities">
+              <h3><FaPlane /> Viagens Futuras</h3>
+              <ul>
                 {futureTravels.map((travel, index) => (
                   <li
                     key={index}
                     onClick={() => handleFutureTravelClick(travel)}
-                    className="travel-city-item p-3 hover:bg-gray-100 cursor-pointer rounded-lg text-gray-700 text-lg transition-colors"
+                    className="travel-city-item"
                   >
                     {travel.name} - {new Date(travel.startDate).toLocaleDateString('pt-PT')} a{' '}
                     {new Date(travel.endDate).toLocaleDateString('pt-PT')}

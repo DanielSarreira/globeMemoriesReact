@@ -1,0 +1,454 @@
+/* ============================================
+   WEATHER ANIMATIONS - Dynamic Weather Backgrounds
+   ============================================ */
+
+.weather-current {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+/* Base animation background container */
+.weather-animation-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  transition: all 0.5s ease;
+}
+
+/* Content overlay - keeps text on top */
+.weather-current-overlay {
+  position: relative;
+  z-index: 10;
+}
+
+/* ============================================
+   SUN & CLEAR SKY
+   ============================================ */
+.weather-bg-clear {
+  background: #87CEEB; /* Sky Blue - Céu limpo azul */
+}
+
+/* Sun */
+.sun {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle at 30% 30%, #ffff00, #ffeb3b);
+  border-radius: 50%;
+  top: 10%;
+  right: 10%;
+  box-shadow: 0 0 60px rgba(255, 255, 0, 0.8), 0 0 100px rgba(255, 215, 0, 0.4);
+  animation: sunGlow 4s ease-in-out infinite;
+}
+
+@keyframes sunGlow {
+  0%, 100% { box-shadow: 0 0 60px rgba(255, 255, 0, 0.8), 0 0 100px rgba(255, 215, 0, 0.4); }
+  50% { box-shadow: 0 0 80px rgba(255, 255, 0, 1), 0 0 120px rgba(255, 215, 0, 0.6); }
+}
+
+/* ============================================
+   CLOUDS
+   ============================================ */
+.weather-bg-cloudy {
+  background: #B0C4DE; /* Light Steel Blue - Céu parcialmente nublado */
+}
+
+.cloud {
+  position: absolute;
+  background: white;
+  border-radius: 100px;
+  opacity: 0.8;
+}
+
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  background: white;
+  border-radius: 100px;
+}
+
+.cloud {
+  width: 100px;
+  height: 40px;
+}
+
+.cloud::before {
+  width: 50px;
+  height: 50px;
+  top: -25px;
+  left: 10px;
+}
+
+.cloud::after {
+  width: 60px;
+  height: 40px;
+  top: -15px;
+  right: 10px;
+}
+
+.cloud-1 {
+  top: 20%;
+  left: -100px;
+  animation: cloudFloat 20s linear infinite;
+}
+
+.cloud-2 {
+  top: 40%;
+  left: -150px;
+  animation: cloudFloat 25s linear infinite 2s;
+  opacity: 0.6;
+}
+
+.cloud-3 {
+  top: 60%;
+  left: -200px;
+  animation: cloudFloat 30s linear infinite 4s;
+  opacity: 0.4;
+}
+
+@keyframes cloudFloat {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(100vw + 200px)); }
+}
+
+.cloud-4 {
+  top: 15%;
+  left: -120px;
+  animation: cloudFloat 18s linear infinite 1s;
+  opacity: 0.7;
+  transform: scale(0.8);
+}
+
+.cloud-5 {
+  top: 75%;
+  left: -180px;
+  animation: cloudFloat 22s linear infinite 3s;
+  opacity: 0.5;
+  transform: scale(1.2);
+}
+
+/* ============================================
+   OVERCAST (Totalmente Nublado)
+   ============================================ */
+.weather-bg-overcast {
+  background: #9CA3AF; /* Gray - Céu totalmente nublado */
+}
+
+/* ============================================
+   RAIN
+   ============================================ */
+.weather-bg-rain {
+  background: #4A5568; /* Dark Gray-Blue - Céu chuvoso */
+}
+
+.rain-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.raindrop {
+  position: absolute;
+  width: 2px;
+  height: 10px;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.8));
+  animation: fall 0.6s linear infinite;
+}
+
+.raindrop:nth-child(1) { left: 10%; animation-delay: 0s; }
+.raindrop:nth-child(2) { left: 20%; animation-delay: 0.1s; }
+.raindrop:nth-child(3) { left: 30%; animation-delay: 0.2s; }
+.raindrop:nth-child(4) { left: 40%; animation-delay: 0.3s; }
+.raindrop:nth-child(5) { left: 50%; animation-delay: 0.4s; }
+.raindrop:nth-child(6) { left: 60%; animation-delay: 0.5s; }
+.raindrop:nth-child(7) { left: 70%; animation-delay: 0.1s; }
+.raindrop:nth-child(8) { left: 80%; animation-delay: 0.2s; }
+.raindrop:nth-child(9) { left: 90%; animation-delay: 0.3s; }
+.raindrop:nth-child(10) { left: 5%; animation-delay: 0.4s; }
+.raindrop:nth-child(11) { left: 15%; animation-delay: 0.5s; }
+.raindrop:nth-child(12) { left: 25%; animation-delay: 0s; }
+.raindrop:nth-child(13) { left: 35%; animation-delay: 0.1s; }
+.raindrop:nth-child(14) { left: 45%; animation-delay: 0.2s; }
+.raindrop:nth-child(15) { left: 55%; animation-delay: 0.3s; }
+.raindrop:nth-child(16) { left: 65%; animation-delay: 0.4s; }
+.raindrop:nth-child(17) { left: 75%; animation-delay: 0.5s; }
+.raindrop:nth-child(18) { left: 85%; animation-delay: 0.1s; }
+.raindrop:nth-child(19) { left: 95%; animation-delay: 0.2s; }
+.raindrop:nth-child(20) { left: 12%; animation-delay: 0.3s; }
+
+@keyframes fall {
+  0% { transform: translateY(-10px); opacity: 1; }
+  100% { transform: translateY(400px); opacity: 0; }
+}
+
+/* ============================================
+   SNOW
+   ============================================ */
+.weather-bg-snow {
+  background: #E0F2FE; /* Very Light Blue - Céu nevado */
+}
+
+.snowflake {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+  animation: snowFall 3s linear infinite;
+}
+
+.snowflake:nth-child(1) { left: 10%; animation-delay: 0s; }
+.snowflake:nth-child(2) { left: 20%; animation-delay: 0.2s; }
+.snowflake:nth-child(3) { left: 30%; animation-delay: 0.4s; }
+.snowflake:nth-child(4) { left: 40%; animation-delay: 0.6s; }
+.snowflake:nth-child(5) { left: 50%; animation-delay: 0.8s; }
+.snowflake:nth-child(6) { left: 60%; animation-delay: 1s; }
+.snowflake:nth-child(7) { left: 70%; animation-delay: 0.3s; }
+.snowflake:nth-child(8) { left: 80%; animation-delay: 0.5s; }
+.snowflake:nth-child(9) { left: 90%; animation-delay: 0.7s; }
+.snowflake:nth-child(10) { left: 5%; animation-delay: 0.9s; }
+.snowflake:nth-child(11) { left: 15%; animation-delay: 0.1s; }
+.snowflake:nth-child(12) { left: 25%; animation-delay: 0.3s; }
+.snowflake:nth-child(13) { left: 35%; animation-delay: 0.5s; }
+.snowflake:nth-child(14) { left: 45%; animation-delay: 0.7s; }
+.snowflake:nth-child(15) { left: 55%; animation-delay: 0.9s; }
+
+@keyframes snowFall {
+  0% { 
+    transform: translateY(-10px) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(200px) translateX(20px) rotate(180deg);
+  }
+  100% { 
+    transform: translateY(400px) translateX(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   WIND & STORMS
+   ============================================ */
+.weather-bg-wind {
+  background: #9E9E9E; /* Gray - Céu ventoso */
+}
+
+.wind-gust {
+  position: absolute;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.6);
+  animation: gustMove 1s ease-in infinite;
+}
+
+.wind-gust:nth-child(1) { width: 100px; top: 20%; animation-delay: 0s; }
+.wind-gust:nth-child(2) { width: 80px; top: 40%; animation-delay: 0.2s; }
+.wind-gust:nth-child(3) { width: 120px; top: 60%; animation-delay: 0.4s; }
+.wind-gust:nth-child(4) { width: 90px; top: 80%; animation-delay: 0.6s; }
+
+@keyframes gustMove {
+  0% { transform: translateX(-200px); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(calc(100vw + 200px)); opacity: 0; }
+}
+
+/* ============================================
+   THUNDERSTORM
+   ============================================ */
+.weather-bg-storm {
+  background: #1E293B; /* Very Dark Blue - Céu de trovoada */
+}
+
+.lightning {
+  position: absolute;
+  width: 4px;
+  height: 200px;
+  background: linear-gradient(90deg, transparent, #ffff00, #ffff00, transparent);
+  left: 30%;
+  top: -50px;
+  opacity: 0;
+  animation: lightningStrike 4s ease-in infinite;
+  box-shadow: 0 0 10px #ffff00;
+}
+
+.lightning:nth-child(2) {
+  left: 60%;
+  animation-delay: 1.2s;
+}
+
+@keyframes lightningStrike {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  11% { opacity: 0; }
+  15% { opacity: 1; }
+  16% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* ============================================
+   FOG
+   ============================================ */
+.weather-bg-fog {
+  background: #D1D5DB; /* Light Gray - Céu com nevoeiro */
+}
+
+.fog-layer {
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  background: radial-gradient(ellipse at 0% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+  animation: fogMove 8s linear infinite;
+}
+
+.fog-layer:nth-child(1) {
+  opacity: 0.5;
+  animation-duration: 8s;
+}
+
+.fog-layer:nth-child(2) {
+  opacity: 0.3;
+  animation-duration: 12s;
+  animation-delay: 2s;
+}
+
+.fog-layer:nth-child(3) {
+  opacity: 0.2;
+  animation-duration: 15s;
+  animation-delay: 4s;
+}
+
+@keyframes fogMove {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(50%); }
+}
+
+/* ============================================
+   HAIL / MIXED
+   ============================================ */
+.weather-bg-hail {
+  background: #475569; /* Slate Gray - Céu com granizo */
+}
+
+.hailstone {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.8), inset -1px -1px 2px rgba(0, 0, 0, 0.2);
+  animation: hailFall 0.8s linear infinite;
+}
+
+.hailstone:nth-child(1) { left: 10%; animation-delay: 0s; }
+.hailstone:nth-child(2) { left: 25%; animation-delay: 0.1s; }
+.hailstone:nth-child(3) { left: 40%; animation-delay: 0.2s; }
+.hailstone:nth-child(4) { left: 55%; animation-delay: 0.3s; }
+.hailstone:nth-child(5) { left: 70%; animation-delay: 0.4s; }
+.hailstone:nth-child(6) { left: 85%; animation-delay: 0.5s; }
+.hailstone:nth-child(7) { left: 15%; animation-delay: 0.2s; }
+.hailstone:nth-child(8) { left: 45%; animation-delay: 0.4s; }
+.hailstone:nth-child(9) { left: 75%; animation-delay: 0.1s; }
+.hailstone:nth-child(10) { left: 5%; animation-delay: 0.3s; }
+
+@keyframes hailFall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(400px) rotate(360deg); opacity: 0; }
+}
+
+/* ============================================
+   NIGHT CLOUDY
+   ============================================ */
+.weather-bg-night-cloudy {
+  background: #1E293B; /* Dark Slate - Noite nublada */
+}
+
+/* ============================================
+   NIGHT CLEAR
+   ============================================ */
+.weather-bg-night-clear {
+  background: #0F172A; /* Very Dark Blue - Noite limpa */
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 2px white;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.star:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+.star:nth-child(2) { top: 20%; left: 30%; animation-delay: 0.5s; }
+.star:nth-child(3) { top: 15%; left: 50%; animation-delay: 1s; }
+.star:nth-child(4) { top: 30%; left: 70%; animation-delay: 1.5s; }
+.star:nth-child(5) { top: 25%; left: 90%; animation-delay: 2s; }
+.star:nth-child(6) { top: 50%; left: 15%; animation-delay: 0.3s; }
+.star:nth-child(7) { top: 55%; left: 40%; animation-delay: 0.8s; }
+.star:nth-child(8) { top: 45%; left: 85%; animation-delay: 1.2s; }
+.star:nth-child(9) { top: 70%; left: 25%; animation-delay: 1.7s; }
+.star:nth-child(10) { top: 75%; left: 60%; animation-delay: 2.2s; }
+
+.moon {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle at 30% 30%, #fef3c7, #fcd34d);
+  border-radius: 50%;
+  top: 15%;
+  right: 15%;
+  box-shadow: 0 0 30px rgba(253, 211, 77, 0.6);
+  animation: moonGlow 4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@keyframes moonGlow {
+  0%, 100% { box-shadow: 0 0 30px rgba(253, 211, 77, 0.6); }
+  50% { box-shadow: 0 0 50px rgba(253, 211, 77, 0.8); }
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 768px) {
+  .sun {
+    width: 80px;
+    height: 80px;
+  }
+
+  .cloud {
+    width: 70px;
+    height: 30px;
+  }
+
+  .cloud::before {
+    width: 35px;
+    height: 35px;
+  }
+
+  .cloud::after {
+    width: 42px;
+    height: 30px;
+  }
+
+  .moon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .lightning {
+    height: 150px;
+  }
+}

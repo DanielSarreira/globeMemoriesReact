@@ -3,6 +3,9 @@
 /* Global Styles */
 @import './globals.css';
 
+/* Fix para inputs - DEVE SER IMPORTADO ANTES DE OUTROS ESTILOS */
+@import './fix-inputs.css';
+
 /* Layout */
 @import './layout.css';
 

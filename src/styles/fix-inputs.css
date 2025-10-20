@@ -1,0 +1,36 @@
+/* Fix para permitir espaços em todos os inputs e textareas */
+input,
+textarea,
+select {
+  /* Garantir que inputs podem receber todos os caracteres */
+  pointer-events: auto !important;
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+  -moz-user-select: auto !important;
+  -ms-user-select: auto !important;
+  
+  /* Permitir espaços normais */
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Garantir que inputs não têm restricões de teclado */
+input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+textarea {
+  /* Remover qualquer bloqueio de interação */
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* Fix específico para campos de pesquisa */
+.search-input,
+.modern-search-input,
+.modern-filter-input,
+input[type="search"],
+input[type="text"],
+textarea {
+  /* Garantir que espaços funcionam */
+  white-space: pre-wrap !important;
+}
