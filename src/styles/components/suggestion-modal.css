@@ -1,0 +1,424 @@
+/* suggestion-modal.css */
+/* Estilos para o Modal de Sugestões */
+
+.suggestion-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeInOverlay 0.2s ease-in-out;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.suggestion-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Header do Modal */
+.suggestion-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.suggestion-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.suggestion-modal-icon {
+  font-size: 24px;
+}
+
+.suggestion-modal-icon.error-icon {
+  color: #dc3545;
+  animation: pulse 1.5s infinite;
+}
+
+.suggestion-modal-icon.suggestion-icon {
+  color: var(--secondary-color);
+  animation: glow 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(255, 153, 0, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(255, 153, 0, 0.8);
+  }
+}
+
+.suggestion-modal-close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.suggestion-modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+/* Conteúdo de Sucesso */
+.suggestion-modal-success {
+  padding: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(40, 167, 69, 0.02) 100%);
+}
+
+.success-message {
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.success-message h3 {
+  font-size: 22px;
+  color: #28a745;
+  margin: 0 0 10px 0;
+}
+
+.success-message p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Formulário */
+.suggestion-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.suggestion-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion-form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suggestion-form-label::after {
+  content: '*';
+  color: #dc3545;
+}
+
+.suggestion-form-label-optional::after {
+  content: '';
+}
+
+.suggestion-form-input,
+.suggestion-form-textarea {
+  padding: 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+}
+
+.suggestion-form-input:focus,
+.suggestion-form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  background-color: #f8f9ff;
+}
+
+.suggestion-form-input:disabled {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.suggestion-form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.suggestion-form-help {
+  font-size: 12px;
+  color: #95a5a6;
+  text-align: right;
+}
+
+/* Seletor de Tipo */
+.suggestion-type-selector {
+  display: flex;
+  gap: 12px;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.suggestion-type-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.suggestion-type-btn:hover {
+  border-color: #dee2e6;
+  background-color: #f0f0f0;
+}
+
+.suggestion-type-btn.active {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: #ffffff;
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+}
+
+/* File Input */
+.suggestion-file-input-wrapper {
+  position: relative;
+}
+
+.suggestion-file-input {
+  display: none;
+}
+
+.suggestion-file-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.suggestion-file-label:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(0, 102, 204, 0.05);
+  color: var(--primary-color);
+}
+
+.suggestion-file-input:checked + .suggestion-file-label {
+  border-color: #28a745;
+  background-color: rgba(40, 167, 69, 0.05);
+  color: #28a745;
+}
+
+/* Info Box */
+.suggestion-form-info {
+  background-color: #e7f3ff;
+  border-left: 4px solid var(--primary-color);
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--primary-dark);
+}
+
+.suggestion-form-info p {
+  margin: 0;
+}
+
+/* Ações */
+.suggestion-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.suggestion-btn-cancel,
+.suggestion-btn-submit {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suggestion-btn-cancel {
+  background-color: #f0f0f0;
+  color: #fff;
+}
+
+.suggestion-btn-cancel:hover:not(:disabled) {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.suggestion-btn-submit {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+}
+
+.suggestion-btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
+}
+
+.suggestion-btn-cancel:disabled,
+.suggestion-btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .suggestion-modal {
+    width: 95%;
+    max-height: 85vh;
+    margin-bottom: 40px;
+  }
+
+  .suggestion-modal-header {
+    padding: 16px;
+  }
+
+  .suggestion-modal-title {
+    font-size: 18px;
+  }
+
+  .suggestion-form {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .suggestion-type-selector {
+    flex-direction: column;
+  }
+
+  .suggestion-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .suggestion-btn-cancel,
+  .suggestion-btn-submit {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Scrollbar customizado */
+.suggestion-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.suggestion-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.suggestion-modal::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+}
+
+.suggestion-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}

@@ -550,8 +550,8 @@ const Users = () => {
                     {showDropdown === listedUser.id && (
                       <div className="dropdown-menu" style={{
                         position: 'absolute',
-                        top: '20%',
-                        right: '60px',
+                        top: '90%',
+                        right: '80px',
                         backgroundColor: 'white',
                         border: '1px solid #ddd',
                         borderRadius: '8px',

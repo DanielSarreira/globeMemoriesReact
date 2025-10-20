@@ -1,0 +1,121 @@
+/* suggestion-button.css */
+/* Estilos para o Botão de Sugestão no Header */
+
+.suggestion-button {
+  position: relative;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+  font-weight: 600;
+  min-width: fit-content;
+}
+
+.suggestion-button-icon {
+  font-size: 18px;
+  animation: slideInIcon 0.5s ease-out;
+}
+
+@keyframes slideInIcon {
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.suggestion-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+}
+
+.suggestion-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.suggestion-button-tooltip {
+  display: none;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Em desktop, mostrar texto */
+@media (min-width: 769px) {
+  .suggestion-button-tooltip {
+    display: inline;
+  }
+}
+
+/* Em mobile, apenas ícone com tooltip ao hover */
+@media (max-width: 768px) {
+  .suggestion-button {
+    padding: 10px 12px;
+    gap: 0;
+  }
+
+  .suggestion-button:hover::after {
+    content: 'Feedback';
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: tooltipFadeIn 0.2s ease-out;
+  }
+
+  @keyframes tooltipFadeIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+}
+
+/* Animação de pulse quando há algo importante */
+.suggestion-button.pulse {
+  animation: buttonPulse 1.5s infinite;
+}
+
+@keyframes buttonPulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(0, 102, 204, 0.6);
+  }
+}
+
+/* Integração com Header */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestion-button {
+  margin-left: 8px;
+}

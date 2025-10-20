@@ -2,209 +2,264 @@ import React from 'react';
 
 /**
  * WeatherAnimation Component
- * Renders dynamic weather-based animations in the weather current section
+ * Renders dynamic weather-based animations based on weather condition and time of day
  * 
- * Maps weather icon components to animation types
+ * All animations have both DAY and NIGHT variants
  */
 const WeatherAnimation = ({ weatherIconName, isDay }) => {
   const getAnimationType = () => {
     if (!weatherIconName) {
-      return isDay ? 'clear' : 'night-clear';
+      return isDay ? 'clear' : 'clear-night';
     }
     
-    // Direct mapping based on icon name strings
+    const iconStr = String(weatherIconName).toLowerCase();
+    
+    // Mapear para tipo de animação + adicionar sufixo -night se for noite
+    let baseType = 'clear';
+    
     switch (weatherIconName) {
-      // Clear/Sunny
       case 'WiDaySunny':
-        return 'clear';
-      
-      // Night clear
       case 'WiNightClear':
-        return 'night-clear';
-      
-      // Night cloudy
-      case 'WiNightCloudy':
-        return 'night-cloudy';
-      
-      // Day cloudy (nublado com sol)
+        baseType = 'clear';
+        break;
       case 'WiDayCloudy':
-        return 'cloudy';
-      
-      // Cloudy (totalmente nublado, sem sol)
+      case 'WiNightCloudy':
+        baseType = 'cloudy';
+        break;
       case 'WiCloudy':
-        return 'overcast';
-      
-      // Rain - TODAS as variações
+        baseType = isDay ? 'cloudy' : 'cloudy';
+        break;
       case 'WiRain':
-        return 'rain';
       case 'WiDayRain':
-        return 'rain';
       case 'WiNightRain':
-        return 'rain';
-      
-      // Snow
+        baseType = 'rain';
+        break;
       case 'WiSnow':
-        return 'snow';
-      
-      // Fog
+        baseType = 'snow';
+        break;
       case 'WiFog':
-        return 'fog';
-      
-      // Thunderstorm
+        baseType = 'fog';
+        break;
       case 'WiThunderstorm':
-        return 'storm';
-      
-      // Wind
+        baseType = 'storm';
+        break;
       case 'WiWindy':
-        return 'wind';
-      
-      // Hail
+        baseType = 'wind';
+        break;
       case 'WiDayHail':
-        return 'hail';
-      
+        baseType = 'hail';
+        break;
       default:
-        // Fallback with string matching
-        const iconStr = String(weatherIconName).toLowerCase();
-        if (iconStr.includes('rain')) return 'rain';
-        if (iconStr.includes('sun') && iconStr.includes('day')) return 'clear';
-        if (iconStr.includes('nightclear')) return 'night-clear';
-        if (iconStr.includes('nightcloudy')) return 'night-cloudy';
-        if (iconStr.includes('daycloudy')) return 'cloudy';
-        if (iconStr.includes('cloud') && !iconStr.includes('day') && !iconStr.includes('night')) return 'overcast';
-        if (iconStr.includes('cloud')) return 'cloudy';
-        if (iconStr.includes('snow')) return 'snow';
-        if (iconStr.includes('fog')) return 'fog';
-        if (iconStr.includes('thunder')) return 'storm';
-        if (iconStr.includes('wind')) return 'wind';
-        if (iconStr.includes('hail')) return 'hail';
-        return isDay ? 'clear' : 'night-clear';
+        if (iconStr.includes('rain')) baseType = 'rain';
+        else if (iconStr.includes('snow')) baseType = 'snow';
+        else if (iconStr.includes('fog')) baseType = 'fog';
+        else if (iconStr.includes('thunder')) baseType = 'storm';
+        else if (iconStr.includes('wind')) baseType = 'wind';
+        else if (iconStr.includes('hail')) baseType = 'hail';
+        else if (iconStr.includes('cloud')) baseType = 'cloudy';
+        else baseType = 'clear';
     }
+    
+    // Adicionar sufixo -night se for noite
+    return isDay ? baseType : `${baseType}-night`;
   };
 
   const animationType = getAnimationType();
 
   const renderAnimation = () => {
-    switch (animationType) {
-      case 'clear':
-        return (
-          <>
-            <div className="sun"></div>
-          </>
-        );
+    // Renderização para DIA
+    if (isDay) {
+      switch (animationType) {
+        case 'clear':
+          return <><div className="sun"></div></>;
 
-      case 'cloudy':
-        return (
-          <>
-            <div className="sun"></div>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            <div className="cloud cloud-3"></div>
-          </>
-        );
+        case 'cloudy':
+          return (
+            <>
+              <div className="sun"></div>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              <div className="cloud cloud-3"></div>
+            </>
+          );
 
-      case 'overcast':
-        return (
-          <>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            <div className="cloud cloud-3"></div>
-            <div className="cloud cloud-4"></div>
-            <div className="cloud cloud-5"></div>
-          </>
-        );
+        case 'rain':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              <div className="rain-container">
+                {[...Array(20)].map((_, i) => (
+                  <div key={i} className="raindrop"></div>
+                ))}
+              </div>
+            </>
+          );
 
-      case 'night-cloudy':
-        return (
-          <>
-            <div className="moon"></div>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="star"></div>
-            ))}
-          </>
-        );
+        case 'snow':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              {[...Array(15)].map((_, i) => (
+                <div key={i} className="snowflake"></div>
+              ))}
+            </>
+          );
 
-      case 'rain':
-        return (
-          <>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            <div className="rain-container">
+        case 'wind':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="wind-gust"></div>
+              ))}
+            </>
+          );
+
+        case 'storm':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              <div className="lightning"></div>
+              <div className="lightning"></div>
               {[...Array(20)].map((_, i) => (
                 <div key={i} className="raindrop"></div>
               ))}
-            </div>
-          </>
-        );
+            </>
+          );
 
-      case 'snow':
-        return (
-          <>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            {[...Array(15)].map((_, i) => (
-              <div key={i} className="snowflake"></div>
-            ))}
-          </>
-        );
+        case 'fog':
+          return (
+            <>
+              <div className="fog-layer"></div>
+              <div className="fog-layer"></div>
+              <div className="fog-layer"></div>
+            </>
+          );
 
-      case 'wind':
-        return (
-          <>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="wind-gust"></div>
-            ))}
-          </>
-        );
+        case 'hail':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="hailstone"></div>
+              ))}
+            </>
+          );
 
-      case 'storm':
-        return (
-          <>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            <div className="lightning"></div>
-            <div className="lightning"></div>
-            {[...Array(20)].map((_, i) => (
-              <div key={i} className="raindrop"></div>
-            ))}
-          </>
-        );
+        default:
+          return <div className="sun"></div>;
+      }
+    }
 
-      case 'fog':
-        return (
-          <>
-            <div className="fog-layer"></div>
-            <div className="fog-layer"></div>
-            <div className="fog-layer"></div>
-          </>
-        );
+    // Renderização para NOITE
+    else {
+      switch (animationType) {
+        case 'clear-night':
+          return (
+            <>
+              <div className="moon"></div>
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="star"></div>
+              ))}
+            </>
+          );
 
-      case 'hail':
-        return (
-          <>
-            <div className="cloud cloud-1"></div>
-            <div className="cloud cloud-2"></div>
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="hailstone"></div>
-            ))}
-          </>
-        );
+        case 'cloudy-night':
+          return (
+            <>
+              <div className="moon"></div>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              <div className="cloud cloud-3"></div>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="star"></div>
+              ))}
+            </>
+          );
 
-      case 'night-clear':
-        return (
-          <>
-            <div className="moon"></div>
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="star"></div>
-            ))}
-          </>
-        );
+        case 'rain-night':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              <div className="rain-container">
+                {[...Array(20)].map((_, i) => (
+                  <div key={i} className="raindrop"></div>
+                ))}
+              </div>
+            </>
+          );
 
-      default:
-        return <div className="sun"></div>;
+        case 'snow-night':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              {[...Array(15)].map((_, i) => (
+                <div key={i} className="snowflake"></div>
+              ))}
+            </>
+          );
+
+        case 'wind-night':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="wind-gust"></div>
+              ))}
+            </>
+          );
+
+        case 'storm-night':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              <div className="lightning"></div>
+              <div className="lightning"></div>
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="raindrop"></div>
+              ))}
+            </>
+          );
+
+        case 'fog-night':
+          return (
+            <>
+              <div className="fog-layer"></div>
+              <div className="fog-layer"></div>
+              <div className="fog-layer"></div>
+            </>
+          );
+
+        case 'hail-night':
+          return (
+            <>
+              <div className="cloud cloud-1"></div>
+              <div className="cloud cloud-2"></div>
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="hailstone"></div>
+              ))}
+            </>
+          );
+
+        default:
+          return (
+            <>
+              <div className="moon"></div>
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="star"></div>
+              ))}
+            </>
+          );
+      }
     }
   };
 

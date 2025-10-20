@@ -9,6 +9,8 @@ import axios from 'axios';
 import { useWeather } from '../context/WeatherContext';
 import InstallAppModal from './InstallAppModal';
 import Toast from './Toast';
+import SuggestionButton from './SuggestionButton';
+import SuggestionModal from './SuggestionModal';
 
 // Dados mockados para notificações
 const mockNotifications = [
@@ -39,6 +41,7 @@ const Header = () => {
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
   
   // Toast state
   const [toast, setToast] = useState({ message: '', type: '', isVisible: false });
@@ -245,6 +248,9 @@ const Header = () => {
       <div className="header-right">
         {user && (
           <>
+            {/* Botão de Sugestão */}
+            <SuggestionButton onClick={() => setIsSuggestionModalOpen(true)} />
+
             {/* Seção de Notificações */}
           
 
@@ -325,6 +331,11 @@ const Header = () => {
       open={isInstallModalOpen}
       onClose={() => setIsInstallModalOpen(false)}
       deferredPrompt={deferredPrompt}
+      showToast={showToast}
+    />
+    <SuggestionModal
+      isOpen={isSuggestionModalOpen}
+      onClose={() => setIsSuggestionModalOpen(false)}
       showToast={showToast}
     />
     <Toast

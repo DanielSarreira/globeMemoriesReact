@@ -47,6 +47,16 @@ const normalizeCityName = (city) => {
     .toLowerCase();
 };
 
+// Formatar hora local para exibição
+const formatLocalTime = (date) => {
+  return date.toLocaleTimeString('pt-PT', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+};
+
 // Validar coordenadas
 const isValidCoordinate = (lat, lon) => {
   return (

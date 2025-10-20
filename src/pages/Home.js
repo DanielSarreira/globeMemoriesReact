@@ -1835,13 +1835,13 @@ const Home = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#666',
+                  color: '#fff',
                   transition: 'background-color 0.2s',
                 }}
                 onMouseEnter={(e) => (e.target.style.backgroundColor = '#f0f0f0')}
                 onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
               >
-                <FaEllipsisV color="#666" />
+                <FaEllipsisV color="#fff" />
               </button>
             )}
             {showDropdown === travel.id && (
