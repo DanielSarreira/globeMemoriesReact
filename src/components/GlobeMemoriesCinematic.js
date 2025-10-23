@@ -700,8 +700,6 @@ const GlobeMemoriesCinematic = React.forwardRef(({
   const startCinematicSequence = useCallback(async () => {
     if (currentScene !== 'idle') return;
     
-    console.log('🎬 Iniciando sequência cinematográfica Globe Memories');
-    
     // Reset completo
     setShowBalloon(false);
     setShowArrow(false);
@@ -739,8 +737,6 @@ const GlobeMemoriesCinematic = React.forwardRef(({
   
   // 🏹 LANÇAMENTO DA SETA
   const launchArrow = useCallback(async () => {
-    console.log('🏹 Lançando seta mágica');
-    
     setCurrentScene('arrow');
     setShowBalloon(false);
     setShowArrow(true);
@@ -755,8 +751,6 @@ const GlobeMemoriesCinematic = React.forwardRef(({
   
   // 💥 IMPACTO DA SETA
   const handleArrowComplete = useCallback(async () => {
-    console.log('💥 Seta atingiu o alvo!');
-    
     setCurrentScene('impact');
     setShowArrow(false);
     setShowImpact(true);
@@ -771,8 +765,6 @@ const GlobeMemoriesCinematic = React.forwardRef(({
   
   // ✈️ CHEGADA DO AVIÃO
   const handleImpactComplete = useCallback(async () => {
-    console.log('✈️ Avião está chegando...');
-    
     setCurrentScene('plane');
     setShowImpact(false);
     
@@ -786,8 +778,6 @@ const GlobeMemoriesCinematic = React.forwardRef(({
   
   // 📋 ABERTURA DO MODAL
   const handlePlaneComplete = useCallback(async () => {
-    console.log('🎉 Avião chegou! Abrindo modal...');
-    
     setShowPlane(false);
     
     // Delay antes do modal

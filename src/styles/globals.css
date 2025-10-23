@@ -126,30 +126,56 @@ html, body {
   scroll-behavior: smooth;
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-color: #1a1a1a;
-    --background-light: #212529;
-    --background-dark: #343a40;
-    --text-color: #f8f9fa;
-    --text-secondary: #adb5bd;
-    --text-muted: #6c757d;
-    --border-color: #495057;
-    --border-light: #495057;
-    --border-dark: #6c757d;
-    --card-background: #212529;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    --input-background: #343a40;
-    --input-border: #495057;
-    --hover-color: #343a40;
-    --active-color: #495057;
-    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
-    --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.6);
+/* ===== SCROLLBAR CUSTOMIZADA - PC E TABLET ===== */
+/* Largura da barra de scroll */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/* Track (fundo da scrollbar) */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+/* Thumb (a parte que se move) */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+/* Thumb ao passar o mouse */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+/* Ocultar scrollbar no mobile */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+  }
+  
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  *::-webkit-scrollbar {
+    display: none;
   }
 }
+
+
 
 /* src/styles/styles.css */
 @supports (padding: env(safe-area-inset-top)) {
@@ -548,24 +574,7 @@ a.button:focus {
   flex-direction: column;
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-color: #1a1a1a;
-    --text-color: #e0e0e0;
-    --secondary-text-color: #a0a0a0;
-    --border-color: #444;
-    --shadow-color: rgba(255, 255, 255, 0.05);
-    --card-background: #2a2a2a;
-    --button-primary: #0066cc;
-    --button-primary-hover: #004a94;
-    --button-action: #ff9900;
-    --button-action-hover: #ff9900;
-    --button-liked: #ff6666;
-    --error-color: #ff5555;
-    --link-hover: #333;
-  }
-}
+
 
 /* Safe area insets for mobile devices */
 @supports (padding: env(safe-area-inset-top)) {
@@ -758,6 +767,7 @@ button:disabled {
   height: 24px;
   animation: spin 1s linear infinite;
   margin: 0 auto;
+  background-color: transparent;
 }
 
 .pull-to-refresh-indicator {
@@ -796,12 +806,7 @@ button:disabled {
   animation: fadeIn 0.5s forwards;
 }
 
-/* --------------------------------------- Dark Mode Overrides --------------------------------------- */
-@media (prefers-color-scheme: dark) {
-  body {
-    background: linear-gradient(135deg, #1a1a1a, #2c3e50);
-  }
-}
+
 
 /* --------------------------------------- Mobile Typography --------------------------------------- */
 @media (max-width: 768px) {

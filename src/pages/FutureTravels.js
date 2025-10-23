@@ -2040,7 +2040,6 @@ const FutureTravels = () => {
       // Ordenar as cidades
       const sortedCities = cityList.sort((a, b) => a.localeCompare(b, 'pt-PT'));
       
-      console.log(`Encontradas ${sortedCities.length} cidades para ${country}:`, sortedCities);
       setCities(sortedCities);
     } catch (error) {
       console.error("Erro ao buscar cidades:", error);

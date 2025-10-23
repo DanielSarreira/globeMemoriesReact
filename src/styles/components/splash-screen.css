@@ -128,7 +128,8 @@
   height: 299; /* increased size */
   padding: 20px;
   border-radius: 0% !important; 
-  backdrop-filter: blur(18px);
+  background: transparent !important;
+  backdrop-filter: none !important;
 }
 
 .logo-glow {
@@ -313,6 +314,8 @@
     height: 135px;
     max-width: 60vw;
     max-height: 60vw;
+    background: transparent !important;
+    backdrop-filter: none !important;
   }
   
   .splash-title {

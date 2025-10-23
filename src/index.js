@@ -1,8 +1,8 @@
 // src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import AppWrapper from './App'; // Ajuste o nome para AppWrapper, conforme definido no App.js
-import { AuthProvider } from './context/AuthContext';
+import AppWrapper from './App';
+import './styles/force-light-mode.css';
 
 // Registrar o service worker
 if ('serviceWorker' in navigator) {
@@ -10,10 +10,10 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/service-worker.js')
       .then((registration) => {
-        console.log('Service Worker registrado com sucesso:', registration);
+        // Service Worker registered successfully
       })
       .catch((error) => {
-        console.log('Falha ao registrar o Service Worker:', error);
+        // Service Worker registration failed
       });
   });
 }
@@ -22,8 +22,6 @@ if ('serviceWorker' in navigator) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <AppWrapper />
-    </AuthProvider>
+    <AppWrapper />
   </React.StrictMode>
 );

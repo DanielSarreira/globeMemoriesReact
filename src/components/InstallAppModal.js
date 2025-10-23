@@ -50,8 +50,7 @@ export default function InstallAppModal({ open, onClose, deferredPrompt, showToa
           showToast('ℹ️ Instalação cancelada.', 'info');
         }
       }
-      // eslint-disable-next-line no-console
-      console.log('PWA install choice:', choiceResult);
+      // PWA install completed
     } catch (error) {
       console.error('Erro na instalação:', error);
       if (showToast) {

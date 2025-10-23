@@ -68,6 +68,16 @@ button:focus {
   box-shadow: var(--shadow), 0 0 0 3px var(--primary-light);
 }
 
+/* Remover focus styling do ícone de password toggle */
+.password-toggle:focus,
+button.password-toggle:focus,
+.password-toggle:active,
+button.password-toggle:active {
+  outline: none;
+  box-shadow: none;
+  background: none;
+}
+
 .button:disabled,
 button:disabled {
   background: var(--text-muted);

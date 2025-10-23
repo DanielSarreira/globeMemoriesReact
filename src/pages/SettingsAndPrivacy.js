@@ -32,15 +32,7 @@ const SettingsAndPrivacy = () => {
   });
 
 
-  // Mock data for blocked users - in real app this would come from backend
-  const mockUsers = [
-    { id: 1, username: 'tiago', name: 'Tiago', profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg', bio: 'Amante de viagens e fotografia!' },
-    { id: 2, username: 'AnaSilva', name: 'Ana Silva', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.' },
-    { id: 3, username: 'PedroCosta', name: 'Pedro Costa', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.' },
-    { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.' },
-    { id: 5, username: 'JoaoPereira', name: 'João Pereira', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!' },
-  ];
-
+  // Utilizadores bloqueados - serão carregados do backend
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [loadingBlocked, setLoadingBlocked] = useState(true);
   const blockedUsersRef = useRef(null);
@@ -66,10 +58,8 @@ const SettingsAndPrivacy = () => {
       setLoadingBlocked(false);
       return;
     }
-    setTimeout(() => {
-      setBlockedUsers(mockUsers.slice(0, 2));
-      setLoadingBlocked(false);
-    }, 500);
+    // Será carregado do backend
+    setLoadingBlocked(false);
   }, [user]);
 
   const showToast = (message, type) => {

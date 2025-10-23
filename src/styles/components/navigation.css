@@ -574,69 +574,6 @@
   color: var(--primary-color);
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .navbar {
-    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-bg-secondary) 100%);
-    border-bottom-color: var(--dark-border);
-  }
-
-  .navbar-brand {
-    color: var(--dark-text-primary);
-  }
-
-  .nav-link {
-    color: var(--dark-text-secondary);
-  }
-
-  .nav-link:hover,
-  .nav-link.active {
-    color: var(--primary-color);
-  }
-
-  .nav-dropdown-menu {
-    background: var(--dark-bg);
-    border-color: var(--dark-border);
-  }
-
-  .nav-dropdown-item {
-    color: var(--dark-text-primary);
-  }
-
-  .navbar-mobile-menu {
-    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-bg-secondary) 100%);
-  }
-
-  .breadcrumb {
-    background: linear-gradient(135deg, var(--dark-bg-secondary) 0%, var(--dark-bg-tertiary) 100%);
-    border-color: var(--dark-border);
-  }
-
-  .pagination-link {
-    background: var(--dark-bg);
-    border-color: var(--dark-border);
-    color: var(--primary-color);
-  }
-
-  .nav-tabs .nav-link {
-    color: var(--dark-text-secondary);
-  }
-
-  .nav-tabs .nav-link.active {
-    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--dark-bg-secondary) 100%);
-  }
-
-  .nav-search-input {
-    background: var(--dark-bg-secondary);
-    border-color: var(--dark-border);
-    color: var(--dark-text-primary);
-  }
-
-  .nav-search-input:focus {
-    background: var(--dark-bg);
-  }
-}
-
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .navbar {

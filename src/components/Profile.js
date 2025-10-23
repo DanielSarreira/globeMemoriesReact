@@ -295,7 +295,7 @@ const Profile = () => {
       try {
         localStorage.setItem('user', JSON.stringify(updatedUser));
       } catch (err) {
-        console.warn('Não foi possível gravar no localStorage:', err);
+        // localStorage error - silently handle
       }
       setSaveSuccess(true);
       showToast('Perfil atualizado localmente!', 'success');
@@ -706,7 +706,7 @@ const Profile = () => {
                           type="text"
                           name="firstName"
                           value={formData.firstName}
-                          onChange={(e) => { console.debug('firstName change', e.target.value); handleInputChange(e); }}
+                          onChange={handleInputChange}
                           placeholder="Digite o seu primeiro nome"
                           maxLength={50}
                           autoFocus
@@ -723,7 +723,7 @@ const Profile = () => {
                           type="text"
                           name="lastName"
                           value={formData.lastName}
-                          onChange={(e) => { console.debug('lastName change', e.target.value); handleInputChange(e); }}
+                          onChange={handleInputChange}
                           placeholder="Digite o seu último nome"
                           maxLength={50}
                           style={{ pointerEvents: 'auto', position: 'relative', zIndex: 5 }}

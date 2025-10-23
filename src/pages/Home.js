@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
@@ -150,21 +151,11 @@ const Home = () => {
       // Permite que novos conteúdos do backoffice sejam sempre exibidos
       const shouldShow = shouldShowWelcomeModal(CURRENT_MODAL_VERSION);
       
-      console.log('Welcome Modal Version Check:', {
-        currentVersion: CURRENT_MODAL_VERSION,
-        shouldShow: shouldShow
-      });
-      
       // Mostrar modal se necessário
       if (shouldShow) {
-        console.log('Showing welcome modal in 1 second...');
         setTimeout(() => {
-          console.log('Setting showWelcomeModal to true');
           setShowWelcomeModal(true);
         }, 1000); // Delay de 1 segundo para melhor UX
-      } else {
-        console.log('Welcome modal already seen for this version, not showing');
-        console.log('A new version from backoffice will show the modal again');
       }
     };
 
@@ -203,7 +194,6 @@ const Home = () => {
         setError('Erro ao carregar o feed. Tente novamente mais tarde.');
         showToast('Erro ao carregar o feed. Tente novamente mais tarde.', 'error');
         setLoading(false);
-        console.error('Erro ao buscar feed:', err);
       }
     }, 1000);
   }, [user]);
@@ -237,7 +227,6 @@ const Home = () => {
   const requestNotificationPermission = async () => {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      console.log('Permissão para notificações concedida!');
       setShowNotificationPrompt(false);
 
       if ('serviceWorker' in navigator) {
@@ -250,7 +239,6 @@ const Home = () => {
         });
       }
     } else {
-      console.log('Permissão para notificações negada.');
       setShowNotificationPrompt(false);
     }
   };
@@ -1056,7 +1044,7 @@ const Home = () => {
         showToast('Por favor, selecione pelo menos um motivo para a denúncia.', 'error');
         return;
       }
-      console.log('Travel reported:', selectedTravel.id, 'Reasons:', reportReasons, 'Other:', otherReason);
+      // TODO: Backend - POST /api/reports { travelId, reasons, otherReason }
       showToast('Viagem denunciada com sucesso!', 'success');
       setShowReportModal(false);
       setSelectedTravel(null);
@@ -1835,13 +1823,13 @@ const Home = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#fff',
+                  color: '#000',
                   transition: 'background-color 0.2s',
                 }}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = '#f0f0f0')}
+                onMouseEnter={(e) => (e.target.style.backgroundColor = 'transparent')}
                 onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
               >
-                <FaEllipsisV color="#fff" />
+                <FaEllipsisV color="#000" />
               </button>
             )}
             {showDropdown === travel.id && (
@@ -2964,6 +2952,21 @@ const Home = () => {
       />
     </div>
   );
+};
+
+// PropTypes para Home (componente principal da página)
+Home.propTypes = {
+  initialFilter: PropTypes.string,
+  maxPostsPerPage: PropTypes.number,
+  showWelcomeModal: PropTypes.bool,
+  customTheme: PropTypes.object
+};
+
+Home.defaultProps = {
+  initialFilter: 'all',
+  maxPostsPerPage: 10,
+  showWelcomeModal: true,
+  customTheme: {}
 };
 
 export default Home;

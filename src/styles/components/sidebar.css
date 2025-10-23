@@ -87,11 +87,44 @@
   background: linear-gradient(190deg, var(--secondary-color) 0%, #0066ccc7 100%);
   color: #fff;
   z-index: 100;
-  overflow: hidden; /* evitar barra de scroll do sidebar */
+  overflow-y: auto; /* permitir scroll */
+  overflow-x: hidden;
   box-shadow: 6px 0 30px rgba(12,20,30,0.25);
   backdrop-filter: blur(10px) saturate(120%);
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   border-right: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Estilo da barra de scroll da sidebar - Desktop e Tablet */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin: 4px 0;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.35));
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Para Firefox */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
 }
 
 /* Mensagem de boas-vindas */
@@ -451,6 +484,28 @@ nav ul li a {
   color: #fff;
   z-index: 999;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Estilo da barra de scroll para sidebar colapsada */
+.sidebar.collapsed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar.collapsed::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin: 4px 0;
+}
+
+.sidebar.collapsed::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.sidebar.collapsed::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.35));
 }
 
 .sidebar.collapsed + .content {

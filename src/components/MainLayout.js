@@ -1,6 +1,7 @@
 // MainLayout.js
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
@@ -9,6 +10,7 @@ import { FaChevronUp, FaPlus, FaPlane, FaGlobe } from 'react-icons/fa';
 const MainLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isLoadingAuth, user } = useAuth();
   const isLoginOrRegister = location.pathname === '/login' || location.pathname === '/register';
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -45,9 +47,12 @@ const MainLayout = () => {
     navigate('/my-travels', { state: { openModal: true } });
   };
 
+  // Se não for login/register E (está carregando OU não tem user), não renderiza Sidebar/Header
+  const shouldShowLayout = isLoginOrRegister || (!isLoadingAuth && user);
+
   return (
     <div className="app-container">
-      {!isLoginOrRegister && <Sidebar />}
+      {shouldShowLayout && !isLoginOrRegister && <Sidebar />}
       <div
         className="content"
         style={{
@@ -56,12 +61,12 @@ const MainLayout = () => {
           minHeight: '100vh',
         }}
       >
-        <Header />
+        {shouldShowLayout && <Header />}
         <main>
           <Outlet />
         </main>
-        <Footer />
-        {!isLoginOrRegister && !isMobile && (
+        {shouldShowLayout && <Footer />}
+        {shouldShowLayout && !isLoginOrRegister && !isMobile && (
           <div className="fixed-buttons">
             <button className="scroll-to-top" onClick={scrollToTop} style={{ display: showScrollTop ? 'flex' : 'none' }}>
               <FaChevronUp />

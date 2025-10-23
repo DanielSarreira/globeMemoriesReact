@@ -79,7 +79,7 @@
 
 .setting-icon {
   font-size: 1.5rem;
-  color: #007bff;
+  color: var(--primary-color);
   margin-right: 1.5rem;
   margin-top: 0.5rem;
 }

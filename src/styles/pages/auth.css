@@ -344,45 +344,7 @@
   color: var(--primary-color);
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .auth-content {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.9) 100%);
-    border-color: var(--dark-border);
-  }
 
-  .auth-title {
-    color: var(--dark-text-primary);
-  }
-
-  .auth-subtitle {
-    color: var(--dark-text-secondary);
-  }
-
-  .auth-input {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: var(--dark-border);
-    color: var(--dark-text-primary);
-  }
-
-  .auth-input:focus {
-    background: var(--dark-bg-secondary);
-  }
-
-  .auth-social-button {
-    background: var(--dark-bg-secondary);
-    border-color: var(--dark-border);
-  }
-
-  .auth-divider span {
-    background: var(--dark-bg);
-  }
-
-  .auth-footer {
-    border-color: var(--dark-border);
-    color: var(--dark-text-secondary);
-  }
-}
 
 /* Responsive */
 @media (max-width: 768px) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaStar, FaHeart, FaComment, FaChevronLeft, FaChevronRight, FaReply, FaPaperPlane, FaFlag, FaEllipsisV } from 'react-icons/fa';
@@ -8,64 +9,8 @@ import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
 import '../styles/components/TravelDetailsModern.css';
 import '../styles/pages/qanda.css'; // Import para estilos modernos de comentários
 
-// Mock data for recommended travels
-const mockRecommendedTravels = [
-  {
-    id: 1,
-    name: "Lisboa",
-    city: "Lisboa",
-    country: "Portugal",
-    highlightImage: require("../images/Globe-Memories.jpg"),
-    price: "500",
-    stars: 4,
-    category: ["Cultural", "Cidade", "História", "Gastronomia", "Arquitetura"],
-    user: "Maria Silva"
-  },
-  {
-    id: 2,
-    name: "Porto",
-    city: "Porto", 
-    country: "Portugal",
-    highlightImage: require("../images/Globe-Memories.png"),
-    price: "350",
-    stars: 5,
-    category: ["Cultural", "Cidade", "História", "Gastronomia"],
-    user: "João Santos"
-  },
-  {
-    id: 3,
-    name: "Coimbra",
-    city: "Coimbra",
-    country: "Portugal", 
-    highlightImage: require("../images/Globe-Memories.jpg"),
-    price: "300",
-    stars: 4,
-    category: ["Cultural", "História", "Arquitetura"],
-    user: "Ana Costa"
-  },
-  {
-    id: 4,
-    name: "Óbidos",
-    city: "Óbidos",
-    country: "Portugal",
-    highlightImage: require("../images/Globe-Memories.png"),
-    price: "200",
-    stars: 5,
-    category: ["Cultural", "História", "Arquitetura", "Paisagem"],
-    user: "Pedro Lima"
-  },
-  {
-    id: 5,
-    name: "Sintra",
-    city: "Sintra",
-    country: "Portugal",
-    highlightImage: require("../images/Globe-Memories.jpg"),
-    price: "400",
-    stars: 4,
-    category: ["Natureza", "História", "Arquitetura", "Paisagem"],
-    user: "Sofia Pereira"
-  }
-];
+// Recomendações de viagens - serão carregadas do backend
+const recommendedTravels = [];
 
 // Componente para setas customizadas (igual ao Home.js)
 const ArrowLeft = () => (
@@ -164,11 +109,10 @@ const TravelDetails = () => {
 
   // Filtrar viagens recomendadas pela mesma categoria
   const getRecommendedTravels = () => {
-    if (!travel || !travel.category) return mockRecommendedTravels;
+    if (!travel || !travel.category) return [];
     
-    return mockRecommendedTravels.filter(recommendedTravel => 
-      recommendedTravel.category.some(cat => travel.category.includes(cat))
-    );
+    // Será preenchido com dados do backend
+    return [];
   };
 
   const recommendedTravels = getRecommendedTravels();
@@ -623,11 +567,7 @@ const TravelDetails = () => {
     }
 
     // Aqui seria feita a chamada à API para enviar a denúncia
-    console.log('Denúncia enviada:', {
-      travelId: (selectedTravel || travel).id,
-      reasons: selectedReasons,
-      otherReason: reportReasons.other ? otherReason : null
-    });
+    // Report submitted with reasons and travelId
 
     showToast('Viagem denunciada com sucesso!', 'success');
     
@@ -800,8 +740,6 @@ const TravelDetails = () => {
       }
     };
     
-    console.log('Mock Travel Data:', mockTravel);
-    console.log('Transports:', mockTravel.transports);
     setTravel(mockTravel);
     setLikeCount(mockTravel.likes);
     // Comentários ordenados do mais recente para o mais antigo
@@ -2372,6 +2310,23 @@ const TravelDetails = () => {
       />
     </div>
   );
+};
+
+// PropTypes para TravelDetails
+TravelDetails.propTypes = {
+  travelId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onNavigateBack: PropTypes.func,
+  showHeader: PropTypes.bool,
+  allowComments: PropTypes.bool,
+  allowReports: PropTypes.bool,
+  customStyles: PropTypes.object
+};
+
+TravelDetails.defaultProps = {
+  showHeader: true,
+  allowComments: true,
+  allowReports: true,
+  customStyles: {}
 };
 
 export default TravelDetails;

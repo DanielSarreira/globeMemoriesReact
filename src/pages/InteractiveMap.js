@@ -256,7 +256,6 @@ const InteractiveMap = () => {
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-PT`
       );
       const data = await response.json();
-      console.log("Dados de localização recebidos:", data); // Debug
       if (data && data.address) {
         const country = data.address.country || 
                        data.address.country_code?.toUpperCase() || 
@@ -269,7 +268,6 @@ const InteractiveMap = () => {
                     data.address.suburb ||
                     "Desconhecido";
         
-        console.log(`Localização processada: ${city}, ${country}`); // Debug
         return { country, city };
       }
     } catch (error) {

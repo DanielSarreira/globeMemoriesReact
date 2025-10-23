@@ -9,7 +9,7 @@ const Toast = ({ message, type, isVisible, show, onClose }) => {
     if (shouldShow) {
       const timer = setTimeout(() => {
         onClose();
-      }, 2600); // Aumentado para 2600ms (1000ms + 1600ms conforme solicitado)
+      }, 2400); // 2400ms = 2.4 segundos
       return () => clearTimeout(timer);
     }
   }, [shouldShow, onClose]);

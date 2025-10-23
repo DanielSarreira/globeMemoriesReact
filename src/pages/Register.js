@@ -33,13 +33,17 @@ const citiesByCountry = {
 };
 
 // Componente de Toast para feedback
-const Toast = ({ message, type, onClose }) => {
+const Toast = ({ message, type, onClose, show }) => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 2600);
-    return () => clearTimeout(timer);
-  }, [onClose]);
+    if (show) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 2400); // 2400ms = 2.4 segundos
+      return () => clearTimeout(timer);
+    }
+  }, [show, onClose]);
+
+  if (!show) return null;
 
   return (
     <div className={`toast ${type}`}>
@@ -87,26 +91,20 @@ const Register = () => {
     const userAgent = window.navigator.userAgent;
     const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
     setIsIOS(isIOSDevice);
-    console.log('É iOS?', isIOSDevice);
 
     // Detectar se o navegador suporta beforeinstallprompt
     const supportsPrompt = 'onbeforeinstallprompt' in window;
     setSupportsBeforeInstallPrompt(supportsPrompt);
-    console.log('Suporta beforeinstallprompt?', supportsPrompt);
 
     // Detectar se o app está em modo standalone (indicando que foi instalado)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     const isInstalledInLocalStorage = localStorage.getItem('isInstalled') === 'true';
     setIsInstalled(isStandalone || isInstalledInLocalStorage);
-    console.log('Está em modo standalone?', isStandalone);
-    console.log('isInstalled no localStorage?', isInstalledInLocalStorage);
-    console.log('App está instalado?', isStandalone || isInstalledInLocalStorage);
 
     // Detectar se é um dispositivo móvel
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      console.log('Largura da janela:', window.innerWidth, 'isMobile:', mobile);
     };
 
     window.addEventListener('resize', handleResize);
@@ -116,23 +114,17 @@ const Register = () => {
 
   useEffect(() => {
     if (isMobile && !isInstalled) {
-      console.log('Mostrando o pop-up de instalação');
       setShowInstallPrompt(true);
-    } else {
-      console.log('Pop-up não mostrado: não é um dispositivo móvel ou o app já está instalado');
     }
 
     const handleBeforeInstallPrompt = (e) => {
-      console.log('Evento beforeinstallprompt disparado!');
       e.preventDefault();
       setDeferredPrompt(e);
-      console.log('deferredPrompt definido:', e);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     window.addEventListener('appinstalled', () => {
-      console.log('PWA foi instalada com sucesso!');
       localStorage.setItem('isInstalled', 'true');
       setIsInstalled(true);
       setShowInstallPrompt(false);
@@ -146,63 +138,63 @@ const Register = () => {
 
   // Funções de validação
   const validateFirstName = (value) => {
-    if (!value.trim()) return 'Primeiro nome é obrigatório';
-    if (value.trim().length < 2) return 'Primeiro nome deve ter pelo menos 2 caracteres';
-    if (!/^[A-Za-zÀ-ÿ\s]+$/.test(value)) return 'Primeiro nome deve conter apenas letras';
+    if (!value.trim()) return 'O primeiro nome é obrigatório';
+    if (value.trim().length < 2) return 'O primeiro nome deve ter pelo menos 2 caracteres';
+    if (!/^[A-Za-zÀ-ÿ\s]+$/.test(value)) return 'O primeiro nome deve conter apenas letras';
     return '';
   };
 
   const validateLastName = (value) => {
-    if (!value.trim()) return 'Último nome é obrigatório';
-    if (value.trim().length < 2) return 'Último nome deve ter pelo menos 2 caracteres';
-    if (!/^[A-Za-zÀ-ÿ\s]+$/.test(value)) return 'Último nome deve conter apenas letras';
+    if (!value.trim()) return 'O último nome é obrigatório';
+    if (value.trim().length < 2) return 'O último nome deve ter pelo menos 2 caracteres';
+    if (!/^[A-Za-zÀ-ÿ\s]+$/.test(value)) return 'O último nome deve conter apenas letras';
     return '';
   };
 
   const validateUsername = (value) => {
-    if (!value.trim()) return 'Nome de utilizador é obrigatório';
-    if (value.length < 3) return 'Nome de utilizador deve ter pelo menos 3 caracteres';
-    if (value.length > 20) return 'Nome de utilizador deve ter no máximo 20 caracteres';
-    if (!/^[a-zA-Z0-9._]+$/.test(value)) return 'Nome de utilizador deve conter apenas letras, números, pontos ou underscore';
-    if (/\s/.test(value)) return 'Nome de utilizador não pode conter espaços';
+    if (!value.trim()) return 'O nome de utilizador é obrigatório';
+    if (value.length < 3) return 'O nome de utilizador deve ter pelo menos 3 caracteres';
+    if (value.length > 20) return 'O nome de utilizador deve ter no máximo 20 caracteres';
+    if (!/^[a-zA-Z0-9._]+$/.test(value)) return 'O nome de utilizador deve conter apenas letras, números, pontos ou underscore';
+    if (/\s/.test(value)) return 'O nome de utilizador não pode conter espaços';
     return '';
   };
 
   const validateEmail = (value) => {
-    if (!value.trim()) return 'Email é obrigatório';
+    if (!value.trim()) return 'O email é obrigatório';
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) return 'Formato de email inválido';
+    if (!emailRegex.test(value)) return 'O formato do email é inválido';
     return '';
   };
 
   const validatePassword = (value) => {
-    if (!value) return 'Palavra-passe é obrigatória';
-    if (value.length < 8) return 'Palavra-passe deve ter pelo menos 8 caracteres';
-    if (!/(?=.*[a-z])/.test(value)) return 'Palavra-passe deve conter pelo menos uma letra minúscula';
-    if (!/(?=.*[A-Z])/.test(value)) return 'Palavra-passe deve conter pelo menos uma letra maiúscula';
-    if (!/(?=.*\d)/.test(value)) return 'Palavra-passe deve conter pelo menos um número';
-    if (!/(?=.*[!@#$%^&*(),.?":{}|<>])/.test(value)) return 'Palavra-passe deve conter pelo menos um caractere especial (!@#$%^&*(),.?":{}|<>)';
+    if (!value) return 'A palavra-passe é obrigatória';
+    if (value.length < 8) return 'A palavra-passe deve ter pelo menos 8 caracteres';
+    if (!/(?=.*[a-z])/.test(value)) return 'A palavra-passe deve conter pelo menos uma letra minúscula';
+    if (!/(?=.*[A-Z])/.test(value)) return 'A palavra-passe deve conter pelo menos uma letra maiúscula';
+    if (!/(?=.*\d)/.test(value)) return 'A palavra-passe deve conter pelo menos um dígito';
+    if (!/(?=.*[!@#$%^&*(),.?":{}|<>])/.test(value)) return 'A palavra-passe deve conter pelo menos um caractere especial (!@#$%^&*(),.?":{}|<>)';
     return '';
   };
 
   const validateConfirmPassword = (value, password) => {
-    if (!value) return 'Confirmação de palavra-passe é obrigatória';
+    if (!value) return 'A confirmação da palavra-passe é obrigatória';
     if (value !== password) return 'As palavras-passe não coincidem';
     return '';
   };
 
   const validateNationality = (value) => {
-    if (!value) return 'País é obrigatório';
+    if (!value) return 'O país é obrigatório';
     return '';
   };
 
   const validateCity = (value) => {
-    if (!value) return 'Cidade é obrigatória';
+    if (!value) return 'A cidade é obrigatória';
     return '';
   };
 
   const validateAcceptTerms = (value) => {
-    if (!value) return 'Deve aceitar os Termos e Política de Privacidade';
+    if (!value) return 'Deve aceitar os Termos e Condições e a Política de Privacidade';
     return '';
   };
 
@@ -264,33 +256,23 @@ const Register = () => {
   };
 
   const handleInstall = async () => {
-    console.log('Botão Instalar clicado!');
-    console.log('deferredPrompt atual:', deferredPrompt);
     if (deferredPrompt) {
       try {
-        console.log('Chamando deferredPrompt.prompt()');
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        console.log('Resultado da escolha do utilizador:', outcome);
         if (outcome === 'accepted') {
-          console.log('Utilizador aceitou instalar o PWA');
           localStorage.setItem('isInstalled', 'true');
           setIsInstalled(true);
-        } else {
-          console.log('Utilizador recusou instalar o PWA');
         }
         setDeferredPrompt(null);
       } catch (error) {
-        console.error('Erro ao chamar prompt():', error);
+        // Silent fail - user experience not affected
       }
       setShowInstallPrompt(false);
-    } else {
-      console.log('deferredPrompt é null, não foi possível chamar prompt()');
     }
   };
 
   const handleDismiss = () => {
-    console.log('Utilizador fechou o modal');
     setShowInstallPrompt(false);
   };
 
@@ -312,19 +294,26 @@ const Register = () => {
       [name]: newValue,
     }));
 
-    // Validar campo em tempo real
-    const error = validateField(name, newValue);
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
-
-    // Se for confirmPassword, também validar quando password mudar
-    if (name === 'password' && formData.confirmPassword) {
-      const confirmError = validateConfirmPassword(formData.confirmPassword, newValue);
+    // Validar campo em tempo real (excepto confirmPassword por segurança)
+    if (name !== 'confirmPassword') {
+      const error = validateField(name, newValue);
       setFieldErrors(prev => ({
         ...prev,
-        confirmPassword: confirmError
+        [name]: error
+      }));
+    } else {
+      // Para confirmPassword, apenas limpar erro se existir (sem validar)
+      setFieldErrors(prev => ({
+        ...prev,
+        confirmPassword: ''
+      }));
+    }
+
+    // Se for password e houver confirmPassword, limpar erro de confirmPassword
+    if (name === 'password') {
+      setFieldErrors(prev => ({
+        ...prev,
+        confirmPassword: ''
       }));
     }
 
@@ -348,7 +337,7 @@ const Register = () => {
 
     // Validar todos os campos
     if (!validateAllFields()) {
-      showToast('Por favor, corrija os erros no formulário', 'error');
+      showToast('Por favor, corrija os erros no formulário antes de continuar.', 'error');
       return;
     }
 
@@ -399,19 +388,32 @@ const Register = () => {
       
       // Verificar tipos específicos de erro
       if (error.response?.status === 409) {
-        if (error.response.data?.message?.includes('email')) {
+        const errorMessage = error.response.data?.message?.toLowerCase() || '';
+        
+        if (errorMessage.includes('email') && errorMessage.includes('username')) {
+          showToast('O email e o nome de utilizador já estão registados. Utilize dados diferentes.', 'error');
+          setFieldErrors(prev => ({ 
+            ...prev, 
+            email: 'Email já registado',
+            username: 'Nome de utilizador já existe'
+          }));
+        } else if (errorMessage.includes('email')) {
           showToast('Este email já está registado. Tente iniciar sessão ou use outro email.', 'error');
           setFieldErrors(prev => ({ ...prev, email: 'Email já registado' }));
-        } else if (error.response.data?.message?.includes('username')) {
+        } else if (errorMessage.includes('username') || errorMessage.includes('utilizador')) {
           showToast('Este nome de utilizador já existe. Escolha outro.', 'error');
           setFieldErrors(prev => ({ ...prev, username: 'Nome de utilizador já existe' }));
         } else {
-          showToast('Dados já registados. Verifique email e nome de utilizador.', 'error');
+          showToast('Dados já registados. Verifique o email e o nome de utilizador.', 'error');
         }
       } else if (error.response?.status === 400) {
         showToast('Dados inválidos. Verifique as informações inseridas.', 'error');
-      } else {
+      } else if (error.response?.status === 500) {
         showToast('Erro no servidor. Tente novamente mais tarde.', 'error');
+      } else if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
+        showToast('Erro de ligação. Verifique a sua ligação à internet e tente novamente.', 'error');
+      } else {
+        showToast('Erro ao registar. Tente novamente mais tarde.', 'error');
       }
     }
   };
@@ -459,7 +461,7 @@ const Register = () => {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  placeholder="Insira o seu Nome"
+                  placeholder="Insira o seu Nome *"
                   className={fieldErrors.firstName ? 'input-error' : ''}
                   required
                 />
@@ -477,7 +479,7 @@ const Register = () => {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  placeholder="Insira o seu Apelido"
+                  placeholder="Insira o seu Apelido *"
                   className={fieldErrors.lastName ? 'input-error' : ''}
                   required
                 />
@@ -501,7 +503,7 @@ const Register = () => {
                   className={`select-modern ${fieldErrors.nationality ? 'input-error' : ''}`}
                   required
                 >
-                  <option value="">Selecione o seu país</option>
+                  <option value="">Selecione o seu país *</option>
                   {countries.map((country) => (
                     <option key={country} value={country}>
                       {country}
@@ -525,7 +527,7 @@ const Register = () => {
                   required
                   disabled={!formData.nationality}
                 >
-                  <option value="">Selecione a sua cidade</option>
+                  <option value="">Selecione a sua cidade *</option>
                   {formData.nationality && citiesByCountry[formData.nationality] && 
                     citiesByCountry[formData.nationality].map((city) => (
                       <option key={city} value={city}>
@@ -551,7 +553,7 @@ const Register = () => {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="Escolha um nome de utilizador"
+                  placeholder="Escolha um nome de utilizador *"
                   className={fieldErrors.username ? 'input-error' : ''}
                   required
                 />
@@ -570,7 +572,7 @@ const Register = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Insira o seu email"
+                  placeholder="Insira o seu email *"
                   className={fieldErrors.email ? 'input-error' : ''}
                   required
                 />
@@ -593,7 +595,7 @@ const Register = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Insira a sua palavra-passe"
+                    placeholder="Insira a sua palavra-passe *"
                     className={fieldErrors.password ? 'input-error' : ''}
                     required
                   />
@@ -621,7 +623,7 @@ const Register = () => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    placeholder="Confirme a sua palavra-passe"
+                    placeholder="Confirme a sua palavra-passe *"
                     className={fieldErrors.confirmPassword ? 'input-error' : ''}
                     required
                   />
@@ -745,7 +747,7 @@ const Register = () => {
             </button>
 
             <div className="login-travel-register">
-              <span>Já tem conta criada?</span>
+              <span>Já tem conta?</span>
               <Link to="/login" className="register-btn">Iniciar Sessão</Link>
             </div>
           </form>
@@ -754,30 +756,258 @@ const Register = () => {
       </div>
 
       {/* Pop-up de instalação */}
-      {showInstallPrompt && (
+      {showInstallPrompt && !isInstalled && (
         <div className="install-prompt-overlay" onClick={handleDismiss}>
-          <div className="install-prompt" onClick={(e) => e.stopPropagation()}>
+          <div className="install-prompt" onClick={(e) => e.stopPropagation()} style={{ width: '95%', maxWidth: '600px' }}>
             <button className="install-prompt-close" onClick={handleDismiss}>
               ✕
             </button>
-            <img src="./icons/favicon.jpg" alt="Globe Memories" className="install-prompt-icon" />
-            <h3>Instale o Globe Memories!</h3>
-            {supportsBeforeInstallPrompt ? (
-              <>
-                <p>Adicione ao seu ecrã inicial com um clique.</p>
-                <button onClick={handleInstall} className="install-button">
-                  Instalar
+            
+            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <img 
+                src="./icons/favicon.jpg" 
+                alt="Globe Memories" 
+                style={{
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '25px',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                  marginBottom: '15px'
+                }}
+              />
+              <h2 style={{
+                color: '#333',
+                fontSize: '1.6rem',
+                marginBottom: '8px',
+                fontWeight: 'bold'
+              }}>📱 Instale o Globe Memories!</h2>
+              <p style={{
+                color: '#666',
+                fontSize: '0.95rem',
+                margin: 0
+              }}>
+                Acesso rápido e offline
+              </p>
+            </div>
+
+            <div style={{
+              background: '#f8f9fa',
+              borderRadius: '12px',
+              padding: '15px',
+              marginBottom: '20px',
+              border: '1px solid #e9ecef'
+            }}>
+              {supportsBeforeInstallPrompt ? (
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    marginBottom: '12px'
+                  }}>
+                    <span style={{ fontSize: '1.3rem', marginTop: '2px' }}>⚡</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Acesso Instantâneo</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Abra o app direto do seu ecrã inicial</p>
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    marginBottom: '12px'
+                  }}>
+                    <span style={{ fontSize: '1.3rem', marginTop: '2px' }}>🔒</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Segurança Total</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Funciona offline em muitos casos</p>
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <span style={{ fontSize: '1.3rem', marginTop: '2px' }}>✨</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Experiência Premium</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Interface nativa e otimizada</p>
+                    </div>
+                  </div>
+                </div>
+              ) : isIOS ? (
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    marginBottom: '15px'
+                  }}>
+                    <span style={{ fontSize: '1.8rem' }}>📤</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Passo 1: Toque em Partilhar</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Botão na barra inferior do navegador</p>
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <span style={{ fontSize: '1.8rem' }}>➕</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Passo 2: Selecione "Ecrã Principal"</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Opção disponível no menu de partilha</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    marginBottom: '15px'
+                  }}>
+                    <span style={{ fontSize: '1.8rem' }}>⋮</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Passo 1: Abra o Menu</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Ícone com três pontos no canto superior</p>
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <span style={{ fontSize: '1.8rem' }}>➕</span>
+                    <div>
+                      <p style={{
+                        color: '#333',
+                        fontWeight: '600',
+                        fontSize: '0.95rem',
+                        margin: '0 0 4px 0'
+                      }}>Passo 2: "Instalar" ou "Ecrã inicial"</p>
+                      <p style={{
+                        color: '#666',
+                        fontSize: '0.85rem',
+                        margin: 0
+                      }}>Procure esta opção no menu</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                onClick={handleDismiss}
+                style={{
+                  padding: '12px 25px',
+                  borderRadius: '25px',
+                  border: '2px solid #ddd',
+                  background: 'transparent',
+                  color: '#666',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  fontFamily: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#999';
+                  e.target.style.color = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = '#ddd';
+                  e.target.style.color = '#666';
+                }}
+              >
+                Agora Não
+              </button>
+              {supportsBeforeInstallPrompt && (
+                <button
+                  onClick={handleInstall}
+                  style={{
+                    padding: '12px 25px',
+                    borderRadius: '25px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #007bff, #0056b3)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
+                    fontFamily: 'inherit'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(0,123,255,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(0,123,255,0.3)';
+                  }}
+                >
+                  ✨ Instalar Agora
                 </button>
-              </>
-            ) : isIOS ? (
-              <p>
-                Toque no botão <strong>Partilhar</strong> e selecione <strong>Adicionar ao Ecrã Principal</strong>.
-              </p>
-            ) : (
-              <p>
-                Para instalar, use a opção do seu navegador para adicionar ao ecrã inicial (geralmente no menu de opções).
-              </p>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

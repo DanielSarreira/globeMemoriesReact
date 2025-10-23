@@ -1,0 +1,52 @@
+/* ============================================
+   FORÇAR MODO CLARO EM TODA A APLICAÇÃO
+   ============================================ */
+
+/* Forçar color-scheme para light em todos os elementos */
+html,
+body,
+*,
+*::before,
+*::after {
+  color-scheme: light !important;
+}
+
+/* Garantir que nenhuma preferência de dark mode afete a aplicação */
+@media (prefers-color-scheme: dark) {
+  html,
+  body,
+  * {
+    color-scheme: light !important;
+  }
+}
+
+/* Remover qualquer filtro ou overlay que possa escurecer a página */
+html {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+body {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* Garantir que inputs não mudem de cor */
+input,
+textarea,
+select {
+  color-scheme: light !important;
+}
+
+/* Garantir que as barras de scroll não mudem em modo dark */
+::-webkit-scrollbar {
+  background: #f5f7fa !important;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f7fa !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c3cfe2 !important;
+}

@@ -7,20 +7,9 @@ import TravelsData from '../data/travelsData';
 import { request, setAuthHeader } from '../axios_helper';
 import axios from 'axios';
 import { useWeather } from '../context/WeatherContext';
-import InstallAppModal from './InstallAppModal';
 import Toast from './Toast';
 import SuggestionButton from './SuggestionButton';
 import SuggestionModal from './SuggestionModal';
-
-// Dados mockados para notificações
-const mockNotifications = [
-  { id: 1, userId: 'user1', type: 'follow', message: 'AnaSilva começou a seguir-te!', relatedId: 'AnaSilva', isRead: false, createdAt: '2025-03-27T10:00:00' },
-  { id: 2, userId: 'user1', type: 'follow', message: 'AnaSilva pediu para seguir!', relatedId: 'AnaSilva', isRead: false, createdAt: '2025-03-27T09:00:00' },
-  { id: 3, userId: 'user1', type: 'follow', message: 'AnaSilva deixou de te seguir!', relatedId: 'AnaSilva', isRead: false, createdAt: '2025-03-26T15:30:00' },
-  { id: 4, userId: 'user1', type: 'like', message: 'AnaSilva gostou da tua viagem!', relatedId: '1', isRead: false, createdAt: '2025-03-20T12:00:00' },
-  { id: 5, userId: 'user1', type: 'comment', message: 'AnaSilva comentou na tua viagem: "Incrível!"', relatedId: '1', isRead: false, createdAt: '2025-02-25T08:00:00' },
-  { id: 6, userId: 'user1', type: 'follow', message: 'TiagoMiranda começou a seguir-te!', relatedId: 'tiago', isRead: false, createdAt: '2025-01-15T14:00:00' },
-];
 
 const Header = () => {
   const [userSearch, setUserSearch] = useState('');
@@ -33,14 +22,11 @@ const Header = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activePage, setActivePage] = useState('/');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  // Notificações serão carregadas do backend - inicialmente vazio
+  const [notifications, setNotifications] = useState([]);
   const { weather, isLoading, setWeather, setIsLoading } = useWeather();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
-  const [isAppInstalled, setIsAppInstalled] = useState(false);
-  const [showInstallButton, setShowInstallButton] = useState(false);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
   
   // Toast state
@@ -69,47 +55,27 @@ const Header = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Detectar se está em modo standalone (PWA instalada)
-  useEffect(() => {
-    const isStandalone = 
-      window.matchMedia('(display-mode: standalone)').matches ||
-      navigator.standalone === true ||
-      document.referrer.includes('android-app://');
-    setIsAppInstalled(isStandalone);
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setDeferredPrompt(event);
-      setShowInstallButton(true); // Mostrar botão apenas quando há deferredPrompt
-    };
-
-    const handleAppInstalled = () => {
-      setIsAppInstalled(true);
-      setShowInstallButton(false);
-      setDeferredPrompt(null);
-      showToast('✨ App instalada com sucesso!', 'success');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
   // Sempre obter o tempo atual para a localização do utilizador ao montar o header
   useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    
     const fetchWeatherForCoords = async (lat, lon) => {
+      if (!mounted) return;
+      
       try {
-        setIsLoading(true);
+        if (mounted) setIsLoading(true);
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&timezone=auto`;
-        const res = await axios.get(url);
+        
+        const res = await axios.get(url, { 
+          signal: controller.signal,
+          timeout: 8000 // Timeout de 8 segundos
+        });
+        
+        if (!mounted || controller.signal.aborted) return;
+        
         const current = res.data?.current_weather;
-        if (current) {
+        if (current && mounted) {
           setWeather({
             temperature: Math.round(current.temperature),
             windspeed: current.windspeed,
@@ -118,30 +84,49 @@ const Header = () => {
           });
         }
       } catch (error) {
-        console.error('Erro ao obter o tempo atual:', error.message);
-        showToast('Erro ao obter informações meteorológicas.', 'error');
+        if (mounted && error.name !== 'AbortError') {
+          // Silenciosamente falha - não mostra erro para weather opcional
+          setWeather(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted && !controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          fetchWeatherForCoords(latitude, longitude);
-        },
-        (error) => {
-          // Se o utilizador negar, usar Lisboa como fallback
-          console.warn('Geolocalização não disponível:', error.message);
+    const getLocationAndWeather = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (mounted) {
+              const { latitude, longitude } = position.coords;
+              fetchWeatherForCoords(latitude, longitude);
+            }
+          },
+          (error) => {
+            // Se o utilizador negar, usar Lisboa como fallback
+            if (mounted) {
+              fetchWeatherForCoords(38.7167, -9.1333);
+            }
+          },
+          { enableHighAccuracy: false, timeout: 5000, maximumAge: 3600000 }
+        );
+      } else {
+        // Sem geolocalização, fallback para Lisboa
+        if (mounted) {
           fetchWeatherForCoords(38.7167, -9.1333);
-        },
-        { enableHighAccuracy: false, timeout: 5000 }
-      );
-    } else {
-      // Sem geolocalização, fallback para Lisboa
-      fetchWeatherForCoords(38.7167, -9.1333);
-    }
+        }
+      }
+    };
+
+    // Começar a buscar weather
+    getLocationAndWeather();
+    
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, [setWeather, setIsLoading]);
 
   // Handlers existentes
@@ -190,38 +175,14 @@ const Header = () => {
     return null;
   }
 
-  const handleInstallClick = () => {
-    // Abre o modal com instruções de instalação (e opção nativa quando disponível)
-    setIsInstallModalOpen(true);
-  };
-
   return (
     <div>
     <header className="header">
       <div className="header-left">
-        {isMobile && !isAppInstalled && showInstallButton ? (
-          <div className="install-app-container">
-            <button
-              className="install-app-btn"
-              onClick={handleInstallClick}
-              title="Instale o app para melhor experiência"
-            >
-              📱 Instalar App
-            </button>
-          </div>
-        ) : isMobile && isAppInstalled ? (
-          <div className="install-app-container">
-            <span className="app-installed-badge" title="App instalada no seu dispositivo">
-              ✓ App Instalada
-            </span>
-          </div>
-        ) : isMobile && isAppInstalled ? (
-          <div className="install-app-container">
-            <span className="app-installed-badge" title="App instalada no seu dispositivo">
-              ✓ App Instalada
-            </span>
-          </div>
-        ) : !isMobile ? (
+        {user && isMobile && (
+          <SuggestionButton onClick={() => setIsSuggestionModalOpen(true)} />
+        )}
+        {!isMobile && (
           <div className="social-icons">
             <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
               <FaFacebook />
@@ -236,7 +197,7 @@ const Header = () => {
               <FaLinkedin />
             </a>
           </div>
-        ) : null}
+        )}
       </div>
 
       <div className="header-center">
@@ -248,11 +209,9 @@ const Header = () => {
       <div className="header-right">
         {user && (
           <>
-            {/* Botão de Sugestão */}
-            <SuggestionButton onClick={() => setIsSuggestionModalOpen(true)} />
-
-            {/* Seção de Notificações */}
-          
+            {!isMobile && (
+              <SuggestionButton onClick={() => setIsSuggestionModalOpen(true)} />
+            )}
 
             {/* Seção de Meteorologia Simplificada (sempre visível) */}
             <div className="weather-section">
@@ -327,12 +286,6 @@ const Header = () => {
         )}
       </div>
     </header>
-    <InstallAppModal
-      open={isInstallModalOpen}
-      onClose={() => setIsInstallModalOpen(false)}
-      deferredPrompt={deferredPrompt}
-      showToast={showToast}
-    />
     <SuggestionModal
       isOpen={isSuggestionModalOpen}
       onClose={() => setIsSuggestionModalOpen(false)}

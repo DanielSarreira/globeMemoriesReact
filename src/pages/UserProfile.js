@@ -132,7 +132,6 @@ const UserProfile = () => {
         }
       } catch (error) {
         console.error('Erro ao buscar perfil:', error);
-        console.log('Erro ao carregar perfil do viajante. Tente novamente.');
         setProfile(null);
       } finally {
         setLoading(false);
@@ -326,25 +325,21 @@ const UserProfile = () => {
   };
 
   const openFollowModal = (title, list) => {
-    console.log('Abrindo Follow Modal:', title, list);
     setModalContent({ title, list, type: 'follow' });
     setShowFollowModal(true);
   };
 
   const closeFollowModal = () => {
-    console.log('Fechando Follow Modal');
     setShowFollowModal(false);
     setModalContent({ title: '', list: [], type: '' });
   };
 
   const openStatsModal = (title, list, type = '') => {
-    console.log('Abrindo Stats Modal:', title, list, type);
     setModalContent({ title, list, type });
     setShowStatsModal(true);
   };
 
   const closeStatsModal = () => {
-    console.log('Fechando Stats Modal');
     setShowStatsModal(false);
     setModalContent({ title: '', list: [], type: '' });
   };

@@ -6,9 +6,12 @@ import {
   FaUsers, FaList, FaLanguage, FaGlobeAmericas, 
   FaBus, FaFileAlt, FaHistory, FaCog, 
   FaBell, FaUserShield, FaSignOutAlt, FaChartLine,
-  FaHome, FaDatabase, FaShieldAlt, FaHandsHelping 
+  FaHome, FaDatabase, FaShieldAlt, FaHandsHelping,
+  FaFlag, FaComments, FaQuestion, FaTrophy, FaEnvelope,
+  FaEye
 } from 'react-icons/fa';
 import UserManagement from './UserManagement';
+import UserProfilesManagement from './UserProfilesManagement';
 import CategoryManagement from './CategoryManagement';
 import LanguageManagement from './LanguageManagement';
 import CountryManagement from './CountryManagement';
@@ -17,10 +20,18 @@ import ContentManagement from './ContentManagement';
 import ActivityLogs from './ActivityLogs';
 import Settings from './Settings';
 import Notifications from './Notifications';
+import AdvancedNotifications from './AdvancedNotifications';
 import RoleManagement from './RoleManagement';
 import BackupManagement from './BackupManagement';
 import SecurityAudit from './SecurityAudit';
 import WelcomeModalManagement from './WelcomeModalManagement';
+import ReportsManagement from './ReportsManagement';
+import TravelModeration from './TravelModeration';
+import TravelModerationComplete from './TravelModerationComplete';
+import CommentsModeration from './CommentsModeration';
+import QandAModeration from './QandAModeration';
+import AchievementsManagement from './AchievementsManagement';
+import AdminSuggestionsManager from './AdminSuggestionsManager';
 import logo from '../../images/Globe-Memories.png';
 import '../../styles/Admin.css';
 import '../../styles/components/welcome-modal-management.css';
@@ -73,24 +84,38 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminLoginAttempts');
+    localStorage.removeItem('adminLastFailedLogin');
     navigate('/admin/login');
   };
 
   const menuItems = [
     { path: '/admin', icon: FaHome, label: 'Dashboard', exact: true },
-    { path: '/admin/users', icon: FaUsers, label: 'Gestão de Utilizadores' },
-    { path: '/admin/categories', icon: FaList, label: 'Categorias' },
-    { path: '/admin/countries', icon: FaGlobeAmericas, label: 'Países' },
-    { path: '/admin/languages', icon: FaLanguage, label: 'Idiomas' },
-    { path: '/admin/transport-methods', icon: FaBus, label: 'Métodos de Transporte' },
-    { path: '/admin/content', icon: FaFileAlt, label: 'Gestão de Conteúdo' },
-    { path: '/admin/welcome-modal', icon: FaHandsHelping, label: 'Modal de Boas-Vindas' },
-    { path: '/admin/backup', icon: FaDatabase, label: 'Gestão de Backups' },
-    { path: '/admin/security', icon: FaShieldAlt, label: 'Auditoria de Segurança' },
-    { path: '/admin/logs', icon: FaHistory, label: 'Logs de Atividade' },
-    { path: '/admin/settings', icon: FaCog, label: 'Configurações' },
-    { path: '/admin/notifications', icon: FaBell, label: 'Notificações' },
-    { path: '/admin/roles', icon: FaUserShield, label: 'Gestão de Permissões' },
+    // ========== MODERAÇÃO (NOVO) ==========
+    { path: '/admin/reports', icon: FaFlag, label: '🚩 Denúncias', section: 'Moderação' },
+    { path: '/admin/travel-moderation-complete', icon: FaEye, label: '🛡️ Mod. de Viagens', section: 'Moderação' },
+    { path: '/admin/comments-moderation', icon: FaComments, label: '💬 Mod. de Comentários', section: 'Moderação' },
+    { path: '/admin/qanda-moderation', icon: FaQuestion, label: '❓ Mod. de Q&A', section: 'Moderação' },
+    // ========== GESTÃO DE DADOS ==========
+    { path: '/admin/users', icon: FaUsers, label: 'Gestão de Utilizadores', section: 'Dados' },
+    { path: '/admin/user-profiles', icon: FaUsers, label: '👤 Perfis de Utilizadores', section: 'Dados' },
+    { path: '/admin/categories', icon: FaList, label: 'Categorias', section: 'Dados' },
+    { path: '/admin/countries', icon: FaGlobeAmericas, label: 'Países', section: 'Dados' },
+    { path: '/admin/languages', icon: FaLanguage, label: 'Idiomas', section: 'Dados' },
+    { path: '/admin/transport-methods', icon: FaBus, label: 'Métodos de Transporte', section: 'Dados' },
+    // ========== CONTEÚDO ==========
+    { path: '/admin/content', icon: FaFileAlt, label: 'Gestão de Conteúdo', section: 'Conteúdo' },
+    { path: '/admin/achievements', icon: FaTrophy, label: '🏆 Achievements', section: 'Conteúdo' },
+    { path: '/admin/welcome-modal', icon: FaHandsHelping, label: 'Modal de Boas-Vindas', section: 'Conteúdo' },
+    { path: '/admin/suggestions', icon: FaComments, label: '💡 Sugestões/Feedback', section: 'Conteúdo' },
+    // ========== SISTEMA ==========
+    { path: '/admin/notifications', icon: FaBell, label: 'Notificações', section: 'Sistema' },
+    { path: '/admin/advanced-notifications', icon: FaBell, label: '📨 Notificações Avançadas', section: 'Sistema' },
+    { path: '/admin/backup', icon: FaDatabase, label: 'Gestão de Backups', section: 'Sistema' },
+    { path: '/admin/security', icon: FaShieldAlt, label: 'Auditoria de Segurança', section: 'Sistema' },
+    { path: '/admin/logs', icon: FaHistory, label: 'Logs de Atividade', section: 'Sistema' },
+    { path: '/admin/settings', icon: FaCog, label: 'Configurações', section: 'Sistema' },
+    { path: '/admin/roles', icon: FaUserShield, label: 'Gestão de Permissões', section: 'Sistema' },
   ];
 
   const isActive = (path, exact = false) => {
@@ -137,18 +162,34 @@ const AdminDashboard = () => {
       </div>
       <div className="content-admin">
         <Routes>
+          {/* ========== MODERAÇÃO (NOVO) ========== */}
+          <Route path="/reports" element={<ReportsManagement />} />
+          <Route path="/travel-moderation-complete" element={<TravelModerationComplete />} />
+          <Route path="/travel-moderation" element={<TravelModeration />} />
+          <Route path="/comments-moderation" element={<CommentsModeration />} />
+          <Route path="/qanda-moderation" element={<QandAModeration />} />
+          
+          {/* ========== GESTÃO DE DADOS ========== */}
           <Route path="/users" element={<UserManagement />} />
+          <Route path="/user-profiles" element={<UserProfilesManagement />} />
           <Route path="/categories" element={<CategoryManagement />} />
           <Route path="/languages" element={<LanguageManagement />} />
           <Route path="/countries" element={<CountryManagement />} />
           <Route path="/transport-methods" element={<TransportMethodManagement />} />
+          
+          {/* ========== CONTEÚDO ========== */}
           <Route path="/content" element={<ContentManagement />} />
+          <Route path="/achievements" element={<AchievementsManagement />} />
           <Route path="/welcome-modal" element={<WelcomeModalManagement />} />
+          <Route path="/suggestions" element={<AdminSuggestionsManager />} />
+          
+          {/* ========== SISTEMA ========== */}
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/advanced-notifications" element={<AdvancedNotifications />} />
           <Route path="/backup" element={<BackupManagement />} />
           <Route path="/security" element={<SecurityAudit />} />
           <Route path="/logs" element={<ActivityLogs />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/notifications" element={<Notifications />} />
           <Route path="/roles" element={<RoleManagement />} />
           <Route
             path="/"

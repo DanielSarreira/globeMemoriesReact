@@ -25,9 +25,8 @@ const WelcomeModal = ({ isOpen, onClose, modalVersion = CURRENT_MODAL_VERSION })
   const [showFeatures, setShowFeatures] = useState(false);
   const [videoUrl] = useState('https://www.youtube.com/embed/mPFakMSvysM');
 
-  // Debug: Log when modal opens
   useEffect(() => {
-    console.log('WelcomeModal isOpen:', isOpen);
+    // Monitor modal state
   }, [isOpen]);
 
   const features = [
@@ -77,9 +76,8 @@ const WelcomeModal = ({ isOpen, onClose, modalVersion = CURRENT_MODAL_VERSION })
     }
   ];
 
-  // Debug: Log when slide changes
   useEffect(() => {
-    console.log('Current slide changed to:', currentSlide, 'of', slides.length);
+    // Monitor slide changes
   }, [currentSlide, slides.length]);
 
   useEffect(() => {
@@ -100,12 +98,9 @@ const WelcomeModal = ({ isOpen, onClose, modalVersion = CURRENT_MODAL_VERSION })
   };
 
   const nextSlide = () => {
-    console.log('Current slide:', currentSlide, 'Total slides:', slides.length);
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
-      console.log('Moving to slide:', currentSlide + 1);
     } else {
-      console.log('Closing modal');
       handleClose();
     }
   };
@@ -461,9 +456,7 @@ const WelcomeModal = ({ isOpen, onClose, modalVersion = CURRENT_MODAL_VERSION })
                   onClick={nextSlide}
                 >
                   {(() => {
-                    const buttonText = currentSlide < slides.length - 1 ? 'Continuar' : 'Começar';
-                    console.log('Button text for slide', currentSlide, ':', buttonText);
-                    return buttonText;
+                    return currentSlide < slides.length - 1 ? 'Continuar' : 'Começar';
                   })()}
                 </button>
               </div>

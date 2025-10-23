@@ -459,17 +459,18 @@
     }
     
     .travels-stats {
-        flex-direction: column;
-        gap: 12px;
-        align-items: center;
+        width: 100%;
+    }
     
-    width: 100%;
-        
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        width: 100%;
     }
     
     .stat-card {
         width: 100%;
-        max-width: 320px;
         padding: 20px;
         text-align: center;
         background: rgba(255, 255, 255, 0.95);
@@ -679,13 +680,20 @@
         font-size: 1.6rem;
     }
     
+    .stats-cards {
+        gap: 10px;
+    }
+    
     .stat-card {
-        padding: 18px 15px;
-        max-width: 280px;
+        padding: 15px 12px;
     }
     
     .stat-card h3 {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
+    }
+    
+    .stat-card p {
+        font-size: 12px;
     }
     
     .filters-section {

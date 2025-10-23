@@ -30,26 +30,35 @@ const StarRating = ({ rating, onRatingChange, maxStars = 5 }) => {
   };
 
   return (
-    <div className="star-rating">
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      margin: '10px 0',
+      width: '100%',
+      flexWrap: 'wrap'
+    }}>
       {[...Array(maxStars)].map((_, index) => {
         const starValue = index + 1;
+        const isFilled = starValue <= (hoverRating || rating);
         return (
           <FaStar
             key={index}
-            className={`star ${starValue <= (hoverRating || rating) ? 'filled' : 'empty'}`}
             onClick={() => handleClick(starValue)}
             onMouseEnter={() => handleMouseEnter(starValue)}
             onMouseLeave={handleMouseLeave}
             style={{
               cursor: 'pointer',
-              fontSize: '24px',
-              color: starValue <= (hoverRating || rating) ? '#ffc107' : '#e4e5e9',
-              marginRight: '5px'
+              fontSize: '32px',
+              color: isFilled ? '#ffc107' : '#ddd',
+              marginRight: '5px',
+              transition: 'all 0.2s ease',
+              filter: isFilled ? 'drop-shadow(0 2px 4px rgba(255, 193, 7, 0.5))' : 'none'
             }}
           />
         );
       })}
-      
     </div>
   );
 };
@@ -57,6 +66,7 @@ const StarRating = ({ rating, onRatingChange, maxStars = 5 }) => {
 const MyTravels = () => {
   const [travels, setTravels] = useState([]);
   const [filterType, setFilterType] = useState('all'); // Novo estado para filtro
+  const [showDrafts, setShowDrafts] = useState(true); // Mostrar rascunhos por padrão
   const [newTravel, setNewTravel] = useState({
     name: '',
     user: 'Tiago',
@@ -105,7 +115,8 @@ const MyTravels = () => {
     negativePoints: [],
     privacy: 'public',
     travelType: 'single',
-    isSpecial: false
+    isSpecial: false,
+    status: 'draft' // 'draft' ou 'published'
   });
   const { user } = useAuth(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -145,6 +156,7 @@ const MyTravels = () => {
   const [selectedDestinationIndex, setSelectedDestinationIndex] = useState(0);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [saveAction, setSaveAction] = useState(null); // 'draft' ou 'publish'
   // Estados para armazenar dados por destino
   const [accommodationsByDestination, setAccommodationsByDestination] = useState({});
   const [pointsOfInterestByDestination, setPointsOfInterestByDestination] = useState({});
@@ -250,7 +262,6 @@ const MyTravels = () => {
   
           // Update the state with the fetched data
           setTravels(response.data);
-          console.log("Fetched travels:", response.data);
         })
         .catch((error) => {
           console.error("Error fetching travels:", error);
@@ -609,6 +620,27 @@ const MyTravels = () => {
       }
     }
     
+    return true;
+  };
+
+  // Função para validar apenas campos essenciais para rascunho
+  const validateFormForDraft = () => {
+    // Para rascunho, apenas o nome é obrigatório
+    if (!newTravel.name.trim()) {
+      setToast({ message: '❌ O nome da viagem é obrigatório para guardar como rascunho (*)!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (newTravel.name.length < 3) {
+      setToast({ message: '❌ O nome da viagem deve ter pelo menos 3 caracteres!', type: 'error', show: true });
+      return false;
+    }
+    
+    if (newTravel.name.length > 100) {
+      setToast({ message: '❌ O nome da viagem não pode ter mais de 100 caracteres! (Atual: ' + newTravel.name.length + '/100)', type: 'error', show: true });
+      return false;
+    }
+
     return true;
   };
 
@@ -1598,26 +1630,84 @@ const MyTravels = () => {
     setToast({ message: 'Viagem eliminada com sucesso!', type: 'success', show: true });
   };
 
+  // Função para publicar um rascunho (permite converter draft para published)
+  const publishDraft = (id) => {
+    const draftTravel = travels.find(t => t.id === id);
+    if (!draftTravel || draftTravel.status !== 'draft') {
+      setToast({ message: '❌ Rascunho não encontrado!', type: 'error', show: true });
+      return;
+    }
+
+    // Atualizar status para published
+    setTravels(prev => prev.map(t => 
+      t.id === id ? { ...t, status: 'published' } : t
+    ));
+    setToast({ message: '✅ Rascunho publicado com sucesso!', type: 'success', show: true });
+  };
+
   const handleAddTravel = () => {
-    if (!validateForm()) return;
+    // Se a ação for guardar como rascunho
+    if (saveAction === 'draft') {
+      if (!validateFormForDraft()) {
+        setSaveAction(null);
+        return;
+      }
+      
+      // Guardar como rascunho (sem validação completa)
+      const draftTravel = {
+        ...newTravel,
+        status: 'draft',
+        id: isEditing ? editTravelId : Date.now(),
+        travelType: selectedTravelType,
+        multiDestinations: selectedTravelType.main === 'multi' ? multiDestinations : null,
+        groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null
+      };
+
+      if (isEditing) {
+        const updatedTravels = travels.map(t => t.id === editTravelId ? draftTravel : t);
+        setTravels(updatedTravels);
+        localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+        showToast('✏️ Rascunho atualizado com sucesso!', 'success');
+      } else {
+        const updatedTravels = [...travels, draftTravel];
+        setTravels(updatedTravels);
+        localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+        showToast('📝 Viagem guardada como rascunho! Pode continuar a editar depois.', 'success');
+      }
+      setSaveAction(null);
+      resetForm();
+      return;
+    }
+
+    // Validação completa para viagens publicadas
+    if (!validateForm()) {
+      setSaveAction(null);
+      return;
+    }
 
     // Se multidestino: por enquanto apenas armazenar localmente; backend será integrado depois
     if (selectedTravelType.main === 'multi') {
       const multiTravel = {
         ...newTravel,
+        status: 'published',
         id: isEditing ? editTravelId : Date.now(),
         travelType: selectedTravelType,
         multiDestinations: multiDestinations,
         groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null
       };
       if (isEditing) {
-        setTravels(prev => prev.map(t => t.id === editTravelId ? multiTravel : t));
-        showToast('Viagem multidestino editada (armazenada local).', 'success');
+        const updatedTravels = travels.map(t => t.id === editTravelId ? multiTravel : t);
+        setTravels(updatedTravels);
+        localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+        showToast('✅ Viagem multidestino editada com sucesso!', 'success');
       } else {
-        setTravels(prev => [...prev, multiTravel]);
-        showToast('Viagem multidestino adicionada (armazenada local).', 'success');
+        const updatedTravels = [...travels, multiTravel];
+        setTravels(updatedTravels);
+        localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+        showToast('✅ Viagem multidestino adicionada com sucesso!', 'success');
       }
       // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
+      setSaveAction(null);
       resetForm();
       return;
     }
@@ -1673,59 +1763,66 @@ const MyTravels = () => {
   };
 
   if (isEditing) {
-      setTravels((prevTravels) =>
-        prevTravels.map((travel) =>
-          travel.id === editTravelId
-            ? {
-                ...newTravel,
-                id: editTravelId,
-        travelType: selectedTravelType,
-        multiDestinations: selectedTravelType.main === 'multi' ? multiDestinations : null,
-        groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null,
-                highlightImage: newTravel.highlightImage,
-                images_generalInformation: newTravel.images_generalInformation || [],
-                accommodations: Array.isArray(newTravel.accommodations)
-                  ? newTravel.accommodations.map(acc => ({
-                      ...acc,
-                      images: acc.images || []
-                    }))
-                  : [
-                      {
-                        name: '',
-                        type: '',
-                        description: '',
-                        rating: '',
-                        checkInDate: '',
-                        checkOutDate: '',
-                        regime: '',
-                        images: []
-                      }
-                    ],
-                foodRecommendations: newTravel.foodRecommendations.filter(
-                  (rec) => rec.name.trim() !== '' || rec.description.trim() !== ''
-                ),
-                images_foodRecommendations: newTravel.images_foodRecommendations || [],
-                pointsOfInterest: newTravel.pointsOfInterest.filter(
-                  (point) => point.name.trim() !== '' || point.type.trim() !== '' || point.link.trim() !== ''
-                ),
-                images_referencePoints: newTravel.images_referencePoints || [],
-                itinerary: newTravel.itinerary.filter(
-                  (item) => item.day && item.activities.length > 0
-                ),
-                localTransport: newTravel.localTransport || [],
-                images_localTransport: newTravel.images_localTransport || [],
-                privacy: newTravel.privacy
-              }
-            : travel
-        )
+      const updatedTravels = travels.map((travel) =>
+        travel.id === editTravelId
+          ? {
+              ...newTravel,
+              status: 'published',
+              id: editTravelId,
+      travelType: selectedTravelType,
+      multiDestinations: selectedTravelType.main === 'multi' ? multiDestinations : null,
+      groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null,
+              highlightImage: newTravel.highlightImage,
+              images_generalInformation: newTravel.images_generalInformation || [],
+              accommodations: Array.isArray(newTravel.accommodations)
+                ? newTravel.accommodations.map(acc => ({
+                    ...acc,
+                    images: acc.images || []
+                  }))
+                : [
+                    {
+                      name: '',
+                      type: '',
+                      description: '',
+                      rating: '',
+                      checkInDate: '',
+                      checkOutDate: '',
+                      regime: '',
+                      images: []
+                    }
+                  ],
+              foodRecommendations: newTravel.foodRecommendations.filter(
+                (rec) => rec.name.trim() !== '' || rec.description.trim() !== ''
+              ),
+              images_foodRecommendations: newTravel.images_foodRecommendations || [],
+              pointsOfInterest: newTravel.pointsOfInterest.filter(
+                (point) => point.name.trim() !== '' || point.type.trim() !== '' || point.link.trim() !== ''
+              ),
+              images_referencePoints: newTravel.images_referencePoints || [],
+              itinerary: newTravel.itinerary.filter(
+                (item) => item.day && item.activities.length > 0
+              ),
+              localTransport: newTravel.localTransport || [],
+              images_localTransport: newTravel.images_localTransport || [],
+              privacy: newTravel.privacy
+            }
+          : travel
       );
-      showToast('Viagem editada com sucesso!', 'success');
+      
+      setTravels(updatedTravels);
+      
+      // Atualizar localStorage
+      localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+      
+      showToast('✅ Viagem editada com sucesso!', 'success');
       // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
+      setSaveAction(null);
       resetForm();
     } else {
       // Para single destination, armazenar localmente também por enquanto
       const singleTravel = {
         ...newTravel,
+        status: 'published',
         id: isEditing ? editTravelId : Date.now(),
         travelType: selectedTravelType,
         multiDestinations: null,
@@ -1733,23 +1830,27 @@ const MyTravels = () => {
       };
       
       setTravels(prev => [...prev, singleTravel]);
-      showToast('Viagem adicionada com sucesso!', 'success');
+      
+      // Atualizar localStorage
+      const updatedTravels = [...travels, singleTravel];
+      localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+      
+      showToast('✅ Viagem adicionada com sucesso!', 'success');
       // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
+      setSaveAction(null);
       resetForm();
       
-      // ✅ OTIMIZADO: Enviar ao backend em background (async, não bloqueia)
-      request(
-              "POST",
-              "/trips",
-              tripData
-            ).then(
-              (response) => {
-                console.log('✅ Viagem sincronizada com backend:', response);
-              }).catch(
-              (error) => {
-                console.error('⚠️ Erro ao sincronizar com backend (armazenada localmente):', error);
-              }
-            );
+      // TODO: Integração com backend será implementada posteriormente
+      // Quando o backend estiver pronto, descomentar o código abaixo:
+      /*
+      request("POST", "/trips", tripData)
+        .then((response) => {
+          console.log('✅ Viagem sincronizada com backend:', response.data);
+        })
+        .catch((error) => {
+          console.error('⚠️ Erro ao sincronizar com backend (viagem armazenada localmente):', error);
+        });
+      */
     }
   };
 
@@ -1804,7 +1905,8 @@ const MyTravels = () => {
       language: '',
       reviews: [],
       negativePoints: '',
-      privacy: 'public'
+      privacy: 'public',
+      status: 'draft'
     });
     setIsModalOpen(false);
     setIsTravelTypeModalOpen(false);
@@ -2104,9 +2206,16 @@ const MyTravels = () => {
 
   // Função para filtrar viagens
   const getFilteredTravels = () => {
-    if (filterType === 'all') return travels;
+    let filtered = travels;
+
+    // Filtro de rascunhos
+    if (!showDrafts) {
+      filtered = filtered.filter(t => t.status !== 'draft');
+    }
+
+    if (filterType === 'all') return filtered;
     
-    return travels.filter(travel => {
+    return filtered.filter(travel => {
       switch (filterType) {
         case 'single':
           return !travel.travelType?.main || travel.travelType?.main === 'single';
@@ -2120,6 +2229,8 @@ const MyTravels = () => {
           return travel.privacy === 'private';
         case 'followers':
           return travel.privacy === 'followers';
+        case 'draft':
+          return travel.status === 'draft';
         default:
           return true;
       }
@@ -2413,9 +2524,34 @@ const MyTravels = () => {
                     transition: 'all 0.3s ease'
                   }}
                 >
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setSaveAction('draft');
+                      handleAddTravel();
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #ffc107, #ffb300)',
+                      color: '#000',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      transition: 'all 0.3s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title="Guardar como rascunho"
+                  >
+                    📝 Rascunho
+                  </button>
                   <button
                     type="button"
-                    onClick={handleAddTravel}
+                    onClick={() => {
+                      setSaveAction('publish');
+                      handleAddTravel();
+                    }}
                     style={{
                       background: 'linear-gradient(135deg, #4CAF50, #45a049)',
                       color: 'white',
@@ -2428,8 +2564,9 @@ const MyTravels = () => {
                       transition: 'all 0.3s ease',
                       whiteSpace: 'nowrap',
                     }}
+                    title="Publicar viagem"
                   >
-                    {isEditing ? "💾 Guardar" : "✅ Adicionar Viagem"}
+                    {isEditing ? "💾 Guardar" : "✅ Adicionar"}
                   </button>
                   <button 
                     type="button" 
@@ -2510,9 +2647,38 @@ const MyTravels = () => {
                     >
                       ⚙️ Configurações
                     </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setSaveAction('draft');
+                        handleAddTravel();
+                      }}
+                      className="button-draft"
+                      style={{
+                        background: 'linear-gradient(135deg, #ffc107, #ffb300)',
+                        color: '#000',
+                        border: 'none',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 3px 12px rgba(255, 193, 7, 0.3)',
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap',
+                        flex: '0 0 auto'
+                      }}
+                      title="Guardar como rascunho para continuar depois"
+                    >
+                      📝 Rascunho
+                    </button>
                     <button
                       type="button"
-                      onClick={handleAddTravel}
+                      onClick={() => {
+                        setSaveAction('publish');
+                        handleAddTravel();
+                      }}
                       className="button-success"
                       style={{
                         background: 'linear-gradient(135deg, #4CAF50, #45a049)',
@@ -2529,8 +2695,9 @@ const MyTravels = () => {
                         whiteSpace: 'nowrap',
                         flex: '0 0 auto'
                       }}
+                      title="Publicar viagem (requer todos os campos obrigatórios)"
                     >
-                      {isEditing ? "💾 Guardar" : "✅ Adicionar"}
+                      {isEditing ? "💾 Guardar & Publicar" : "✅ Publicar"}
                     </button>
                     <button 
                       type="button" 
@@ -3006,19 +3173,16 @@ const MyTravels = () => {
                         />
                       </div>
                       <div className="form-group">
-                          <div className="form-group">
-                        <label style={{textAlign: 'center', width: '100%'}}>⭐ Avaliação Geral da Viagem (1 a 5): <span style={{color: 'red'}}>*</span></label>
-                        <StarRating
-                          rating={parseInt(newTravel.stars) || 0}
-                          onRatingChange={(rating) => 
-                            setNewTravel(prev => ({ ...prev, stars: rating.toString() }))
-                          }
-                        />
+                        <label style={{textAlign: 'center', width: '100%', display: 'block', marginBottom: '10px'}}>⭐ Avaliação Geral da Viagem (1 a 5): <span style={{color: 'red'}}>*</span></label>
+                        <div style={{display: 'flex', justifyContent: 'center'}}>
+                          <StarRating
+                            rating={parseInt(newTravel.stars) || 0}
+                            onRatingChange={(rating) => 
+                              setNewTravel(prev => ({ ...prev, stars: rating.toString() }))
+                            }
+                          />
+                        </div>
                       </div>
-                      </div>
-
-
-                      
                     </div>
 
 <br></br>
@@ -3734,36 +3898,38 @@ const MyTravels = () => {
                             {accommodation.description ? accommodation.description.length : 0}/500 caracteres
                           </small>
 
-                          <label style={{textAlign: 'center', width: '100%'}}>⭐ Avaliação da Estadia:</label>
-                          <StarRating
-                            rating={accommodation.rating || 0}
-                            onRatingChange={(rating) => {
-                              if (selectedTravelType.main === 'single') {
-                                setNewTravel(prev => {
-                                  const updatedAccommodations = [...prev.accommodations];
-                                  updatedAccommodations[index] = {
-                                    ...updatedAccommodations[index],
-                                    rating: rating
-                                  };
-                                  return { ...prev, accommodations: updatedAccommodations };
-                                });
-                              } else if (selectedTravelType.main === 'multi') {
-                                const destinationKey = getCurrentDestinationKey();
-                                if (destinationKey) {
-                                  const currentAccommodations = accommodationsByDestination[destinationKey] || [];
-                                  const updatedAccommodations = [...currentAccommodations];
-                                  updatedAccommodations[index] = {
-                                    ...updatedAccommodations[index],
-                                    rating: rating
-                                  };
-                                  setAccommodationsByDestination(prev => ({
-                                    ...prev,
-                                    [destinationKey]: updatedAccommodations
-                                  }));
+                          <label style={{textAlign: 'center', width: '100%', display: 'block', marginBottom: '10px', marginTop: '15px'}}>⭐ Avaliação da Estadia:</label>
+                          <div style={{display: 'flex', justifyContent: 'center'}}>
+                            <StarRating
+                              rating={accommodation.rating || 0}
+                              onRatingChange={(rating) => {
+                                if (selectedTravelType.main === 'single') {
+                                  setNewTravel(prev => {
+                                    const updatedAccommodations = [...prev.accommodations];
+                                    updatedAccommodations[index] = {
+                                      ...updatedAccommodations[index],
+                                      rating: rating
+                                    };
+                                    return { ...prev, accommodations: updatedAccommodations };
+                                  });
+                                } else if (selectedTravelType.main === 'multi') {
+                                  const destinationKey = getCurrentDestinationKey();
+                                  if (destinationKey) {
+                                    const currentAccommodations = accommodationsByDestination[destinationKey] || [];
+                                    const updatedAccommodations = [...currentAccommodations];
+                                    updatedAccommodations[index] = {
+                                      ...updatedAccommodations[index],
+                                      rating: rating
+                                    };
+                                    setAccommodationsByDestination(prev => ({
+                                      ...prev,
+                                      [destinationKey]: updatedAccommodations
+                                    }));
+                                  }
                                 }
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -4599,16 +4765,46 @@ const MyTravels = () => {
                 ← Anterior
               </button>
               
-              <button
-                onClick={(activeTab === 'group' || activeTab === 'negativePoints') ? handleAddTravel : handleNextTab}
-                disabled={tabs.indexOf(activeTab) === tabs.length - 1 && activeTab !== 'group'}
-                className="nav-button next-button"
-                title={(activeTab === 'group' || activeTab === 'negativePoints') ? "Guardar viagem" : "Avançar para próxima aba"}
-              >
-                {(activeTab === 'group' || activeTab === 'negativePoints')
-                  ? (isEditing ? "💾 Guardar Alterações" : "✅ Adicionar") 
-                  : "Avançar →"}
-              </button>
+              {activeTab === 'group' || activeTab === 'negativePoints' ? (
+                <>
+                  {/* Botões de Rascunho e Publicar */}
+                  <button
+                    onClick={() => {
+                      setSaveAction('draft');
+                      handleAddTravel();
+                    }}
+                    className="nav-button draft-button"
+                    title="Guardar como rascunho para continuar depois"
+                    style={{
+                      backgroundColor: '#ffc107',
+                      color: '#fff',
+                      marginRight: '10px'
+                    }}
+                  >
+                    📝 Guardar como Rascunho
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setSaveAction('publish');
+                      handleAddTravel();
+                    }}
+                    className="nav-button next-button"
+                    title="Publicar viagem (requer todos os campos obrigatórios)"
+                  >
+                    {isEditing ? "💾 Guardar & Publicar" : "✅ Publicar Viagem"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleNextTab}
+                  disabled={tabs.indexOf(activeTab) === tabs.length - 1 && activeTab !== 'group'}
+                  className="nav-button next-button"
+                  title="Avançar para próxima aba"
+                >
+                  Avançar →
+                </button>
+              )}
             </div>
             </div>
           </div>
@@ -4618,26 +4814,32 @@ const MyTravels = () => {
       {/* Filtros e estatísticas */}
       <div className="travels-header">
         <div className="travels-stats">
-          <h2>As minhas viagens ({travels.length})</h2>
+          <h2>As minhas viagens ({travels.filter(t => t.status !== 'draft' || showDrafts).length})</h2>
           <br></br>
           <div className="stats-cards">
             <div className="stat-card">
               <span className="stat-number">
-                {travels.filter(t => !t.travelType?.main || t.travelType?.main === 'single').length}
+                {travels.filter(t => (!t.travelType?.main || t.travelType?.main === 'single') && (t.status !== 'draft' || showDrafts)).length}
               </span>
               <span className="stat-label">🎯 Destino Único</span>
             </div>
             <div className="stat-card">
               <span className="stat-number">
-                {travels.filter(t => t.travelType?.main === 'multi' || t.multiDestinations).length}
+                {travels.filter(t => (t.travelType?.main === 'multi' || t.multiDestinations) && (t.status !== 'draft' || showDrafts)).length}
               </span>
               <span className="stat-label">🗺️ Multidestino</span>
             </div>
             <div className="stat-card">
               <span className="stat-number">
-                {travels.filter(t => t.travelType?.isGroup || t.groupData).length}
+                {travels.filter(t => (t.travelType?.isGroup || t.groupData) && (t.status !== 'draft' || showDrafts)).length}
               </span>
               <span className="stat-label">👥 Em Grupo</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-number">
+                {travels.filter(t => t.status === 'draft').length}
+              </span>
+              <span className="stat-label">📝 Rascunhos</span>
             </div>
           </div>
         </div>
@@ -4651,14 +4853,25 @@ const MyTravels = () => {
             onChange={(e) => setFilterType(e.target.value)}
             className="filter-select"
           >
-            <option value="all">🌟 Todas as viagens ({travels.length})</option>
-            <option value="single">🎯 Destino Único ({travels.filter(t => !t.travelType?.main || t.travelType?.main === 'single').length})</option>
-            <option value="multi">🗺️ Multidestino ({travels.filter(t => t.travelType?.main === 'multi' || t.multiDestinations).length})</option>
-            <option value="group">👥 Viagens em Grupo ({travels.filter(t => t.travelType?.isGroup || t.groupData).length})</option>
-            <option value="public">🌍 Públicas ({travels.filter(t => !t.privacy || t.privacy === 'public').length})</option>
-            <option value="followers">👥 Para Seguidores ({travels.filter(t => t.privacy === 'followers').length})</option>
-            <option value="private">🔒 Privadas ({travels.filter(t => t.privacy === 'private').length})</option>
+            <option value="all">🌟 Todas as viagens ({travels.filter(t => t.status !== 'draft' || showDrafts).length})</option>
+            <option value="single">🎯 Destino Único ({travels.filter(t => (!t.travelType?.main || t.travelType?.main === 'single') && (t.status !== 'draft' || showDrafts)).length})</option>
+            <option value="multi">🗺️ Multidestino ({travels.filter(t => (t.travelType?.main === 'multi' || t.multiDestinations) && (t.status !== 'draft' || showDrafts)).length})</option>
+            <option value="group">👥 Viagens em Grupo ({travels.filter(t => (t.travelType?.isGroup || t.groupData) && (t.status !== 'draft' || showDrafts)).length})</option>
+            <option value="public">🌍 Públicas ({travels.filter(t => (!t.privacy || t.privacy === 'public') && (t.status !== 'draft' || showDrafts)).length})</option>
+            <option value="followers">👥 Para Seguidores ({travels.filter(t => t.privacy === 'followers' && (t.status !== 'draft' || showDrafts)).length})</option>
+            <option value="private">🔒 Privadas ({travels.filter(t => t.privacy === 'private' && (t.status !== 'draft' || showDrafts)).length})</option>
+            <option value="draft">📝 Rascunhos ({travels.filter(t => t.status === 'draft').length})</option>
           </select>
+
+          <label style={{marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+            <input 
+              type="checkbox" 
+              checked={showDrafts} 
+              onChange={(e) => setShowDrafts(e.target.checked)}
+              style={{cursor: 'pointer', width: '18px', height: '18px'}}
+            />
+            <span>Mostrar rascunhos</span>
+          </label>
         </div>
       </div>
 
@@ -4690,6 +4903,13 @@ const MyTravels = () => {
               <div className="travel-card-header">
                 {/* Tags da viagem */}
                 <div className="travel-tags">
+                  {/* Tag Status - Rascunho */}
+                  {travel.status === 'draft' && (
+                    <span className="tag tag-draft" style={{backgroundColor: '#ffc107', color: '#000'}}>
+                      📝 Rascunho
+                    </span>
+                  )}
+
                   {/* Tag Tipo de Viagem */}
                   <span className={`tag tag-destination ${
                     (travel.travelType?.main === 'multi' || travel.multiDestinations) 
@@ -4808,6 +5028,21 @@ const MyTravels = () => {
               </div>
               
               <div className="travel-actions">
+                {travel.status === 'draft' && (
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      handleEdit(travel.id);
+                      setActiveTab('generalInfo');
+                      setIsModalOpen(true);
+                    }}
+                    className="action-btn publish-btn"
+                    title="Continuar a editar e publicar rascunho"
+                    style={{backgroundColor: '#28a745', color: '#fff'}}
+                  >
+                    ✅ Publicar
+                  </button>
+                )}
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleEdit(travel.id); }}
                   className="action-btn edit-btn"

@@ -101,7 +101,7 @@ const AdminSuggestionsManager = () => {
   return (
     <div className="admin-suggestions-container">
       <div className="admin-suggestions-header">
-        <h2>📋 Gerenciar Sugestões e Erros</h2>
+        <h2>📋 Gerir Sugestões e Erros</h2>
         <div className="admin-suggestions-stats">
           <div className="stat-card">
             <span className="stat-label">Total</span>
@@ -229,7 +229,7 @@ const AdminSuggestionsManager = () => {
               )}
 
               <div className="detail-section">
-                <h4>Gerenciamento</h4>
+                <h4>Gestão</h4>
                 <div className="management-controls">
                   <div className="control-group">
                     <label>Status:</label>

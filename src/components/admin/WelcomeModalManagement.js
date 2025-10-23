@@ -181,7 +181,6 @@ const WelcomeModalManager = () => {
       //   body: JSON.stringify(formData)
       // });
       
-      console.log('Saving modal version:', formData);
       alert('Versão do modal salva com sucesso!');
       setIsEditing(false);
       fetchModalVersions();

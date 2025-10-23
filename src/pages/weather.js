@@ -310,7 +310,6 @@ const WeatherPage = () => {
       const data = response.data;
 
       if (!data.results || data.results.length === 0) {
-        console.warn('Nenhum resultado encontrado para a cidade:', city);
         return null;
       }
 

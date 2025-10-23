@@ -20,18 +20,15 @@ export const shouldShowWelcomeModal = (currentVersion = CURRENT_MODAL_VERSION) =
     
     // Se não houver versão armazenada, deve mostrar o modal
     if (!viewedVersion) {
-      console.log('No previous version found. Showing modal.');
       return true;
     }
     
     // Se a versão atual é diferente da versão vista, deve mostrar o modal
     if (viewedVersion !== currentVersion) {
-      console.log(`New version available. Viewed: ${viewedVersion}, Current: ${currentVersion}. Showing modal.`);
       return true;
     }
     
     // Se as versões são iguais e o viajante marcou "não mostrar", não exibe
-    console.log(`Same version (${currentVersion}). Modal already viewed. Not showing.`);
     return false;
     
   } catch (error) {
@@ -48,7 +45,6 @@ export const shouldShowWelcomeModal = (currentVersion = CURRENT_MODAL_VERSION) =
 export const markWelcomeModalAsViewed = (version = CURRENT_MODAL_VERSION) => {
   try {
     localStorage.setItem('globeMemoriesWelcomeVersion', version);
-    console.log('Welcome modal marked as viewed. Version:', version);
   } catch (error) {
     console.error('Error marking welcome modal as viewed:', error);
   }
@@ -62,7 +58,6 @@ export const resetWelcomeModalHistory = () => {
     localStorage.removeItem('globeMemoriesWelcomeVersion');
     // Remove também a chave antiga se existir
     localStorage.removeItem('globeMemoriesWelcomeShown');
-    console.log('Welcome modal history reset.');
   } catch (error) {
     console.error('Error resetting welcome modal history:', error);
   }

@@ -248,21 +248,7 @@
   }
 }
 
-/* 🌙 DARK MODE SUPPORT */
-@media (prefers-color-scheme: dark) {
-  .cinematic-modal-content {
-    background: rgba(20, 20, 20, 0.95);
-    color: white;
-  }
-  
-  .cinematic-modal-content h2 {
-    color: white;
-  }
-  
-  .cinematic-modal-content p {
-    color: #ccc;
-  }
-}
+
 
 /* 🎯 HIGH DPI / RETINA SUPPORT */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {

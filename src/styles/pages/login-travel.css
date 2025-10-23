@@ -162,13 +162,14 @@
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
 }
 .input-group label {
   font-size: 1rem;
   color: #fff;
   font-weight: 700;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.3rem;
   letter-spacing: 0.5px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
@@ -224,10 +225,22 @@
   padding: 0.5rem;
   transition: all 0.2s ease;
   z-index: 10;
+  box-shadow: none;
+}
+.password-toggle:focus {
+  background: none;
+  outline: none;
+  box-shadow: none;
 }
 .password-toggle:hover {
   color: #007bff;
   transform: scale(1.1);
+  background: none;
+  box-shadow: none;
+}
+.password-toggle:active {
+  background: none;
+  box-shadow: none;
 }
 .login-travel-options {
   display: flex;
@@ -413,10 +426,14 @@
     margin-bottom: 0.3rem;
   }
   .login-travel-form {
-    gap: 0.8rem;
+    gap: 1.5rem;
   }
   .login-travel-form h2 {
     font-size: 1.5rem;
+  }
+  .input-group {
+    margin-bottom: 1.2rem;
+    gap: 0.6rem;
   }
   .register-btn {
     font-size: 1rem;

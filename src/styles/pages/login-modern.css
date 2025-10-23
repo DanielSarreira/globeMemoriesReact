@@ -103,9 +103,22 @@
   font-size: 1.2rem;
   cursor: pointer;
   transition: color 0.2s;
+  outline: none;
+  box-shadow: none;
+}
+.login-modern-form .password-toggle:focus {
+  background: none;
+  outline: none;
+  box-shadow: none;
 }
 .login-modern-form .password-toggle:hover {
   color: #004a94;
+  background: none;
+  box-shadow: none;
+}
+.login-modern-form .password-toggle:active {
+  background: none;
+  box-shadow: none;
 }
 
 .login-modern-form .login-modern-options {
