@@ -105,4 +105,39 @@ export const request = (method, url, data) => {
   });
 };
 
+// =============================================
+// Media / Files Utilities
+// =============================================
+
+export const BASE_FILES_URL = `${API_BASE_URL}/files`;
+
+/**
+ * Convert a relative fileUrl returned by the backend (e.g. "trip-photos/abc.jpg")
+ * to a full public URL suitable for use in <img src> or <video src>.
+ * Returns null for falsy input. Passes through already-absolute URLs unchanged.
+ */
+export const toFullMediaUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `${BASE_FILES_URL}/${path}`;
+};
+
+/**
+ * Upload a single file to a backend media endpoint using multipart/form-data.
+ * The field name is "file" as required by all media upload endpoints.
+ * Do NOT set Content-Type manually — axios/browser sets the multipart boundary.
+ */
+export const uploadFile = (url, file) => {
+  const form = new FormData();
+  form.append('file', file);
+  return axiosInstance({
+    method: 'POST',
+    url,
+    data: form,
+    headers: {
+      'Content-Type': undefined,
+    },
+  });
+};
+
 export default axiosInstance;

@@ -11,25 +11,131 @@ import logoImg from '../images/Globe-Memories.png';
 // Modern travel-themed background video (optional, fallback to gradient if not loaded)
 const YOUTUBE_BG_URL = 'https://www.youtube.com/embed/YFhwEJosUsU?autoplay=1&mute=1&controls=0&loop=1&playlist=YFhwEJosUsU&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
 
-// Lista de países
-const countries = [
-  'Portugal', 'Brasil', 'Espanha', 'França', 'Alemanha', 'Reino Unido', 'Itália', 'Estados Unidos', 
-  'Canadá', 'Holanda', 'Bélgica', 'Suíça', 'Áustria', 'Noruega', 'Suécia', 'Dinamarca', 'Finlândia',
-  'Polônia', 'República Checa', 'Hungria', 'Grécia', 'Turquia', 'Rússia', 'Japão', 'China', 'Coreia do Sul',
-  'Austrália', 'Nova Zelândia', 'Argentina', 'Chile', 'México', 'Colômbia', 'Peru', 'Outros'
-];
 
-// Lista de cidades por país (simplificada para principais cidades)
-const citiesByCountry = {
-  'Portugal': ['Lisboa', 'Porto', 'Braga', 'Coimbra', 'Aveiro', 'Faro', 'Funchal', 'Évora'],
-  'Brasil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Belo Horizonte', 'Curitiba', 'Recife'],
-  'Espanha': ['Madrid', 'Barcelona', 'Sevilha', 'Valência', 'Bilbao', 'Granada', 'Toledo', 'Salamanca'],
-  'França': ['Paris', 'Lyon', 'Marselha', 'Nice', 'Toulouse', 'Bordeaux', 'Nantes', 'Estrasburgo'],
-  'Alemanha': ['Berlim', 'Munique', 'Hamburgo', 'Colônia', 'Frankfurt', 'Stuttgart', 'Dresden', 'Leipzig'],
-  'Reino Unido': ['Londres', 'Manchester', 'Birmingham', 'Liverpool', 'Bristol', 'Edinburgh', 'Glasgow', 'Cardiff'],
-  'Itália': ['Roma', 'Milão', 'Nápoles', 'Turim', 'Palermo', 'Génova', 'Bologna', 'Florença'],
-  'Estados Unidos': ['Nova York', 'Los Angeles', 'Chicago', 'Houston', 'Miami', 'San Francisco', 'Las Vegas', 'Boston'],
-  'Outros': ['Outra']
+// Custom Searchable Dropdown with improved UX (matching register design)
+const SearchableDropdown = ({ options, value, onChange, placeholder, disabled, labelKey = 'label', valueKey = 'value', error }) => {
+  const [search, setSearch] = useState('');
+  const [showOptions, setShowOptions] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const dropdownRef = React.useRef(null);
+
+  const filteredOptions = options.filter(opt =>
+    opt[labelKey].toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedLabel = value ? options.find(opt => opt[valueKey] === value)?.[labelKey] || '' : '';
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setShowOptions(false);
+    setSearch('');
+    setFocusedIndex(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    // Handle backspace to clear selection
+    if (e.key === 'Backspace' && value && !search) {
+      e.preventDefault();
+      onChange(null);
+      setSearch('');
+      setShowOptions(true);
+      return;
+    }
+
+    if (!showOptions && (e.key === 'ArrowDown' || e.key === 'Enter')) {
+      e.preventDefault();
+      setShowOptions(true);
+      return;
+    }
+    if (showOptions) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev > 0 ? prev - 1 : -1));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (focusedIndex >= 0) handleSelect(filteredOptions[focusedIndex][valueKey]);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setShowOptions(false);
+          setFocusedIndex(-1);
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div 
+      ref={dropdownRef}
+      className={`searchable-dropdown-container${disabled ? ' disabled' : ''} ${error ? ' has-error' : ''} ${showOptions ? ' open' : ''}`}
+      style={{ position: 'relative', width: '100%' }}
+    >
+      <div className="dropdown-input-wrapper">
+        <input
+          type="text"
+          value={selectedLabel || search}
+          onChange={e => setSearch(e.target.value)}
+          onFocus={() => !disabled && setShowOptions(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="dropdown-input"
+          autoComplete="off"
+          spellCheck="false"
+          role="combobox"
+          aria-expanded={showOptions}
+          aria-haspopup="listbox"
+        />
+        <div className="dropdown-arrow">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 8 10 12 14 8"></polyline>
+          </svg>
+        </div>
+      </div>
+
+      {showOptions && filteredOptions.length > 0 && (
+        <ul className="dropdown-options-list" role="listbox">
+          {filteredOptions.map((opt, idx) => (
+            <li
+              key={opt[valueKey]}
+              onMouseDown={() => handleSelect(opt[valueKey])}
+              onMouseEnter={() => setFocusedIndex(idx)}
+              className={`dropdown-option ${focusedIndex === idx ? 'focused' : ''} ${value === opt[valueKey] ? 'selected' : ''}`}
+              role="option"
+              aria-selected={value === opt[valueKey]}
+            >
+              {opt[labelKey]}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {showOptions && filteredOptions.length === 0 && (
+        <div className="dropdown-no-results">
+          Nenhum resultado encontrado
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Componente de Toast para feedback
@@ -57,15 +163,63 @@ const Register = () => {
     firstName: '',
     lastName: '',
     nationality: '',
-    city: '',
+    cityId: null,
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
+    privateProfile: false,
     acceptTerms: false
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
+  // Async country/city dropdown state
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  // Fetch countries on mount (axios_helper best practice)
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingCountries(true);
+    request('GET', '/cities/countries')
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          setCountryOptions(res.data.map(c => ({ label: c, value: c })));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCountryOptions([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingCountries(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch cities when nationality changes (axios_helper best practice)
+  useEffect(() => {
+    let isMounted = true;
+    if (!formData.nationality) {
+      setCityOptions([]);
+      return;
+    }
+    setLoadingCities(true);
+    request('GET', `/cities/by-country?countryName=${encodeURIComponent(formData.nationality)}`)
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          // Display city name but store city ID as value
+          setCityOptions(res.data.map(city => ({ label: city.cityName, value: city.id })));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCityOptions([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingCities(false);
+      });
+    return () => { isMounted = false; };
+  }, [formData.nationality]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', show: false });
   const [successMessage, setSuccessMessage] = useState('');
@@ -193,6 +347,11 @@ const Register = () => {
     return '';
   };
 
+  const validateCityId = (value) => {
+    if (!value && value !== 0) return 'A cidade é obrigatória';
+    return '';
+  };
+
   const validateAcceptTerms = (value) => {
     if (!value) return 'Deve aceitar os Termos e Condições e a Política de Privacidade';
     return '';
@@ -225,6 +384,9 @@ const Register = () => {
         break;
       case 'city':
         error = validateCity(value);
+        break;
+      case 'cityId':
+        error = validateCityId(value);
         break;
       case 'acceptTerms':
         error = validateAcceptTerms(value);
@@ -285,15 +447,14 @@ const Register = () => {
     setShowTermsModal(false);
   };
 
+  // General handler for normal inputs
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
     setFormData((prevData) => ({
       ...prevData,
       [name]: newValue,
     }));
-
     // Validar campo em tempo real (excepto confirmPassword por segurança)
     if (name !== 'confirmPassword') {
       const error = validateField(name, newValue);
@@ -302,32 +463,39 @@ const Register = () => {
         [name]: error
       }));
     } else {
-      // Para confirmPassword, apenas limpar erro se existir (sem validar)
       setFieldErrors(prev => ({
         ...prev,
         confirmPassword: ''
       }));
     }
-
-    // Se for password e houver confirmPassword, limpar erro de confirmPassword
     if (name === 'password') {
       setFieldErrors(prev => ({
         ...prev,
         confirmPassword: ''
       }));
     }
-
     // Limpar cidade quando país mudar
     if (name === 'nationality') {
       setFormData(prevData => ({
         ...prevData,
-        city: ''
+        cityId: null
       }));
       setFieldErrors(prev => ({
         ...prev,
-        city: ''
+        cityId: ''
       }));
     }
+  };
+
+  // Handler for SearchableDropdown country
+  const handleCountryChange = (countryValue) => {
+    setFormData(prev => ({ ...prev, nationality: countryValue, cityId: null }));
+    setFieldErrors(prev => ({ ...prev, nationality: validateField('nationality', countryValue), cityId: '' }));
+  };
+  // Handler for SearchableDropdown city
+  const handleCityChange = (cityValue) => {
+    setFormData(prev => ({ ...prev, cityId: cityValue }));
+    setFieldErrors(prev => ({ ...prev, cityId: validateField('cityId', cityValue) }));
   };
 
   const handleSubmit = async (e) => {
@@ -365,10 +533,12 @@ const Register = () => {
           firstName: firstName,
           lastName: lastName,
           nationality: nationality,
-          city: formData.city,
+          cityId: formData.cityId,
           email: email,
           username: username,
           password: password,
+          passwordConfirm: formData.confirmPassword,
+          privateProfile: formData.privateProfile
         }
       );
       
@@ -386,6 +556,18 @@ const Register = () => {
       setAuthHeader(null);
       console.error('Erro no registo:', error);
       
+      // Map backend field names to frontend field names
+      const fieldNameMapping = {
+        firstName: 'firstName',
+        lastName: 'lastName',
+        nationality: 'nationality',
+        cityId: 'cityId',
+        email: 'email',
+        username: 'username',
+        password: 'password',
+        passwordConfirm: 'confirmPassword'
+      };
+
       // Verificar tipos específicos de erro
       if (error.response?.status === 409) {
         const errorMessage = error.response.data?.message?.toLowerCase() || '';
@@ -407,7 +589,39 @@ const Register = () => {
           showToast('Dados já registados. Verifique o email e o nome de utilizador.', 'error');
         }
       } else if (error.response?.status === 400) {
-        showToast('Dados inválidos. Verifique as informações inseridas.', 'error');
+        const responseData = error.response.data;
+        const validationErrors = responseData?.validationErrors;
+        const generalMessage = responseData?.message || 'Dados inválidos. Verifique as informações inseridas.';
+        
+        // If there are specific validation errors from the backend, map them to fields
+        if (validationErrors && typeof validationErrors === 'object') {
+          const newFieldErrors = {};
+          let hasErrors = false;
+          
+          // Map backend field errors to frontend field names
+          Object.entries(validationErrors).forEach(([backendField, errorMessage]) => {
+            const frontendField = fieldNameMapping[backendField] || backendField;
+            newFieldErrors[frontendField] = errorMessage;
+            hasErrors = true;
+          });
+          
+          if (hasErrors) {
+            setFieldErrors(prev => ({ ...prev, ...newFieldErrors }));
+            showToast(generalMessage || 'Corrija os erros nos campos destacados.', 'error');
+          } else {
+            showToast(generalMessage, 'error');
+          }
+        } else {
+          // If no validation errors object, check if message contains specific info
+          showToast(generalMessage, 'error');
+          
+          // Try to identify field from message
+          if (generalMessage.toLowerCase().includes('username')) {
+            setFieldErrors(prev => ({ ...prev, username: generalMessage }));
+          } else if (generalMessage.toLowerCase().includes('email')) {
+            setFieldErrors(prev => ({ ...prev, email: generalMessage }));
+          }
+        }
       } else if (error.response?.status === 500) {
         showToast('Erro no servidor. Tente novamente mais tarde.', 'error');
       } else if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
@@ -492,24 +706,18 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Segunda linha: País + Cidade */}
+            {/* Segunda linha: País + Cidade (com dropdowns de busca) */}
             <div className="form-row">
               <div className="input-group">
                 <label>Selecione o seu País: <span style={{color: 'red'}}>*</span></label>
-                <select
-                  name="nationality"
+                <SearchableDropdown
+                  options={countryOptions}
                   value={formData.nationality}
-                  onChange={handleChange}
-                  className={`select-modern ${fieldErrors.nationality ? 'input-error' : ''}`}
-                  required
-                >
-                  <option value="">Selecione o seu país *</option>
-                  {countries.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleCountryChange}
+                  placeholder={loadingCountries ? 'Carregando países...' : 'Selecione ou pesquise o país *'}
+                  disabled={loadingCountries}
+                  error={fieldErrors.nationality}
+                />
                 {fieldErrors.nationality && (
                   <div className="field-error">
                     <FaExclamationCircle style={{ marginRight: '5px' }} />
@@ -519,26 +727,18 @@ const Register = () => {
               </div>
               <div className="input-group">
                 <label>Selecione a sua Cidade: <span style={{color: 'red'}}>*</span></label>
-                <select
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className={`select-modern ${fieldErrors.city ? 'input-error' : ''}`}
-                  required
-                  disabled={!formData.nationality}
-                >
-                  <option value="">Selecione a sua cidade *</option>
-                  {formData.nationality && citiesByCountry[formData.nationality] && 
-                    citiesByCountry[formData.nationality].map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                </select>
-                {fieldErrors.city && (
+                <SearchableDropdown
+                  options={cityOptions}
+                  value={formData.cityId}
+                  onChange={handleCityChange}
+                  placeholder={formData.nationality ? (loadingCities ? 'Carregando cidades...' : 'Selecione ou pesquise a cidade *') : 'Selecione o país primeiro'}
+                  disabled={!formData.nationality || loadingCities}
+                  error={fieldErrors.cityId}
+                />
+                {fieldErrors.cityId && (
                   <div className="field-error">
                     <FaExclamationCircle style={{ marginRight: '5px' }} />
-                    {fieldErrors.city}
+                    {fieldErrors.cityId}
                   </div>
                 )}
               </div>

@@ -19,6 +19,7 @@ import QandA from './pages/QandA';
 import Users from './pages/Users';
 import UserProfile from './pages/UserProfile';
 import Weather from './pages/weather';
+import TravelDetails from './components/TravelDetails';
 
 const AppRouter = () => {
   return (
@@ -102,7 +103,7 @@ const AppRouter = () => {
         } />
         <Route path="/travel/:id" element={
           <ProtectedRoute>
-            <Travels />
+            <TravelDetails />
           </ProtectedRoute>
         } />
         <Route path="/profile/:username" element={

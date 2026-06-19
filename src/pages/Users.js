@@ -2,23 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
-import TravelsData from '../data/travelsData';
 import '../styles/pages/users.css';
 import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
 import { FaCheck, FaFlag, FaBan, FaEllipsisV } from 'react-icons/fa';
 import Toast from '../components/Toast';
 import { usersModalUtils } from '../utils/modalUtils';
+import api from '../axios_helper';
 
 const Users = () => {
   const { user } = useAuth();
   const [usersList, setUsersList] = useState([]);
-  const [following, setFollowing] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [followingStatusById, setFollowingStatusById] = useState({});
+  const [pendingStatusById, setPendingStatusById] = useState({});
+  const [followActionLoadingById, setFollowActionLoadingById] = useState({});
   const [loadingFilters, setLoadingFilters] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [sortOption, setSortOption] = useState('all');
+  const [sortOption, setSortOption] = useState('followers');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [reportedUsers, setReportedUsers] = useState([]);
@@ -44,8 +46,13 @@ const Users = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(() => usersModalUtils.shouldShow());
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  // Filtro de países selecionados
-  const [selectedCountries, setSelectedCountries] = useState([]);
+  // Filtro de país selecionado
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [page, setPage] = useState(0);
+  const [size] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const currentUserId = user?.id ? Number(user.id) : null;
 
   // Toast functions
   const showToast = (message, type) => {
@@ -63,11 +70,8 @@ const Users = () => {
   const countryList = Array.from(new Set(usersList.map(u => u.nationality).filter(Boolean))).sort();
 
   const handleCountryFilterChange = (country) => {
-    setSelectedCountries((prev) =>
-      prev.includes(country)
-        ? prev.filter((c) => c !== country)
-        : [...prev, country]
-    );
+    setSelectedCountry((prev) => (prev === country ? '' : country));
+    setPage(0);
   };
 
   // Mapeamento de países para bandeiras (emoji flags)
@@ -108,44 +112,82 @@ const Users = () => {
     'Outros': '🌍'
   };
 
-  const mockUsers = [
-    { id: 1, username: 'tiago', name: 'Tiago', nationality: 'Bahamas', profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg', bio: 'Amante de viagens e fotografia!', travelCount: 0, followersCount: 120, trendingScore: 80, joinDate: '2024-01-15', privacy: 'public' },
-    { id: 2, username: 'AnaSilva', name: 'Ana Silva', nationality: 'Uganda', profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg', bio: 'Exploradora de montanhas.', travelCount: 0, followersCount: 200, trendingScore: 90, joinDate: '2023-06-10', privacy: 'private' },
-    { id: 3, username: 'PedroCosta', name: 'Pedro Costa', nationality: 'Omã', profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg', bio: 'Apaixonado por culturas.', travelCount: 0, followersCount: 80, trendingScore: 60, joinDate: '2024-03-22', privacy: 'public' },
-    { id: 4, username: 'SofiaRamos', name: 'Sofia Ramos', nationality: 'França', profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg', bio: 'Viajante urbana e foodie.', travelCount: 0, followersCount: 150, trendingScore: 85, joinDate: '2023-09-05', privacy: 'private' },
-    { id: 5, username: 'JoaoPereira', name: 'João Pereira', nationality: 'Portugal', profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg', bio: 'A aventura é o meu lema!', travelCount: 0, followersCount: 90, trendingScore: 70, joinDate: '2024-02-18', privacy: 'public' },
-    { id: 6, username: 'MariaOliveira', name: 'Maria Oliveira', nationality: 'Reino Unido', profilePicture: 'https://randomuser.me/api/portraits/women/6.jpg', bio: 'História e arte em cada destino.', travelCount: 0, followersCount: 110, trendingScore: 75, joinDate: '2023-11-30', privacy: 'private' },
-    { id: 7, username: 'LucasSantos', name: 'Lucas Santos', nationality: 'Itália', profilePicture: 'https://randomuser.me/api/portraits/men/7.jpg', bio: 'Sempre em busca do próximo voo.', travelCount: 0, followersCount: 130, trendingScore: 88, joinDate: '2024-04-01', privacy: 'public' },
-    { id: 8, username: 'BeatrizLima', name: 'Beatriz Lima', nationality: 'Estados Unidos', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
-    { id: 9, username: 'Teste', name: 'Teste User', nationality: 'Canadá', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 50, trendingScore: 55, joinDate: '2024-04-20', privacy: 'private' },
-    { id: 10, username: 'BeatrizLima', name: 'Beatriz Lima', nationality: 'Gabão', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
-    { id: 11, username: 'cris', name: 'Cristiano', nationality: 'Croácia', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
-    { id: 12, username: 'cristisilva', name: 'Cristi silva', nationality: 'Croácia', profilePicture: 'https://randomuser.me/api/portraits/women/8.jpg', bio: 'A natureza é o meu refúgio.', travelCount: 0, followersCount: 170, trendingScore: 92, joinDate: '2023-08-12', privacy: 'private' },
-  ];
+  useEffect(() => {
+    setLoadingFilters(false);
+  }, []);
 
   useEffect(() => {
-    // Primeiro carrega os filtros/controles imediatamente
-    setLoadingFilters(false);
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 350);
 
-    // Depois carrega os viajantes com um pequeno delay para melhor UX
-    setTimeout(() => {
-      const updatedUsers = mockUsers.map((mockUser) => {
-        const userTravels = TravelsData.filter((travel) => travel.user === mockUser.username);
-        return {
-          ...mockUser,
-          travelCount: userTravels.length,
-        };
-      });
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
+  useEffect(() => {
+    const discoverUsers = async () => {
       if (!user) {
-        setUsersList(updatedUsers.filter((u) => u.privacy === 'public'));
-      } else {
-        setUsersList(updatedUsers.filter((u) => u.username !== user.username));
-        setFollowing(['AnaSilva', 'PedroCosta']);
+        setUsersList([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        setLoadingUsers(false);
+        return;
       }
-      setLoadingUsers(false);
-    }, 300);
-  }, [user]);
+
+      setLoadingUsers(true);
+      try {
+        const params = {
+          sortBy: sortOption,
+          page,
+          size,
+        };
+
+        if (selectedCountry) {
+          params.nationality = selectedCountry;
+        }
+
+        if (debouncedSearchTerm) {
+          params.username = debouncedSearchTerm;
+        }
+
+        const response = await api.get('/users/discover', { params });
+        const data = response.data || {};
+        const content = Array.isArray(data.content) ? data.content : [];
+
+        const mappedUsers = content.map((backendUser) => {
+          const fullName = [backendUser.firstName, backendUser.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+
+          return {
+            id: backendUser.id,
+            username: backendUser.username,
+            name: fullName || backendUser.username,
+            nationality: backendUser.nationality || 'Desconhecido',
+            profilePicture: backendUser.profilePhoto || defaultAvatar,
+            travelCount: backendUser.totalTripPosts || 0,
+            followersCount: backendUser.followersCount || 0,
+            privacy: backendUser.privacy || 'public',
+          };
+        });
+
+        setUsersList(mappedUsers);
+        setTotalPages(data.totalPages || 0);
+        setTotalElements(data.totalElements || 0);
+      } catch (error) {
+        console.error('Erro ao descobrir viajantes:', error);
+        setUsersList([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        showToast('Não foi possível carregar os viajantes neste momento.', 'error');
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    discoverUsers();
+  }, [user, sortOption, selectedCountry, debouncedSearchTerm, page, size]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -166,38 +208,188 @@ const Users = () => {
     }
   }, [showDropdown]);
 
-  const handleFollow = (targetUser, e) => {
+  useEffect(() => {
+    const loadRelationshipStatuses = async () => {
+      if (!currentUserId || usersList.length === 0) {
+        setFollowingStatusById({});
+        setPendingStatusById({});
+        return;
+      }
+
+      const nextFollowingStatus = {};
+      const nextPendingStatus = {};
+
+      await Promise.all(usersList.map(async (listedUser) => {
+        const followedId = listedUser.id;
+        if (!followedId) {
+          return;
+        }
+
+        try {
+          const followingResponse = await api.get('/users/is-following', {
+            params: { followerId: currentUserId, followedId }
+          });
+
+          const isFollowing = Boolean(followingResponse.data);
+          nextFollowingStatus[followedId] = isFollowing;
+
+          if (isFollowing) {
+            nextPendingStatus[followedId] = false;
+            return;
+          }
+
+          const pendingResponse = await api.get('/users/follow-request-status', {
+            params: { requesterId: currentUserId, targetId: followedId }
+          });
+
+          nextPendingStatus[followedId] = Boolean(pendingResponse.data);
+        } catch (error) {
+          nextFollowingStatus[followedId] = false;
+          nextPendingStatus[followedId] = false;
+        }
+      }));
+
+      setFollowingStatusById(nextFollowingStatus);
+      setPendingStatusById(nextPendingStatus);
+    };
+
+    loadRelationshipStatuses();
+  }, [currentUserId, usersList]);
+
+  // Load blocked users list on component mount
+  useEffect(() => {
+    const loadBlockedUsers = async () => {
+      if (!currentUserId || !user) {
+        setBlockedUsers([]);
+        return;
+      }
+
+      try {
+        const response = await api.get('/users-management/blocked-list');
+        const blockedList = Array.isArray(response.data) ? response.data : [];
+        setBlockedUsers(blockedList.map(u => u.username || u));
+      } catch (error) {
+        console.error('Erro ao carregar utilizadores bloqueados:', error);
+        setBlockedUsers([]);
+      }
+    };
+
+    loadBlockedUsers();
+  }, [currentUserId, user]);
+
+  const refreshRelationshipStatus = async (targetUserId) => {
+    if (!currentUserId || !targetUserId) {
+      return null;
+    }
+
+    try {
+      const followingResponse = await api.get('/users/is-following', {
+        params: { followerId: currentUserId, followedId: targetUserId }
+      });
+
+      const isFollowing = Boolean(followingResponse.data);
+      setFollowingStatusById((prev) => ({ ...prev, [targetUserId]: isFollowing }));
+
+      if (isFollowing) {
+        setPendingStatusById((prev) => ({ ...prev, [targetUserId]: false }));
+        return { isFollowing: true, isPending: false };
+      }
+
+      const pendingResponse = await api.get('/users/follow-request-status', {
+        params: { requesterId: currentUserId, targetId: targetUserId }
+      });
+
+      const isPending = Boolean(pendingResponse.data);
+      setPendingStatusById((prev) => ({ ...prev, [targetUserId]: isPending }));
+      return { isFollowing: false, isPending };
+    } catch (error) {
+      console.error('Erro ao verificar estado de seguimento:', error);
+      return null;
+    }
+  };
+
+  const handleFollow = async (targetUser, e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
       showToast('Inicie sessão para seguir viajantes.', 'error');
       return;
     }
-    if (targetUser.privacy === 'public') {
-      setFollowing([...following, targetUser.username]);
-      showToast(`Agora segues ${targetUser.name}!`, 'success');
-    } else {
-      setPendingRequests([...pendingRequests, targetUser.username]);
-      showToast(`Pedido enviado com sucesso para: ${targetUser.name}!`, 'success');
-      setShowModal(true);
-      setTimeout(() => {
-        setShowModal(false);
-      }, 3000);
+
+    const targetUserId = targetUser?.id;
+    if (!targetUserId || followActionLoadingById[targetUserId]) {
+      return;
+    }
+
+    setFollowActionLoadingById((prev) => ({ ...prev, [targetUserId]: true }));
+    try {
+      await api.post(`/users/${targetUserId}/follow`);
+      const relationship = await refreshRelationshipStatus(targetUserId);
+
+      if (relationship?.isFollowing) {
+        showToast(`Agora segues ${targetUser.name}!`, 'success');
+      } else {
+        showToast(`Pedido enviado com sucesso para: ${targetUser.name}!`, 'success');
+        setShowModal(true);
+        setTimeout(() => {
+          setShowModal(false);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Erro ao seguir viajante:', error);
+      showToast('Não foi possível seguir este viajante.', 'error');
+    } finally {
+      setFollowActionLoadingById((prev) => ({ ...prev, [targetUserId]: false }));
     }
   };
 
-  const handleUnfollow = (targetUsername, e) => {
+  const handleUnfollow = async (targetUserId, targetUsername, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setFollowing(following.filter((username) => username !== targetUsername));
-    setPendingRequests(pendingRequests.filter((username) => username !== targetUsername));
-    showToast('Deixaste de seguir este viajante!', 'success');
+    if (!targetUserId || followActionLoadingById[targetUserId]) {
+      return;
+    }
+
+    setFollowActionLoadingById((prev) => ({ ...prev, [targetUserId]: true }));
+    try {
+      await api.post(`/users/${targetUserId}/unfollow`);
+      setFollowingStatusById((prev) => ({ ...prev, [targetUserId]: false }));
+      setPendingStatusById((prev) => ({ ...prev, [targetUserId]: false }));
+      showToast(`Deixaste de seguir ${targetUsername}!`, 'success');
+    } catch (error) {
+      console.error('Erro ao deixar de seguir viajante:', error);
+      showToast('Não foi possível deixar de seguir este viajante.', 'error');
+    } finally {
+      setFollowActionLoadingById((prev) => ({ ...prev, [targetUserId]: false }));
+    }
   };
 
-  const handleCancelRequest = (targetUsername, e) => {
+  const handleCancelRequest = (targetUserId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setPendingRequests(pendingRequests.filter((username) => username !== targetUsername));
+    if (!targetUserId) {
+      return;
+    }
+    showToast('Cancelamento de pedido pendente ainda não disponível na API.', 'error');
+  };
+
+  const handleUnblockUser = async (targetUser, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!targetUser) {
+      return;
+    }
+    setFollowActionLoadingById((prev) => ({ ...prev, [targetUser.id]: true }));
+    try {
+      await api.delete(`/users-management/${targetUser.id}/unblock`);
+      setBlockedUsers((prev) => prev.filter((username) => username !== targetUser.username));
+      showToast(`${targetUser.username} foi desbloqueado.`, 'success');
+    } catch (error) {
+      console.error('Erro ao desbloquear viajante:', error);
+      showToast('Não foi possível desbloquear este viajante.', 'error');
+    } finally {
+      setFollowActionLoadingById((prev) => ({ ...prev, [targetUser.id]: false }));
+    }
   };
 
   // Função para sanitizar inputs de pesquisa
@@ -229,10 +421,12 @@ const Users = () => {
     }
 
     setSearchTerm(sanitized);
+    setPage(0);
   };
 
   const handleSortChange = (option) => {
     setSortOption(option);
+    setPage(0);
   };
 
   const handleReportUser = (targetUser, e) => {
@@ -281,8 +475,6 @@ const Users = () => {
       showToast('Viajante denunciado com sucesso!', 'success');
       setShowReportModal(false);
       setSelectedUser(null);
-      // Remove from following if currently following
-      setFollowing(following.filter(username => username !== selectedUser.username));
       
       // Reset form
       setReportReasons({
@@ -298,14 +490,18 @@ const Users = () => {
     }
   };
 
-  const confirmBlockUser = () => {
+  const confirmBlockUser = async () => {
     if (selectedUser) {
-      setBlockedUsers([...blockedUsers, selectedUser.username]);
-      showToast('Viajante bloqueado com sucesso!', 'success');
-      setShowBlockModal(false);
-      setSelectedUser(null);
-      // Remove from following if currently following
-      setFollowing(following.filter(username => username !== selectedUser.username));
+      try {
+        await api.post(`/users-management/${selectedUser.id}/block`);
+        setBlockedUsers([...blockedUsers, selectedUser.username]);
+        showToast('Viajante bloqueado com sucesso!', 'success');
+        setShowBlockModal(false);
+        setSelectedUser(null);
+      } catch (error) {
+        console.error('Erro ao bloquear viajante:', error);
+        showToast('Não foi possível bloquear este viajante.', 'error');
+      }
     }
   };
 
@@ -315,33 +511,7 @@ const Users = () => {
     setShowDropdown(showDropdown === userId ? null : userId);
   };
 
-  // Search by username or name and filter out blocked users
-  // Filtro por país + busca + bloqueados
-  const filteredUsers = usersList.filter((listedUser) => {
-    const matchesSearch = listedUser.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listedUser.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const notBlocked = !blockedUsers.includes(listedUser.username);
-    const matchesCountry =
-      selectedCountries.length === 0 || selectedCountries.includes(listedUser.nationality);
-    return matchesSearch && notBlocked && matchesCountry;
-  });
-
-  // Sort users based on selected option
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
-    switch (sortOption) {
-      case 'trending':
-        return b.trendingScore - a.trendingScore;
-      case 'mostFollowers':
-        return b.followersCount - a.followersCount;
-      case 'newTravelers':
-        return new Date(b.joinDate) - new Date(a.joinDate); // Newest first
-      case 'mostTravels':
-        return b.travelCount - a.travelCount;
-      case 'all':
-      default:
-        return 0; // No sorting
-    }
-  });
+  const visibleUsers = usersList; // Show all users, blocked ones display with blocked indicator
 
   return (
     <div className="users-page">
@@ -444,32 +614,14 @@ const Users = () => {
           {/* Filtros de ordenação */}
           <div className="sort-filters-inline">
             <button
-              className={`filter-button ${sortOption === 'all' ? 'active' : ''}`}
-              onClick={() => handleSortChange('all')}
-            >
-              Todos os Viajantes
-            </button>
-            <button
-              className={`filter-button ${sortOption === 'trending' ? 'active' : ''}`}
-              onClick={() => handleSortChange('trending')}
-            >
-              Em Destaque
-            </button>
-            <button
-              className={`filter-button ${sortOption === 'mostFollowers' ? 'active' : ''}`}
-              onClick={() => handleSortChange('mostFollowers')}
+              className={`filter-button ${sortOption === 'followers' ? 'active' : ''}`}
+              onClick={() => handleSortChange('followers')}
             >
               Mais Seguidos
             </button>
             <button
-              className={`filter-button ${sortOption === 'newTravelers' ? 'active' : ''}`}
-              onClick={() => handleSortChange('newTravelers')}
-            >
-              Novos Viajantes
-            </button>
-            <button
-              className={`filter-button ${sortOption === 'mostTravels' ? 'active' : ''}`}
-              onClick={() => handleSortChange('mostTravels')}
+              className={`filter-button ${sortOption === 'trips' ? 'active' : ''}`}
+              onClick={() => handleSortChange('trips')}
             >
               Mais Viagens
             </button>
@@ -482,10 +634,10 @@ const Users = () => {
             <label className="filter-label">Filtrar pessoas por País</label>
             <div className="country-filters">
               {countryList.map((country) => (
-                <label key={country} className={`country-filter ${selectedCountries.includes(country) ? 'selected' : ''}`}>
+                <label key={country} className={`country-filter ${selectedCountry === country ? 'selected' : ''}`}>
                   <input
                     type="checkbox"
-                    checked={selectedCountries.includes(country)}
+                    checked={selectedCountry === country}
                     onChange={() => handleCountryFilterChange(country)}
                     className="country-checkbox"
                   />
@@ -511,8 +663,8 @@ const Users = () => {
         </div>
       ) : (
         <div className="users-grid">
-        {sortedUsers.length > 0 ? (
-          sortedUsers.map((listedUser) => (
+        {visibleUsers.length > 0 ? (
+          visibleUsers.map((listedUser) => (
             <Link
               to={`/profile/${listedUser.username}`}
               key={listedUser.id}
@@ -605,7 +757,7 @@ const Users = () => {
                       </div>
                     )}
 
-{user && following.includes(listedUser.username) && (
+{user && followingStatusById[listedUser.id] && (
                   <span
                     className="following-text"
                     style={{
@@ -641,6 +793,20 @@ const Users = () => {
                 <h3>
                   {listedUser.username}
                 </h3>
+                {blockedUsers.includes(listedUser.username) && (
+                  <div style={{
+                    color: '#e74c3c',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#fee',
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                  }}>
+                    🚫 Bloqueou este viajante
+                  </div>
+                )}
                 <div className="user-country" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', margin: '0.5rem 0' }}>
                   <img
                     className="country-flag"
@@ -657,26 +823,46 @@ const Users = () => {
               {user && (
                 <div className="user-actions">
                   <div className="main-actions">
-                    {following.includes(listedUser.username) ? (
+                    {blockedUsers.includes(listedUser.username) ? (
+                      <button
+                        className="unblock-button"
+                        onClick={(e) => handleUnblockUser(listedUser, e)}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#ff9900',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '5px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '600'
+                        }}
+                      >
+                        🔓 Desbloquear
+                      </button>
+                    ) : followingStatusById[listedUser.id] ? (
                       <button
                         className="unfollow-button"
-                        onClick={(e) => handleUnfollow(listedUser.username, e)}
+                        onClick={(e) => handleUnfollow(listedUser.id, listedUser.username, e)}
+                        disabled={Boolean(followActionLoadingById[listedUser.id])}
                       >
-                        Não seguir
+                        {followActionLoadingById[listedUser.id] ? 'A processar...' : 'Não seguir'}
                       </button>
-                    ) : pendingRequests.includes(listedUser.username) ? (
+                    ) : pendingStatusById[listedUser.id] ? (
                       <button
                         className="pending-button"
-                        onClick={(e) => handleCancelRequest(listedUser.username, e)}
+                        onClick={(e) => handleCancelRequest(listedUser.id, e)}
+                        disabled={Boolean(followActionLoadingById[listedUser.id])}
                       >
-                        Pendente
+                        {followActionLoadingById[listedUser.id] ? 'A processar...' : 'Pendente'}
                       </button>
                     ) : (
                       <button
                         className="follow-button"
                         onClick={(e) => handleFollow(listedUser, e)}
+                        disabled={Boolean(followActionLoadingById[listedUser.id])}
                       >
-                        {listedUser.privacy === 'public' ? 'Seguir' : 'Pedir para seguir'}
+                        {followActionLoadingById[listedUser.id] ? 'A processar...' : 'Seguir'}
                       </button>
                     )}
                   </div>
@@ -688,6 +874,35 @@ const Users = () => {
       ) : (
         <p className="no-users">Nenhum Viajante encontrado.</p>
       )}
+        </div>
+      )}
+
+      {!loadingUsers && totalPages > 0 && (
+        <div className="users-controls" style={{ marginTop: '12px' }}>
+          <div className="main-filters-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>
+              {totalElements} viajante(s) encontrado(s)
+            </p>
+            <div className="sort-filters-inline" style={{ gap: '8px' }}>
+              <button
+                className="filter-button"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+                disabled={page === 0}
+              >
+                Anterior
+              </button>
+              <span style={{ alignSelf: 'center', fontSize: '14px', color: '#444' }}>
+                Página {page + 1} de {Math.max(totalPages, 1)}
+              </span>
+              <button
+                className="filter-button"
+                onClick={() => setPage((prev) => (prev + 1 < totalPages ? prev + 1 : prev))}
+                disabled={page + 1 >= totalPages}
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

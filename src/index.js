@@ -20,8 +20,4 @@ if ('serviceWorker' in navigator) {
 
 // Renderizar a aplicação
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <AppWrapper />
-  </React.StrictMode>
-);
+root.render(<AppWrapper />);

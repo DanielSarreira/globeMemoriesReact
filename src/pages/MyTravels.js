@@ -3,13 +3,140 @@ import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext'; 
-import { request, setAuthHeader } from '../axios_helper';
+import { request, setAuthHeader, uploadFile, toFullMediaUrl } from '../axios_helper';
 import Toast from '../components/Toast';
 import "../styles/components/modal.css";
 import "../styles/pages/future-travels.css";
 import "../styles/pages/future-travels-modal.css";
 import "../styles/pages/my-travels.css";
 import "../styles/pages/my-travels-modal.css";
+import "../styles/pages/register-travel.css"; // For SearchableDropdown styling
+
+// Custom Searchable Dropdown with improved UX (matching register design)
+const SearchableDropdown = ({ options, value, onChange, placeholder, disabled, labelKey = 'label', valueKey = 'value', error }) => {
+  const [search, setSearch] = useState('');
+  const [showOptions, setShowOptions] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const dropdownRef = React.useRef(null);
+
+  const filteredOptions = options.filter(opt =>
+    opt[labelKey].toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedLabel = value ? options.find(opt => opt[valueKey] === value)?.[labelKey] || '' : '';
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setShowOptions(false);
+    setSearch('');
+    setFocusedIndex(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    // Handle backspace to clear selection
+    if (e.key === 'Backspace' && value && !search) {
+      e.preventDefault();
+      onChange(null);
+      setSearch('');
+      setShowOptions(true);
+      return;
+    }
+
+    if (!showOptions && (e.key === 'ArrowDown' || e.key === 'Enter')) {
+      e.preventDefault();
+      setShowOptions(true);
+      return;
+    }
+    if (showOptions) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev > 0 ? prev - 1 : -1));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (focusedIndex >= 0) handleSelect(filteredOptions[focusedIndex][valueKey]);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setShowOptions(false);
+          setFocusedIndex(-1);
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div 
+      ref={dropdownRef}
+      className={`searchable-dropdown-container${disabled ? ' disabled' : ''} ${error ? ' has-error' : ''} ${showOptions ? ' open' : ''}`}
+      style={{ position: 'relative', width: '100%' }}
+    >
+      <div className="dropdown-input-wrapper">
+        <input
+          type="text"
+          value={selectedLabel || search}
+          onChange={e => setSearch(e.target.value)}
+          onFocus={() => !disabled && setShowOptions(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="dropdown-input"
+          autoComplete="off"
+          spellCheck="false"
+          role="combobox"
+          aria-expanded={showOptions}
+          aria-haspopup="listbox"
+        />
+        <div className="dropdown-arrow">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 8 10 12 14 8"></polyline>
+          </svg>
+        </div>
+      </div>
+
+      {showOptions && filteredOptions.length > 0 && (
+        <ul className="dropdown-options-list" role="listbox">
+          {filteredOptions.map((opt, idx) => (
+            <li
+              key={opt[valueKey]}
+              onMouseDown={() => handleSelect(opt[valueKey])}
+              onMouseEnter={() => setFocusedIndex(idx)}
+              className={`dropdown-option ${focusedIndex === idx ? 'focused' : ''} ${value === opt[valueKey] ? 'selected' : ''}`}
+              role="option"
+              aria-selected={value === opt[valueKey]}
+            >
+              {opt[labelKey]}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {showOptions && filteredOptions.length === 0 && (
+        <div className="dropdown-no-results">
+          Nenhum resultado encontrado
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ...existing code...
 
@@ -61,6 +188,48 @@ const StarRating = ({ rating, onRatingChange, maxStars = 5 }) => {
       })}
     </div>
   );
+};
+
+// Converts a backend /trips/my-trips list entry into the shape expected by the display cards
+const normalizeBackendTrip = (trip) => {
+  const startDate = trip.startDate;
+  const endDate = trip.endDate;
+  const tripDurationDays = (startDate && endDate)
+    ? Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86400000))
+    : 0;
+
+  return {
+    id: trip.tripId,
+    name: trip.tripTitle || 'Sem título',
+    description: trip.tripSummary || '',
+    city: trip.citiesVisited?.[0] || '',
+    country: trip.countriesVisited?.[0] || '',
+    countryName: trip.countriesVisited?.[0] || '',
+    days: tripDurationDays,
+    tripDurationDays,
+    price: String(trip.totalCosts ?? ''),
+    cost: { total: trip.totalCosts },
+    stars: trip.tripRating || 0,
+    tripRating: trip.tripRating || 0,
+    category: (trip.categories || []).map(c => `${c.categoryIcon || ''} ${c.categoryName || ''}`.trim()),
+    highlightImage: toFullMediaUrl(trip.tripPhoto) || null,
+    startDate,
+    endDate,
+    status: 'published',
+    privacy: (trip.tripPrivacy || 'public').toLowerCase(),
+    travelType: { main: 'single', isGroup: false },
+    groupData: null,
+    multiDestinations: null,
+    accommodations: [],
+    foodRecommendations: [],
+    transportMethods: [],
+    pointsOfInterest: [],
+    negativePoints: [],
+    travelVideos: [],
+    images_generalInformation: [],
+    totalLikes: trip.totalLikes || 0,
+    totalComments: trip.totalComments || 0,
+  };
 };
 
 const MyTravels = () => {
@@ -145,6 +314,16 @@ const MyTravels = () => {
   const [newItineraryDay, setNewItineraryDay] = useState({ day: '', activities: [''] });
   const [itineraryError, setItineraryError] = useState('');
   const [toast, setToast] = useState({ message: '', type: '', show: false });
+  
+  // ===== TRANSPORT MANAGEMENT STATE =====
+  const [editingTransportIndex, setEditingTransportIndex] = useState(null);
+  const [newTransport, setNewTransport] = useState({ name: '', description: '', cost: '' });
+  const [isTransportFormOpen, setIsTransportFormOpen] = useState(false);
+  
+  // ===== ACCOMMODATION CITY/COUNTRY DROPDOWNS =====
+  const [accommodationCountryCityOptions, setAccommodationCountryCityOptions] = useState({});
+  const [loadingAccommodationCities, setLoadingAccommodationCities] = useState({});
+  
   // Novos estados para tipos de viagem
   const [selectedTravelType, setSelectedTravelType] = useState({ main: '', isGroup: false }); // main: 'single' | 'multi'
   const [groupMembers, setGroupMembers] = useState([]);
@@ -160,12 +339,895 @@ const MyTravels = () => {
   // Estados para armazenar dados por destino
   const [accommodationsByDestination, setAccommodationsByDestination] = useState({});
   const [pointsOfInterestByDestination, setPointsOfInterestByDestination] = useState({});
-  // Lista de idiomas comuns
-  const languages = [
-    'Português', 'Inglês', 'Espanhol', 'Francês', 'Alemão', 
-    'Italiano', 'Holandês', 'Russo', 'Chinês', 'Japonês',
-    'Árabe', 'Hindi', 'Coreano', 'Sueco', 'Norueguês'
-  ];
+  
+  // Async country/city dropdown state
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  
+  // Async country/city dropdown state for multi-destination
+  const [multiCountryOptions, setMultiCountryOptions] = useState([]);
+  const [multiCityOptions, setMultiCityOptions] = useState([]);
+  const [loadingMultiCountries, setLoadingMultiCountries] = useState(false);
+  const [loadingMultiCities, setLoadingMultiCities] = useState(false);
+
+  // ===== API Data States (Categories, Languages, Accommodations, Transports) =====
+  const [apiCategories, setApiCategories] = useState([]);
+  const [apiLanguages, setApiLanguages] = useState([]);
+  const [apiAccommodationTypes, setApiAccommodationTypes] = useState([]);
+  const [apiAccommodationBoards, setApiAccommodationBoards] = useState([]);
+  const [apiTransports, setApiTransports] = useState([]);
+  
+  // Loading states for API data
+  const [loadingApiData, setLoadingApiData] = useState({
+    categories: false,
+    languages: false,
+    accommodationTypes: false,
+    accommodationBoards: false,
+    transports: false
+  });
+  
+  // City cache for performance: Map "Country:City" to cityId
+  const [cityIdCache, setCityIdCache] = useState({});
+  
+  // Trip submission state for UX
+  const [isSubmittingTrip, setIsSubmittingTrip] = useState(false);
+  const [cityLookupInProgress, setCityLookupInProgress] = useState({});
+  
+  // ===== USER TRIPS STATE (Loaded from /trips/my-trips) =====
+  const [userTrips, setUserTrips] = useState([]);
+  const [loadingUserTrips, setLoadingUserTrips] = useState(false);
+  const [selectedTripForEdit, setSelectedTripForEdit] = useState(null);
+
+  // Fetch countries on mount (axios_helper best practice)
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingCountries(true);
+    request('GET', '/cities/countries')
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          setCountryOptions(res.data.map(c => ({ label: c, value: c })));
+          setMultiCountryOptions(res.data.map(c => ({ label: c, value: c })));
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setCountryOptions([]);
+          setMultiCountryOptions([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingCountries(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch cities when single destination country changes (axios_helper best practice)
+  useEffect(() => {
+    let isMounted = true;
+    if (!newTravel.country) {
+      setCityOptions([]);
+      return;
+    }
+    setLoadingCities(true);
+    request('GET', `/cities/by-country?countryName=${encodeURIComponent(newTravel.country)}`)
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          setCityOptions(res.data.map(city => ({ label: city.cityName, value: city.cityName })));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCityOptions([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingCities(false);
+      });
+    return () => { isMounted = false; };
+  }, [newTravel.country]);
+
+  // Fetch cities when multi-destination country changes (axios_helper best practice)
+  useEffect(() => {
+    let isMounted = true;
+    if (!newDestination.country) {
+      setMultiCityOptions([]);
+      return;
+    }
+    setLoadingMultiCities(true);
+    request('GET', `/cities/by-country?countryName=${encodeURIComponent(newDestination.country)}`)
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          setMultiCityOptions(res.data.map(city => ({ label: city.cityName, value: city.cityName })));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setMultiCityOptions([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingMultiCities(false);
+      });
+    return () => { isMounted = false; };
+  }, [newDestination.country]);
+
+  // ===== ACCOMMODATION CITY LOADER (for accommodation country selection) =====
+  const loadAccommodationCities = (accommodationIndex, countryName) => {
+    if (!countryName) return;
+    
+    let isMounted = true;
+    setLoadingAccommodationCities(prev => ({ ...prev, [accommodationIndex]: true }));
+    
+    request('GET', `/cities/by-country?countryName=${encodeURIComponent(countryName)}`)
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          const cities = res.data.map(c => ({ label: c.cityName, value: c.cityName }));
+          setAccommodationCountryCityOptions(prev => ({
+            ...prev,
+            [accommodationIndex]: cities
+          }));
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAccommodationCountryCityOptions(prev => ({
+            ...prev,
+            [accommodationIndex]: []
+          }));
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingAccommodationCities(prev => ({ ...prev, [accommodationIndex]: false }));
+      });
+    
+    return () => { isMounted = false; };
+  };
+
+  // ===== EMOJI CODE TO EMOJI CONVERTER =====
+  const convertEmojiCode = (emojiCode) => {
+    if (!emojiCode) return '📍';
+    // Handle emoji codes like :herb: or :beach_with_umbrella:
+    const emojiMap = {
+      ':herb:': '🌿',
+      ':beach:': '🏖️',
+      ':person_climbing:': '🧗',
+      ':mountain:': '⛰️',
+      ':cityscape:': '🏙️',
+      ':fork_and_knife:': '🍽️',
+      ':art:': '🎨',
+      ':book:': '📚',
+      ':sun:': '☀️',
+      ':snow:': '❄️',
+      ':tent:': '⛺',
+      ':sailboat:': '⛵',
+      ':airplane:': '✈️',
+      ':bus:': '🚌',
+      ':train:': '🚂',
+      ':car:': '🚗',
+      ':family:': '👨‍👩‍👧‍👦',
+      ':heart:': '❤️',
+      ':moneybag:': '💰',
+      ':sparkles:': '✨',
+      ':lion:': '🦁',
+      ':classical_building:': '🏛️',
+      ':european_castle:': '🏰',
+      ':city_dusk:': '🌆',
+      ':mountain_snow:': '⛰️',
+      ':person_in_lotus_position:': '🧘',
+      ':island:': '🏝️',
+      ':briefcase:': '💼',
+      ':palm_tree:': '🌴',
+      ':pray:': '🙏',
+      ':seedling:': '🌱',
+      ':earth_africa:': '🌍',
+      ':compass:': '🧭',
+      ':person_getting_massage:': '💆',
+      ':gem:': '💎',
+      ':park:': '🏞️',
+      ':ship:': '🚢',
+      ':ocean:': '🌊',
+      ':camping:': '⛺',
+      ':bicycle:': '🚴',
+      ':hiking_boot:': '🥾',
+      ':national_park:': '🏕️',
+      ':sunrise:': '🌅',
+      ':sunset:': '🌇',
+      ':stars:': '⭐',
+      ':moon:': '🌙',
+    };
+    return emojiMap[emojiCode.toLowerCase()] || emojiCode || '📍';
+  };
+
+  // ===== GET CATEGORY ICON FROM API DATA =====
+  const getCategoryIcon = (categoryName) => {
+    const category = apiCategories.find(cat => cat.name === categoryName);
+    if (category && category.icon) {
+      return convertEmojiCode(category.icon);
+    }
+    // If no icon from API, return empty string (no hardcoded fallback)
+    return '';
+  };
+
+  // ===== GET LANGUAGE CODE BY NAME =====
+  const getLanguageCode = (languageName) => {
+    const lang = apiLanguages.find(l => l.name === languageName);
+    return lang ? `(${lang.code})` : '';
+  };
+
+  // ===== SECURITY: INPUT SANITIZATION =====
+  const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return '';
+    return input
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .trim();
+  };
+
+  // ===== DATA TRANSFORMATION: GET CITY ID BY COUNTRY+CITY NAME =====
+  const getCityIdByCountryAndCity = async (countryName, cityName) => {
+    const cacheKey = `${countryName}:${cityName}`;
+    
+    // Check cache first (PERFORMANCE)
+    if (cityIdCache[cacheKey]) {
+      return cityIdCache[cacheKey];
+    }
+    
+    // Check if lookup is in progress (prevent duplicate requests)
+    if (cityLookupInProgress[cacheKey]) {
+      return null;
+    }
+    
+    setCityLookupInProgress(prev => ({ ...prev, [cacheKey]: true }));
+    
+    try {
+      // Fetch cities for this country to find the city ID
+      const response = await request('GET', `/cities/by-country?countryName=${encodeURIComponent(countryName)}`);
+      
+      if (Array.isArray(response.data)) {
+        const foundCity = response.data.find(c => 
+          c.cityName?.toLowerCase() === cityName?.toLowerCase()
+        );
+        
+        if (foundCity) {
+          const cityId = foundCity.id || foundCity.cityId;
+          // Cache the result
+          setCityIdCache(prev => ({ ...prev, [cacheKey]: cityId }));
+          return cityId;
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Failed to resolve city ID for ${countryName}/${cityName}:`, error.message);
+    } finally {
+      setCityLookupInProgress(prev => ({ ...prev, [cacheKey]: false }));
+    }
+    
+    return null;
+  };
+
+  // ===== DATA TRANSFORMATION: CONVERT BACKEND TRIP TO FRONTEND FORM STATE =====
+  const transformBackendTripToFrontend = (backendTrip) => {
+    if (!backendTrip) return null;
+    
+    // Get category names from IDs (using apiCategories mapping)
+    const categoryNames = (backendTrip.categories || [])
+      .map(categoryId => {
+        const cat = apiCategories.find(c => c.id === categoryId);
+        return cat?.name;
+      })
+      .filter(name => name !== undefined);
+    
+    // Get language names from IDs (using apiLanguages mapping)
+    const languageNames = (backendTrip.languagesSpoken || [])
+      .map(langId => {
+        const lang = apiLanguages.find(l => l.id === langId);
+        return lang?.name;
+      })
+      .filter(name => name !== undefined);
+    
+    // Transform itinerary days (flatten topics to activities)
+    const itinerary = (backendTrip.tripItinerary?.itineraryDays || [])
+      .map(day => ({
+        day: day.day || '',
+        activities: (day.topics || [])
+          .map(topic => topic.description || topic.name || '')
+          .filter(act => act.trim())
+      }));
+    
+    // Transform accommodations (add missing fields if needed)
+    const accommodations = (backendTrip.accommodations || [])
+      .map(acc => ({
+        name: acc.name || '',
+        type: acc.accommodationTypeName || '',
+        country: '', // Not provided by backend, will be fetched from city
+        city: acc.city || '',
+        description: acc.description || '',
+        rating: acc.rating || 0,
+        nights: acc.nrNights || 0,
+        price: acc.price || '',
+        checkInDate: acc.checkIn || backendTrip.startDate || '',
+        checkOutDate: acc.checkOut || backendTrip.endDate || '',
+        bookingDate: acc.bookingDate || '',
+        regime: acc.accommodationBoardName || '',
+        images: []
+      }));
+    
+    // Transform transports
+    const localTransport = (backendTrip.tripTransports || [])
+      .map(transport => ({
+        id: transport.id || Date.now(),
+        name: transport.name || '',
+        description: transport.description || '',
+        cost: transport.cost || 0
+      }));
+    
+    // Transform food recommendations
+    const foodRecommendations = (backendTrip.recommendedFoods || [])
+      .map(food => ({
+        name: food.name || '',
+        description: food.description || ''
+      }));
+    
+    // Transform points of interest
+    const pointsOfInterest = (backendTrip.referencePoints || [])
+      .map(point => ({
+        name: point.name || '',
+        description: point.description || '',
+        type: '',
+        link: (point.photos && point.photos[0]) || ''
+      }));
+    
+    // Transform negative points
+    const negativePoints = (backendTrip.negativePoints || [])
+      .map(point => ({
+        name: point.name || '',
+        description: point.description || ''
+      }));
+    
+    // Get first city name (from cities array - backend only stores IDs)
+    // We'll set a placeholder, as backend doesn't return city names
+    const mainCity = backendTrip.accommodations?.[0]?.city || 'Unknown';
+    
+    // Parse dates
+    const startDate = backendTrip.startDate || '';
+    const endDate = backendTrip.endDate || '';
+    
+    // Parse cost breakdown if available
+    const priceDetails = backendTrip.cost || { 
+      accommodation: 0, 
+      food: 0, 
+      transport: 0, 
+      extra: 0 
+    };
+    
+    return {
+      name: backendTrip.title || '',
+      user: 'Tiago',
+      category: categoryNames,
+      country: '', // Not provided by backend, user will select
+      city: mainCity,
+      price: (backendTrip.cost?.total || 0).toString(),
+      days: backendTrip.tripDurationDays || 0,
+      transport: '',
+      startDate: startDate,
+      endDate: endDate,
+      BookingTripPaymentDate: backendTrip.bookingDate || startDate || '',
+      highlightImage: '',
+      travelVideos: [],
+      views: 0,
+      priceDetails: {
+        hotel: (priceDetails.accommodation || 0).toString(),
+        flight: (priceDetails.transport || 0).toString(),
+        food: (priceDetails.food || 0).toString(),
+        extras: (priceDetails.extra || 0).toString()
+      },
+      images: [],
+      images_generalInformation: [],
+      description: backendTrip.tripSummary || '',
+      longDescription: backendTrip.tripDescription || '',
+      activities: [],
+      accommodations: accommodations.length > 0 ? accommodations : [
+        {
+          name: '',
+          type: '',
+          country: '',
+          city: '',
+          description: '',
+          rating: 0,
+          nights: '',
+          price: '',
+          checkInDate: '',
+          checkOutDate: '',
+          bookingDate: '',
+          regime: '',
+          images: []
+        }
+      ],
+      foodRecommendations: foodRecommendations,
+      images_foodRecommendations: [],
+      climate: backendTrip.weather || '',
+      pointsOfInterest: pointsOfInterest,
+      images_referencePoints: [],
+      safety: { tips: [], vaccinations: [] },
+      itinerary: itinerary,
+      localTransport: localTransport,
+      language: '',
+      languages: languageNames,
+      reviews: [],
+      negativePoints: negativePoints,
+      privacy: (backendTrip.tripPrivacy || 'PUBLIC').toLowerCase() === 'public' ? 'public' : 'private',
+      travelType: 'single',
+      isSpecial: false,
+      status: 'published'
+    };
+  };
+
+  // ===== DATA TRANSFORMATION: CONVERT FRONTEND TO BACKEND FORMAT =====
+  const transformTravelToBackendFormat = async () => {
+    // ===== ENHANCED VALIDATION FOR REQUIRED FIELDS =====
+    const name = (newTravel.name || '').trim();
+    const country = (newTravel.country || '').trim();
+    const city = (newTravel.city || '').trim();
+    const startDate = (newTravel.startDate || '').trim();
+    const endDate = (newTravel.endDate || '').trim();
+    const description = (newTravel.description || '').trim();
+    const longDescription = (newTravel.longDescription || '').trim();
+    
+    // Check all required fields with clear error messages
+    if (!name) {
+      setToast({ message: '❌ Nome da viagem é obrigatório!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!country) {
+      setToast({ message: '❌ País é obrigatório!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!city) {
+      setToast({ message: '❌ Cidade é obrigatória!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!startDate) {
+      setToast({ message: '❌ Data de início é obrigatória!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!endDate) {
+      setToast({ message: '❌ Data de fim é obrigatória!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!description) {
+      setToast({ message: '❌ Descrição curta é obrigatória!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!longDescription) {
+      setToast({ message: '❌ Descrição longa é obrigatória!', type: 'error', show: true });
+      return null;
+    }
+    
+    if (!newTravel.stars || newTravel.stars === 0 || newTravel.stars === '0') {
+      setToast({ message: '❌ Avaliação da viagem é obrigatória!', type: 'error', show: true });
+      return null;
+    }
+
+    // Resolve city ID
+    const cityId = await getCityIdByCountryAndCity(country, city);
+    if (!cityId) {
+      setToast({ message: `❌ Não foi possível encontrar a cidade: ${city}`, type: 'error', show: true });
+      return null;
+    }
+
+    // Build the backend request body
+    const backendTripData = {
+      userId: user?.id || 1,
+      cities: [cityId],
+      title: sanitizeInput(name),
+      tripSummary: sanitizeInput(description),
+      tripDescription: sanitizeInput(longDescription),
+      startDate: startDate,
+      endDate: endDate,
+      bookingDate: (newTravel.BookingTripPaymentDate || startDate),
+      weather: sanitizeInput(newTravel.climate),
+      tripRating: parseInt(newTravel.stars) || 0,
+      tripPrivacy: (newTravel.privacy || 'public').toUpperCase(),
+      allowComments: true,
+      isHidden: false,
+      
+      // Calculate trip duration in days (REQUIRED by backend)
+      tripDurationDays: Math.ceil(
+        (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24) + 1
+      ),
+      
+      // Cost breakdown
+      cost: {
+        total: Math.max(0, parseFloat(newTravel.price) || 0),
+        accommodation: Math.max(0, parseFloat(newTravel.priceDetails?.hotel) || 0),
+        food: Math.max(0, parseFloat(newTravel.priceDetails?.food) || 0),
+        transport: Math.max(0, parseFloat(newTravel.priceDetails?.transport) || 0),
+        extra: Math.max(0, parseFloat(newTravel.priceDetails?.extras) || 0),
+      },
+      
+      // Categories (get IDs from API data)
+      categories: newTravel.category
+        .map(catName => {
+          const cat = apiCategories.find(c => c.name === catName);
+          return cat?.id;
+        })
+        .filter(id => id !== undefined && id !== null),
+      
+      // Languages (get IDs from API data)
+      languagesSpoken: (newTravel.languages || [])
+        .map(langName => {
+          const lang = apiLanguages.find(l => l.name === langName);
+          return lang?.id;
+        })
+        .filter(id => id !== undefined && id !== null),
+      
+      // Itinerary - transform to backend format
+      tripItinerary: {
+        itineraryDays: (newTravel.itinerary || []).map(day => ({
+          day: sanitizeInput(day.day) || `Day ${day.day}`,
+          topics: (day.activities || [])
+            .filter(act => act.trim())
+            .map((activity, idx) => ({
+              name: sanitizeInput(activity.split('\n')[0]) || `Activity ${idx + 1}`,
+              description: sanitizeInput(activity)
+            }))
+        }))
+      },
+      
+      // Reference Points
+      referencePoints: (newTravel.pointsOfInterest || [])
+        .filter(point => point.name?.trim())
+        .map(point => ({
+          name: sanitizeInput(point.name),
+          description: sanitizeInput(point.description || point.type),
+          city: city,
+          photos: point.link ? [point.link] : []
+        })),
+      
+      // Accommodations
+      accommodations: (newTravel.accommodations || [])
+        .filter(acc => acc.name?.trim())
+        .map(acc => {
+          const accType = apiAccommodationTypes.find(at => at.type === acc.type);
+          const accBoard = apiAccommodationBoards.find(ab => ab.board === acc.regime);
+          
+          return {
+            name: sanitizeInput(acc.name),
+            accommodationTypeId: accType?.id || 1,
+            accommodationTypeName: acc.type,
+            accommodationBoardId: accBoard?.id || 1,
+            accommodationBoardName: acc.regime,
+            city: acc.city || city,
+            price: Math.max(0, parseFloat(acc.price || 0)),
+            nrNights: Math.max(0, parseInt(acc.nights || 0)),
+            checkIn: acc.checkInDate || startDate,
+            checkOut: acc.checkOutDate || endDate,
+            bookingDate: (acc.bookingDate || newTravel.BookingTripPaymentDate || startDate),
+            description: sanitizeInput(acc.description),
+            rating: Math.max(0, Math.min(5, parseInt(acc.rating || 0)))
+          };
+        }),
+      
+      // Transports
+      tripTransports: (newTravel.localTransport || [])
+        .filter(transport => transport && transport.name && typeof transport === 'object')
+        .map(transport => {
+          const transportData = apiTransports.find(t => t.name === transport.name);
+          return {
+            transportId: transportData?.id || 1,
+            name: sanitizeInput(transport.name),
+            description: sanitizeInput(transport.description || transport.name),
+            cost: Math.max(0, parseFloat(transport.cost || 0)),
+            photos: []
+          };
+        }),
+      
+      // Recommended Foods
+      recommendedFoods: (newTravel.foodRecommendations || [])
+        .filter(food => food.name?.trim())
+        .map(food => ({
+          name: sanitizeInput(food.name),
+          description: sanitizeInput(food.description),
+          city: city,
+          photos: []
+        })),
+      
+      // Negative Points
+      negativePoints: (newTravel.negativePoints || [])
+        .filter(point => point.name?.trim())
+        .map(point => ({
+          name: sanitizeInput(point.name),
+          description: sanitizeInput(point.description)
+        }))
+    };
+    
+    return backendTripData;
+  };
+
+  // ===== FETCH CATEGORIES WITH CACHE =====
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingApiData(prev => ({ ...prev, categories: true }));
+    
+    // Try to use cached data first
+    const cachedCategories = localStorage.getItem('api_categories');
+    if (cachedCategories) {
+      try {
+        const parsed = JSON.parse(cachedCategories);
+        if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
+          setApiCategories(parsed);
+          setLoadingApiData(prev => ({ ...prev, categories: false }));
+          return;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse cached categories');
+      }
+    }
+
+    // If no cache, fetch from API
+    request('GET', '/categories')
+      .then(res => {
+        console.log('✅ Categories fetched from API:', res.data);
+        if (isMounted && Array.isArray(res.data)) {
+          const data = res.data.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            icon: cat.icon
+          }));
+          setApiCategories(data);
+          // Save to localStorage
+          localStorage.setItem('api_categories', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to fetch categories:', err.message);
+        if (isMounted) {
+          // Try to use stale cache on error
+          const staleCached = localStorage.getItem('api_categories');
+          if (staleCached) {
+            try {
+              setApiCategories(JSON.parse(staleCached));
+            } catch (e) {
+              setApiCategories([]);
+            }
+          } else {
+            setApiCategories([]);
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingApiData(prev => ({ ...prev, categories: false }));
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // ===== FETCH LANGUAGES WITH CACHE =====
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingApiData(prev => ({ ...prev, languages: true }));
+    
+    // Try to use cached data first
+    const cachedLanguages = localStorage.getItem('api_languages');
+    if (cachedLanguages) {
+      try {
+        const parsed = JSON.parse(cachedLanguages);
+        if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
+          setApiLanguages(parsed);
+          setLoadingApiData(prev => ({ ...prev, languages: false }));
+          return;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse cached languages');
+      }
+    }
+
+    // If no cache, fetch from API
+    request('GET', '/languages-spoken')
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          const data = res.data.map(lang => ({
+            id: lang.id,
+            name: lang.name,
+            code: lang.code
+          }));
+          setApiLanguages(data);
+          // Save to localStorage
+          localStorage.setItem('api_languages', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to fetch languages:', err.message);
+        if (isMounted) {
+          // Try to use stale cache on error
+          const staleCached = localStorage.getItem('api_languages');
+          if (staleCached) {
+            try {
+              setApiLanguages(JSON.parse(staleCached));
+            } catch (e) {
+              setApiLanguages([]);
+            }
+          } else {
+            setApiLanguages([]);
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingApiData(prev => ({ ...prev, languages: false }));
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // ===== FETCH ACCOMMODATION TYPES WITH CACHE =====
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingApiData(prev => ({ ...prev, accommodationTypes: true }));
+    
+    // Try to use cached data first
+    const cachedAccTypes = localStorage.getItem('api_accommodation_types');
+    if (cachedAccTypes) {
+      try {
+        const parsed = JSON.parse(cachedAccTypes);
+        if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
+          setApiAccommodationTypes(parsed);
+          setLoadingApiData(prev => ({ ...prev, accommodationTypes: false }));
+          return;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse cached accommodation types');
+      }
+    }
+
+    // If no cache, fetch from API
+    request('GET', '/accommodation-types')
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          const data = res.data.map(acc => ({
+            id: acc.id,
+            type: acc.type
+          }));
+          setApiAccommodationTypes(data);
+          // Save to localStorage
+          localStorage.setItem('api_accommodation_types', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to fetch accommodation types:', err.message);
+        if (isMounted) {
+          // Try to use stale cache on error
+          const staleCached = localStorage.getItem('api_accommodation_types');
+          if (staleCached) {
+            try {
+              setApiAccommodationTypes(JSON.parse(staleCached));
+            } catch (e) {
+              setApiAccommodationTypes([]);
+            }
+          } else {
+            setApiAccommodationTypes([]);
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingApiData(prev => ({ ...prev, accommodationTypes: false }));
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // ===== FETCH ACCOMMODATION BOARDS (REGIMES) WITH CACHE =====
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingApiData(prev => ({ ...prev, accommodationBoards: true }));
+    
+    // Try to use cached data first
+    const cachedBoards = localStorage.getItem('api_accommodation_boards');
+    if (cachedBoards) {
+      try {
+        const parsed = JSON.parse(cachedBoards);
+        if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
+          setApiAccommodationBoards(parsed);
+          setLoadingApiData(prev => ({ ...prev, accommodationBoards: false }));
+          return;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse cached accommodation boards');
+      }
+    }
+
+    // If no cache, fetch from API
+    request('GET', '/accommodation-boards')
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          const data = res.data.map(board => ({
+            id: board.id,
+            board: board.board
+          }));
+          setApiAccommodationBoards(data);
+          // Save to localStorage
+          localStorage.setItem('api_accommodation_boards', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to fetch accommodation boards:', err.message);
+        if (isMounted) {
+          // Try to use stale cache on error
+          const staleCached = localStorage.getItem('api_accommodation_boards');
+          if (staleCached) {
+            try {
+              setApiAccommodationBoards(JSON.parse(staleCached));
+            } catch (e) {
+              setApiAccommodationBoards([]);
+            }
+          } else {
+            setApiAccommodationBoards([]);
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingApiData(prev => ({ ...prev, accommodationBoards: false }));
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // ===== FETCH TRANSPORTS WITH CACHE =====
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingApiData(prev => ({ ...prev, transports: true }));
+    
+    // Try to use cached data first
+    const cachedTransports = localStorage.getItem('api_transports');
+    if (cachedTransports) {
+      try {
+        const parsed = JSON.parse(cachedTransports);
+        if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
+          setApiTransports(parsed);
+          setLoadingApiData(prev => ({ ...prev, transports: false }));
+          return;
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse cached transports');
+      }
+    }
+
+    // If no cache, fetch from API
+    request('GET', '/transports')
+      .then(res => {
+        if (isMounted && Array.isArray(res.data)) {
+          const data = res.data.map(transport => ({
+            id: transport.id,
+            name: transport.name
+          }));
+          setApiTransports(data);
+          // Save to localStorage
+          localStorage.setItem('api_transports', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.warn('⚠️ Failed to fetch transports:', err.message);
+        if (isMounted) {
+          // Try to use stale cache on error
+          const staleCached = localStorage.getItem('api_transports');
+          if (staleCached) {
+            try {
+              setApiTransports(JSON.parse(staleCached));
+            } catch (e) {
+              setApiTransports([]);
+            }
+          } else {
+            setApiTransports([]);
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingApiData(prev => ({ ...prev, transports: false }));
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  // Extract language names from API data (array of strings, not objects)
+  const languages = apiLanguages.map(lang => lang.name || lang);
 
   const renderStars = (stars) => (
     [...Array(5)].map((_, index) => (
@@ -187,22 +1249,8 @@ const MyTravels = () => {
     setToast({ show: false, message: '', type: '' });
   };
 
-  const transportOptions = [
-    'Carro', 'Comboio', 'Autocarro', 'Avião', 'Bicicleta', 'A Pé', 'Barco', 'Táxi'
-  ];
-
-  const countryToCities = {
-    'Portugal': ['Lisboa', 'Porto', 'Coimbra', 'Braga', 'Aveiro', 'Évora', 'Faro', 'Viseu', 'Setúbal', 'Leiria'],
-    'Brasil': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 'Belo Horizonte', 'Manaus', 'Curitiba', 'Recife', 'Porto Alegre'],
-    'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Philadelphia', 'Phoenix', 'San Antonio', 'San Diego', 'Dallas', 'San Jose'],
-    'Espanha': ['Madrid', 'Barcelona', 'Valencia', 'Sevilha', 'Saragoça', 'Málaga', 'Múrcia', 'Palma de Maiorca', 'Las Palmas', 'Bilbao'],
-    'França': ['Paris', 'Marselha', 'Lyon', 'Toulouse', 'Nice', 'Nantes', 'Montpellier', 'Estrasburgo', 'Bordeaux', 'Lille'],
-    'Itália': ['Roma', 'Milão', 'Nápoles', 'Turim', 'Palermo', 'Génova', 'Bolonha', 'Florença', 'Bari', 'Catânia']
-  };
-
-  const getCitiesForCountry = (country) => {
-    return countryToCities[country] || [];
-  };
+  // Transport options (API data only)
+  const transportOptions = apiTransports.map(t => t.name);
 
   // Função para formatar tamanho de arquivo
   const formatFileSize = (bytes) => {
@@ -242,32 +1290,73 @@ const MyTravels = () => {
     };
   };
 
-  const categories = [
-    'Natureza', 'Cidade', 'Cultural', 'Nature', 'Foodie', 'History',
-    'Beach', 'Mountains', 'City Break', 'Wildlife', 'Luxury', 'Budget',
-    'Solo Travel', 'Family', 'Romantic'
-  ];
+  // Categories with icons (API data only)
+  const categories = apiCategories.map(cat => cat.name);
 
-  // Abrir modal automaticamente ao redirecionar com estado
+  // Fetch user trips from backend on mount
   useEffect(() => {
-    const cachedTravels = localStorage.getItem("user-travels");
-    if (cachedTravels) {
-      setTravels(JSON.parse(cachedTravels));
-    } else {
-      // Make the GET request using .then()
-      request("GET", "/trips/user/" + user.id)
-        .then((response) => {
-          // Save the fetched data to localStorage
-          localStorage.setItem("user-travels", JSON.stringify(response.data));
-  
-          // Update the state with the fetched data
-          setTravels(response.data);
-        })
-        .catch((error) => {
-          console.error("Error fetching travels:", error);
-        });
+    let isMounted = true;
+    setLoadingUserTrips(true);
+
+    const loadLocalDrafts = () => {
+      try {
+        const cached = localStorage.getItem("user-travels");
+        if (!cached) return [];
+        const all = JSON.parse(cached);
+        return Array.isArray(all) ? all.filter(t => t.status === 'draft') : [];
+      } catch (e) {
+        return [];
+      }
+    };
+    
+    // Show cached data immediately (stale-while-revalidate) for snappy UX
+    const cachedUserTrips = localStorage.getItem("user-trips-backend");
+    if (cachedUserTrips) {
+      try {
+        const parsed = JSON.parse(cachedUserTrips);
+        if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
+          setUserTrips(parsed);
+          setTravels([...parsed.map(normalizeBackendTrip), ...loadLocalDrafts()]);
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to parse cached user trips');
+      }
     }
-  }, [location.state]);
+
+    // Always fetch fresh data from API
+    request("GET", "/trips/my-trips")
+      .then((response) => {
+        if (isMounted && response.data?.content) {
+          // Extract content array from paginated response
+          const trips = response.data.content;
+          setUserTrips(trips);
+          setTravels([...trips.map(normalizeBackendTrip), ...loadLocalDrafts()]);
+          // Cache the trips
+          localStorage.setItem("user-trips-backend", JSON.stringify(trips));
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error fetching user trips:", error.message);
+        if (isMounted) {
+          // Try to use stale cache on error
+          const staleCached = localStorage.getItem("user-trips-backend");
+          if (staleCached) {
+            try {
+              setUserTrips(JSON.parse(staleCached));
+            } catch (e) {
+              setUserTrips([]);
+            }
+          } else {
+            setUserTrips([]);
+          }
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingUserTrips(false);
+      });
+
+    return () => { isMounted = false; };
+  }, []);
 
   // Abrir modal automaticamente ao redirecionar com estado
   useEffect(() => {
@@ -673,11 +1762,15 @@ const MyTravels = () => {
           {
             name: '',
             type: '',
+            country: '',
+            city: '',
             description: '',
             rating: 0,
             nights: '',
+            price: '',
             checkInDate: '',
             checkOutDate: '',
+            bookingDate: '',
             regime: '',
             images: []
           }
@@ -711,11 +1804,15 @@ const MyTravels = () => {
           {
             name: '',
             type: '',
+            country: '',
+            city: '',
             description: '',
             rating: 0,
             nights: '',
+            price: '',
             checkInDate: '',
             checkOutDate: '',
+            bookingDate: '',
             regime: '',
             images: []
           }
@@ -728,11 +1825,15 @@ const MyTravels = () => {
             {
               name: '',
               type: '',
+              country: '',
+              city: '',
               description: '',
               rating: 0,
               nights: '',
+              price: '',
               checkInDate: '',
               checkOutDate: '',
+              bookingDate: '',
               regime: '',
               images: []
             }
@@ -758,6 +1859,82 @@ const MyTravels = () => {
         }));
       }
     }
+  };
+
+  // ===== TRANSPORT MANAGEMENT FUNCTIONS =====
+  const addTransport = () => {
+    if (!newTransport.name.trim()) {
+      setToast({ message: '❌ Nome do transporte é obrigatório!', type: 'error', show: true });
+      return;
+    }
+    
+    setNewTravel(prev => ({
+      ...prev,
+      localTransport: [
+        ...prev.localTransport,
+        {
+          id: Date.now(),
+          name: newTransport.name.trim(),
+          description: newTransport.description.trim(),
+          cost: parseFloat(newTransport.cost) || 0
+        }
+      ]
+    }));
+    
+    setNewTransport({ name: '', description: '', cost: '' });
+    setIsTransportFormOpen(false);
+    setToast({ message: '✅ Transporte adicionado com sucesso!', type: 'success', show: true });
+  };
+
+  const updateTransport = (index) => {
+    if (!newTransport.name.trim()) {
+      setToast({ message: '❌ Nome do transporte é obrigatório!', type: 'error', show: true });
+      return;
+    }
+    
+    setNewTravel(prev => {
+      const updatedTransports = [...prev.localTransport];
+      updatedTransports[index] = {
+        ...updatedTransports[index],
+        name: newTransport.name.trim(),
+        description: newTransport.description.trim(),
+        cost: parseFloat(newTransport.cost) || 0
+      };
+      return { ...prev, localTransport: updatedTransports };
+    });
+    
+    setNewTransport({ name: '', description: '', cost: '' });
+    setEditingTransportIndex(null);
+    setIsTransportFormOpen(false);
+    setToast({ message: '✅ Transporte atualizado com sucesso!', type: 'success', show: true });
+  };
+
+  const deleteTransport = (index) => {
+    setNewTravel(prev => ({
+      ...prev,
+      localTransport: prev.localTransport.filter((_, i) => i !== index)
+    }));
+    setEditingTransportIndex(null);
+    setNewTransport({ name: '', description: '', cost: '' });
+    setIsTransportFormOpen(false);
+    setToast({ message: '✅ Transporte removido com sucesso!', type: 'success', show: true });
+  };
+
+  const editTransport = (index) => {
+    const transport = newTravel.localTransport[index];
+    setNewTransport({
+      name: transport.name,
+      description: transport.description,
+      cost: transport.cost.toString()
+    });
+    setEditingTransportIndex(index);
+    setIsTransportFormOpen(true);
+  };
+
+  const cancelEditTransport = () => {
+    setNewTransport({ name: '', description: '', cost: '' });
+    setEditingTransportIndex(null);
+    setIsTransportFormOpen(false);
   };
 
   const handleChange = (e) => {
@@ -1460,16 +2637,28 @@ const MyTravels = () => {
       accommodations: Array.isArray(travelToEdit.accommodations) && travelToEdit.accommodations.length > 0
         ? travelToEdit.accommodations.map(acc => ({
             ...acc,
-            images: acc.images || []
+            images: acc.images || [],
+            country: acc.country || '',
+            city: acc.city || '',
+            price: acc.price || '',
+            nights: acc.nights || '',
+            checkInDate: acc.checkInDate || '',
+            checkOutDate: acc.checkOutDate || '',
+            bookingDate: acc.bookingDate || ''
           }))
         : [
             {
               name: '',
               type: '',
+              country: '',
+              city: '',
               description: '',
               rating: '',
+              nights: '',
+              price: '',
               checkInDate: '',
               checkOutDate: '',
+              bookingDate: '',
               regime: '',
               images: []
             }
@@ -1625,6 +2814,112 @@ const MyTravels = () => {
     }
   };
 
+  // ===== LOAD BACKEND TRIP INTO FORM FOR EDITING =====
+  const handleLoadBackendTrip = async (backendTripId) => {
+    try {
+      const tripToEdit = userTrips.find(t => (t.tripId || t.id) === backendTripId);
+      if (!tripToEdit) {
+        setToast({ message: '❌ Viagem não encontrada!', type: 'error', show: true });
+        return;
+      }
+
+      // Transform backend trip data to frontend form state
+      const frontendTrip = transformBackendTripToFrontend(tripToEdit);
+      if (!frontendTrip) {
+        setToast({ message: '❌ Erro ao carregar dados da viagem!', type: 'error', show: true });
+        return;
+      }
+
+      // Load trip data into form
+      setNewTravel(frontendTrip);
+      setSelectedTripForEdit(backendTripId);
+      setEditTravelId(backendTripId);
+      setIsEditing(true);
+      setIsModalOpen(true);
+      setActiveTab('generalInfo');
+      setSelectedTravelType({ main: 'single', isGroup: false });
+
+      // Reset editing states
+      setNewFoodRecommendation({ name: '', description: '' });
+      setEditingFoodIndex(null);
+      setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+      setEditingPointIndex(null);
+      setNewItineraryDay({ day: '', activities: [''] });
+      setEditingItineraryDay(null);
+      setItineraryError('');
+      setImagePreview(null);
+      setVideosPreviews([]);
+      setVideosInfo([]);
+
+      setToast({ message: '✅ Viagem carregada para edição!', type: 'success', show: true });
+    } catch (error) {
+      console.error('❌ Error loading backend trip:', error);
+      setToast({ message: '❌ Erro ao carregar viagem!', type: 'error', show: true });
+    }
+  };
+
+  // ===== DELETE BACKEND TRIP =====
+  const handleDeleteBackendTrip = async (backendTripId) => {
+    const confirmed = window.confirm('Tem certeza que deseja eliminar esta viagem? Esta ação não pode ser desfeita.');
+    if (!confirmed) return;
+
+    try {
+      setLoadingUserTrips(true);
+      
+      // Delete trip from backend
+      await request('DELETE', `/trips/${backendTripId}`);
+      
+      // Remove from local state
+      const updatedUserTrips = userTrips.filter(t => (t.tripId || t.id) !== backendTripId);
+      setUserTrips(updatedUserTrips);
+      setTravels(prev => prev.filter(t => t.id !== backendTripId));
+      
+      // Refresh cache
+      localStorage.setItem("user-trips-backend", JSON.stringify(updatedUserTrips));
+      
+      // Reset form if we were editing this trip
+      if (selectedTripForEdit === backendTripId) {
+        resetForm();
+        setIsModalOpen(false);
+      }
+      
+      setToast({ message: '✅ Viagem eliminada com sucesso!', type: 'success', show: true });
+    } catch (error) {
+      console.error('❌ Error deleting trip:', error);
+      setToast({ message: `❌ Erro ao eliminar viagem: ${error.message}`, type: 'error', show: true });
+    } finally {
+      setLoadingUserTrips(false);
+    }
+  };
+
+  // ===== REFRESH USER TRIPS FROM BACKEND =====
+  const refreshUserTrips = async () => {
+    try {
+      setLoadingUserTrips(true);
+      const response = await request('GET', '/trips/my-trips');
+      
+      if (response.data?.content) {
+        const trips = response.data.content;
+        setUserTrips(trips);
+        const localDrafts = (() => {
+          try {
+            const cached = localStorage.getItem("user-travels");
+            if (!cached) return [];
+            const all = JSON.parse(cached);
+            return Array.isArray(all) ? all.filter(t => t.status === 'draft') : [];
+          } catch (e) { return []; }
+        })();
+        setTravels([...trips.map(normalizeBackendTrip), ...localDrafts]);
+        localStorage.setItem("user-trips-backend", JSON.stringify(trips));
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing trips:', error);
+      setToast({ message: `❌ Erro ao atualizar viagens: ${error.message}`, type: 'error', show: true });
+    } finally {
+      setLoadingUserTrips(false);
+    }
+  };
+
   const handleDelete = (id) => {
     setTravels(travels.filter((travel) => travel.id !== id));
     setToast({ message: 'Viagem eliminada com sucesso!', type: 'success', show: true });
@@ -1645,7 +2940,79 @@ const MyTravels = () => {
     setToast({ message: '✅ Rascunho publicado com sucesso!', type: 'success', show: true });
   };
 
-  const handleAddTravel = () => {
+  // ===== UPLOAD TRIP MEDIA AFTER CREATION =====
+  // Called after POST /trips returns the created trip with sub-entity IDs.
+  // Uploads all File objects selected in the form to their respective media endpoints.
+  // Non-fatal: individual upload failures are logged but do not block the flow.
+  const uploadTripMedia = async (tripId, createdTripData) => {
+    const uploadErrors = [];
+
+    const uploadSingle = async (url, file) => {
+      if (!(file instanceof File)) return;
+      try {
+        await uploadFile(url, file);
+      } catch (err) {
+        const msg = err?.response?.data?.message || err.message || 'Erro desconhecido';
+        uploadErrors.push(msg);
+      }
+    };
+
+    // 1. Highlight image → uploaded first so it becomes the trip's cover photo
+    if (newTravel.highlightImage instanceof File) {
+      await uploadSingle(`/trips/${tripId}/media/photos`, newTravel.highlightImage);
+    }
+
+    // 2. General trip photos
+    for (const file of (newTravel.images_generalInformation || [])) {
+      await uploadSingle(`/trips/${tripId}/media/photos`, file);
+    }
+
+    // 3. Trip videos
+    for (const file of (newTravel.travelVideos || [])) {
+      await uploadSingle(`/trips/${tripId}/media/videos`, file);
+    }
+
+    // 4. Accommodation photos — matched by position to sub-entities returned in POST response
+    const createdAccommodations = createdTripData?.accommodations || [];
+    for (let i = 0; i < createdAccommodations.length; i++) {
+      const accId = createdAccommodations[i]?.id;
+      const accImages = newTravel.accommodations?.[i]?.images || [];
+      if (accId) {
+        for (const file of accImages) {
+          await uploadSingle(`/trips/${tripId}/media/accommodations/${accId}/photos`, file);
+        }
+      }
+    }
+
+    // 5. Food photos — flat array mapped positionally to created food entities
+    const createdFoods = createdTripData?.recommendedFoods || [];
+    const foodPhotos = newTravel.images_foodRecommendations || [];
+    for (let i = 0; i < Math.min(foodPhotos.length, createdFoods.length); i++) {
+      const foodId = createdFoods[i]?.id;
+      if (foodId && foodPhotos[i] instanceof File) {
+        await uploadSingle(`/trips/${tripId}/media/foods/${foodId}/photo`, foodPhotos[i]);
+      }
+    }
+
+    // 6. Reference point photos — flat array mapped positionally to created reference points
+    const createdRefPoints = createdTripData?.referencePoints || [];
+    const refPhotos = newTravel.images_referencePoints || [];
+    for (let i = 0; i < Math.min(refPhotos.length, createdRefPoints.length); i++) {
+      const refId = createdRefPoints[i]?.id;
+      if (refId && refPhotos[i] instanceof File) {
+        await uploadSingle(`/trips/${tripId}/media/reference-points/${refId}/photos`, refPhotos[i]);
+      }
+    }
+
+    if (uploadErrors.length > 0) {
+      const summary = uploadErrors.length === 1
+        ? `⚠️ Falha ao carregar 1 ficheiro: ${uploadErrors[0]}`
+        : `⚠️ ${uploadErrors.length} ficheiros não foram carregados: ${uploadErrors[0]}${uploadErrors.length > 1 ? ' (e outros)' : ''}`;
+      setToast({ message: summary, type: 'error', show: true });
+    }
+  };
+
+  const handleAddTravel = async () => {
     // Se a ação for guardar como rascunho
     if (saveAction === 'draft') {
       if (!validateFormForDraft()) {
@@ -1706,151 +3073,82 @@ const MyTravels = () => {
         localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
         showToast('✅ Viagem multidestino adicionada com sucesso!', 'success');
       }
-      // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
       setSaveAction(null);
       resetForm();
       return;
     }
 
-  // Map newTravel to TripDto structure
-  const tripData = {
-    userId: 1, // Hardcoded for now; replace with actual user ID from auth state
-    countryId: newTravel.country === 'Portugal' ? 1 : newTravel.country === 'Brazil' ? 2 : 3, // Map country to an ID
-    title: newTravel.name,
-    startDate: newTravel.startDate, // Assumes "yyyy-MM-dd"
-    endDate: newTravel.endDate, // Assumes "yyyy-MM-dd"
-    bookingDate: newTravel.BookingTripPaymentDate, // Assumes "yyyy-MM-dd"
-    tripDurationDays: parseInt(newTravel.days) || calculateTripDays(),
-    tripSummary: newTravel.description,
-    tripDescription: newTravel.longDescription,
-    tripRating: parseInt(newTravel.stars) || 0, // Add stars to newTravel if not present
-    cost: {
-      total: parseFloat(newTravel.price) || 0,
-      accommodation: parseFloat(newTravel.priceDetails.hotel) || 0,
-      transport: parseFloat(newTravel.priceDetails.transport) || 0,
-      food: parseFloat(newTravel.priceDetails.food) || 0,
-      extra: parseFloat(newTravel.priceDetails.extras) || 0,
-    },
-    categoryIds: newTravel.category.map(cat => {
-      const categoryMap = {
-        'Natureza': 1, 'Cidade': 2, 'Cultural': 3, 'Nature': 4, 'Foodie': 5, // Example mapping
-      };
-      return categoryMap[cat] || 0;
-    }).filter(id => id !== 0),
-    languageSpokenIds: (newTravel.languages || []).map(lang => {
-      const languageMap = { 'Português': 1, 'Inglês': 2, 'Espanhol': 3 };
-      return languageMap[lang.trim()] || 0;
-    }).filter(id => id !== 0),
-    referencePoints: newTravel.pointsOfInterest.map(point => ({
-      name: point.name,
-      description: point.type,
-      photos: point.link || null,
-    })),
-    tripTransports: newTravel.localTransport.map(transport => ({
-      transportId: 1,
-      cost: 30,
-      photos: ["foto1", "foto2"]
-    })),
-    accommodations: newTravel.accommodations.map(acc => ({
-      name: acc.name,
-      accommodationTypeId: 1,
-      description: acc.description,
-      price: 150,
-      nrNights: 10,
-      rating: parseInt(acc.rating) || 0,
-      accommodationBoardId: 1,
-    })),
-  };
+    // ===== SINGLE DESTINATION: SUBMIT TO BACKEND =====
+    setIsSubmittingTrip(true);
+    
+    try {
+      // Transform frontend data to backend format (includes validation & sanitization)
+      const backendTripData = await transformTravelToBackendFormat();
+      
+      if (!backendTripData) {
+        setIsSubmittingTrip(false);
+        return;
+      }
 
-  if (isEditing) {
-      const updatedTravels = travels.map((travel) =>
-        travel.id === editTravelId
-          ? {
-              ...newTravel,
-              status: 'published',
-              id: editTravelId,
-      travelType: selectedTravelType,
-      multiDestinations: selectedTravelType.main === 'multi' ? multiDestinations : null,
-      groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null,
-              highlightImage: newTravel.highlightImage,
-              images_generalInformation: newTravel.images_generalInformation || [],
-              accommodations: Array.isArray(newTravel.accommodations)
-                ? newTravel.accommodations.map(acc => ({
-                    ...acc,
-                    images: acc.images || []
-                  }))
-                : [
-                    {
-                      name: '',
-                      type: '',
-                      description: '',
-                      rating: '',
-                      checkInDate: '',
-                      checkOutDate: '',
-                      regime: '',
-                      images: []
-                    }
-                  ],
-              foodRecommendations: newTravel.foodRecommendations.filter(
-                (rec) => rec.name.trim() !== '' || rec.description.trim() !== ''
-              ),
-              images_foodRecommendations: newTravel.images_foodRecommendations || [],
-              pointsOfInterest: newTravel.pointsOfInterest.filter(
-                (point) => point.name.trim() !== '' || point.type.trim() !== '' || point.link.trim() !== ''
-              ),
-              images_referencePoints: newTravel.images_referencePoints || [],
-              itinerary: newTravel.itinerary.filter(
-                (item) => item.day && item.activities.length > 0
-              ),
-              localTransport: newTravel.localTransport || [],
-              images_localTransport: newTravel.images_localTransport || [],
-              privacy: newTravel.privacy
-            }
-          : travel
-      );
+      // Call backend API to create/update trip
+      if (isEditing) {
+        // UPDATE: If editing, include the trip ID
+        backendTripData.tripId = editTravelId;
+        await request('PUT', `/trips/${editTravelId}`, backendTripData);
+        showToast('✅ Viagem atualizada com sucesso no backend!', 'success');
+      } else {
+        // CREATE: New trip
+        const response = await request('POST', '/trips', backendTripData);
+
+        // Upload media files (photos, videos) after the trip is created.
+        // The response contains sub-entity IDs needed for per-entity uploads.
+        if (response?.data?.id) {
+          await uploadTripMedia(response.data.id, response.data);
+        }
+
+        showToast('✅ Viagem publicada com sucesso!', 'success');
+        
+        // Refresh the backend trips list so the new trip appears immediately
+        await refreshUserTrips();
+      }
       
-      setTravels(updatedTravels);
-      
-      // Atualizar localStorage
-      localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
-      
-      showToast('✅ Viagem editada com sucesso!', 'success');
-      // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
       setSaveAction(null);
       resetForm();
-    } else {
-      // Para single destination, armazenar localmente também por enquanto
-      const singleTravel = {
+      
+    } catch (error) {
+      console.error('❌ Erro ao publicar viagem:', error);
+      
+      // Fallback: Store locally if backend fails
+      const localTravel = {
         ...newTravel,
-        status: 'published',
+        status: 'draft_sync_pending',
         id: isEditing ? editTravelId : Date.now(),
         travelType: selectedTravelType,
         multiDestinations: null,
-        groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null
+        groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null,
+        syncError: error.message
       };
       
-      setTravels(prev => [...prev, singleTravel]);
+      if (isEditing) {
+        const updatedTravels = travels.map(t => t.id === editTravelId ? localTravel : t);
+        setTravels(updatedTravels);
+        localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+      } else {
+        const updatedTravels = [...travels, localTravel];
+        setTravels(updatedTravels);
+        localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+      }
       
-      // Atualizar localStorage
-      const updatedTravels = [...travels, singleTravel];
-      localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
+      setToast({ 
+        message: '⚠️ Falha ao sincronizar com backend. Viagem guardada localmente. Tente novamente depois.', 
+        type: 'error', 
+        show: true 
+      });
       
-      showToast('✅ Viagem adicionada com sucesso!', 'success');
-      // ✅ OTIMIZADO: resetForm IMEDIATAMENTE sem delay
       setSaveAction(null);
       resetForm();
-      
-      // TODO: Integração com backend será implementada posteriormente
-      // Quando o backend estiver pronto, descomentar o código abaixo:
-      /*
-      request("POST", "/trips", tripData)
-        .then((response) => {
-          console.log('✅ Viagem sincronizada com backend:', response.data);
-        })
-        .catch((error) => {
-          console.error('⚠️ Erro ao sincronizar com backend (viagem armazenada localmente):', error);
-        });
-      */
+    } finally {
+      setIsSubmittingTrip(false);
     }
   };
 
@@ -1886,10 +3184,15 @@ const MyTravels = () => {
         {
           name: '',
           type: '',
+          country: '',
+          city: '',
           description: '',
           rating: '',
+          nights: '',
+          price: '',
           checkInDate: '',
           checkOutDate: '',
+          bookingDate: '',
           regime: '',
           images: []
         }
@@ -2063,6 +3366,42 @@ const MyTravels = () => {
         show: true 
       });
     }
+  };
+
+  // Handler for single-travel country change via SearchableDropdown
+  const handleCountryChange = (value) => {
+    setNewTravel(prev => ({
+      ...prev,
+      country: value,
+      city: '' // Clear city when country changes
+    }));
+    // Reset data for new location
+    handleCountryCityReset('country', value);
+  };
+
+  // Handler for single-travel city change via SearchableDropdown
+  const handleCityChange = (value) => {
+    setNewTravel(prev => ({
+      ...prev,
+      city: value
+    }));
+  };
+
+  // Handler for multi-destination country change via SearchableDropdown
+  const handleMultiCountryChange = (value) => {
+    setNewDestination(prev => ({
+      ...prev,
+      country: value,
+      city: '' // Clear city when country changes
+    }));
+  };
+
+  // Handler for multi-destination city change via SearchableDropdown
+  const handleMultiCityChange = (value) => {
+    setNewDestination(prev => ({
+      ...prev,
+      city: value
+    }));
   };
 
   // Função para obter acomodações do destino atual
@@ -3025,41 +4364,23 @@ const MyTravels = () => {
                       <div className="form-row">
                         <div className="form-group">
                           <label style={{textAlign: 'center', width: '100%'}}>🌍 País: <span style={{color: 'red'}}>*</span></label>
-                          <select 
-                            name="country" 
-                            value={newTravel.country} 
-                            onChange={handleChange} 
-                            required
-                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
-                            title="Selecione o país da sua viagem"
-                          >
-                            <option value="">Selecione um país</option>
-                            <option value="Portugal">Portugal</option>
-                            <option value="Brasil">Brasil</option>
-                            <option value="United States">Estados Unidos</option>
-                            <option value="Espanha">Espanha</option>
-                            <option value="França">França</option>
-                            <option value="Itália">Itália</option>
-                          </select>
+                          <SearchableDropdown
+                            options={countryOptions}
+                            value={newTravel.country}
+                            onChange={handleCountryChange}
+                            placeholder={loadingCountries ? 'Carregando países...' : 'Selecione ou pesquise o país *'}
+                            disabled={loadingCountries}
+                          />
                         </div>
                         <div className="form-group">
                           <label style={{textAlign: 'center', width: '100%'}}>🏙️ Cidade: <span style={{color: 'red'}}>*</span></label>
-                          <select
-                            name="city"
+                          <SearchableDropdown
+                            options={cityOptions}
                             value={newTravel.city}
-                            onChange={handleChange}
-                            required
-                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
-                            disabled={!newTravel.country}
-                            title={newTravel.country ? "Selecione a cidade da sua viagem" : "Primeiro selecione um país"}
-                          >
-                            <option value="">
-                              {newTravel.country ? "Selecione uma cidade" : "Primeiro selecione um país"}
-                            </option>
-                            {getCitiesForCountry(newTravel.country).map(city => (
-                              <option key={city} value={city}>{city}</option>
-                            ))}
-                          </select>
+                            onChange={handleCityChange}
+                            placeholder={!newTravel.country ? 'Selecione primeiro um país' : (loadingCities ? 'Carregando cidades...' : 'Selecione ou pesquise a cidade *')}
+                            disabled={!newTravel.country || loadingCities}
+                          />
                         </div>
                       </div>
                     )}
@@ -3068,38 +4389,20 @@ const MyTravels = () => {
                         
                         <label style={{textAlign: 'center', width: '100%'}}>🌐 Destinos: <span style={{color: 'red'}}>*</span></label>
                         <div className="destination-controls">
-                          <select 
-                            name="multiCountry" 
-                            value={newDestination.country} 
-                            onChange={(e)=>setNewDestination(prev=>({...prev,country:e.target.value, city:''}))}
-                            title="Selecione o país do destino"
-                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
-                          >
-                            <option value="">País</option>
-                            <option value="Portugal">Portugal</option>
-                            <option value="Brasil">Brasil</option>
-                            <option value="United States">United States</option>
-                            <option value="Espanha">Espanha</option>
-                            <option value="França">França</option>
-                            <option value="Itália">Itália</option>
-                          </select>
-                          <select 
-                            name="multiCity" 
-                            value={newDestination.city} 
-                            onChange={(e)=>setNewDestination(prev=>({...prev,city:e.target.value}))}
-                            disabled={!newDestination.country}
-                            style={{ borderColor: '#e9ecef', boxShadow: 'none' }}
-                            title={newDestination.country ? "Selecione a cidade do destino" : "Primeiro selecione um país"}
-                          >
-                            <option value="">
-                              {newDestination.country ? "Selecione uma cidade" : "Primeiro selecione um país"}
-                            </option>
-                            {newDestination.country && getCitiesForCountry(newDestination.country).map(city => (
-                              <option key={city} value={city}>
-                                {city}
-                              </option>
-                            ))}
-                          </select>
+                          <SearchableDropdown
+                            options={multiCountryOptions}
+                            value={newDestination.country}
+                            onChange={handleMultiCountryChange}
+                            placeholder={loadingMultiCountries ? 'Carregando países...' : 'Selecione o país'}
+                            disabled={loadingMultiCountries}
+                          />
+                          <SearchableDropdown
+                            options={multiCityOptions}
+                            value={newDestination.city}
+                            onChange={handleMultiCityChange}
+                            placeholder={!newDestination.country ? 'Selecione primeiro um país' : (loadingMultiCities ? 'Carregando cidades...' : 'Selecione a cidade')}
+                            disabled={!newDestination.country || loadingMultiCities}
+                          />
                           <button onClick={addDestination} type="button" className="button-success" title="Adicionar destino à lista">
                             ➕ Adicionar
                           </button>
@@ -3191,53 +4494,59 @@ const MyTravels = () => {
                      <div className="form-row">
                       <div className="form-group">
                         <label style={{textAlign: 'center', width: '100%'}}>🗂️ Categorias Selecionadas: <span style={{color: 'red'}}>*</span></label>
-                     <p>{newTravel.category.length > 0 ? newTravel.category.join(', ') : 'Nenhuma categoria selecionada'}</p> 
-                    <button type="button" onClick={() => setIsCategoryModalOpen(true)} title="Abrir seletor de categorias">
-                      📋 Selecionar Categorias
+                     <p>{newTravel.category.length > 0 ? newTravel.category.map(cat => `${getCategoryIcon(cat)} ${cat}`).join(', ') : 'Nenhuma categoria selecionada'}</p> 
+                    <button type="button" onClick={() => setIsCategoryModalOpen(true)} title="Abrir seletor de categorias" disabled={loadingApiData.categories}>
+                      {loadingApiData.categories ? '⏳ A carregar...' : '📋 Selecionar Categorias'}
                     </button>
 
                     {isCategoryModalOpen && (
                       <div className="modal-overlay">
                         <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
                           <h3>🗂️ Selecionar Categorias</h3>
-                          <div className="category-list">
-                            {categories.map((cat) => (
-                              <div 
-                                key={cat} 
-                                className={`category-item ${newTravel.category.includes(cat) ? 'selected' : ''}`}
-                                onClick={() => {
-                                  const event = {
-                                    target: {
-                                      name: 'category',
-                                      value: cat,
-                                      type: 'checkbox',
-                                      checked: !newTravel.category.includes(cat)
-                                    }
-                                  };
-                                  handleChange(event);
-                                }}
-                                style={{
-                                  padding: '12px 16px',
-                                  border: `2px solid ${newTravel.category.includes(cat) ? '#007bff' : '#e9ecef'}`,
-                                  borderRadius: '8px',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  backgroundColor: newTravel.category.includes(cat) ? '#f0f8ff' : 'white',
-                                  marginBottom: '8px'
-                                }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  name="category"
-                                  value={cat}
-                                  checked={newTravel.category.includes(cat)}
-                                  onChange={() => {}} // Controle pelo onClick do div
-                                  style={{ marginRight: '8px', pointerEvents: 'none' }}
-                                />
-                                <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{cat}</label>
-                              </div>
-                            ))}
-                          </div>
+                          {loadingApiData.categories ? (
+                            <p style={{ textAlign: 'center', color: '#666' }}>⏳ A carregar categorias...</p>
+                          ) : (
+                            <div className="category-list">
+                              {categories.map((cat) => (
+                                <div 
+                                  key={cat} 
+                                  className={`category-item ${newTravel.category.includes(cat) ? 'selected' : ''}`}
+                                  onClick={() => {
+                                    const event = {
+                                      target: {
+                                        name: 'category',
+                                        value: cat,
+                                        type: 'checkbox',
+                                        checked: !newTravel.category.includes(cat)
+                                      }
+                                    };
+                                    handleChange(event);
+                                  }}
+                                  style={{
+                                    padding: '12px 16px',
+                                    border: `2px solid ${newTravel.category.includes(cat) ? '#007bff' : '#e9ecef'}`,
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    backgroundColor: newTravel.category.includes(cat) ? '#f0f8ff' : 'white',
+                                    marginBottom: '8px'
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    name="category"
+                                    value={cat}
+                                    checked={newTravel.category.includes(cat)}
+                                    onChange={() => {}} // Controle pelo onClick do div
+                                    style={{ marginRight: '8px', pointerEvents: 'none' }}
+                                  />
+                                  <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>
+                                    {getCategoryIcon(cat)} {cat}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="modal-actions">
                             <button type="button-danger" onClick={() => setIsCategoryModalOpen(false)}>
                               Fechar
@@ -3260,53 +4569,59 @@ const MyTravels = () => {
 
 
                     <label style={{textAlign: 'center', width: '100%'}}>🗣️ Línguas Utilizadas: <span style={{color: 'red'}}>*</span></label>
-                        <p>{newTravel.languages && newTravel.languages.length > 0 ? newTravel.languages.join(', ') : 'Nenhuma língua selecionada'}</p>
-                        <button type="button" onClick={() => setIsLanguageModalOpen(true)} title="Abrir seletor de idiomas">
-                          🗣️ Selecionar Idiomas
+                        <p>{newTravel.languages && newTravel.languages.length > 0 ? newTravel.languages.map(lang => `${lang} ${getLanguageCode(lang)}`).join(', ') : 'Nenhuma língua selecionada'}</p>
+                        <button type="button" onClick={() => setIsLanguageModalOpen(true)} title="Abrir seletor de idiomas" disabled={loadingApiData.languages}>
+                          {loadingApiData.languages ? '⏳ A carregar...' : '🗣️ Selecionar Idiomas'}
                         </button>
 
                         {isLanguageModalOpen && (
                           <div className="modal-overlay">
                             <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
                               <h3>🗣️ Selecionar Idiomas</h3>
-                              <div className="category-list">
-                                {languages.map((lang) => (
-                                  <div 
-                                    key={lang} 
-                                    className={`category-item ${(newTravel.languages || []).includes(lang) ? 'selected' : ''}`}
-                                    onClick={() => {
-                                      const event = {
-                                        target: {
-                                          name: 'languages',
-                                          value: lang,
-                                          type: 'checkbox',
-                                          checked: !(newTravel.languages || []).includes(lang)
-                                        }
-                                      };
-                                      handleChange(event);
-                                    }}
-                                    style={{
-                                      padding: '12px 16px',
-                                      border: `2px solid ${(newTravel.languages || []).includes(lang) ? '#007bff' : '#e9ecef'}`,
-                                      borderRadius: '8px',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s ease',
-                                      backgroundColor: (newTravel.languages || []).includes(lang) ? '#f0f8ff' : 'white',
-                                      marginBottom: '8px'
-                                    }}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      name="languages"
-                                      value={lang}
-                                      checked={(newTravel.languages || []).includes(lang)}
-                                      onChange={() => {}} // Controle pelo onClick do div
-                                      style={{ marginRight: '8px', pointerEvents: 'none' }}
-                                    />
-                                    <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{lang}</label>
-                                  </div>
-                                ))}
-                              </div>
+                              {loadingApiData.languages ? (
+                                <p style={{ textAlign: 'center', color: '#666' }}>⏳ A carregar idiomas...</p>
+                              ) : (
+                                <div className="category-list">
+                                  {languages.map((lang) => (
+                                    <div 
+                                      key={lang} 
+                                      className={`category-item ${(newTravel.languages || []).includes(lang) ? 'selected' : ''}`}
+                                      onClick={() => {
+                                        const event = {
+                                          target: {
+                                            name: 'languages',
+                                            value: lang,
+                                            type: 'checkbox',
+                                            checked: !(newTravel.languages || []).includes(lang)
+                                          }
+                                        };
+                                        handleChange(event);
+                                      }}
+                                      style={{
+                                        padding: '12px 16px',
+                                        border: `2px solid ${(newTravel.languages || []).includes(lang) ? '#007bff' : '#e9ecef'}`,
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        backgroundColor: (newTravel.languages || []).includes(lang) ? '#f0f8ff' : 'white',
+                                        marginBottom: '8px'
+                                      }}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        name="languages"
+                                        value={lang}
+                                        checked={(newTravel.languages || []).includes(lang)}
+                                        onChange={() => {}} // Controle pelo onClick do div
+                                        style={{ marginRight: '8px', pointerEvents: 'none' }}
+                                      />
+                                      <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>
+                                        {lang} {getLanguageCode(lang)}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                               <div className="modal-actions">
                                 <button type="button-danger" onClick={() => setIsLanguageModalOpen(false)}>
                                   Fechar
@@ -3819,6 +5134,55 @@ const MyTravels = () => {
                             )}
                           </div>
 
+                          {/* Country and City Selection for Accommodation */}
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label style={{textAlign: 'center', width: '100%'}}>🌍 País da Estadia:</label>
+                              <SearchableDropdown
+                                options={countryOptions}
+                                value={accommodation.country}
+                                onChange={(value) => {
+                                  if (selectedTravelType.main === 'single') {
+                                    setNewTravel(prev => {
+                                      const updatedAccommodations = [...prev.accommodations];
+                                      updatedAccommodations[index] = {
+                                        ...updatedAccommodations[index],
+                                        country: value,
+                                        city: '' // Reset city when country changes
+                                      };
+                                      return { ...prev, accommodations: updatedAccommodations };
+                                    });
+                                    // Load cities for this accommodation
+                                    loadAccommodationCities(index, value);
+                                  }
+                                }}
+                                placeholder="Selecione o país"
+                                disabled={loadingCountries}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label style={{textAlign: 'center', width: '100%'}}>🏙️ Cidade da Estadia:</label>
+                              <SearchableDropdown
+                                options={accommodationCountryCityOptions[index] || []}
+                                value={accommodation.city}
+                                onChange={(value) => {
+                                  if (selectedTravelType.main === 'single') {
+                                    setNewTravel(prev => {
+                                      const updatedAccommodations = [...prev.accommodations];
+                                      updatedAccommodations[index] = {
+                                        ...updatedAccommodations[index],
+                                        city: value
+                                      };
+                                      return { ...prev, accommodations: updatedAccommodations };
+                                    });
+                                  }
+                                }}
+                                placeholder={!accommodation.country ? 'Selecione primeiro um país' : (loadingAccommodationCities[index] ? 'A carregar cidades...' : 'Selecione a cidade')}
+                                disabled={!accommodation.country || (loadingAccommodationCities[index] || false)}
+                              />
+                            </div>
+                          </div>
+
                           <div className="form-row">
                             <div className="form-group">
                               <label style={{textAlign: 'center', width: '100%'}}>🏨 Nome do Alojamento:</label>
@@ -3849,6 +5213,53 @@ const MyTravels = () => {
                               />
                               <small style={{fontSize: '12px', color: '#6c757d'}}>De 1 a 365 noites</small>
                             </div>
+                            <div className="form-group">
+                              <label style={{textAlign: 'center', width: '100%'}}>💰 Preço por Noite (€):</label>
+                              <input
+                                type="number"
+                                name={`accommodations${index}.price`}
+                                value={accommodation.price}
+                                onChange={handleChange}
+                                placeholder="Ex.: 120.50"
+                                min="0"
+                                step="0.01"
+                                title="Preço por noite em euros"
+                              />
+                              <small style={{fontSize: '12px', color: '#6c757d'}}>Valor em euros</small>
+                            </div>
+                          </div>
+
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Check-in:</label>
+                              <input
+                                type="date"
+                                name={`accommodations${index}.checkInDate`}
+                                value={accommodation.checkInDate}
+                                onChange={handleChange}
+                                title="Data de check-in"
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label style={{textAlign: 'center', width: '100%'}}>📅 Data de Check-out:</label>
+                              <input
+                                type="date"
+                                name={`accommodations${index}.checkOutDate`}
+                                value={accommodation.checkOutDate}
+                                onChange={handleChange}
+                                title="Data de check-out"
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label style={{textAlign: 'center', width: '100%'}}>🎫 Data de Reserva:</label>
+                              <input
+                                type="date"
+                                name={`accommodations${index}.bookingDate`}
+                                value={accommodation.bookingDate}
+                                onChange={handleChange}
+                                title="Data da reserva do alojamento"
+                              />
+                            </div>
                           </div>
 
                           <div className="form-row">
@@ -3858,13 +5269,29 @@ const MyTravels = () => {
                                 name={`accommodations${index}.type`}
                                 value={accommodation.type}
                                 onChange={handleChange}
+                                disabled={loadingApiData.accommodationTypes}
                               >
-                                <option value="">Selecione o tipo</option>
-                                <option value="Hotel">🏨 Hotel</option>
-                                <option value="Hostel">🎒 Hostel</option>
-                                <option value="Apartamento">🏠 Apartamento</option>
-                                <option value="Pousada">🏡 Pousada</option>
-                                <option value="Casa de Férias">🏖️ Casa de Férias</option>
+                                <option value="">
+                                  {loadingApiData.accommodationTypes ? 'A carregar...' : 'Selecione o tipo'}
+                                </option>
+                                {apiAccommodationTypes.length > 0 
+                                  ? apiAccommodationTypes.map(accType => (
+                                      <option key={accType.id} value={accType.type}>
+                                        {accType.type}
+                                      </option>
+                                    ))
+                                  : [
+                                      { id: 1, type: 'Hotel' },
+                                      { id: 2, type: 'Hostel' },
+                                      { id: 3, type: 'Apartamento' },
+                                      { id: 4, type: 'Pousada' },
+                                      { id: 5, type: 'Casa de Férias' }
+                                    ].map(accType => (
+                                      <option key={accType.id} value={accType.type}>
+                                        {accType.type}
+                                      </option>
+                                    ))
+                                }
                               </select>
                             </div>
                             <div className="form-group">
@@ -3873,12 +5300,28 @@ const MyTravels = () => {
                                 name={`accommodations${index}.regime`}
                                 value={accommodation.regime}
                                 onChange={handleChange}
+                                disabled={loadingApiData.accommodationBoards}
                               >
-                                <option value="">Selecione o regime</option>
-                                <option value="Tudo Incluído">🍽️ Tudo Incluído</option>
-                                <option value="Meia Pensão">🥐 Meia Pensão</option>
-                                <option value="Pensão Completa">🍳 Pensão Completa</option>
-                                <option value="Apenas Alojamento">🛏️ Apenas Alojamento</option>
+                                <option value="">
+                                  {loadingApiData.accommodationBoards ? 'A carregar...' : 'Selecione o regime'}
+                                </option>
+                                {apiAccommodationBoards.length > 0 
+                                  ? apiAccommodationBoards.map(board => (
+                                      <option key={board.id} value={board.board}>
+                                        {board.board}
+                                      </option>
+                                    ))
+                                  : [
+                                      { id: 1, board: 'Tudo Incluído' },
+                                      { id: 2, board: 'Meia Pensão' },
+                                      { id: 3, board: 'Pensão Completa' },
+                                      { id: 4, board: 'Apenas Alojamento' }
+                                    ].map(board => (
+                                      <option key={board.id} value={board.board}>
+                                        {board.board}
+                                      </option>
+                                    ))
+                                }
                               </select>
                             </div>
                           </div>
@@ -4180,65 +5623,141 @@ const MyTravels = () => {
                   </div>
 
                   <div className="LeftPosition">
-                    <div>
-                      <label style={{textAlign: 'center', width: '100%'}}>🚗 Métodos de Transporte Selecionados:</label>
-                      <br></br>
-                      <p>{newTravel.localTransport.length > 0 ? newTravel.localTransport.join(', ') : 'Nenhum método selecionado'}</p>
-                      <button type="button" onClick={() => setIsTransportModalOpen(true)}>
-                        ➕ Adicionar Métodos de Transporte
+                    <div className="accommodation-header">
+                      <h3>🚗 Métodos de Transporte</h3>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setNewTransport({ name: '', description: '', cost: '' });
+                          setEditingTransportIndex(null);
+                          setIsTransportFormOpen(true);
+                        }}
+                        className="button-success"
+                        disabled={loadingApiData.transports}
+                      >
+                        + Adicionar Transporte
                       </button>
+                    </div>
 
-                      {isTransportModalOpen && (
-                        <div className="modal-overlay">
-                          <div className="modal-content category-modal" onClick={(e) => e.stopPropagation()}>
-                            <h3>🚗 Adicionar Métodos de Transporte</h3>
-                            <div className="category-list">
-                              {transportOptions.map((option) => (
-                                <div 
-                                  key={option}
-                                  className={`category-item ${newTravel.localTransport.includes(option) ? 'selected' : ''}`}
-                                  onClick={() => {
-                                    const event = {
-                                      target: {
-                                        name: 'localTransport',
-                                        value: option,
-                                        type: 'checkbox',
-                                        checked: !newTravel.localTransport.includes(option)
-                                      }
-                                    };
-                                    handleChange(event);
-                                  }}
-                                  style={{
-                                    padding: '12px 16px',
-                                    border: `2px solid ${newTravel.localTransport.includes(option) ? '#007bff' : '#e9ecef'}`,
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    backgroundColor: newTravel.localTransport.includes(option) ? '#f0f8ff' : 'white',
-                                    marginBottom: '8px'
-                                  }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    name="localTransport"
-                                    value={option}
-                                    checked={newTravel.localTransport.includes(option)}
-                                    onChange={() => {}} // Controle pelo onClick do div
-                                    style={{ marginRight: '8px', pointerEvents: 'none' }}
-                                  />
-                                  <label style={{ cursor: 'pointer', pointerEvents: 'none' }}>{option}</label>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="modal-actions">
-                              <button type="button-danger" onClick={() => setIsTransportModalOpen(false)}>
-                                Fechar
-                              </button>
-                            </div>
+                    {/* Transport Form */}
+                    {isTransportFormOpen && (
+                      <div style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '2px solid #007bff' }}>
+                        <h4>{editingTransportIndex !== null ? '✏️ Editar Transporte' : '➕ Novo Transporte'}</h4>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>🚗 Tipo de Transporte:</label>
+                            <select
+                              value={newTransport.name}
+                              onChange={(e) => setNewTransport(prev => ({ ...prev, name: e.target.value }))}
+                              style={{ width: '100%', padding: '10px', borderRadius: '5px' }}
+                              disabled={loadingApiData.transports}
+                            >
+                              <option value="">Selecione o transporte</option>
+                              {apiTransports.length > 0
+                                ? apiTransports.map(t => (
+                                    <option key={t.id} value={t.name}>{t.name}</option>
+                                  ))
+                                : ['Avião', 'Autocarro', 'Comboio', 'Carro', 'Táxi', 'Metro', 'Barco'].map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                  ))
+                              }
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>💰 Custo (€):</label>
+                            <input
+                              type="number"
+                              value={newTransport.cost}
+                              onChange={(e) => setNewTransport(prev => ({ ...prev, cost: e.target.value }))}
+                              placeholder="Ex.: 45.50"
+                              min="0"
+                              step="0.01"
+                              style={{ width: '100%', padding: '10px', borderRadius: '5px' }}
+                            />
                           </div>
                         </div>
-                      )}
-                    </div>
+
+                        <div className="form-row">
+                          <div className="form-group" style={{ width: '100%' }}>
+                            <label>📝 Descrição:</label>
+                            <textarea
+                              value={newTransport.description}
+                              onChange={(e) => setNewTransport(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="Ex.: Voo direto de Lisboa para Berlim, duração 2h30m"
+                              maxLength="300"
+                              rows="3"
+                              style={{ width: '100%', padding: '10px', borderRadius: '5px', resize: 'vertical' }}
+                            />
+                            <small style={{fontSize: '12px', color: newTransport.description.length > 250 ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
+                              {newTransport.description.length}/300 caracteres
+                            </small>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => editingTransportIndex !== null ? updateTransport(editingTransportIndex) : addTransport()}
+                            className="button-success"
+                          >
+                            {editingTransportIndex !== null ? '💾 Atualizar' : '✅ Adicionar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditTransport}
+                            className="button-danger"
+                          >
+                            ❌ Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Transport List */}
+                    {Array.isArray(newTravel.localTransport) && newTravel.localTransport.length > 0 ? (
+                      <div>
+                        {newTravel.localTransport.map((transport, index) => (
+                          <div key={transport.id || index} style={{ backgroundColor: '#f0f8ff', padding: '12px', borderRadius: '8px', marginBottom: '10px', border: '1px solid #007bff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                              <div style={{ flex: 1 }}>
+                                <h5 style={{ margin: '0 0 5px 0' }}>🚗 {transport.name}</h5>
+                                <p style={{ margin: '5px 0', color: '#666', fontSize: '14px' }}>
+                                  <strong>💰 Custo:</strong> €{parseFloat(transport.cost || 0).toFixed(2)}
+                                </p>
+                                {transport.description && (
+                                  <p style={{ margin: '5px 0', color: '#666', fontSize: '14px' }}>
+                                    <strong>📝 Descrição:</strong> {transport.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: '5px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => editTransport(index)}
+                                  className="edit-button"
+                                  title="Editar transporte"
+                                  style={{ padding: '5px 10px', fontSize: '12px' }}
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteTransport(index)}
+                                  className="delete-button"
+                                  title="Remover transporte"
+                                  style={{ padding: '5px 10px', fontSize: '12px' }}
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ textAlign: 'center', color: '#999', padding: '20px' }}>Nenhum transporte adicionado ainda.</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -4875,6 +6394,7 @@ const MyTravels = () => {
         </div>
       </div>
 
+
       <div className="travels-grid">
         {getFilteredTravels().length === 0 ? (
           filterType === 'all' ? (
@@ -4940,22 +6460,32 @@ const MyTravels = () => {
               <div className="travel-content">
                 <Link to={`/travel/${travel.id}`}>
                   {travel.highlightImage ? (
-                    <img
-                      src={
-                        travel.highlightImage instanceof File
-                          ? URL.createObjectURL(travel.highlightImage)
-                          : travel.highlightImage
-                      }
-                      alt={travel.name}
-                      className="highlight-image"
-                      onError={(e) => (e.target.src = '/default-image.jpg')}
-                    />
-                  ) : 
+                    <>
+                      <img
+                        src={
+                          travel.highlightImage instanceof File
+                            ? URL.createObjectURL(travel.highlightImage)
+                            : travel.highlightImage
+                        }
+                        alt={travel.name}
+                        className="highlight-image"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = '';
+                        }}
+                      />
+                      <div className="no-image-placeholder" style={{ display: 'none' }}>
+                        <div className="no-image-icon">📸</div>
+                        <span>Sem imagem</span>
+                      </div>
+                    </>
+                  ) : (
                     <div className="no-image-placeholder">
                       <div className="no-image-icon">📸</div>
                       <span>Sem imagem</span>
                     </div>
-                  }
+                  )}
                   
                   <div className="travel-text">
                     <h3>{travel.name}</h3>
@@ -5021,10 +6551,9 @@ const MyTravels = () => {
                         <p>{travel.description.length > 80 ? `${travel.description.substring(0, 80)}...` : travel.description}</p>
                       )}
                     </div>
-                    
-                    <span className="view-details-button">Ver mais detalhes →</span>
                   </div>
                 </Link>
+                <Link to={`/travel/${travel.id}`} className="view-details-button">Ver mais detalhes →</Link>
               </div>
               
               <div className="travel-actions">
@@ -5044,14 +6573,14 @@ const MyTravels = () => {
                   </button>
                 )}
                 <button 
-                  onClick={(e) => { e.stopPropagation(); handleEdit(travel.id); }}
+                  onClick={(e) => { e.stopPropagation(); travel.status === 'draft' ? handleEdit(travel.id) : handleLoadBackendTrip(travel.id); }}
                   className="action-btn edit-btn"
                   title="Editar viagem"
                 >
                   ✏️ Editar
                 </button>
                 <button 
-                  onClick={(e) => { e.stopPropagation(); handleDelete(travel.id); }}
+                  onClick={(e) => { e.stopPropagation(); travel.status === 'draft' ? handleDelete(travel.id) : handleDeleteBackendTrip(travel.id); }}
                   className="action-btn delete-btn"
                   title="Eliminar viagem"
                 >

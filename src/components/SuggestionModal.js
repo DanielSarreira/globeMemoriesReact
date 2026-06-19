@@ -4,6 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import { request } from '../axios_helper';
 import '../styles/components/suggestion-modal.css';
 
+// Reads a File object and returns a base64 data-URL string
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Falha ao ler o ficheiro.'));
+    reader.readAsDataURL(file);
+  });
+
 const SuggestionModal = ({ isOpen, onClose, showToast }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -16,6 +25,7 @@ const SuggestionModal = ({ isOpen, onClose, showToast }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0); // forces file input reset after submit
 
   // Obter página atual
   useEffect(() => {
@@ -85,40 +95,26 @@ const SuggestionModal = ({ isOpen, onClose, showToast }) => {
     setIsSubmitting(true);
 
     try {
-      const submitData = new FormData();
-      submitData.append('userId', user.id);
-      submitData.append('username', user.username);
-      submitData.append('type', formData.type);
-      submitData.append('page', formData.page);
-      submitData.append('title', formData.title);
-      submitData.append('description', formData.description);
-      submitData.append('steps', formData.steps);
-      
+      // Convert screenshot to base64 if provided
+      let imageUrl = null;
       if (formData.screenshot) {
-        submitData.append('screenshot', formData.screenshot);
+        imageUrl = await fileToBase64(formData.screenshot);
       }
 
-      // Enviar para backend
-      const response = await request(
-        'post',
-        '/api/suggestions/create',
-        submitData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      // Map form fields to backend CreateFeedbackDto
+      const payload = {
+        feedbackType: formData.type === 'error' ? 'ERROR_REPORT' : 'SUGGESTION',
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        stepsToReproduce: formData.steps.trim() || null,
+        imageUrl,
+      };
 
-      // Atualizar pontos de conquista
-      if (response.data.achievementPoints) {
-        showToast(`✨ +${response.data.achievementPoints} pontos de conquista!`, 'success');
-      }
+      await request('POST', '/feedback', payload);
 
-      setSuccessMessage('Obrigado! A sua sugestão foi registada com sucesso.');
-      showToast('Sugestão enviada com sucesso! 🎉', 'success');
+      setSuccessMessage('Obrigado! O seu feedback foi registado com sucesso.');
+      showToast('Feedback enviado com sucesso! 🎉', 'success');
 
-      // Limpar formulário
       setTimeout(() => {
         setFormData({
           type: 'error',
@@ -128,13 +124,14 @@ const SuggestionModal = ({ isOpen, onClose, showToast }) => {
           steps: '',
           screenshot: null,
         });
+        setFileInputKey(k => k + 1); // reset file input element
         setSuccessMessage('');
         onClose();
       }, 2000);
 
     } catch (error) {
-      console.error('Erro ao enviar sugestão:', error);
-      showToast('Erro ao enviar sugestão. Tente novamente.', 'error');
+      console.error('Erro ao enviar feedback:', error);
+      showToast('Erro ao enviar feedback. Tente novamente.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -265,6 +262,7 @@ const SuggestionModal = ({ isOpen, onClose, showToast }) => {
                 <input
                   type="file"
                   id="screenshot-input"
+                  key={fileInputKey}
                   className="suggestion-file-input"
                   onChange={handleFileChange}
                   accept="image/png,image/jpeg,image/gif"

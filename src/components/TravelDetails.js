@@ -2,15 +2,38 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaStar, FaHeart, FaComment, FaChevronLeft, FaChevronRight, FaReply, FaPaperPlane, FaFlag, FaEllipsisV } from 'react-icons/fa';
+import { FaStar, FaHeart, FaComment, FaChevronLeft, FaChevronRight, FaReply, FaPaperPlane, FaFlag, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Toast from './Toast';
 import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
+import { request, toFullMediaUrl } from '../axios_helper';
 import '../styles/components/TravelDetailsModern.css';
 import '../styles/pages/qanda.css'; // Import para estilos modernos de comentários
 
 // Recomendações de viagens - serão carregadas do backend
 const recommendedTravels = [];
+
+// Mapping for backend category icons that use :emoji_name: format
+const categoryEmojiMap = {
+  ':city_dusk:': '🌆',
+  ':herb:': '🌿',
+  ':classical_building:': '🏛️',
+  ':beach_with_umbrella:': '🏖️',
+  ':mountain:': '⛰️',
+  ':fork_and_knife:': '🍽️',
+  ':airplane:': '✈️',
+  ':tent:': '⛺',
+  ':national_park:': '🏞️',
+  ':ski:': '⛷️',
+  ':shopping_bags:': '🛍️',
+  ':performing_arts:': '🎭',
+  ':camera:': '📷',
+  ':bicyclist:': '🚴',
+};
+const mapCategoryIcon = (icon) => {
+  if (!icon) return '📌';
+  return categoryEmojiMap[icon] || icon;
+};
 
 // Componente para setas customizadas (igual ao Home.js)
 const ArrowLeft = () => (
@@ -89,6 +112,11 @@ const TravelDetails = () => {
   const [likedComments, setLikedComments] = useState([]);
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentSuccess, setCommentSuccess] = useState(null);
+  const [commentsPage, setCommentsPage] = useState(0);
+  const [commentsTotalPages, setCommentsTotalPages] = useState(0);
+  const [commentsTotalCount, setCommentsTotalCount] = useState(0);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [editingComment, setEditingComment] = useState(null); // { id, text }
 
   // Estados para denunciar viagem
   const [showReportModal, setShowReportModal] = useState(false);
@@ -172,6 +200,56 @@ const TravelDetails = () => {
     }
   }, [showDropdown]);
 
+  // --- Comment helpers & API functions ---
+
+  // Transform backend TripCommentDto to frontend format
+  const transformComment = (dto) => ({
+    id: dto.id,
+    userId: dto.user?.id,
+    user: dto.user?.username || `${dto.user?.firstName || ''} ${dto.user?.lastName || ''}`.trim() || 'Utilizador',
+    userProfilePicture: dto.user?.profilePhoto || null,
+    text: dto.content,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt || null,
+    likes: dto.likeCount || 0,
+    currentUserLiked: dto.currentUserLiked || false,
+    replies: (dto.replies || []).map(r => transformComment(r)),
+  });
+
+  // Extract liked comment keys recursively from a tree
+  const extractLikedKeys = (commentList, travelId, parentIds = []) => {
+    return commentList.flatMap(c => {
+      const key = `travel-${travelId}-${parentIds.join('-')}-${c.id}`;
+      const childKeys = c.replies?.length ? extractLikedKeys(c.replies, travelId, [...parentIds, c.id]) : [];
+      return c.currentUserLiked ? [key, ...childKeys] : childKeys;
+    });
+  };
+
+  // Fetch paginated comments from backend
+  const fetchComments = async (page = 0, append = false) => {
+    if (append) setLoadingMoreComments(true);
+    try {
+      const resp = await request('GET', `/trips/${id}/comments?page=${page}&size=20`);
+      const data = resp.data;
+      const transformed = (data.content || []).map(transformComment);
+      const likedKeys = extractLikedKeys(transformed, id);
+      if (append) {
+        setComments(prev => [...prev, ...transformed]);
+        setLikedComments(prev => [...new Set([...prev, ...likedKeys])]);
+      } else {
+        setComments(transformed);
+        setLikedComments(likedKeys);
+      }
+      setCommentsTotalPages(data.totalPages || 0);
+      setCommentsTotalCount(data.totalElements || 0);
+      setCommentsPage(page);
+    } catch (err) {
+      console.error('Erro ao carregar comentários:', err);
+    } finally {
+      if (append) setLoadingMoreComments(false);
+    }
+  };
+
   // Render stars function
   const renderStars = (stars) => {
     return [...Array(5)].map((_, index) => (
@@ -230,7 +308,7 @@ const TravelDetails = () => {
   };
 
   // Like function (igual ao Home.js)
-  const handleLike = (e) => {
+  const handleLike = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
@@ -238,8 +316,23 @@ const TravelDetails = () => {
       return;
     }
 
-    setIsLiked(!isLiked);
-    setLikeCount(prevCount => isLiked ? prevCount - 1 : prevCount + 1);
+    const currentlyLiked = isLiked;
+
+    // Optimistic update
+    setIsLiked(!currentlyLiked);
+    setLikeCount(prevCount => currentlyLiked ? prevCount - 1 : prevCount + 1);
+
+    try {
+      if (currentlyLiked) {
+        await request('DELETE', `/trips/${id}/like`);
+      } else {
+        await request('POST', `/trips/${id}/like`);
+      }
+    } catch (err) {
+      // Revert on error
+      setIsLiked(currentlyLiked);
+      setLikeCount(prevCount => currentlyLiked ? prevCount + 1 : prevCount - 1);
+    }
   };
 
   // Comments functions (estrutura igual ao Home.js)
@@ -280,14 +373,14 @@ const TravelDetails = () => {
     return sanitized;
   };
 
-  const handleAddComment = (parentIds = [], text) => {
+  const handleAddComment = async (parentIds = [], text) => {
     if (!user) {
       alert('Faça login para comentar!');
       return;
     }
 
     const commentText = text || newComment;
-    
+
     const validation = validateComment(commentText);
     if (!validation.valid) {
       alert(validation.message);
@@ -300,7 +393,6 @@ const TravelDetails = () => {
       return;
     }
 
-    // Verificar se conteúdo perigoso foi removido (não comparar trim)
     if (sanitizedComment !== commentText) {
       alert(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
       return;
@@ -309,26 +401,23 @@ const TravelDetails = () => {
     setCommentLoading(true);
     setCommentSuccess(null);
 
-    setTimeout(() => {
-      const newCommentObj = {
-        id: Date.now(),
-        user: user.username || 'Usuario',
-        userProfilePicture: user.profilePicture || defaultAvatar,
-        text: sanitizedComment,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        replies: []
-      };
+    try {
+      const payload = { content: sanitizedComment };
+      if (parentIds.length > 0) {
+        payload.parentCommentId = parentIds[parentIds.length - 1];
+      }
+
+      const response = await request('POST', `/trips/${id}/comments`, payload);
+      const newCommentObj = transformComment(response.data);
 
       if (parentIds.length === 0) {
-        // Comentários principais: novos no topo
         setComments(prev => [newCommentObj, ...prev]);
+        setCommentsTotalCount(prev => prev + 1);
         setNewComment('');
       } else {
-        const addReplyToComment = (comments, path, reply) => {
-          return comments.map(comment => {
+        const addReplyToComment = (commentList, path, reply) => {
+          return commentList.map(comment => {
             if (path.length === 1 && comment.id === path[0]) {
-              // Respostas também no topo
               return { ...comment, replies: [reply, ...(comment.replies || [])] };
             } else if (path.length > 1 && comment.id === path[0]) {
               return { ...comment, replies: addReplyToComment(comment.replies || [], path.slice(1), reply) };
@@ -336,42 +425,139 @@ const TravelDetails = () => {
             return comment;
           });
         };
-
         setComments(prev => addReplyToComment(prev, parentIds, newCommentObj));
-        setNewReply(prev => ({ ...prev, [`travel-${travel.id}-${parentIds.join('-')}`]: '' }));
-        setReplyOpen(prev => ({ ...prev, [`travel-${travel.id}-${parentIds.join('-')}`]: false }));
+        const replyKey = `travel-${travel.id}-${parentIds.join('-')}`;
+        setNewReply(prev => ({ ...prev, [replyKey]: '' }));
+        setReplyOpen(prev => ({ ...prev, [replyKey]: false }));
       }
 
-      setCommentLoading(false);
       setCommentSuccess(COMMENT_LIMITS.MESSAGES.SUCCESS);
       setTimeout(() => setCommentSuccess(null), 2600);
-    }, 1000);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erro ao adicionar comentário. Tente novamente.';
+      showToast(msg, 'error');
+    } finally {
+      setCommentLoading(false);
+    }
   };
 
-  const handleCommentLike = (commentId, parentIds = []) => {
+  const handleCommentLike = async (commentId, parentIds = []) => {
     if (!user) return;
 
-    const key = `travel-${travel.id}-${parentIds.join('-')}-${commentId}`;
-    
-    const updateLikes = (comments, path, isLiked) => {
-      return comments.map(comment => {
-        if (path.length === 0 && comment.id === commentId) {
-          return { ...comment, likes: isLiked ? comment.likes - 1 : comment.likes + 1 };
-        } else if (path.length > 0 && comment.id === path[0]) {
-          return { ...comment, replies: updateLikes(comment.replies || [], path.slice(1), isLiked) };
-        }
-        return comment;
-      });
-    };
+    const key = `travel-${travel.id}-${[...parentIds].join('-')}-${commentId}`;
+    const isAlreadyLiked = likedComments.includes(key);
+    const delta = isAlreadyLiked ? -1 : 1;
 
-    const isLiked = likedComments.includes(key);
-    setLikedComments((prev) => (isLiked ? prev.filter((k) => k !== key) : [...prev, key]));
-    
-    setComments((prev) => updateLikes(prev, parentIds, isLiked));
+    const updateLikes = (commentList, path) =>
+      commentList.map(c => {
+        if (path.length === 0 && c.id === commentId) {
+          return { ...c, likes: c.likes + delta };
+        } else if (path.length > 0 && c.id === path[0]) {
+          return { ...c, replies: updateLikes(c.replies || [], path.slice(1)) };
+        }
+        return c;
+      });
+
+    // Optimistic update
+    setLikedComments(prev => isAlreadyLiked ? prev.filter(k => k !== key) : [...prev, key]);
+    setComments(prev => updateLikes(prev, parentIds));
+
+    try {
+      if (isAlreadyLiked) {
+        await request('DELETE', `/trips/${id}/comments/${commentId}/like`);
+      } else {
+        await request('POST', `/trips/${id}/comments/${commentId}/like`);
+      }
+    } catch (err) {
+      // Revert optimistic update on error
+      setLikedComments(prev => isAlreadyLiked ? [...prev, key] : prev.filter(k => k !== key));
+      setComments(prev => updateLikes(prev, parentIds)); // delta will cancel itself on 2nd call? No, re-apply reverse
+      // Actually need to re-apply with -delta so let's do it properly
+      const revert = (commentList, path) =>
+        commentList.map(c => {
+          if (path.length === 0 && c.id === commentId) {
+            return { ...c, likes: c.likes - delta };
+          } else if (path.length > 0 && c.id === path[0]) {
+            return { ...c, replies: revert(c.replies || [], path.slice(1)) };
+          }
+          return c;
+        });
+      setComments(prev => revert(prev, parentIds));
+    }
   };
 
   const toggleReply = (key) => {
     setReplyOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingComment({ id: comment.id, text: comment.text });
+  };
+
+  const submitEditComment = async (commentId, parentIds = []) => {
+    if (!editingComment || editingComment.id !== commentId) return;
+
+    const validation = validateComment(editingComment.text);
+    if (!validation.valid) {
+      alert(validation.message);
+      return;
+    }
+
+    const sanitized = sanitizeContent(editingComment.text);
+    if (!sanitized || sanitized !== editingComment.text) {
+      alert(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
+      return;
+    }
+
+    try {
+      const resp = await request('PATCH', `/trips/${id}/comments/${commentId}`, { content: sanitized });
+      const updated = transformComment(resp.data);
+
+      const updateComment = (commentList, path) =>
+        commentList.map(c => {
+          if (path.length === 0 && c.id === commentId) {
+            return { ...c, text: updated.text, updatedAt: updated.updatedAt };
+          } else if (path.length > 0 && c.id === path[0]) {
+            return { ...c, replies: updateComment(c.replies || [], path.slice(1)) };
+          }
+          return c;
+        });
+
+      setComments(prev => updateComment(prev, parentIds));
+      setEditingComment(null);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erro ao editar comentário.';
+      showToast(msg, 'error');
+    }
+  };
+
+  const handleDeleteComment = async (commentId, parentIds = []) => {
+    if (!window.confirm('Tem a certeza que quer apagar este comentário?')) return;
+
+    try {
+      await request('DELETE', `/trips/${id}/comments/${commentId}`);
+
+      if (parentIds.length === 0) {
+        setComments(prev => prev.filter(c => c.id !== commentId));
+        setCommentsTotalCount(prev => Math.max(0, prev - 1));
+      } else {
+        const removeComment = (commentList, path) =>
+          commentList.map(c => {
+            if (path.length === 1 && c.id === path[0]) {
+              return { ...c, replies: c.replies.filter(r => r.id !== commentId) };
+            } else if (path.length > 1 && c.id === path[0]) {
+              return { ...c, replies: removeComment(c.replies || [], path.slice(1)) };
+            }
+            return c;
+          });
+        setComments(prev => removeComment(prev, parentIds));
+      }
+
+      showToast('Comentário apagado com sucesso!', 'success');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erro ao apagar comentário.';
+      showToast(msg, 'error');
+    }
   };
 
   const getRelativeTime = (date) => {
@@ -401,11 +587,13 @@ const TravelDetails = () => {
     const key = `travel-${travel.id}-${parentIds.concat(comment.id).join('-')}`;
     const likeKey = `travel-${travel.id}-${[...parentIds].join('-')}-${comment.id}`;
     const isLiked = likedComments.includes(likeKey);
+    const isOwnComment = user && comment.userId === user?.id;
+    const isEditing = editingComment?.id === comment.id;
     
     return (
       <motion.div 
         key={comment.id} 
-        className="comment-item-modern" // Classe unificada
+        className="comment-item-modern"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -419,9 +607,50 @@ const TravelDetails = () => {
           <div className="comment-content-modern">
             <div className="comment-header-modern">
               <span className="comment-username">{comment.user}</span>
-              <span className="comment-time">{getRelativeTime(comment.createdAt)}</span>
+              <span className="comment-time">
+                {getRelativeTime(comment.createdAt)}
+                {comment.updatedAt && <em style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.7 }}>(editado)</em>}
+              </span>
             </div>
-            <p className="comment-text">{comment.text}</p>
+
+            {isEditing ? (
+              <div className="edit-comment-container" onClick={e => e.stopPropagation()}>
+                <textarea
+                  value={editingComment.text}
+                  onChange={(e) => {
+                    if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
+                      setEditingComment(prev => ({ ...prev, text: e.target.value }));
+                    }
+                  }}
+                  className="reply-input-modern"
+                  rows="3"
+                  maxLength={COMMENT_LIMITS.MAX_LENGTH}
+                  autoFocus
+                />
+                <div className="reply-actions">
+                  <span className="char-count">{editingComment.text.length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                  <motion.button
+                    className="cancel-reply-btn"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingComment(null); }}
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  >
+                    Cancelar
+                  </motion.button>
+                  <motion.button
+                    className="send-reply-btn"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); submitEditComment(comment.id, parentIds); }}
+                    disabled={!editingComment.text?.trim()}
+                    whileHover={editingComment.text?.trim() ? { scale: 1.05 } : {}}
+                    whileTap={editingComment.text?.trim() ? { scale: 0.95 } : {}}
+                  >
+                    Guardar
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              <p className="comment-text">{comment.text}</p>
+            )}
+
             <div className="comment-actions-modern">
               <motion.button
                 className={`comment-like-btn ${isLiked ? 'liked' : ''}`}
@@ -436,18 +665,46 @@ const TravelDetails = () => {
                 <FaHeart className={`heart-icon ${isLiked ? 'liked' : ''}`} />
                 {comment.likes > 0 && <span>{comment.likes}</span>}
               </motion.button>
-              <motion.button
-                className="reply-btn-modern"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleReply(key);
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaReply /> Responder
-              </motion.button>
+              {!isEditing && (
+                <motion.button
+                  className="reply-btn-modern"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleReply(key);
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FaReply /> Responder
+                </motion.button>
+              )}
+              {isOwnComment && !isEditing && (
+                <>
+                  <motion.button
+                    className="reply-btn-modern"
+                    style={{ color: '#888' }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEditComment(comment); }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Editar comentário"
+                    aria-label="Editar comentário"
+                  >
+                    <FaEdit />
+                  </motion.button>
+                  <motion.button
+                    className="reply-btn-modern"
+                    style={{ color: '#e74c3c' }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteComment(comment.id, parentIds); }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Apagar comentário"
+                    aria-label="Apagar comentário"
+                  >
+                    <FaTrash />
+                  </motion.button>
+                </>
+              )}
             </div>
             
             <AnimatePresence>
@@ -522,7 +779,7 @@ const TravelDetails = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {[...comment.replies].reverse().map((reply, replyIndex) => 
+            {comment.replies.map((reply, replyIndex) => 
               renderComment(reply, parentIds.concat(comment.id), replyIndex)
             )}
           </motion.div>
@@ -537,6 +794,13 @@ const TravelDetails = () => {
       e.preventDefault();
       e.stopPropagation();
     }
+    
+    // SECURITY: Prevent users from reporting their own trips
+    if (user?.id === (travelToReport || travel)?.userId) {
+      showToast('Não pode denunciar as suas próprias viagens.', 'error');
+      return;
+    }
+    
     if (!user) {
       showToast('Inicie sessão para denunciar viagens.', 'error');
       return;
@@ -608,9 +872,127 @@ const TravelDetails = () => {
     );
   };
 
-  // Mock travel data (in real app, this would come from API)
+  // Fetch travel data from backend (or mock if not found)
   useEffect(() => {
-    const mockTravel = {
+    let isMounted = true;
+    
+    const fetchTravelData = async () => {
+      setLoading(true);
+      try {
+        // Try to fetch backend trip data first
+        const backendTrip = await request('GET', `/trips/${id}`)
+          .catch(() => null); // If not found, ignore error
+        
+        if (isMounted && backendTrip?.data) {
+          // Transform backend trip to match frontend structure
+          const backendData = backendTrip.data;
+          const travel = {
+            id: backendData.id,
+            userId: backendData.userId, // SECURITY: Store for own trip check
+            name: backendData.title || 'Untitled Trip',
+            city: backendData.cities?.[0]?.cityName || backendData.accommodations?.[0]?.city || 'Unknown',
+            country: backendData.cities?.[0]?.countryname || 'Unknown',
+            user: backendData.username || (backendData.userId === user?.id ? (user?.username || user?.name || `User ${backendData.userId}`) : `User ${backendData.userId}`),
+            highlightImage: toFullMediaUrl(backendData.photos?.[0] || backendData.accommodations?.[0]?.photos?.[0]) || require('../images/highlightImage/aveiro.jpg'),
+            price: (backendData.cost?.total || 0).toString(),
+            days: backendData.tripDurationDays || 1,
+            views: 0,
+            likes: backendData.totalLikes || 0,
+            comments: 0,
+            stars: backendData.tripRating || 0,
+            transports: (backendData.transports || []).filter(t => t && t.name).map(t => t.name),
+            startDate: backendData.startDate,
+            endDate: backendData.endDate,
+            BookingTripPaymentDate: backendData.bookingDate,
+            priceDetails: {
+              hotel: (backendData.cost?.accommodation || 0).toString(),
+              flight: (backendData.cost?.transport || 0).toString(),
+              food: (backendData.cost?.food || 0).toString(),
+              extras: (backendData.cost?.extra || 0).toString()
+            },
+            description: backendData.tripSummary || 'No description provided',
+            longDescription: backendData.tripDescription || 'No detailed description available',
+            climate: backendData.weather || 'Not specified',
+            language: backendData.languagesSpoken?.[0]?.name || 'Português',
+            languages: (backendData.languagesSpoken || []).map(lang => lang.name),
+            languagesSpoken: (backendData.languagesSpoken || []),
+            category: (backendData.categories || []).map(cat => cat.categoryName || cat.name || ''),
+            categories_full: (backendData.categories || []).map(cat => ({
+              name: cat.categoryName || cat.name || '',
+              icon: mapCategoryIcon(cat.icon || cat.categoryIcon)
+            })),
+            travelVideos: (backendData.videos || []).filter(Boolean).map(toFullMediaUrl),
+            images_generalInformation: (backendData.photos || []).filter(Boolean).map(toFullMediaUrl),
+            accommodations: (backendData.accommodations || [])
+              .filter(acc => acc && acc.name) // SECURITY: Filter valid entries
+              .map(acc => ({
+              name: acc.name,
+              type: acc.accommodationType?.type || acc.accommodationTypeName || 'Accommodation',
+              description: acc.description || '',
+              rating: acc.rating || 0,
+              nights: acc.nrNights || 0,
+              checkInDate: acc.checkIn || '',
+              checkOutDate: acc.checkOut || '',
+              regime: acc.accommodationBoard?.board || acc.accommodationBoardName || '',
+              images: (acc.photos || []).filter(Boolean).map(toFullMediaUrl)
+            })),
+            foodRecommendations: (backendData.recommendedFoods || [])
+              .filter(food => food && food.name) // SECURITY: Filter valid entries
+              .map(food => ({
+              name: food.name,
+              description: food.description || ''
+            })),
+            images_foodRecommendations: (backendData.recommendedFoods || [])
+              .flatMap(food => (food.photos || []).filter(Boolean).map(toFullMediaUrl)),
+            transportMethods: (backendData.transports || [])
+              .filter(t => t && t.name)
+              .map(transport => ({
+              name: transport.name || 'Transport',
+              description: transport.description || 'No description',
+              cost: transport.cost || 0,
+              images: (transport.photos || []).filter(Boolean).map(toFullMediaUrl)
+            })),
+            images_transportMethods: (backendData.transports || [])
+              .flatMap(t => (t.photos || []).filter(Boolean).map(toFullMediaUrl)),
+            pointsOfInterest: (backendData.referencePoints || []).map(point => ({
+              name: point.name,
+              description: point.description,
+              type: 'Point of Interest'
+            })),
+            images_referencePoints: (backendData.referencePoints || [])
+              .flatMap(rp => (rp.photos || []).filter(Boolean).map(toFullMediaUrl)),
+            localTransport: [],
+            itinerary: (backendData.tripItinerary?.itineraryDays || []).map(day => ({
+              day: day.day,
+              activities: (day.topics || []).map(topic => topic.description || topic.name)
+            })),
+            activities: [],
+            negativePoints: (backendData.negativePoints || []).map(point => ({
+              name: point.name,
+              description: point.description
+            })),
+            safety: {
+              tips: [],
+              vaccinations: []
+            }
+          };
+          
+          setTravel(travel);
+          setIsLiked(backendData.isLiked || false);
+          setLikeCount(backendData.totalLikes || 0);
+          setLoading(false);
+          // Load comments from backend (non-blocking)
+          fetchComments(0, false).catch(() => setComments([]));
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching backend trip:', error);
+      }
+      
+      // Fallback to mock data if backend trip not found
+      if (!isMounted) return;
+      
+      const mockTravel = {
       id: parseInt(id),
       name: "Viagem a Aveiro com a família",
       city: "Aveiro",
@@ -740,10 +1122,10 @@ const TravelDetails = () => {
       }
     };
     
-    setTravel(mockTravel);
-    setLikeCount(mockTravel.likes);
-    // Comentários ordenados do mais recente para o mais antigo
-    setComments([
+      setTravel(mockTravel);
+      setLikeCount(mockTravel.likes);
+      // Comentários ordenados do mais recente para o mais antigo
+      setComments([
       {
         id: 4,
         user: "Carlos Oliveira",
@@ -800,8 +1182,12 @@ const TravelDetails = () => {
           }
         ]
       }
-    ]);
-    setLoading(false);
+      ]);
+      setLoading(false);
+    };
+    
+    fetchTravelData();
+    return () => { isMounted = false; };
   }, [id]);
 
   // Função para obter todas as imagens da viagem
@@ -1031,7 +1417,7 @@ const TravelDetails = () => {
                     </div>
                     <div className="stat-item-travel-details" onClick={toggleComments}>
                       <FaComment className="stat-icon-travel-details" />
-                      <span className="stat-value-travel-details">{comments.length}</span>
+                      <span className="stat-value-travel-details">{commentsTotalCount || comments.length}</span>
                       <span className="stat-label-travel-details">comentários</span>
                     </div>
                   </div>
@@ -1050,12 +1436,15 @@ const TravelDetails = () => {
                       Comentar
                     </button>
                     
+                    {/* SECURITY: Hide Denunciar button for own trips */}
                     {/* Desktop: Botão Denunciar direto */}
-                    {!isMobile && (
+                    {!isMobile && user?.id !== travel?.userId && (
                       <button 
                         className="action-btn-travel-details report-btn-travel-details" 
                         onClick={(e) => handleReportTravel(travel, e)}
                         style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                        title="Denunciar esta viagem"
+                        aria-label="Denunciar viagem"
                       >
                         <FaFlag />
                         Denunciar
@@ -1063,11 +1452,13 @@ const TravelDetails = () => {
                     )}
                     
                     {/* Mobile: Botão Denunciar compacto */}
-                    {isMobile && (
+                    {isMobile && user?.id !== travel?.userId && (
                       <button 
                         className="action-btn-travel-details report-btn-travel-details" 
                         onClick={(e) => handleReportTravel(travel, e)}
                         style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '6px 10px' }}
+                        title="Denunciar esta viagem"
+                        aria-label="Denunciar viagem"
                       >
                         <FaFlag />
                         <span style={{ display: window.innerWidth > 480 ? 'inline' : 'none' }}>
@@ -1117,7 +1508,7 @@ const TravelDetails = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="comments-modal-header-travel-details">
-                <h3>Comentários ({comments.length})</h3>
+                <h3>Comentários ({commentsTotalCount || comments.length})</h3>
                 <button className="close-comments-travel-details" onClick={handleCloseComments}>×</button>
               </div>
               
@@ -1181,6 +1572,18 @@ const TravelDetails = () => {
                       <p>Seja o primeiro a comentar!</p>
                     </div>
                   )}
+                  {commentsPage + 1 < commentsTotalPages && (
+                    <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                      <button
+                        className="comment-submit-btn-modern"
+                        onClick={() => fetchComments(commentsPage + 1, true)}
+                        disabled={loadingMoreComments}
+                        style={{ background: 'transparent', border: '1px solid currentColor', opacity: loadingMoreComments ? 0.6 : 1 }}
+                      >
+                        {loadingMoreComments ? 'A carregar...' : 'Carregar mais comentários'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -1209,9 +1612,14 @@ const TravelDetails = () => {
               <div className="categories-display-travel-details">
                 {travel.category && travel.category.length > 0 ? (
                   <div className="category-tags-travel-details">
-                    {travel.category.slice(0, 3).map((cat, index) => (
-                      <span key={index} className="category-tag-travel-details">{cat}</span>
-                    ))}
+                    {travel.category.slice(0, 3).map((cat, index) => {
+                      const categoryData = travel.categories_full && travel.categories_full[index];
+                      return (
+                        <span key={index} className="category-tag-travel-details">
+                          {categoryData?.icon || '🏷️'} {cat}
+                        </span>
+                      );
+                    })}
                     {travel.category.length > 3 && (
                       <span className="more-categories-travel-details">+{travel.category.length - 3}</span>
                     )}
@@ -1220,7 +1628,7 @@ const TravelDetails = () => {
                   <span className="no-categories-travel-details">Não categorizada</span>
                 )}
               </div>
-              <button className="view-all-btn-travel-details">Ver Todas</button>
+              <button className="view-all-btn-travel-details" onClick={openCategoriesModal}>Ver Todas</button>
             </div>
           </div>
 
@@ -1256,20 +1664,20 @@ const TravelDetails = () => {
             <div className="card-content-travel-details">
               <h3>Transportes</h3>
               <div className="transport-display-travel-details">
-                {Array.isArray(travel && travel.transports) && travel.transports.length > 0 ? (
+                {travel.transportMethods && travel.transportMethods.length > 0 ? (
                   <div className="transport-tags-travel-details">
-                    {travel.transports.slice(0, 3).map((transport, index) => (
-                      <span key={index} className="transport-tag-travel-details">{transport}</span>
+                    {travel.transportMethods.slice(0, 3).map((transport, index) => (
+                      <span key={index} className="transport-tag-travel-details">{transport.name}</span>
                     ))}
-                    {travel.transports.length > 3 && (
-                      <span className="more-transports-travel-details">+{travel.transports.length - 3}</span>
+                    {travel.transportMethods.length > 3 && (
+                      <span className="more-transports-travel-details">+{travel.transportMethods.length - 3}</span>
                     )}
                   </div>
                 ) : (
                   <span className="no-transports-travel-details">Sem transportes</span>
                 )}
               </div>
-              <button className="view-all-btn-travel-details">Ver Todos</button>
+              <button className="view-all-btn-travel-details" onClick={openTransportModal}>Ver Todos</button>
             </div>
           </div>
         </div>
@@ -1370,10 +1778,10 @@ const TravelDetails = () => {
                       <span><strong>Clima:</strong> {travel.climate}</span>
                     </div>
                   )}
-                  {travel.language && (
+                  {travel.languages && travel.languages.length > 0 && (
                     <div className="language-info-travel-details">
                       <span className="info-icon-travel-details">�️</span>
-                      <span><strong>Línguas Utilizadas:</strong> {travel.language}</span>
+                      <span><strong>Línguas Utilizadas:</strong> {travel.languagesSpoken && travel.languagesSpoken.length > 0 ? travel.languagesSpoken.map((lang) => `${lang.name}${lang.code ? ` (${lang.code})` : ''}`).join(', ') : travel.languages.join(', ')}</span>
                     </div>
                   )}
                 </div>
@@ -1995,11 +2403,15 @@ const TravelDetails = () => {
             </div>
             <div className="modal-body-travel-details">
               <div className="categories-grid-modal-travel-details">
-                {travel.category && travel.category.map((cat, index) => (
-                  <div key={index} className="category-item-modal-travel-details">
-                    <span className="category-text-travel-details">{cat}</span>
-                  </div>
-                ))}
+                {travel.category && travel.category.map((cat, index) => {
+                  const categoryData = travel.categories_full && travel.categories_full[index];
+                  return (
+                    <div key={index} className="category-item-modal-travel-details">
+                      <span className="category-icon-modal-travel-details">{categoryData?.icon || '🏷️'}</span>
+                      <span className="category-text-travel-details">{cat}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -2016,11 +2428,18 @@ const TravelDetails = () => {
             </div>
             <div className="modal-body-travel-details">
               <div className="transport-details-modal-travel-details">
-                {travel.transports && travel.transports.length > 0 ? (
+                {travel.transportMethods && travel.transportMethods.length > 0 ? (
                   <div className="transport-grid-modal-travel-details">
-                    {travel.transports.map((transport, index) => (
+                    {travel.transportMethods.map((transport, index) => (
                       <div key={index} className="transport-item-modal-travel-details">
-                        <span className="transport-text-travel-details">{transport}</span>
+                        <div className="transport-card-modal">
+                          <span className="transport-icon-modal">🚗</span>
+                          <h4 className="transport-name-modal">{transport.name}</h4>
+                          <p className="transport-description-modal">{transport.description}</p>
+                          {transport.cost > 0 && (
+                            <span className="transport-cost-modal">💰 {transport.cost}€</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

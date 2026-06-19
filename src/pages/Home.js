@@ -6,6 +6,7 @@ import defaultAvatar from '../images/assets/avatar.jpg';
 import { FaHeart, FaComment, FaSync, FaShareAlt, FaChevronDown, FaSearch, FaBell, FaList, FaTh, FaChevronLeft, FaChevronRight, FaEllipsisV, FaFlag, FaReply, FaPaperPlane, FaTimes } from 'react-icons/fa';
 import { FaStar } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { request } from '../axios_helper';
 import TravelsData from '../data/travelsData';
 import WelcomeModal from '../components/WelcomeModal';
 import Toast from '../components/Toast';
@@ -71,10 +72,12 @@ const Home = () => {
   const [newComment, setNewComment] = useState({});
   const [newReply, setNewReply] = useState({});
   const [replyOpen, setReplyOpen] = useState({});
-  const [likedTravels, setLikedTravels] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [likedTravels, setLikedTravels] = useState({});
+  const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const travelsPerPage = 5;
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const travelsPerPage = 20;
 
   const [currentImageIndices, setCurrentImageIndices] = useState({});
   const [isPulling, setIsPulling] = useState(false);
@@ -86,6 +89,7 @@ const Home = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentSuccess, setCommentSuccess] = useState(null);
+  const [commentsLoadState, setCommentsLoadState] = useState({}); // { [tripId]: { loading, loaded, page, totalPages } }
   const [likedComments, setLikedComments] = useState([]);
   const [notifications, setNotifications] = useState(mockNotifications);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(true);
@@ -162,51 +166,115 @@ const Home = () => {
     checkWelcomeModal();
   }, []);
 
+  // Fetch following feed with pagination and search
   useEffect(() => {
-    setTimeout(() => {
+    const fetchFollowingFeed = async () => {
+      setLoading(true);
       try {
-        let travels = [];
-
-        if (user && user.id) {
-          const followedUsers = ['Tiago Miranda'];
-          travels = TravelsData.filter((travel) =>
-            followedUsers.includes(travel.user) && (travel.privacy === 'public' || travel.privacy === 'followers')
-          );
+        // Build query parameters
+        const params = new URLSearchParams();
+        params.append('page', currentPage);
+        params.append('size', travelsPerPage);
+        params.append('sort', 'startDate,desc');
+        
+        if (searchQuery.trim()) {
+          params.append('text', searchQuery.trim());
         }
 
-        const publicTravels = TravelsData.filter((travel) => travel.privacy === 'public');
-        const combinedTravels = [
-          ...travels,
-          ...publicTravels.filter(
-            (publicTravel) => !travels.some((followedTravel) => followedTravel.id === publicTravel.id)
-          ),
-        ];
+        const response = await request('GET', `/trips/following-feed?${params.toString()}`);
+        
+        if (response?.data) {
+          const pageData = response.data;
+          
+          // Map TripFeedDto to internal travel object structure
+          const mappedTravels = (pageData.content || []).map(trip => ({
+            id: trip.tripId,
+            tripId: trip.tripId,
+            name: trip.tripTitle || 'Untitled Trip',
+            description: trip.tripSummary || 'No description available',
+            longDescription: trip.tripSummary || '',
+            city: trip.citiesVisited?.[0] || 'Unknown',
+            country: trip.countriesVisited?.[0] || 'Unknown',
+            citiesVisited: trip.citiesVisited || [],
+            countriesVisited: trip.countriesVisited || [],
+            user: trip.username || `User ${trip.userId}`,
+            userId: trip.userId,
+            userProfilePicture: trip.userProfilePhoto || defaultAvatar,
+            highlightImage: trip.tripPhoto || require('../images/highlightImage/aveiro.jpg'),
+            price: (trip.totalCosts || 0).toString(),
+            likes: trip.totalLikes || 0,
+            stars: trip.tripRating || 0,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            category: (trip.categories || []).map(cat => cat.categoryName || cat.name || ''),
+            categories_full: (trip.categories || []).map(cat => ({
+              name: cat.categoryName || cat.name || '',
+              icon: cat.icon || cat.categoryIcon || '📌' // Backend now returns emoji directly
+            })),
+            totalCommentsCount: trip.totalComments || 0,
+            comments: [],
+            images_generalInformation: [],
+            images_accommodations: [],
+            images_foodRecommendations: [],
+            images_referencePoints: [],
+            images_transportMethods: [],
+            accommodations: [],
+            foodRecommendations: [],
+            transportMethods: [],
+            pointsOfInterest: [],
+            itinerary: [],
+            negativePoints: [],
+            travelVideos: [],
+            isHidden: trip.isHidden || false,
+            privacy: 'public',
+            createdAt: trip.startDate
+          }));
 
-        setFeedTravels(combinedTravels);
-        const initialIndices = combinedTravels.reduce((acc, travel) => {
+          setFeedTravels(mappedTravels);
+          setTotalPages(pageData.totalPages || 0);
+          setTotalElements(pageData.totalElements || 0);
+
+          // Initialize liked state from API response
+          const initialLiked = (pageData.content || []).reduce((acc, trip) => {
+            acc[trip.tripId] = trip.isLiked || false;
+            return acc;
+          }, {});
+          setLikedTravels(initialLiked);
+          
+          // Initialize image indices
+          const initialIndices = mappedTravels.reduce((acc, travel) => {
+            acc[travel.id] = 0;
+            return acc;
+          }, {});
+          setCurrentImageIndices(initialIndices);
+          
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error fetching following feed:', err);
+        const errorMsg = err.response?.data?.message || 'Erro ao carregar o feed. Tente novamente mais tarde.';
+        setError(errorMsg);
+        showToast(errorMsg, 'error');
+        
+        // Fallback to mock data on error
+        const mockData = TravelsData.slice(0, travelsPerPage);
+        setFeedTravels(mockData);
+        const initialIndices = mockData.reduce((acc, travel) => {
           acc[travel.id] = 0;
           return acc;
         }, {});
         setCurrentImageIndices(initialIndices);
-
-        setLoading(false);
-      } catch (err) {
-        setError('Erro ao carregar o feed. Tente novamente mais tarde.');
-        showToast('Erro ao carregar o feed. Tente novamente mais tarde.', 'error');
+      } finally {
         setLoading(false);
       }
-    }, 1000);
-  }, [user]);
+    };
+
+    fetchFollowingFeed();
+  }, [user?.id, currentPage, searchQuery]);
 
   useEffect(() => {
     const handleRefreshEvent = () => {
-      setLoading(true);
-      setTimeout(() => {
-        setFeedTravels(TravelsData);
-        setCurrentPage(1);
-        setLoading(false);
-        setIsFeedRefreshed(true);
-      }, 1000);
+      handleRefreshFeed();
     };
     window.addEventListener('refreshHomeTravels', handleRefreshEvent);
     return () => window.removeEventListener('refreshHomeTravels', handleRefreshEvent);
@@ -346,7 +414,7 @@ const Home = () => {
     return () => observer.disconnect();
   }, [isMobile, feedTravels, currentPage, sortOption, searchQuery]);
 
-  const handleLike = (travelId, e) => {
+  const handleLike = async (travelId, e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
@@ -354,41 +422,185 @@ const Home = () => {
       return;
     }
 
-    if (likedTravels.includes(travelId)) {
-      setLikedTravels(likedTravels.filter((id) => id !== travelId));
-      setFeedTravels(
-        feedTravels.map((travel) =>
-          travel.id === travelId ? { ...travel, likes: travel.likes - 1 } : travel
+    const currentlyLiked = !!likedTravels[travelId];
+
+    // Optimistic update
+    setLikedTravels(prev => ({ ...prev, [travelId]: !currentlyLiked }));
+    setFeedTravels(prev =>
+      prev.map(travel =>
+        travel.id === travelId
+          ? { ...travel, likes: travel.likes + (currentlyLiked ? -1 : 1) }
+          : travel
+      )
+    );
+
+    try {
+      if (currentlyLiked) {
+        await request('DELETE', `/trips/${travelId}/like`);
+      } else {
+        await request('POST', `/trips/${travelId}/like`);
+      }
+    } catch (err) {
+      // Revert on error
+      setLikedTravels(prev => ({ ...prev, [travelId]: currentlyLiked }));
+      setFeedTravels(prev =>
+        prev.map(travel =>
+          travel.id === travelId
+            ? { ...travel, likes: travel.likes + (currentlyLiked ? 1 : -1) }
+            : travel
         )
       );
-    } else {
-      setLikedTravels([...likedTravels, travelId]);
-      setFeedTravels(
-        feedTravels.map((travel) =>
-          travel.id === travelId ? { ...travel, likes: travel.likes + 1 } : travel
-        )
-      );
+      showToast('Erro ao atualizar gosto', 'error');
     }
   };
 
-  const handleRefreshFeed = () => {
+  const handleRefreshFeed = async () => {
     setLoading(true);
     setIsRefreshing(true);
     setIsFeedRefreshed(true);
-    setTimeout(() => {
-      setFeedTravels(TravelsData);
-      // Reset image indices for refreshed travels
-      const resetIndices = TravelsData.reduce((acc, t) => {
-        acc[t.id] = 0;
-        return acc;
-      }, {});
-      setCurrentImageIndices(resetIndices);
-      setCurrentPage(1);
+    
+    try {
+      // Reset to first page for refresh
+      setCurrentPage(0);
+      
+      const params = new URLSearchParams();
+      params.append('page', 0);
+      params.append('size', travelsPerPage);
+      params.append('sort', 'startDate,desc');
+      
+      if (searchQuery.trim()) {
+        params.append('text', searchQuery.trim());
+      }
+
+      const response = await request('GET', `/trips/following-feed?${params.toString()}`);
+      
+      if (response?.data) {
+        const pageData = response.data;
+        const mappedTravels = (pageData.content || []).map(trip => ({
+          id: trip.tripId,
+          tripId: trip.tripId,
+          name: trip.tripTitle || 'Untitled Trip',
+          description: trip.tripSummary || 'No description available',
+          longDescription: trip.tripSummary || '',
+          city: trip.citiesVisited?.[0] || 'Unknown',
+          country: trip.countriesVisited?.[0] || 'Unknown',
+          citiesVisited: trip.citiesVisited || [],
+          countriesVisited: trip.countriesVisited || [],
+          user: trip.username || `User ${trip.userId}`,
+          userId: trip.userId,
+          userProfilePicture: trip.userProfilePhoto || defaultAvatar,
+          highlightImage: trip.tripPhoto || require('../images/highlightImage/aveiro.jpg'),
+          price: (trip.totalCosts || 0).toString(),
+          likes: trip.totalLikes || 0,
+          stars: trip.tripRating || 0,
+          startDate: trip.startDate,
+          endDate: trip.endDate,
+          category: [],
+          totalCommentsCount: trip.totalComments || 0,
+          comments: [],
+          images_generalInformation: [],
+          images_accommodations: [],
+          images_foodRecommendations: [],
+          images_referencePoints: [],
+          images_transportMethods: [],
+          accommodations: [],
+          foodRecommendations: [],
+          transportMethods: [],
+          pointsOfInterest: [],
+          itinerary: [],
+          negativePoints: [],
+          travelVideos: [],
+          isHidden: trip.isHidden || false,
+          privacy: 'public',
+          createdAt: trip.startDate
+        }));
+
+        setFeedTravels(mappedTravels);
+        setTotalPages(pageData.totalPages || 0);
+        setTotalElements(pageData.totalElements || 0);
+
+        // Re-initialize liked state from refreshed feed
+        const refreshedLiked = (pageData.content || []).reduce((acc, trip) => {
+          acc[trip.tripId] = trip.isLiked || false;
+          return acc;
+        }, {});
+        setLikedTravels(refreshedLiked);
+        
+        const resetIndices = mappedTravels.reduce((acc, t) => {
+          acc[t.id] = 0;
+          return acc;
+        }, {});
+        setCurrentImageIndices(resetIndices);
+      }
+    } catch (err) {
+      console.error('Error refreshing feed:', err);
+      showToast('Erro ao atualizar o feed', 'error');
+    } finally {
       setLoading(false);
       setIsRefreshing(false);
       setPullDistance(0);
       setIsPulling(false);
-    }, 1000);
+    }
+  };
+
+  // Convert backend date array [year,month(1-based),day,h,m,s,nanos] → ISO string
+  const parseBackendDate = (d) => {
+    if (!d) return null;
+    if (Array.isArray(d)) {
+      return new Date(d[0], d[1] - 1, d[2], d[3] || 0, d[4] || 0, d[5] || 0).toISOString();
+    }
+    return d;
+  };
+
+  const transformFeedComment = (dto) => ({
+    id: dto.id,
+    userId: dto.user?.id,
+    user: dto.user?.username || `${dto.user?.firstName || ''} ${dto.user?.lastName || ''}`.trim() || 'Utilizador',
+    userProfilePicture: dto.user?.profilePhoto || null,
+    text: dto.content,
+    createdAt: parseBackendDate(dto.createdAt),
+    updatedAt: dto.updatedAt ? parseBackendDate(dto.updatedAt) : null,
+    likes: dto.likeCount || 0,
+    currentUserLiked: dto.currentUserLiked || false,
+    replies: (dto.replies || []).map(r => transformFeedComment(r)),
+  });
+
+  const fetchTripComments = async (travelId, page = 0, append = false) => {
+    setCommentsLoadState(prev => ({
+      ...prev,
+      [travelId]: { ...(prev[travelId] || {}), loading: true }
+    }));
+    try {
+      const resp = await request('GET', `/trips/${travelId}/comments?page=${page}&size=20`);
+      const data = resp.data;
+      const transformed = (data.content || []).map(transformFeedComment);
+
+      // Initialise likedComments from currentUserLiked flags
+      const extractLikedKeys = (commentList, tripId, parentIds = []) =>
+        commentList.flatMap(c => {
+          const key = `${tripId}-${parentIds.join('-')}-${c.id}`;
+          const child = c.replies?.length ? extractLikedKeys(c.replies, tripId, [...parentIds, c.id]) : [];
+          return c.currentUserLiked ? [key, ...child] : child;
+        });
+      const likedKeys = extractLikedKeys(transformed, travelId);
+
+      setFeedTravels(prev => prev.map(t =>
+        t.id === travelId
+          ? { ...t, comments: append ? [...t.comments, ...transformed] : transformed }
+          : t
+      ));
+      setLikedComments(prev => [...new Set([...prev, ...likedKeys])]);
+      setCommentsLoadState(prev => ({
+        ...prev,
+        [travelId]: { loading: false, loaded: true, page, totalPages: data.totalPages || 0 }
+      }));
+    } catch (err) {
+      console.error('Erro ao carregar comentários:', err);
+      setCommentsLoadState(prev => ({
+        ...prev,
+        [travelId]: { ...(prev[travelId] || {}), loading: false, loaded: true }
+      }));
+    }
   };
 
   // Função para sanitizar conteúdo contra XSS
@@ -417,7 +629,7 @@ const Home = () => {
     return sanitized;
   };
 
-  const handleAddComment = (travelId, parentIds = [], text) => {
+  const handleAddComment = async (travelId, parentIds = [], text) => {
     if (!user) {
       showToast('Inicie sessão para comentar!', 'error');
       return;
@@ -447,22 +659,17 @@ const Home = () => {
     setCommentLoading(true);
     setCommentSuccess(null);
 
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      const payload = { content: sanitizedComment };
+      if (parentIds.length > 0) {
+        payload.parentCommentId = parentIds[parentIds.length - 1];
+      }
+      const resp = await request('POST', `/trips/${travelId}/comments`, payload);
+      const newC = transformFeedComment(resp.data);
+
       const updateComments = (comments, path) => {
         if (path.length === 0) {
-          return [
-            ...comments,
-            {
-              id: Date.now(),
-              user: user.username,
-              userProfilePicture: user.profilePicture || null,
-              text: sanitizedComment,
-              createdAt: new Date().toISOString(),
-              likes: 0,
-              replies: [],
-            },
-          ];
+          return [...comments, newC];
         }
         const [currentId, ...rest] = path;
         return comments.map((c) =>
@@ -472,17 +679,11 @@ const Home = () => {
         );
       };
 
-      const updatedTravels = feedTravels.map((travel) => {
-        if (travel.id === travelId) {
-          return {
-            ...travel,
-            comments: updateComments(travel.comments, parentIds),
-          };
-        }
-        return travel;
-      });
-
-      setFeedTravels(updatedTravels);
+      setFeedTravels(prev => prev.map(travel =>
+        travel.id === travelId
+          ? { ...travel, comments: updateComments(travel.comments, parentIds), totalCommentsCount: (travel.totalCommentsCount || 0) + 1 }
+          : travel
+      ));
 
       // Clear inputs
       if (parentIds.length === 0) {
@@ -499,7 +700,11 @@ const Home = () => {
       
       // Clear success message after 2.6 seconds
       setTimeout(() => setCommentSuccess(null), 2600);
-    }, 1000);
+    } catch (err) {
+      console.error('Erro ao publicar comentário:', err);
+      showToast('Erro ao publicar comentário. Tente novamente.', 'error');
+      setCommentLoading(false);
+    }
   };
 
   const handleCommentLike = (travelId, commentId, parentIds = []) => {
@@ -872,7 +1077,13 @@ const Home = () => {
   const toggleComments = (travelId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
+    // Fetch comments from API on first open
+    const loadState = commentsLoadState[travelId];
+    if (!loadState?.loaded && !loadState?.loading) {
+      fetchTripComments(travelId, 0, false);
+    }
+
     // Se for mobile, usar modal
     if (isMobile) {
       setCurrentTravelIdForComments(travelId);
@@ -1089,7 +1300,7 @@ const Home = () => {
     if (lastTap && (now - lastTap) < DOUBLE_TAP_DELAY) {
       e.preventDefault();
       e.stopPropagation();
-      if (!likedTravels.includes(travelId)) {
+      if (!likedTravels[travelId]) {
         handleLike(travelId, e);
       }
       setHeartAnimation(prev => ({ ...prev, [travelId]: true }));
@@ -1516,7 +1727,7 @@ const Home = () => {
               <h1>{travel.name}</h1>
               <div className="travel-details-infoadditional">
                 <p><strong>🌍</strong> {travel.country} <strong>🏙️</strong> {travel.city}</p>
-                <p><strong>🏷️</strong> {travel.category.join(', ')}</p>
+                <p><strong>🏷️</strong> {travel.category && travel.category.length > 0 ? travel.category.join(', ') : <em style={{color:'#999'}}>Sem categorias</em>}</p>
                 <p><strong>📅</strong> {travel.startDate} <strong>📅</strong> {travel.endDate}</p>
                 <p><strong>💰</strong> {travel.price}€</p>
                 <p><strong></strong> {renderStars(travel.stars)}</p>
@@ -1676,13 +1887,13 @@ const Home = () => {
               )}
               <div className="feed-actions-grid">
                 <button
-                  className={`like-btn  ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
+                  className={`like-btn  ${likedTravels[travel.id] ? 'liked' : ''}`}
                   onClick={(e) => handleLike(travel.id, e)}
                 >
                   <FaHeart /> {travel.likes}
                 </button>
                 <button className="comments-btn" onClick={(e) => toggleComments(travel.id, e)}>
-                  <FaComment /> {travel.comments.length}
+                  <FaComment /> {travel.totalCommentsCount ?? travel.comments.length}
                 </button>
               </div>
             </div>
@@ -1690,7 +1901,7 @@ const Home = () => {
           {showComments === travel.id && (
             <div className={`comments-section-modern`} onClick={(e) => e.stopPropagation()}>
               <div className="comments-header-modern">
-                <h4>💬 Comentários ({travel.comments.length})</h4>
+                <h4>💬 Comentários ({travel.totalCommentsCount ?? travel.comments.length})</h4>
                 <motion.button
                   className="close-comments-btn"
                   onClick={handleCloseComments}
@@ -1703,7 +1914,9 @@ const Home = () => {
               </div>
               
               <div className="comments-container-modern">
-                {travel.comments.length > 0 ? (
+                {commentsLoadState[travel.id]?.loading ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>A carregar comentários...</div>
+                ) : travel.comments.length > 0 ? (
                   <div className="comments-list-modern">
                     <AnimatePresence>
                       {[...travel.comments].reverse().map((comment, commentIndex) => 
@@ -2103,13 +2316,13 @@ const Home = () => {
               {!isMobile && (
                 <div className="feed-actions-grid">
                   <button
-                    className={`like-btn ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
+                    className={`like-btn ${likedTravels[travel.id] ? 'liked' : ''}`}
                     onClick={(e) => handleLike(travel.id, e)}
                   >
                     <FaHeart /> {travel.likes}
                   </button>
                   <button className="comments-btn" onClick={(e) => toggleComments(travel.id, e)}>
-                    <FaComment /> {travel.comments.length}
+                    <FaComment /> {travel.totalCommentsCount ?? travel.comments.length}
                   </button>
                   {/* Removido o botão de partilhar */}
                 </div>
@@ -2154,7 +2367,7 @@ const Home = () => {
             {isMobile && (
               <div className="feed-actions-mobile">
                 <button
-                  className={`like-btn ${likedTravels.includes(travel.id) ? 'liked' : ''}`}
+                  className={`like-btn ${likedTravels[travel.id] ? 'liked' : ''}`}
                   aria-label={`Gostos: ${travel.likes}`}
                   onClick={(e) => handleLike(travel.id, e)}
                   style={{ position:'relative' }}
@@ -2164,12 +2377,12 @@ const Home = () => {
                 </button>
                 <button 
                   className="comments-btn" 
-                  aria-label={`Comentários: ${travel.comments.length}`}
+                  aria-label={`Comentários: ${travel.totalCommentsCount ?? travel.comments.length}`}
                   onClick={(e) => toggleComments(travel.id, e)}
                   style={{ position:'relative' }}
                 >
                   <FaComment />
-                  <span className="count-badge">{Array.isArray(travel.comments) ? travel.comments.length : 0}</span>
+                  <span className="count-badge">{travel.totalCommentsCount ?? (Array.isArray(travel.comments) ? travel.comments.length : 0)}</span>
                 </button>
               </div>
             )}
@@ -2181,7 +2394,7 @@ const Home = () => {
                   <strong>🌍</strong> {travel.country} <strong>🏙️</strong> {travel.city}
                 </p>
                 <p>
-                  <strong>🏷️</strong> {travel.category.join(', ')}
+                  <strong>🏷️</strong> {travel.category && travel.category.length > 0 ? travel.category.join(', ') : <em style={{color:'#999'}}>Sem categorias</em>}
                 </p>
                 <p>
                   <strong>📅</strong> {travel.startDate}{' '}
@@ -2257,7 +2470,7 @@ const Home = () => {
               onClick={e => e.stopPropagation()}
             >
               <div className="comments-header-modern" style={{ padding: '20px' }}>
-                <h4>💬 Comentários ({travel.comments.length})</h4>
+                <h4>💬 Comentários ({travel.totalCommentsCount ?? travel.comments.length})</h4>
                 <motion.button
                   className="close-comments-btn"
                   onClick={handleCloseComments}
@@ -2287,7 +2500,9 @@ const Home = () => {
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
-                {travel.comments.length > 0 ? (
+                {commentsLoadState[travel.id]?.loading ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>A carregar comentários...</div>
+                ) : travel.comments.length > 0 ? (
                   <div className="comments-list-modern">
                     <AnimatePresence>
                       {[...travel.comments].reverse().map((comment, commentIndex) => 
@@ -2388,7 +2603,7 @@ const Home = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="comments-header-modern">
-              <h4>💬 Comentários ({travel.comments.length})</h4>
+              <h4>💬 Comentários ({travel.totalCommentsCount ?? travel.comments.length})</h4>
               <motion.button
                 className="close-comments-btn"
                 onClick={handleCloseComments}
@@ -2401,7 +2616,9 @@ const Home = () => {
             </div>
             
             <div className="comments-container-modern">
-              {travel.comments.length > 0 ? (
+              {commentsLoadState[travel.id]?.loading ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>A carregar comentários...</div>
+              ) : travel.comments.length > 0 ? (
                 <div className="comments-list-modern">
                   <AnimatePresence>
                     {[...travel.comments].reverse().map((comment, commentIndex) => 
@@ -2503,27 +2720,19 @@ const Home = () => {
     );
   };
 
+  // No need for client-side filtering/sorting since backend handles it
+  // Just use the feedTravels as they come from the API (already paginated and sorted)
   const filteredTravels = feedTravels
-    .filter((travel) => travel.country === filterCountry || filterCountry === '')
-    .filter((travel) =>
-      travel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      travel.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      travel.country?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    .filter((travel) => travel.country === filterCountry || filterCountry === '');
 
-  const sortedTravels = [...filteredTravels].sort((a, b) => {
-    if (sortOption === 'likes') {
-      return b.likes - a.likes;
-    }
-    return new Date(b.startDate) - new Date(a.startDate);
-  });
+  const sortedTravels = filteredTravels; // Backend already handles sorting
 
   const featuredTravels = [...feedTravels]
     .sort((a, b) => b.likes - a.likes)
     .slice(0, 2);
 
-  const displayedTravels = isMobile ? sortedTravels : sortedTravels.slice(0, currentPage * travelsPerPage);
-  const hasMoreTravels = !isMobile && !isFeedRefreshed && displayedTravels.length < sortedTravels.length;
+  const displayedTravels = feedTravels; // Display all travels from current page
+  const hasMoreTravels = currentPage < totalPages - 1;
 
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
 
@@ -2552,7 +2761,10 @@ const Home = () => {
               type="text"
               placeholder="Pesquisar por Nome, País ou Cidade..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(0); // Reset pagination when searching
+              }}
               className="search-input"
             />
             <FaSearch className="search-icon" />
@@ -2608,7 +2820,7 @@ const Home = () => {
                 <div className="featured-info">
                   <h3>{travel.name}</h3>
                   <p>Por: <Link to={`/profile/${travel.user}`}>{travel.user}</Link></p>
-                  <p><strong>Categoria:</strong> {travel.category.join(', ')}</p>
+                  <p><strong>Categoria:</strong> {travel.category && travel.category.length > 0 ? travel.category.join(', ') : <em style={{color:'#999'}}>Sem categorias</em>}</p>
                   <p><strong>País:</strong> {travel.country} | <strong>Cidade:</strong> {travel.city}</p>
                   <p><strong>Data:</strong> {travel.startDate} a {travel.endDate}</p>
                   <p><strong>Preço:</strong> {travel.price}€ | <strong>Avaliação:</strong> {travel.stars}★</p>

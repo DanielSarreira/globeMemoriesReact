@@ -5,50 +5,241 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Toast from '../components/Toast';
 import defaultAvatar from '../images/assets/avatar.jpg';
 import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
+import { request } from '../axios_helper';
 import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
+import '../styles/pages/register-travel.css'; // Para SearchableDropdown
 import { qandaModalUtils } from '../utils/modalUtils';
 
-// Dados simulados de viagens realizadas
-const pastTripsData = [
-  { id: 1, name: 'Viagem a Lisboa', date: '2024-05-10', user: 'Tiago Miranda' },
-  { id: 2, name: 'Férias em São Paulo', date: '2024-08-15', user: 'Tiago Miranda' },
-];
+// Custom Searchable Dropdown
+const SearchableDropdown = ({ options, value, onChange, placeholder, disabled, labelKey = 'label', valueKey = 'value' }) => {
+  const [search, setSearch] = React.useState('');
+  const [showOptions, setShowOptions] = React.useState(false);
+  const [focusedIndex, setFocusedIndex] = React.useState(-1);
+  const dropdownRef = React.useRef(null);
+
+  const filteredOptions = options.filter(opt =>
+    opt[labelKey].toLowerCase().includes(search.toLowerCase())
+  );
+  const selectedLabel = value ? options.find(opt => opt[valueKey] === value)?.[labelKey] || '' : '';
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setShowOptions(false);
+    setSearch('');
+    setFocusedIndex(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Backspace' && value && !search) {
+      e.preventDefault(); onChange(null); setSearch(''); setShowOptions(true); return;
+    }
+    if (!showOptions && (e.key === 'ArrowDown' || e.key === 'Enter')) {
+      e.preventDefault(); setShowOptions(true); return;
+    }
+    if (showOptions) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setFocusedIndex(p => (p < filteredOptions.length - 1 ? p + 1 : p)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusedIndex(p => (p > 0 ? p - 1 : -1)); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (focusedIndex >= 0) handleSelect(filteredOptions[focusedIndex][valueKey]); }
+      else if (e.key === 'Escape') { e.preventDefault(); setShowOptions(false); setFocusedIndex(-1); }
+    }
+  };
+
+  React.useEffect(() => {
+    const handler = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowOptions(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className={`searchable-dropdown-container${disabled ? ' disabled' : ''}${showOptions ? ' open' : ''}`} style={{ position: 'relative', width: '100%' }}>
+      <div className="dropdown-input-wrapper">
+        <input
+          type="text"
+          value={selectedLabel || search}
+          onChange={e => setSearch(e.target.value)}
+          onFocus={() => !disabled && setShowOptions(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="dropdown-input"
+          autoComplete="off"
+          spellCheck="false"
+          role="combobox"
+          aria-expanded={showOptions}
+          aria-haspopup="listbox"
+        />
+        <div className="dropdown-arrow">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 8 10 12 14 8"></polyline>
+          </svg>
+        </div>
+      </div>
+      {showOptions && filteredOptions.length > 0 && (
+        <ul className="dropdown-options-list" role="listbox">
+          {filteredOptions.map((opt, idx) => (
+            <li key={opt[valueKey]} onMouseDown={() => handleSelect(opt[valueKey])} onMouseEnter={() => setFocusedIndex(idx)}
+              className={`dropdown-option${focusedIndex === idx ? ' focused' : ''}${value === opt[valueKey] ? ' selected' : ''}`}
+              role="option" aria-selected={value === opt[valueKey]}>
+              {opt[labelKey]}
+            </li>
+          ))}
+        </ul>
+      )}
+      {showOptions && filteredOptions.length === 0 && (
+        <div className="dropdown-no-results">Nenhum resultado encontrado</div>
+      )}
+    </div>
+  );
+};
 
 const QandA = () => {
   const { user } = useAuth();
+
+  // ── All-questions feed state ──────────────────────────────────────────────
   const [questions, setQuestions] = useState([]);
+  const [allPage, setAllPage] = useState(0);
+  const [allTotalPages, setAllTotalPages] = useState(0);
+  const [allTotal, setAllTotal] = useState(0);
+
+  // ── My-questions feed state ───────────────────────────────────────────────
+  const [myQuestions, setMyQuestions] = useState([]);
+  const [myPage, setMyPage] = useState(0);
+  const [myTotalPages, setMyTotalPages] = useState(0);
+  const [myTotal, setMyTotal] = useState(0);
+
+  // ── Form / UI state ───────────────────────────────────────────────────────
   const [newQuestion, setNewQuestion] = useState('');
   const [category, setCategory] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
-  const [selectedTrip, setSelectedTrip] = useState('');
+  const [cityId, setCityId] = useState(null);
+
+  // ── Countries/cities for question form ───────────────────────────────────
+  const [countries, setCountries] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const countryOptions = countries.map(c => ({ label: c, value: c }));
+  const cityOptions = cities.map(c => ({ label: c.cityName, value: c.id }));
+
+  // ── Comments loading state per question ──────────────────────────────────
+  const [commentsLoading, setCommentsLoading] = useState({});
   const [newComment, setNewComment] = useState({});
   const [newReply, setNewReply] = useState({});
-  const [replyOpen, setReplyOpen] = useState({}); // Estado para controlar quais campos de réplica estão abertos
+  const [replyOpen, setReplyOpen] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({ category: '', country: '', city: '', minLikes: '', answered: '' });
-  const [sortOption, setSortOption] = useState('date'); // Sempre ordena por data por padrão
+  const [filters, setFilters] = useState({ category: '', answered: '' });
+  const [sortOption, setSortOption] = useState('created_at');
   const [expandedSections, setExpandedSections] = useState({});
-  const [currentPage, setCurrentPage] = useState({ all: 1, mine: 1 });
   const [likedQuestions, setLikedQuestions] = useState([]);
   const [likedComments, setLikedComments] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [activeSection, setActiveSection] = useState('all'); // 'all' ou 'mine'
+  const [activeSection, setActiveSection] = useState('all');
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', show: false });
   const [showWelcomeModal, setShowWelcomeModal] = useState(() => qandaModalUtils.shouldShow());
   const [dontShowAgain, setDontShowAgain] = useState(false);
-  const questionsPerPage = 5;
 
-  useEffect(() => {
+  // ── Transform backend DTO → frontend question shape ──────────────────────
+  const transformQuestion = useCallback((dto) => ({
+    id: dto.questionId,
+    userId: dto.userId,
+    user: dto.username || 'Utilizador',
+    userProfilePicture: dto.userProfilePhoto || null,
+    question: dto.questionText,
+    category: dto.category || '',
+    country: dto.countryName || 'N/A',
+    city: dto.cityName || 'N/A',
+    createdAt: dto.createdAt,
+    likes: dto.totalLikes || 0,
+    totalComments: dto.totalComments || 0,
+    currentUserLiked: dto.userLiked || false,
+    comments: [], // loaded on demand when section is expanded
+  }), []);
+
+  // ── Fetch all questions from API ──────────────────────────────────────────
+  const fetchAllQuestions = useCallback(async (page = 0, append = false) => {
     setIsLoading(true);
-    setTimeout(() => {
-      setQuestions(QandAData);
+    try {
+      const params = new URLSearchParams({ page, size: 20, sortBy: sortOption });
+      if (filters.category) params.append('category', filters.category);
+      if (filters.answered === 'yes') params.append('hasComments', 'true');
+      if (filters.answered === 'no') params.append('hasComments', 'false');
+      if (searchQuery.trim()) params.append('searchText', searchQuery.trim());
+
+      const resp = await request('GET', `/forum/questions?${params.toString()}`);
+      const data = resp.data;
+      const transformed = (data.content || []).map(transformQuestion);
+
+      // Seed liked state
+      const liked = transformed.filter(q => q.currentUserLiked).map(q => q.id);
+      setLikedQuestions(prev => [...new Set([...prev, ...liked])]);
+
+      setQuestions(prev => append ? [...prev, ...transformed] : transformed);
+      setAllPage(data.number ?? page);
+      setAllTotalPages(data.totalPages ?? 0);
+      setAllTotal(data.totalElements ?? 0);
+    } catch (err) {
+      console.error('Erro ao carregar perguntas:', err);
+      showToast('Erro ao carregar perguntas.', 'error');
+    } finally {
       setIsLoading(false);
-    }, 1000);
-  }, []);
+    }
+  }, [sortOption, filters, searchQuery, transformQuestion]);
+
+  // ── Fetch my questions from API ───────────────────────────────────────────
+  const fetchMyQuestions = useCallback(async (page = 0, append = false) => {
+    setIsLoading(true);
+    try {
+      const resp = await request('GET', `/forum/questions/my?page=${page}&size=20`);
+      const data = resp.data;
+      const transformed = (data.content || []).map(transformQuestion);
+
+      setMyQuestions(prev => append ? [...prev, ...transformed] : transformed);
+      setMyPage(data.number ?? page);
+      setMyTotalPages(data.totalPages ?? 0);
+      setMyTotal(data.totalElements ?? 0);
+    } catch (err) {
+      console.error('Erro ao carregar as minhas perguntas:', err);
+      showToast('Erro ao carregar as suas perguntas.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [transformQuestion]);
+
+  // ── Load countries on mount ──────────────────────────────────────────────
+  useEffect(() => {
+    request('GET', '/cities/countries')
+      .then(r => setCountries(r.data || []))
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load cities when country changes ─────────────────────────────────────
+  useEffect(() => {
+    if (!country) { setCities([]); setCityId(null); setCity(''); return; }
+    setLoadingCities(true);
+    request('GET', `/cities/by-country?countryName=${encodeURIComponent(country)}`)
+      .then(r => setCities(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setCities([]))
+      .finally(() => setLoadingCities(false));
+    setCityId(null);
+    setCity('');
+  }, [country]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load on mount and when filters/sort/search change (all section) ───────
+  useEffect(() => {
+    if (activeSection === 'all') {
+      fetchAllQuestions(0, false);
+    }
+  }, [activeSection, sortOption, filters, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load my questions when section switches to 'mine' ─────────────────────
+  useEffect(() => {
+    if (activeSection === 'mine' && user) {
+      fetchMyQuestions(0, false);
+    }
+  }, [activeSection, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showToast = (message, type) => {
     setToast({ message, type, show: true });
@@ -85,7 +276,7 @@ const QandA = () => {
     return sanitized.trim();
   };
 
-  const handleAskQuestion = useCallback((e) => {
+  const handleAskQuestion = useCallback(async (e) => {
     e.preventDefault();
     setError('');
     
@@ -134,46 +325,41 @@ const QandA = () => {
       return;
     }
 
+    if (!cityId) {
+      setError('Selecione uma cidade!');
+      showToast('Selecione uma cidade!', 'error');
+      return;
+    }
+
     setIsLoading(true);
-
-    // Simular delay de API
-    setTimeout(() => {
-      const newQuestionData = {
-        id: Date.now(),
-        user: user.username,
-        userProfilePicture: user.profilePicture || null,
-        question: sanitizedQuestion,
+    try {
+      const resp = await request('POST', '/forum/questions', {
+        questionText: sanitizedQuestion,
         category,
-        country: country || 'Não especificado',
-        city: city || 'Não especificado',
-        tripId: selectedTrip || null,
-        tripName: selectedTrip ? pastTripsData.find((t) => t.id === parseInt(selectedTrip))?.name : null,
-        createdAt: new Date().toISOString(),
-        likes: 0,
-        comments: [],
-      };
-
-      setQuestions((prev) => [newQuestionData, ...prev]);
-      
+        cityId,
+      });
+      const created = transformQuestion(resp.data);
+      setQuestions(prev => [created, ...prev]);
+      setAllTotal(prev => prev + 1);
       // Reset form
       setNewQuestion('');
       setCategory('');
       setCountry('');
       setCity('');
-      setSelectedTrip('');
+      setCityId(null);
+      setCities([]);
       setIsAskingQuestion(false);
-      setIsLoading(false);
       setError('');
       showToast('Pergunta criada com sucesso!', 'success');
-      
-      // Show success message
-      setTimeout(() => {
-        setError(''); // Clear any existing errors
-      }, 100);
-    }, 1000);
-  }, [user, newQuestion, category, country, city, selectedTrip]);
+    } catch (err) {
+      console.error('Erro ao criar pergunta:', err);
+      showToast('Erro ao criar pergunta.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, newQuestion, category, cityId, transformQuestion]);
 
-  const handleCommentOrReply = useCallback((questionId, parentIds = [], text) => {
+  const handleCommentOrReply = useCallback(async (questionId, parentCommentId = null, text, replyKey = null) => {
     setError('');
     
     if (!user) {
@@ -189,7 +375,6 @@ const QandA = () => {
       return;
     }
 
-    // Sanitizar conteúdo contra XSS
     const sanitizedText = sanitizeContent(text);
     if (!sanitizedText) {
       setError(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT);
@@ -203,137 +388,194 @@ const QandA = () => {
       return;
     }
 
-    // Show loading state
-    const commentKey = parentIds.length === 0 ? `comment-${questionId}` : `reply-${questionId}-${parentIds.join('-')}`;
-    
-    // Simulate API delay
-    setTimeout(() => {
-      const updateComments = (comments, path) => {
-        if (path.length === 0) {
-          return [
-            ...comments,
-            {
-              id: Date.now(),
-              user: user.username,
-              userProfilePicture: user.profilePicture || null,
-              text: sanitizedText,
-              createdAt: new Date().toISOString(),
-              likes: 0,
-              replies: [],
-            },
-          ];
-        }
-        const [currentId, ...rest] = path;
-        return comments.map((c) =>
-          c.id === currentId
-            ? { ...c, replies: updateComments(c.replies || [], rest) }
-            : c
-        );
+    try {
+      const body = { content: sanitizedText };
+      if (parentCommentId != null) body.parentCommentId = parentCommentId;
+      const resp = await request('POST', `/forum/questions/${questionId}/comments`, body);
+      const dto = resp.data;
+      const newCommentObj = {
+        id: dto.commentId,
+        userId: dto.userId,
+        user: dto.username || user.username,
+        userProfilePicture: dto.userProfilePhoto || user.profilePicture || null,
+        text: dto.content,
+        createdAt: dto.createdAt,
+        likes: dto.totalLikes || 0,
+        currentUserLiked: dto.userLiked || false,
+        replies: dto.replies || [],
       };
 
-      setQuestions((prev) =>
-        prev.map((q) =>
+      if (parentCommentId == null) {
+        // Top-level comment
+        setQuestions(prev => prev.map(q =>
           q.id === questionId
-            ? { ...q, comments: updateComments(q.comments, parentIds) }
+            ? { ...q, comments: [...q.comments, newCommentObj], totalComments: (q.totalComments || 0) + 1 }
             : q
-        )
-      );
-
-      // Clear inputs
-      if (parentIds.length === 0) {
-        setNewComment((prev) => ({ ...prev, [questionId]: '' }));
+        ));
+        setNewComment(prev => ({ ...prev, [questionId]: '' }));
         showToast('Comentário adicionado com sucesso!', 'success');
       } else {
-        const replyKey = `${questionId}-${parentIds.join('-')}`;
-        setNewReply((prev) => ({ ...prev, [replyKey]: '' }));
-        setReplyOpen((prev) => ({ ...prev, [replyKey]: false }));
+        // Reply — insert into parent
+        const addReply = (comments) => comments.map(c =>
+          c.id === parentCommentId
+            ? { ...c, replies: [...(c.replies || []), newCommentObj] }
+            : { ...c, replies: addReply(c.replies || []) }
+        );
+        setQuestions(prev => prev.map(q =>
+          q.id === questionId ? { ...q, comments: addReply(q.comments) } : q
+        ));
+        if (replyKey) {
+          setNewReply(prev => ({ ...prev, [replyKey]: '' }));
+          setReplyOpen(prev => ({ ...prev, [replyKey]: false }));
+        }
         showToast('Resposta adicionada com sucesso!', 'success');
       }
-      
       setError('');
-    }, 500);
-  }, [user, showToast]);
-
-  const handleLike = useCallback((type, id, parentIds = []) => {
-    if (!user) return setError('Inicie sessão para gostar!');
-    const key = `${parentIds.join('-')}-${id}`;
-
-    const updateLikes = (items, path, isLiked) => {
-      if (path.length === 0) {
-        return items.map((item) =>
-          item.id === id ? { ...item, likes: item.likes + (isLiked ? -1 : 1) } : item
-        );
-      }
-      const [currentId, ...rest] = path;
-      return items.map((item) =>
-        item.id === currentId
-          ? { ...item, replies: updateLikes(item.replies || [], rest, isLiked) }
-          : item
-      );
-    };
-
-    if (type === 'question') {
-      const isLiked = likedQuestions.includes(id);
-      setLikedQuestions((prev) => (isLiked ? prev.filter((qId) => qId !== id) : [...prev, id]));
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === id ? { ...q, likes: q.likes + (isLiked ? -1 : 1) } : q))
-      );
-    } else {
-      const isLiked = likedComments.includes(key);
-      setLikedComments((prev) => (isLiked ? prev.filter((k) => k !== key) : [...prev, key]));
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === parentIds[0]
-            ? { ...q, comments: updateLikes(q.comments, parentIds.slice(1), isLiked) }
-            : q
-        )
-      );
+    } catch (err) {
+      console.error('Erro ao adicionar comentário:', err);
+      showToast('Erro ao adicionar comentário.', 'error');
     }
-  }, [user, likedQuestions, likedComments]);
+  }, [user, sanitizeContent]);
 
-  const toggleSection = (key) => {
-    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  const handleLikeQuestion = useCallback(async (questionId) => {
+    if (!user) return showToast('Inicie sessão para gostar!', 'error');
+    const isLiked = likedQuestions.includes(questionId);
+    // Optimistic update
+    setLikedQuestions(prev => isLiked ? prev.filter(id => id !== questionId) : [...prev, questionId]);
+    setQuestions(prev => prev.map(q =>
+      q.id === questionId ? { ...q, likes: q.likes + (isLiked ? -1 : 1) } : q
+    ));
+    try {
+      if (isLiked) {
+        await request('DELETE', `/forum/questions/${questionId}/like`);
+      } else {
+        await request('POST', `/forum/questions/${questionId}/like`);
+      }
+    } catch (err) {
+      // Revert on failure
+      setLikedQuestions(prev => isLiked ? [...prev, questionId] : prev.filter(id => id !== questionId));
+      setQuestions(prev => prev.map(q =>
+        q.id === questionId ? { ...q, likes: q.likes + (isLiked ? 1 : -1) } : q
+      ));
+      showToast('Erro ao processar gosto.', 'error');
+    }
+  }, [user, likedQuestions]);
+
+  const handleLikeComment = useCallback(async (commentId, questionId) => {
+    if (!user) return showToast('Inicie sessão para gostar!', 'error');
+    const isLiked = likedComments.includes(commentId);
+    // Optimistic update
+    setLikedComments(prev => isLiked ? prev.filter(id => id !== commentId) : [...prev, commentId]);
+    const updateLikesInTree = (comments) => comments.map(c =>
+      c.id === commentId
+        ? { ...c, likes: c.likes + (isLiked ? -1 : 1) }
+        : { ...c, replies: updateLikesInTree(c.replies || []) }
+    );
+    setQuestions(prev => prev.map(q =>
+      q.id === questionId ? { ...q, comments: updateLikesInTree(q.comments) } : q
+    ));
+    try {
+      if (isLiked) {
+        await request('DELETE', `/forum/comments/${commentId}/like`);
+      } else {
+        await request('POST', `/forum/comments/${commentId}/like`);
+      }
+    } catch (err) {
+      // Revert
+      setLikedComments(prev => isLiked ? [...prev, commentId] : prev.filter(id => id !== commentId));
+      const revertLikes = (comments) => comments.map(c =>
+        c.id === commentId
+          ? { ...c, likes: c.likes + (isLiked ? 1 : -1) }
+          : { ...c, replies: revertLikes(c.replies || []) }
+      );
+      setQuestions(prev => prev.map(q =>
+        q.id === questionId ? { ...q, comments: revertLikes(q.comments) } : q
+      ));
+      showToast('Erro ao processar gosto.', 'error');
+    }
+  }, [user, likedComments]);
+
+  const handleDeleteQuestion = useCallback(async (questionId) => {
+    if (!window.confirm('Tem a certeza que quer eliminar esta pergunta?')) return;
+    try {
+      await request('DELETE', `/forum/questions/${questionId}`);
+      setMyQuestions(prev => prev.filter(q => q.id !== questionId));
+      setQuestions(prev => prev.filter(q => q.id !== questionId));
+      setMyTotal(prev => Math.max(0, prev - 1));
+      setAllTotal(prev => Math.max(0, prev - 1));
+      showToast('Pergunta eliminada.', 'success');
+    } catch (err) {
+      console.error('Erro ao eliminar pergunta:', err);
+      showToast('Erro ao eliminar pergunta.', 'error');
+    }
+  }, []);
+
+  const handleDeleteComment = useCallback(async (commentId, questionId) => {
+    if (!window.confirm('Tem a certeza que quer eliminar este comentário?')) return;
+    try {
+      await request('DELETE', `/forum/comments/${commentId}`);
+      const removeFromTree = (comments) => comments
+        .filter(c => c.id !== commentId)
+        .map(c => ({ ...c, replies: removeFromTree(c.replies || []) }));
+      setQuestions(prev => prev.map(q =>
+        q.id === questionId
+          ? { ...q, comments: removeFromTree(q.comments), totalComments: Math.max(0, (q.totalComments || 1) - 1) }
+          : q
+      ));
+      showToast('Comentário eliminado.', 'success');
+    } catch (err) {
+      console.error('Erro ao eliminar comentário:', err);
+      showToast('Erro ao eliminar comentário.', 'error');
+    }
+  }, []);
+
+  const fetchQuestionComments = useCallback(async (questionId) => {
+    setCommentsLoading(prev => ({ ...prev, [questionId]: true }));
+    try {
+      const resp = await request('GET', `/forum/questions/${questionId}/comments?page=0&size=50`);
+      const data = resp.data;
+      const transformComment = (dto) => ({
+        id: dto.commentId,
+        userId: dto.userId,
+        user: dto.username || 'Utilizador',
+        userProfilePicture: dto.userProfilePhoto || null,
+        text: dto.content,
+        createdAt: dto.createdAt,
+        likes: dto.totalLikes || 0,
+        currentUserLiked: dto.userLiked || false,
+        replies: (dto.replies || []).map(r => transformComment(r)),
+      });
+      const comments = (data.content || []).map(transformComment);
+      // Seed liked state
+      const likedIds = [];
+      const collectLiked = (list) => list.forEach(c => { if (c.currentUserLiked) likedIds.push(c.id); collectLiked(c.replies || []); });
+      collectLiked(comments);
+      setLikedComments(prev => [...new Set([...prev, ...likedIds])]);
+      setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, comments } : q));
+      setMyQuestions(prev => prev.map(q => q.id === questionId ? { ...q, comments } : q));
+    } catch (err) {
+      console.error('Erro ao carregar comentários:', err);
+    } finally {
+      setCommentsLoading(prev => ({ ...prev, [questionId]: false }));
+    }
+  }, []);
+
+  const toggleSection = (questionId) => {
+    const key = `question-${questionId}`;
+    const isCurrentlyOpen = expandedSections[key];
+    setExpandedSections(prev => ({ ...prev, [key]: !isCurrentlyOpen }));
+    // Fetch comments on first open
+    if (!isCurrentlyOpen) {
+      const q = questions.find(q => q.id === questionId) || myQuestions.find(q => q.id === questionId);
+      if (q && q.comments.length === 0) {
+        fetchQuestionComments(questionId);
+      }
+    }
   };
 
   const toggleReply = (key) => {
     setReplyOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   };
-
-  const applyFilters = useMemo(() => {
-    const lowerQuery = searchQuery.toLowerCase();
-    return (q) =>
-      (q.question.toLowerCase().includes(lowerQuery) || q.user.toLowerCase().includes(lowerQuery)) &&
-      (!filters.category || q.category === filters.category) &&
-      (!filters.country || q.country === filters.country) &&
-      (!filters.city || q.city === filters.city) &&
-      (!filters.minLikes || q.likes >= parseInt(filters.minLikes)) &&
-      (filters.answered === '' || (filters.answered === 'yes' ? q.comments.length > 0 : q.comments.length === 0));
-  }, [searchQuery, filters]);
-
-  const myQuestions = useMemo(() => user ? questions.filter((q) => q.user === user.username).filter(applyFilters) : [], [questions, user, applyFilters]);
-  const allQuestions = useMemo(() => questions.filter(applyFilters), [questions, applyFilters]);
-
-  const paginatedMyQuestions = useMemo(() => {
-    const sorted = [...myQuestions].sort((a, b) =>
-      sortOption === 'comments'
-        ? b.comments.length - a.comments.length
-        : sortOption === 'likes'
-        ? b.likes - a.likes
-        : new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    return sorted.slice(0, currentPage.mine * questionsPerPage);
-  }, [myQuestions, currentPage.mine, questionsPerPage, sortOption]);
-
-  const paginatedAllQuestions = useMemo(() => {
-    const sorted = [...allQuestions].sort((a, b) =>
-      sortOption === 'comments'
-        ? b.comments.length - a.comments.length
-        : sortOption === 'likes'
-        ? b.likes - a.likes
-        : new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    return sorted.slice(0, currentPage.all * questionsPerPage);
-  }, [allQuestions, currentPage.all, questionsPerPage, sortOption]);
 
   const getRelativeTime = (date) => {
     const now = new Date();
@@ -365,9 +607,10 @@ const QandA = () => {
     });
   };
 
-  const renderComment = useCallback((comment, questionId, parentIds = [], index = 0) => {
-    const key = `${questionId}-${parentIds.concat(comment.id).join('-')}`;
-    const likeKey = `${[questionId, ...parentIds].join('-')}-${comment.id}`;
+  const renderComment = useCallback((comment, questionId, parentCommentId = null, index = 0) => {
+    const replyKey = `${questionId}-${comment.id}`;
+    const isLiked = likedComments.includes(comment.id);
+    const isOwner = user && user.id === comment.userId;
     return (
       <motion.div 
         key={comment.id} 
@@ -386,21 +629,33 @@ const QandA = () => {
             <div className="comment-header-modern">
               <span className="comment-username">{comment.user}</span>
               <span className="comment-time">{getRelativeTime(comment.createdAt)}</span>
+              {isOwner && (
+                <motion.button
+                  className="delete-comment-btn"
+                  onClick={() => handleDeleteComment(comment.id, questionId)}
+                  title="Eliminar comentário"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: '12px', padding: '2px 6px' }}
+                >
+                  <FaTimes />
+                </motion.button>
+              )}
             </div>
             <p className="comment-text">{comment.text}</p>
             <div className="comment-actions-modern">
               <motion.button
-                className={`comment-like-btn ${likedComments.includes(likeKey) ? 'liked' : ''}`}
-                onClick={() => handleLike('comment', comment.id, [questionId, ...parentIds])}
+                className={`comment-like-btn ${isLiked ? 'liked' : ''}`}
+                onClick={() => handleLikeComment(comment.id, questionId)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <FaHeart className={`heart-icon ${likedComments.includes(likeKey) ? 'liked' : ''}`} />
+                <FaHeart className={`heart-icon ${isLiked ? 'liked' : ''}`} />
                 {comment.likes > 0 && <span>{comment.likes}</span>}
               </motion.button>
               <motion.button
                 className="reply-btn-modern"
-                onClick={() => toggleReply(key)}
+                onClick={() => toggleReply(replyKey)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -409,7 +664,7 @@ const QandA = () => {
             </div>
             
             <AnimatePresence>
-              {replyOpen[key] && (
+              {replyOpen[replyKey] && (
                 <motion.div 
                   className="reply-input-container"
                   initial={{ opacity: 0, height: 0 }}
@@ -424,10 +679,10 @@ const QandA = () => {
                   />
                   <div className="reply-input-wrapper">
                     <textarea
-                      value={newReply[key] || ''}
+                      value={newReply[replyKey] || ''}
                       onChange={(e) => {
                         if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
-                          setNewReply({ ...newReply, [key]: e.target.value });
+                          setNewReply({ ...newReply, [replyKey]: e.target.value });
                         }
                       }}
                       placeholder="Escreva uma resposta..."
@@ -437,21 +692,21 @@ const QandA = () => {
                       autoFocus
                     />
                     <div className="reply-actions">
-                      <span style={{ fontSize: '12px', color: '#999', marginRight: 'auto' }}>{(newReply[key] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
+                      <span style={{ fontSize: '12px', color: '#999', marginRight: 'auto' }}>{(newReply[replyKey] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
                       <motion.button
                         className="cancel-reply-btn"
-                        onClick={() => toggleReply(key)}
+                        onClick={() => toggleReply(replyKey)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
                         Cancelar
                       </motion.button>
                       <motion.button
-                        onClick={() => handleCommentOrReply(questionId, parentIds.concat(comment.id), newReply[key])}
+                        onClick={() => handleCommentOrReply(questionId, comment.id, newReply[replyKey], replyKey)}
                         className="send-reply-btn"
-                        disabled={!newReply[key]?.trim()}
-                        whileHover={newReply[key]?.trim() ? { scale: 1.05 } : {}}
-                        whileTap={newReply[key]?.trim() ? { scale: 0.95 } : {}}
+                        disabled={!newReply[replyKey]?.trim()}
+                        whileHover={newReply[replyKey]?.trim() ? { scale: 1.05 } : {}}
+                        whileTap={newReply[replyKey]?.trim() ? { scale: 0.95 } : {}}
                       >
                         <FaPaperPlane />
                       </motion.button>
@@ -470,17 +725,21 @@ const QandA = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {[...comment.replies].reverse().map((reply, replyIndex) => 
-              renderComment(reply, questionId, parentIds.concat(comment.id), replyIndex)
+            {[...comment.replies].map((reply, replyIndex) => 
+              renderComment(reply, questionId, comment.id, replyIndex)
             )}
           </motion.div>
         )}
       </motion.div>
     );
-  }, [newReply, replyOpen, handleLike, handleCommentOrReply, likedComments, user, getRelativeTime]);
+  }, [newReply, replyOpen, handleLikeComment, handleCommentOrReply, handleDeleteComment, likedComments, user, getRelativeTime]);
 
-  const renderQuestionItem = useCallback((question, index) => {
+  const renderQuestionItem = useCallback((question, index, showDelete = false) => {
     const questionKey = `question-${question.id}`;
+    const isLikedQuestion = likedQuestions.includes(question.id);
+    const isOwner = user && user.id === question.userId;
+    const commentsOpen = expandedSections[questionKey];
+    const loadingComments = commentsLoading[question.id];
     return (
       <motion.div 
         key={question.id} 
@@ -517,15 +776,17 @@ const QandA = () => {
             </div>
           </div>
           
-          {question.tripName && (
-            <motion.div 
-              className="trip-badge"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3 }}
+          {(showDelete || isOwner) && (
+            <motion.button
+              className="delete-question-btn"
+              onClick={() => handleDeleteQuestion(question.id)}
+              title="Eliminar pergunta"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              style={{ background: 'none', border: '1px solid #e74c3c', borderRadius: '6px', color: '#e74c3c', cursor: 'pointer', fontSize: '12px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              <span>✈️ {question.tripName}</span>
-            </motion.div>
+              <FaTimes /> Eliminar
+            </motion.button>
           )}
         </div>
 
@@ -535,35 +796,33 @@ const QandA = () => {
           <div className="question-stats">
             <div className="stat-item">
               <motion.button
-                className={`like-btn ${likedQuestions.includes(question.id) ? 'liked' : ''}`}
-                onClick={() => handleLike('question', question.id)}
+                className={`like-btn ${isLikedQuestion ? 'liked' : ''}`}
+                onClick={() => handleLikeQuestion(question.id)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <FaHeart className={`heart-icon ${likedQuestions.includes(question.id) ? 'liked' : ''}`} />
+                <FaHeart className={`heart-icon ${isLikedQuestion ? 'liked' : ''}`} />
                 <span>{question.likes}</span>
               </motion.button>
             </div>
             
             <div className="stat-item">
               <motion.button
-                className="comments-btn"
-                onClick={() => toggleSection(questionKey)}
+                className={`comments-btn ${commentsOpen ? 'active' : ''}`}
+                onClick={() => toggleSection(question.id)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <FaComments className="comments-icon" />
-                <span>{question.comments.length}</span>
+                <span>{question.totalComments ?? question.comments.length}</span>
               </motion.button>
             </div>
-            
-         
           </div>
         </div>
 
         {/* Seção de comentários com animação */}
         <AnimatePresence>
-          {expandedSections[questionKey] && (
+          {commentsOpen && (
             <motion.div 
               className="comments-section-modern"
               initial={{ opacity: 0, height: 0 }}
@@ -575,7 +834,7 @@ const QandA = () => {
                 <h4>💬 Comentários ({question.comments.length})</h4>
                 <motion.button
                   className="close-comments-btn"
-                  onClick={() => toggleSection(questionKey)}
+                  onClick={() => toggleSection(question.id)}
                   aria-label="Fechar comentários"
                   whileHover={{ rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -585,10 +844,14 @@ const QandA = () => {
               </div>
               
               <div className="comments-container-modern">
-                {question.comments.length > 0 ? (
+                {loadingComments ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                    <FaSpinner className="spinning" /> A carregar comentários...
+                  </div>
+                ) : question.comments.length > 0 ? (
                   <div className="comments-list-modern">
-                    {[...question.comments].reverse().map((comment, commentIndex) => 
-                      renderComment(comment, question.id, [], commentIndex)
+                    {question.comments.map((comment, commentIndex) => 
+                      renderComment(comment, question.id, null, commentIndex)
                     )}
                   </div>
                 ) : (
@@ -632,7 +895,7 @@ const QandA = () => {
                         <AnimatePresence>
                           {newComment[question.id]?.trim() && (
                             <motion.button
-                              onClick={() => handleCommentOrReply(question.id, [], newComment[question.id])}
+                              onClick={() => handleCommentOrReply(question.id, null, newComment[question.id])}
                               className="send-comment-btn"
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
@@ -654,7 +917,7 @@ const QandA = () => {
         </AnimatePresence>
       </motion.div>
     );
-  }, [expandedSections, newComment, user, likedQuestions, likedComments, handleLike, handleCommentOrReply, renderComment]);
+  }, [expandedSections, commentsLoading, newComment, user, likedQuestions, handleLikeQuestion, handleDeleteQuestion, handleCommentOrReply, renderComment]);
 
   return (
     <div className="qanda-page-modern">
@@ -815,47 +1078,42 @@ const QandA = () => {
                   />
                 </div>
 
-                <div className="form-row">
+                  <div className="form-row">
                   <div className="form-group">
                     <label>🏷️ Categoria</label>
-                    <select value={category} onChange={(e) => setCategory(e.target.value)} className="modern-select">
-                      <option value="">Selecione uma categoria</option>
-                      {['Alojamento', 'Transportes', 'Dicas Locais', 'Cultura', 'Gastronomia', 'Outros'].map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                    <SearchableDropdown
+                      options={['Alojamento', 'Transportes', 'Dicas Locais', 'Cultura', 'Gastronomia', 'Outros'].map(c => ({ label: c, value: c }))}
+                      value={category}
+                      onChange={(val) => setCategory(val || '')}
+                      placeholder="Selecione uma categoria"
+                    />
                   </div>
 
                   <div className="form-group">
                     <label>🌍 País</label>
-                    <select value={country} onChange={(e) => setCountry(e.target.value)} className="modern-select">
-                      <option value="">Selecione um país</option>
-                      {['Portugal', 'Brasil', 'Espanha', 'Itália', 'França'].map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                    <SearchableDropdown
+                      options={countryOptions}
+                      value={country}
+                      onChange={(val) => setCountry(val || '')}
+                      placeholder="Selecione um país"
+                    />
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>🏙️ Cidade</label>
-                    <select value={city} onChange={(e) => setCity(e.target.value)} className="modern-select">
-                      <option value="">Selecione uma cidade</option>
-                      {['Lisboa', 'São Paulo', 'Madrid', 'Roma', 'Paris'].map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>✈️ Viagem Relacionada</label>
-                    <select value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} className="modern-select">
-                      <option value="">Escolha uma viagem (opcional)</option>
-                      {pastTripsData.filter((t) => t.user === user.username).map((trip) => (
-                        <option key={trip.id} value={trip.id}>{trip.name} - {trip.date}</option>
-                      ))}
-                    </select>
+                    <label>🏙️ Cidade *</label>
+                    <SearchableDropdown
+                      options={cityOptions}
+                      value={cityId}
+                      onChange={(val) => {
+                        setCityId(val);
+                        const found = cities.find(c => c.id === val);
+                        setCity(found ? found.cityName : '');
+                      }}
+                      placeholder={loadingCities ? 'A carregar...' : country ? 'Selecione uma cidade' : 'Selecione primeiro um país'}
+                      disabled={!country || loadingCities}
+                    />
                   </div>
                 </div>
 
@@ -941,9 +1199,9 @@ const QandA = () => {
               onChange={(e) => setSortOption(e.target.value)} 
               className="sort-select"
             >
-              <option value="date">📅 Mais recentes</option>
-              <option value="comments">💬 Mais comentadas</option>
-              <option value="likes">❤️ Mais gostadas</option>
+              <option value="created_at">📅 Mais recentes</option>
+              <option value="total_comments">💬 Mais comentadas</option>
+              <option value="total_likes">❤️ Mais gostadas</option>
             </select>
           </div>
         </div>
@@ -967,28 +1225,6 @@ const QandA = () => {
                   <option value="">🏷️ Todas as categorias</option>
                   {['Alojamento', 'Transportes', 'Dicas Locais', 'Cultura', 'Gastronomia', 'Outros'].map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-
-                <select 
-                  value={filters.country} 
-                  onChange={(e) => setFilters({ ...filters, country: e.target.value })} 
-                  className="filter-select-modern"
-                >
-                  <option value="">🌍 Todos os países</option>
-                  {['Portugal', 'Brasil', 'Espanha', 'Itália', 'França'].map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-
-                <select 
-                  value={filters.city} 
-                  onChange={(e) => setFilters({ ...filters, city: e.target.value })} 
-                  className="filter-select-modern"
-                >
-                  <option value="">🏙️ Todas as cidades</option>
-                  {['Lisboa', 'São Paulo', 'Madrid', 'Roma', 'Paris'].map((c) => (
-                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
 
@@ -1035,20 +1271,14 @@ const QandA = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <h2>As Minhas Perguntas</h2>
-                  <span className="question-count">{myQuestions.length} pergunta{myQuestions.length !== 1 ? 's' : ''}</span>
+                  <span className="question-count">{myTotal} pergunta{myTotal !== 1 ? 's' : ''}</span>
                 </motion.div>
-                {paginatedMyQuestions.length > 0 ? (
+                {myQuestions.length > 0 ? (
                   <>
-                    {paginatedMyQuestions.map((question, index) => renderQuestionItem(question, index))}
-                    {paginatedMyQuestions.length < [...myQuestions].sort((a, b) =>
-                        sortOption === 'comments'
-                          ? b.comments.length - a.comments.length
-                          : sortOption === 'likes'
-                          ? b.likes - a.likes
-                          : new Date(b.createdAt) - new Date(a.createdAt)
-                      ).length && (
+                    {myQuestions.map((question, index) => renderQuestionItem(question, index, true))}
+                    {myPage + 1 < myTotalPages && (
                       <motion.button 
-                        onClick={() => setCurrentPage((prev) => ({ ...prev, mine: prev.mine + 1 }))} 
+                        onClick={() => fetchMyQuestions(myPage + 1, true)} 
                         className="load-more-btn-modern"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1089,20 +1319,14 @@ const QandA = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <h2>Todas as Perguntas</h2>
-                  <span className="question-count">{allQuestions.length} pergunta{allQuestions.length !== 1 ? 's' : ''}</span>
+                  <span className="question-count">{allTotal} pergunta{allTotal !== 1 ? 's' : ''}</span>
                 </motion.div>
-                {paginatedAllQuestions.length > 0 ? (
+                {questions.length > 0 ? (
                   <>
-                    {paginatedAllQuestions.map((question, index) => renderQuestionItem(question, index))}
-                    {paginatedAllQuestions.length < [...allQuestions].sort((a, b) =>
-                        sortOption === 'comments'
-                          ? b.comments.length - a.comments.length
-                          : sortOption === 'likes'
-                          ? b.likes - a.likes
-                          : new Date(b.createdAt) - new Date(a.createdAt)
-                      ).length && (
+                    {questions.map((question, index) => renderQuestionItem(question, index))}
+                    {allPage + 1 < allTotalPages && (
                       <motion.button 
-                        onClick={() => setCurrentPage((prev) => ({ ...prev, all: prev.all + 1 }))} 
+                        onClick={() => fetchAllQuestions(allPage + 1, true)} 
                         className="load-more-btn-modern"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1141,69 +1365,5 @@ const QandA = () => {
     </div>
   );
 };
-
-// Dados simulados
-const QandAData = [
-  {
-    id: 1,
-    user: 'Tiago Miranda',
-    userProfilePicture: null,
-    question: 'Quais são as melhores dicas para economizar em alojamento em Lisboa?',
-    category: 'Alojamento',
-    country: 'Portugal',
-    city: 'Lisboa',
-    tripId: 1,
-    tripName: 'Viagem a Lisboa',
-    createdAt: '2025-03-15T10:30:00.000Z',
-    likes: 5,
-    comments: [
-      {
-        id: 1,
-        user: 'Ana Silva',
-        userProfilePicture: null,
-        text: 'Procure hostels no centro.',
-        createdAt: '2025-03-16T09:15:00.000Z',
-        likes: 3,
-        replies: [
-          {
-            id: 1,
-            user: 'João Pereira',
-            userProfilePicture: null,
-            text: 'Concordo, os hostels são ótimos!',
-            createdAt: '2025-03-17T11:30:00.000Z',
-            likes: 2,
-            replies: [
-              {
-                id: 2,
-                user: 'Tiago Miranda',
-                userProfilePicture: null,
-                text: 'Sim, e têm boa localização!',
-                createdAt: '2025-03-18T16:45:00.000Z',
-                likes: 1,
-                replies: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
-    user: 'Maria Oliveira',
-    userProfilePicture: null,
-    question: 'É seguro usar transportes públicos em São Paulo à noite?',
-    category: 'Transportes',
-    country: 'Brasil',
-    city: 'São Paulo',
-    tripId: null,
-    tripName: null,
-    createdAt: '2025-03-14T15:45:00.000Z',
-    likes: 8,
-    comments: [
-      { id: 1, user: 'Carlos Souza', userProfilePicture: null, text: 'Depende da região.', createdAt: '2025-03-15T12:00:00.000Z', likes: 4, replies: [] },
-    ],
-  },
-];
 
 export default QandA;
