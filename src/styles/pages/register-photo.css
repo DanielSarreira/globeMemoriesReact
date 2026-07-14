@@ -1,0 +1,16 @@
+
+/* Profile photo section at the top of the register form */
+.register-photo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 12px;
+  margin-bottom: 8px;
+}
+.register-photo-hint {
+  color: #65676b;
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+  font-weight: 500;
+}

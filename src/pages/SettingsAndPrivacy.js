@@ -1,21 +1,56 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FaGlobe, FaLock, FaBell, FaUserShield, FaHistory, FaSignOutAlt, FaTrash, FaBan, FaUnlock, FaInfoCircle, FaCog, FaFileAlt } from 'react-icons/fa';
+import { FaGlobe, FaLock, FaBell, FaUserShield, FaHistory, FaSignOutAlt, FaTrash, FaBan, FaUnlock, FaInfoCircle, FaCog, FaFileAlt, FaDesktop, FaMobileAlt, FaTabletAlt, FaTimes, FaShieldAlt } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { request, clearAllAuth, setAuthHeader } from '../axios_helper';
 import Toast from '../components/Toast';
 import TermsModal from '../components/TermsModal';
 import '../styles/pages/SettingsAndPrivacy.css';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 
 
+/**
+ * Map backend StatsVisibility enum value to the local option id used by
+ * the settings dropdowns. The backend can return:
+ *   - 'PUBLIC'    → everyone sees the stats
+ *   - 'FOLLOWERS' → only followers (and the owner) see the stats
+ *   - 'PRIVATE'   → only the owner sees the stats
+ *   - null / missing / unknown → default to 'all' (PUBLIC) so legacy users
+ *     who pre-date the V4 migration still see their own stats.
+ */
+const statsVisibilityToOption = (v) => {
+  if (v === 'FOLLOWERS') return 'followers';
+  if (v === 'PRIVATE') return 'private';
+  return 'all';
+};
+
+/**
+ * Reverse mapping — send the dropdown value back to the backend.
+ * Kept as a small explicit table so adding a new visibility level later
+ * is a one-line change here.
+ */
+const optionToStatsVisibility = (v) => {
+  if (v === 'followers') return 'FOLLOWERS';
+  if (v === 'private') return 'PRIVATE';
+  return 'PUBLIC';
+};
+
+
 const SettingsAndPrivacy = () => {
   const [activeTab, setActiveTab] = useState('settings');
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [toast, setToast] = useState({ message: '', type: '', show: false });
   const [isLoading, setIsLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsModalTab, setTermsModalTab] = useState('terms');
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [closingSessionId, setClosingSessionId] = useState(null);
+  const [showLogoutAllModal, setShowLogoutAllModal] = useState(false);
   const [settings, setSettings] = useState({
     language: 'pt',
     notifications: {
@@ -25,9 +60,13 @@ const SettingsAndPrivacy = () => {
       promotions: false
     },
     privacy: {
-      profileVisibility: 'followers',
-      travelVisibility: 'followers',
-      showStatistics: 'all'
+      profileVisibility: 'public',
+      // Maps the backend StatsVisibility enum:
+      //   'PUBLIC'    → 'all'   (show to everyone)
+      //   'FOLLOWERS' → 'followers'  (only followers + own)
+      //   'PRIVATE'   → 'private'  (only me)
+      showStatistics: 'all',
+      showMonetaryStatistics: 'all',
     }
   });
 
@@ -54,13 +93,51 @@ const SettingsAndPrivacy = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      setLoadingBlocked(false);
-      return;
-    }
-    // Será carregado do backend
-    setLoadingBlocked(false);
+    const fetchBlockedUsers = async () => {
+      if (!user) {
+        setLoadingBlocked(false);
+        return;
+      }
+      setLoadingBlocked(true);
+      try {
+        const resp = await request('GET', '/users-management/blocked-list');
+        const list = Array.isArray(resp.data) ? resp.data : [];
+        // Map backend UserBasicDto → frontend shape
+        const mapped = list.map((u) => ({
+          id: u.id,
+          name: [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.username || 'Utilizador',
+          username: u.username,
+          profilePicture: u.profilePhoto || null,
+        }));
+        setBlockedUsers(mapped);
+      } catch (err) {
+        console.error('Erro ao carregar utilizadores bloqueados:', err);
+        setBlockedUsers([]);
+      } finally {
+        setLoadingBlocked(false);
+      }
+    };
+    fetchBlockedUsers();
   }, [user]);
+
+  // Load current privacy settings from the backend on mount (so the UI
+  // reflects the real persisted state, not a hardcoded default).
+  useEffect(() => {
+    if (!user) return;
+    setSettings((prev) => ({
+      ...prev,
+      privacy: {
+        ...prev.privacy,
+        // Backend only has a boolean privateProfile (no "followers" tier).
+        // Map: true → 'private' (only followers + own can see), false → 'public'.
+        profileVisibility: user.privateProfile ? 'private' : 'public',
+        // Map backend StatsVisibility enum to our internal option ids.
+        // Unknown / missing values default to 'all' (PUBLIC).
+        showStatistics: statsVisibilityToOption(user.showStatistics),
+        showMonetaryStatistics: statsVisibilityToOption(user.showMonetaryStatistics),
+      },
+    }));
+  }, [user?.id, user?.privateProfile, user?.showStatistics, user?.showMonetaryStatistics]);
 
   const showToast = (message, type) => {
     setToast({ message, type, show: true });
@@ -152,35 +229,131 @@ const SettingsAndPrivacy = () => {
   const handlePrivacyChange = async (type, value) => {
     setIsLoading(true);
     try {
+      // Compute the next "to-be-persisted" snapshot of the three privacy
+      // fields. We always send the full triplet so the backend stays the
+      // single source of truth — sending partial updates would leave
+      // the other fields in whatever state the form was last in.
+      const nextPrivateProfile =
+        type === 'profileVisibility' ? value === 'private' : !!user?.privateProfile;
+      const nextShowStatistics = optionToStatsVisibility(
+        type === 'showStatistics' ? value : settings.privacy.showStatistics
+      );
+      const nextShowMonetaryStatistics = optionToStatsVisibility(
+        type === 'showMonetaryStatistics' ? value : settings.privacy.showMonetaryStatistics
+      );
+
+      await request('PATCH', '/users/update-privacy', {
+        privateProfile: nextPrivateProfile,
+        showStatistics: nextShowStatistics,
+        showMonetaryStatistics: nextShowMonetaryStatistics,
+      });
+
+      // Keep the local AuthContext in sync so the rest of the app reflects
+      // the new value immediately (used by /users/{id}/detailed, etc.).
+      if (setUser && user) {
+        const updatedUser = {
+          ...user,
+          privateProfile: nextPrivateProfile,
+          showStatistics: nextShowStatistics,
+          showMonetaryStatistics: nextShowMonetaryStatistics,
+        };
+        setUser(updatedUser);
+        // CRITICAL: also persist to localStorage. AuthContext.loadAuth()
+        // only runs on mount, so without this update, refreshing the page
+        // would re-read the stale value from localStorage and revert the UI
+        // (and the rest of the app) to the old privacy setting.
+        try {
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        } catch (e) {
+          console.warn('Não foi possível persistir user no localStorage:', e);
+        }
+      }
       setSettings(prev => ({
         ...prev,
         privacy: {
           ...prev.privacy,
-          [type]: value
-        }
+          [type]: value,
+        },
       }));
-      // Simulação de chamada à API
-      await new Promise(resolve => setTimeout(resolve, 500));
       showToast('Definições de privacidade atualizadas!', 'success');
     } catch (error) {
-      showToast('Erro ao atualizar privacidade. Tente novamente.', 'error');
+      const msg = error.response?.data?.message || 'Erro ao atualizar privacidade. Tente novamente.';
+      showToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogoutAllDevices = async () => {
-    if (!window.confirm('Tem a certeza que deseja terminar sessão em todos os dispositivos?')) return;
-    
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const resp = await request('GET', '/sessions');
+      const list = Array.isArray(resp.data) ? resp.data : [];
+      setSessions(list);
+    } catch (err) {
+      console.error('Erro ao carregar sessões:', err);
+      showToast('Não foi possível carregar o histórico de sessões.', 'error');
+      setSessions([]);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const handleOpenSessionsModal = () => {
+    setShowSessionsModal(true);
+    fetchSessions();
+  };
+
+  const handleCloseSession = async (sessionToClose) => {
+    if (sessionToClose.isCurrentSession) return;
+    setClosingSessionId(sessionToClose.id);
+    try {
+      await request('DELETE', `/sessions/${sessionToClose.id}`);
+      setSessions(sessions.filter((s) => s.id !== sessionToClose.id));
+      showToast('Sessão terminada com sucesso.', 'success');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Erro ao terminar sessão.', 'error');
+    } finally {
+      setClosingSessionId(null);
+    }
+  };
+
+  const handleLogoutAllDevices = () => {
+    setShowLogoutAllModal(true);
+  };
+
+  const confirmLogoutAll = async () => {
+    setShowLogoutAllModal(false);
     setIsLoading(true);
     try {
-      // Simulação de chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await request('POST', '/sessions/close-all-sessions');
+      // The current session is also killed — log the user out client-side
+      clearAllAuth();
+      setUser(null);
+      setAuthHeader(null);
       showToast('Sessão terminada em todos os dispositivos!', 'success');
-    } catch (error) {
-      showToast('Erro ao terminar sessões. Tente novamente.', 'error');
+      setTimeout(() => navigate('/login'), 600);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Erro ao terminar sessões. Tente novamente.', 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const renderDeviceIcon = (deviceType) => {
+    const t = (deviceType || '').toLowerCase();
+    if (t.includes('mobile') || t.includes('phone')) return <FaMobileAlt />;
+    if (t.includes('tablet') || t.includes('ipad')) return <FaTabletAlt />;
+    return <FaDesktop />;
+  };
+
+  const formatDateTime = (iso) => {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' });
+    } catch (e) {
+      return iso;
     }
   };
 
@@ -217,15 +390,24 @@ const SettingsAndPrivacy = () => {
     }
   };
 
-  const handleUnblockUser = async (userToUnblock) => {
+  const [confirmUnblock, setConfirmUnblock] = useState(null);
+
+  const handleUnblockUser = (userToUnblock) => {
+    setConfirmUnblock(userToUnblock);
+  };
+
+  const confirmUnblockAction = async () => {
+    const userToUnblock = confirmUnblock;
+    if (!userToUnblock) return;
     setIsLoading(true);
     try {
-      setBlockedUsers(blockedUsers.filter(blockedUser => blockedUser.username !== userToUnblock.username));
-      // Simulação de chamada à API
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await request('DELETE', `/users-management/${userToUnblock.id}/unblock`);
+      setBlockedUsers(blockedUsers.filter((u) => u.id !== userToUnblock.id));
       showToast(`${userToUnblock.name} foi desbloqueado com sucesso!`, 'success');
-    } catch (error) {
-      showToast('Erro ao desbloquear viajante. Tente novamente.', 'error');
+      setConfirmUnblock(null);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erro ao desbloquear viajante. Tente novamente.';
+      showToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -327,9 +509,9 @@ const SettingsAndPrivacy = () => {
               <div className="setting-details">
                 <h3>Atividade da Conta</h3>
                 <p>Visualize o histórico de sessões, dispositivos ligados e ações recentes.</p>
-                <button 
+                <button
                   className="button"
-                  onClick={() => showToast('Funcionalidade em desenvolvimento. Em breve disponível!', 'info')}
+                  onClick={handleOpenSessionsModal}
                   disabled={isLoading}
                 >
                   Ver Histórico
@@ -366,34 +548,15 @@ const SettingsAndPrivacy = () => {
               <FaUserShield className="setting-icon" />
               <div className="setting-details">
                 <h3>Visibilidade do Perfil</h3>
-                <p>Controlar quem pode ver o seu perfil e as suas viagens.</p>
-                <select 
-                  className="privacy-select" 
+                <p>Público: qualquer pessoa pode ver o seu perfil. Privado: apenas os seus seguidores podem ver.</p>
+                <select
+                  className="privacy-select"
                   value={settings.privacy.profileVisibility}
                   onChange={(e) => handlePrivacyChange('profileVisibility', e.target.value)}
                   disabled={isLoading}
                 >
                   <option value="public">Público</option>
-                  <option value="followers">Apenas Seguidores</option>
-                  <option value="private">Privado</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="setting-item">
-              <FaLock className="setting-icon" />
-              <div className="setting-details">
-                <h3>Privacidade das Viagens</h3>
-                <p>Defina a visibilidade padrão das suas viagens e memórias partilhadas.</p>
-                <select 
-                  className="privacy-select" 
-                  value={settings.privacy.travelVisibility}
-                  onChange={(e) => handlePrivacyChange('travelVisibility', e.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="public">Público</option>
-                  <option value="followers">Apenas Seguidores</option>
-                  <option value="private">Privado</option>
+                  <option value="private">Privado (apenas seguidores)</option>
                 </select>
               </div>
             </div>
@@ -402,18 +565,45 @@ const SettingsAndPrivacy = () => {
               <FaInfoCircle className="setting-icon" />
               <div className="setting-details">
                 <h3>Estatísticas do Perfil</h3>
-                <p>Controle quem pode ver as suas estatísticas de viagem (número de viagens, países visitados, etc.).</p>
-                <select 
-                  className="privacy-select" 
-                  value={settings.privacy.showStatistics}
-                  onChange={(e) => handlePrivacyChange('showStatistics', e.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="all">Mostrar para Todos</option>
-                  <option value="followers">Apenas Seguidores</option>
-                  <option value="private">Apenas para Mim</option>
-                  <option value="hidden">Ocultar Completamente</option>
-                </select>
+                <p>
+                  Controle quem pode ver as suas estatísticas de viagem. As estatísticas
+                  gerais (viagens, países e cidades) e as estatísticas monetárias (gastos
+                  e médias em €) são controladas de forma independente.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+                  <div>
+                    <label style={{ fontWeight: 600, fontSize: '14px', display: 'block', marginBottom: '4px' }}>
+                      Estatísticas gerais
+                    </label>
+                    <select
+                      className="privacy-select"
+                      value={settings.privacy.showStatistics}
+                      onChange={(e) => handlePrivacyChange('showStatistics', e.target.value)}
+                      disabled={isLoading}
+                      style={{ width: '100%' }}
+                    >
+                      <option value="all">Mostrar para Todos</option>
+                      <option value="followers">Apenas Seguidores</option>
+                      <option value="private">Apenas para Mim</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, fontSize: '14px', display: 'block', marginBottom: '4px' }}>
+                      Estatísticas monetárias
+                    </label>
+                    <select
+                      className="privacy-select"
+                      value={settings.privacy.showMonetaryStatistics}
+                      onChange={(e) => handlePrivacyChange('showMonetaryStatistics', e.target.value)}
+                      disabled={isLoading}
+                      style={{ width: '100%' }}
+                    >
+                      <option value="all">Mostrar para Todos</option>
+                      <option value="followers">Apenas Seguidores</option>
+                      <option value="private">Apenas para Mim</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -582,6 +772,158 @@ const SettingsAndPrivacy = () => {
         show={toast.show}
         onClose={closeToast}
       />
+
+      {/* Modal de confirmação para desbloquear */}
+      {confirmUnblock && (
+        <div className="confirm-modal-overlay" onClick={() => !isLoading && setConfirmUnblock(null)}>
+          <div className="confirm-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Desbloquear viajante</h3>
+            <p>
+              Tens a certeza que queres desbloquear <strong>{confirmUnblock.name}</strong>{' '}
+              (@{confirmUnblock.username})? Esta pessoa poderá voltar a ver o teu perfil e interagir contigo.
+            </p>
+            <div className="confirm-modal-actions">
+              <button
+                className="button button-secondary"
+                onClick={() => setConfirmUnblock(null)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                className="button button-primary"
+                onClick={confirmUnblockAction}
+                disabled={isLoading}
+              >
+                {isLoading ? 'A processar...' : 'Desbloquear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de histórico de sessões */}
+      {showSessionsModal && (
+        <div className="confirm-modal-overlay" onClick={() => setShowSessionsModal(false)}>
+          <div
+            className="confirm-modal-content sessions-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sessions-modal-header">
+              <h3>
+                <FaShieldAlt style={{ marginRight: 8 }} />
+                Sessões Ativas
+              </h3>
+              <button
+                className="icon-close-button"
+                onClick={() => setShowSessionsModal(false)}
+                aria-label="Fechar"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <p className="sessions-modal-subtitle">
+              Estes são os dispositivos e sessões onde a sua conta está ativa.
+              Pode terminar sessões individuais ou todas de uma vez.
+            </p>
+
+            {loadingSessions ? (
+              <div className="loading-spinner" style={{ margin: '40px auto' }}></div>
+            ) : sessions.length === 0 ? (
+              <div className="no-sessions-message">
+                Nenhuma sessão ativa encontrada.
+              </div>
+            ) : (
+              <div className="sessions-list">
+                {sessions.map((s) => (
+                  <div
+                    key={s.id}
+                    className={`session-item ${s.isCurrentSession ? 'is-current' : ''}`}
+                  >
+                    <div className="session-device-icon">
+                      {renderDeviceIcon(s.deviceType)}
+                    </div>
+                    <div className="session-info">
+                      <div className="session-device-name">
+                        {s.deviceName || s.deviceType || 'Dispositivo desconhecido'}
+                        {s.isCurrentSession && (
+                          <span className="current-session-badge">Esta sessão</span>
+                        )}
+                      </div>
+                      <div className="session-meta">
+                        <span>{s.deviceType || '—'}</span>
+                        {s.ipAddress && <span> · IP: {s.ipAddress}</span>}
+                      </div>
+                      <div className="session-meta-light">
+                        Início de sessão: {formatDateTime(s.createdAt)}
+                      </div>
+                      <div className="session-meta-light">
+                        Última atividade: {formatDateTime(s.lastActivity)}
+                      </div>
+                      {s.expiresAt && (
+                        <div className="session-meta-light">
+                          Expira: {formatDateTime(s.expiresAt)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="session-action">
+                      {s.isCurrentSession ? (
+                        <span className="session-current-label">Atual</span>
+                      ) : (
+                        <button
+                          className="button button-secondary session-close-button"
+                          onClick={() => handleCloseSession(s)}
+                          disabled={closingSessionId === s.id}
+                        >
+                          {closingSessionId === s.id ? 'A terminar...' : 'Terminar'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="sessions-modal-footer">
+              <button
+                className="button button-secondary"
+                onClick={() => setShowSessionsModal(false)}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmação para terminar sessão em TODOS os dispositivos */}
+      {showLogoutAllModal && (
+        <div className="confirm-modal-overlay" onClick={() => setShowLogoutAllModal(false)}>
+          <div className="confirm-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Terminar sessão em todos os dispositivos</h3>
+            <p>
+              Tens a certeza que queres terminar a sessão <strong>neste e em todos os outros dispositivos</strong>?
+              Terás de iniciar sessão novamente.
+            </p>
+            <div className="confirm-modal-actions">
+              <button
+                className="button button-secondary"
+                onClick={() => setShowLogoutAllModal(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                className="button button-primary"
+                onClick={confirmLogoutAll}
+                disabled={isLoading}
+              >
+                {isLoading ? 'A terminar...' : 'Terminar tudo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

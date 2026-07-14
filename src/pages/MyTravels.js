@@ -1,9 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext'; 
 import { request, setAuthHeader, uploadFile, toFullMediaUrl } from '../axios_helper';
+import { useTripDraft } from '../hooks/useTripDraft';
+import {
+  validateTripForm,
+  countErrorsBySection,
+  getFieldError,
+  normaliseDateString,
+  TRIP_FORM_SECTIONS,
+} from '../utils/tripValidation';
+import TripErrorsModal from '../components/TripErrorsModal';
+import FieldError from '../components/FieldError';
+import SectionErrorPanel from '../components/SectionErrorPanel';
+import { emojiMap } from '../utils/emojiCode';
 import Toast from '../components/Toast';
 import "../styles/components/modal.css";
 import "../styles/pages/future-travels.css";
@@ -23,7 +35,21 @@ const SearchableDropdown = ({ options, value, onChange, placeholder, disabled, l
     opt[labelKey].toLowerCase().includes(search.toLowerCase())
   );
 
-  const selectedLabel = value ? options.find(opt => opt[valueKey] === value)?.[labelKey] || '' : '';
+  // Robust label resolution: try the exact match first, then a
+  // case-insensitive trim match. If nothing matches, fall back to the
+  // raw `value` so the user can still see what's been selected (this
+  // matters for legacy data where the option list might not include
+  // the previously-picked value, e.g. a country that was renamed
+  // or a city that was removed from the catalog).
+  const selectedLabel = (() => {
+    if (!value) return '';
+    const norm = (s) => (s || '').toString().trim().toLowerCase();
+    const direct = options.find((opt) => opt[valueKey] === value);
+    if (direct) return direct[labelKey];
+    const fuzzy = options.find((opt) => norm(opt[valueKey]) === norm(value));
+    if (fuzzy) return fuzzy[labelKey];
+    return value; // raw fallback so the input isn't empty
+  })();
 
   const handleSelect = (val) => {
     onChange(val);
@@ -232,6 +258,44 @@ const normalizeBackendTrip = (trip) => {
   };
 };
 
+// ── Hook: per-field error lookup ──────────────────────────────
+// The validateTripForm result is a flat array of errors with metadata.
+// Each form field needs to ask "am I bad?" — this hook gives back a
+// pair of (a) an errorsForSection(s) selector and (b) a lookup for a
+// specific (section, field, itemIndex) triple so we can render
+// inline error messages next to inputs.
+//
+// (useFormErrors was moved inside MyTravels as a useMemo so it can
+// see the live state — the implementation is right above the JSX
+// return.)
+
+// ── Tab button with optional error badge ──────────────────────
+// A tiny pure component for the trip-planner tabs. When `errorCount`
+// is > 0 it shows a red badge with the count and adds `aria-invalid`
+// so screen readers announce the section as problematic. Used by the
+// error modal flow so the user can see at-a-glance which sections
+// need attention.
+const TabButtonWithBadge = ({ tab, label, active, onClick, errorCount }) => (
+  <button
+    type="button"
+    onClick={() => onClick(tab)}
+    className={`tab-button ${active ? 'active' : ''} ${errorCount > 0 ? 'has-error' : ''}`}
+    aria-invalid={errorCount > 0 || undefined}
+      title={errorCount > 0 ? `${errorCount} ${errorCount > 1 ? 'campos em falta' : 'campo em falta'} nesta secção` : undefined}
+  >
+    <span>{label}</span>
+    {errorCount > 0 && (
+      <span
+        className="tab-error-badge"
+        aria-label={`${errorCount} erros`}
+        data-testid={`tab-error-badge-${tab}`}
+      >
+        {errorCount > 99 ? '99+' : errorCount}
+      </span>
+    )}
+  </button>
+);
+
 const MyTravels = () => {
   const [travels, setTravels] = useState([]);
   const [filterType, setFilterType] = useState('all'); // Novo estado para filtro
@@ -300,20 +364,73 @@ const MyTravels = () => {
   const [videosPreviews, setVideosPreviews] = useState([]); // Array de previews dos vídeos
   const [videosInfo, setVideosInfo] = useState([]); // Array de informações dos vídeos
   const [generalInfoImagePreviews, setGeneralInfoImagePreviews] = useState([]);
-  const [accommodationImagePreviews, setAccommodationImagePreviews] = useState([]);
-  const [foodRecommendationImagePreviews, setFoodRecommendationImagePreviews] = useState([]);
   const [transportImagePreviews, setTransportImagePreviews] = useState([]);
-  const [referencePointImagePreviews, setReferencePointImagePreviews] = useState([]);
   const [editingFoodIndex, setEditingFoodIndex] = useState(null);
-  const [newFoodRecommendation, setNewFoodRecommendation] = useState({ name: '', description: '' });
+  // Per-item photos: at most 1 photo per food recommendation.
+  // `photoFile` holds the raw File object (so we can upload it after the
+  // trip is created). `photoPreview` is a blob URL for instant UI feedback.
+  const [newFoodRecommendation, setNewFoodRecommendation] = useState({
+    name: '',
+    description: '',
+    photoFile: null,
+    photoPreview: null,
+  });
   const [editingPointIndex, setEditingPointIndex] = useState(null);
-  const [newPointOfInterest, setNewPointOfInterest] = useState({ name: '', description: '', type: '', link: '' });
+  // Per-item photos for reference points: multiple allowed (per the user's
+  // request, photos are owned by each point, not a global pool).
+  const [newPointOfInterest, setNewPointOfInterest] = useState({
+    name: '',
+    description: '',
+    type: '',
+    link: '',
+    photoFiles: [],
+    photoPreviews: [],
+  });
   const [editingNegativeIndex, setEditingNegativeIndex] = useState(null);
   const [newNegativePoint, setNewNegativePoint] = useState({ name: '', description: '' });
   const [editingItineraryDay, setEditingItineraryDay] = useState(null);
   const [newItineraryDay, setNewItineraryDay] = useState({ day: '', activities: [''] });
   const [itineraryError, setItineraryError] = useState('');
+
+  // ── Form errors modal ────────────────────────────────────────
+  // Holds the structured errors from the most recent validation run
+  // (pre-flight client-side OR the last backend error response). The
+  // errors per section are also surfaced as red badges on the tab
+  // buttons (see `errorCountsBySection`).
+  const [formErrors, setFormErrors] = useState([]);
+  const [showErrorsModal, setShowErrorsModal] = useState(false);
+  // Live error count, recomputed when the form changes so badges
+  // disappear as the user fixes issues without submitting.
+  const [errorCountsBySection, setErrorCountsBySection] = useState({});
   const [toast, setToast] = useState({ message: '', type: '', show: false });
+
+  // ── Live error list (used for inline field errors) ───────────
+  // Computed from the same validateTripForm call that powers the
+  // badges, but kept as a derived value via useMemo so it never lags
+  // behind. The `getFieldError(...)` helper is used inside each
+  // field's render to decide whether to wrap itself in <FieldError>.
+  const formMedia = useMemo(() => ({
+    coverPhoto: newTravel.highlightImage instanceof File ? newTravel.highlightImage : null,
+    generalPhotos: (newTravel.images_generalInformation || []).filter((f) => f instanceof File),
+    videos: (newTravel.travelVideos || []).filter((f) => f instanceof File),
+    accommodationPhotos: (newTravel.accommodations || []).map((a) => a.images || []),
+    referencePointPhotos: (newTravel.pointsOfInterest || []).map((p) => p.photoFiles || []),
+    foodPhotos: (newTravel.foodRecommendations || []).map((f) => f.photoFile).filter(Boolean),
+  }), [
+    newTravel.highlightImage, newTravel.images_generalInformation, newTravel.travelVideos,
+    newTravel.accommodations, newTravel.pointsOfInterest, newTravel.foodRecommendations,
+  ]);
+  const liveErrors = useMemo(() => validateTripForm(newTravel, formMedia).errors, [
+    newTravel, formMedia,
+  ]);
+  // Look up an error for a (section, field, [itemIndex]) triple.
+  // Use this inside each field's render: const err = fieldError('general', 'title').
+  const fieldError = (section, field, itemIndex = null) =>
+    getFieldError(liveErrors, { section, field, itemIndex });
+  // Convenience: errors for a whole section, used by the per-section
+  // error panel at the top of each tab.
+  const errorsForSection = (section) =>
+    liveErrors.filter((e) => e.section === section);
   
   // ===== TRANSPORT MANAGEMENT STATE =====
   const [editingTransportIndex, setEditingTransportIndex] = useState(null);
@@ -336,6 +453,15 @@ const MyTravels = () => {
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [saveAction, setSaveAction] = useState(null); // 'draft' ou 'publish'
+
+  // ── Trip draft autosave (only for NEW trips, not edits) ──────
+  // We snapshot `newTravel` to localStorage on a 1.5s debounce.
+  // `hasSavedDraft` is exposed to the header so we can show a "Rascunho
+  // recuperado" toast when the user re-opens the form.
+  const draft = useTripDraft(newTravel, isEditing ? null : user?.id, {
+    enabled: !isEditing, // only autosave when creating, not when editing
+  });
+  const { hasSavedDraft, lastSavedAt, loadDraft, clearDraft } = draft;
   // Estados para armazenar dados por destino
   const [accommodationsByDestination, setAccommodationsByDestination] = useState({});
   const [pointsOfInterestByDestination, setPointsOfInterestByDestination] = useState({});
@@ -381,6 +507,36 @@ const MyTravels = () => {
   const [selectedTripForEdit, setSelectedTripForEdit] = useState(null);
 
   // Fetch countries on mount (axios_helper best practice)
+  // ── Live error count for the tab badges ───────────────────────
+  // We don't re-run the full validation on every keystroke (that would
+  // flash errors as the user types), but we do recompute section-level
+  // counts so the badges shrink/grow as the user fixes issues. The
+  // modal is only shown on submit, but the badges give continuous
+  // feedback.
+  useEffect(() => {
+    // Skip when the modal is closed AND the counts are already empty —
+    // we don't need to recompute on every state change otherwise.
+    const formMedia = {
+      coverPhoto: newTravel.highlightImage instanceof File ? newTravel.highlightImage : null,
+      generalPhotos: (newTravel.images_generalInformation || []).filter((f) => f instanceof File),
+      videos: (newTravel.travelVideos || []).filter((f) => f instanceof File),
+      accommodationPhotos: (newTravel.accommodations || []).map((a) => a.images || []),
+      referencePointPhotos: (newTravel.pointsOfInterest || []).map((p) => p.photoFiles || []),
+      foodPhotos: (newTravel.foodRecommendations || []).map((f) => f.photoFile).filter(Boolean),
+    };
+    const result = validateTripForm(newTravel, formMedia);
+    setErrorCountsBySection(countErrorsBySection(result.errors));
+    // We never auto-open the modal here; the user only sees it when
+    // they click "Publicar". This keeps the form from feeling naggy.
+  }, [
+    newTravel.title, newTravel.tripSummary, newTravel.tripDescription,
+    newTravel.startDate, newTravel.endDate, newTravel.weather, newTravel.stars,
+    newTravel.country, newTravel.city, newTravel.category, newTravel.languages,
+    newTravel.priceDetails, newTravel.accommodations, newTravel.pointsOfInterest,
+    newTravel.foodRecommendations, newTravel.negativePoints, newTravel.itinerary,
+    newTravel.highlightImage, newTravel.images_generalInformation, newTravel.travelVideos,
+  ]);
+
   useEffect(() => {
     let isMounted = true;
     setLoadingCountries(true);
@@ -484,55 +640,6 @@ const MyTravels = () => {
   // ===== EMOJI CODE TO EMOJI CONVERTER =====
   const convertEmojiCode = (emojiCode) => {
     if (!emojiCode) return '📍';
-    // Handle emoji codes like :herb: or :beach_with_umbrella:
-    const emojiMap = {
-      ':herb:': '🌿',
-      ':beach:': '🏖️',
-      ':person_climbing:': '🧗',
-      ':mountain:': '⛰️',
-      ':cityscape:': '🏙️',
-      ':fork_and_knife:': '🍽️',
-      ':art:': '🎨',
-      ':book:': '📚',
-      ':sun:': '☀️',
-      ':snow:': '❄️',
-      ':tent:': '⛺',
-      ':sailboat:': '⛵',
-      ':airplane:': '✈️',
-      ':bus:': '🚌',
-      ':train:': '🚂',
-      ':car:': '🚗',
-      ':family:': '👨‍👩‍👧‍👦',
-      ':heart:': '❤️',
-      ':moneybag:': '💰',
-      ':sparkles:': '✨',
-      ':lion:': '🦁',
-      ':classical_building:': '🏛️',
-      ':european_castle:': '🏰',
-      ':city_dusk:': '🌆',
-      ':mountain_snow:': '⛰️',
-      ':person_in_lotus_position:': '🧘',
-      ':island:': '🏝️',
-      ':briefcase:': '💼',
-      ':palm_tree:': '🌴',
-      ':pray:': '🙏',
-      ':seedling:': '🌱',
-      ':earth_africa:': '🌍',
-      ':compass:': '🧭',
-      ':person_getting_massage:': '💆',
-      ':gem:': '💎',
-      ':park:': '🏞️',
-      ':ship:': '🚢',
-      ':ocean:': '🌊',
-      ':camping:': '⛺',
-      ':bicycle:': '🚴',
-      ':hiking_boot:': '🥾',
-      ':national_park:': '🏕️',
-      ':sunrise:': '🌅',
-      ':sunset:': '🌇',
-      ':stars:': '⭐',
-      ':moon:': '🌙',
-    };
     return emojiMap[emojiCode.toLowerCase()] || emojiCode || '📍';
   };
 
@@ -606,7 +713,6 @@ const MyTravels = () => {
   // ===== DATA TRANSFORMATION: CONVERT BACKEND TRIP TO FRONTEND FORM STATE =====
   const transformBackendTripToFrontend = (backendTrip) => {
     if (!backendTrip) return null;
-    
     // Get category names from IDs (using apiCategories mapping)
     const categoryNames = (backendTrip.categories || [])
       .map(categoryId => {
@@ -685,24 +791,27 @@ const MyTravels = () => {
     // Get first city name (from cities array - backend only stores IDs)
     // We'll set a placeholder, as backend doesn't return city names
     const mainCity = backendTrip.accommodations?.[0]?.city || 'Unknown';
-    
+
     // Parse dates
     const startDate = backendTrip.startDate || '';
     const endDate = backendTrip.endDate || '';
-    
+
     // Parse cost breakdown if available
-    const priceDetails = backendTrip.cost || { 
-      accommodation: 0, 
-      food: 0, 
-      transport: 0, 
-      extra: 0 
+    const priceDetails = backendTrip.cost || {
+      accommodation: 0,
+      food: 0,
+      transport: 0,
+      extra: 0
     };
-    
+
     return {
       name: backendTrip.title || '',
       user: 'Tiago',
       category: categoryNames,
-      country: '', // Not provided by backend, user will select
+      // Country is now denormalised on the backend (resolved from
+      // the first trip city at read time). Falls back to '' for
+      // legacy trips that pre-date the field.
+      country: backendTrip.country || '',
       city: mainCity,
       price: (backendTrip.cost?.total || 0).toString(),
       days: backendTrip.tripDurationDays || 0,
@@ -723,6 +832,11 @@ const MyTravels = () => {
       images_generalInformation: [],
       description: backendTrip.tripSummary || '',
       longDescription: backendTrip.tripDescription || '',
+      // Trip rating (1-5 stars). The StarRating component reads
+      // `newTravel.stars` and converts to int via parseInt, so we
+      // store the value as a string to stay consistent with the
+      // rest of the form state.
+      stars: backendTrip.tripRating != null ? String(backendTrip.tripRating) : '0',
       activities: [],
       accommodations: accommodations.length > 0 ? accommodations : [
         {
@@ -878,23 +992,29 @@ const MyTravels = () => {
         }))
       },
       
-      // Reference Points
+      // Reference Points (photos are per-point, not global — per user spec)
       referencePoints: (newTravel.pointsOfInterest || [])
         .filter(point => point.name?.trim())
         .map(point => ({
           name: sanitizeInput(point.name),
           description: sanitizeInput(point.description || point.type),
           city: city,
-          photos: point.link ? [point.link] : []
+          // Backend will accept empty list — we upload the actual files in a
+          // post-create step (see uploadTripMedia).
+          photos: []
         })),
-      
-      // Accommodations
+
+      // Accommodations — each accommodation carries its own photos.
+      // (Was previously only sent by name; now we include `photos` so the
+      // accommodation sub-entity has the per-accommodation gallery.
+      // Files are uploaded post-create; this DTO just keeps the shape
+      // consistent with the backend.)
       accommodations: (newTravel.accommodations || [])
         .filter(acc => acc.name?.trim())
         .map(acc => {
           const accType = apiAccommodationTypes.find(at => at.type === acc.type);
           const accBoard = apiAccommodationBoards.find(ab => ab.board === acc.regime);
-          
+
           return {
             name: sanitizeInput(acc.name),
             accommodationTypeId: accType?.id || 1,
@@ -908,7 +1028,8 @@ const MyTravels = () => {
             checkOut: acc.checkOutDate || endDate,
             bookingDate: (acc.bookingDate || newTravel.BookingTripPaymentDate || startDate),
             description: sanitizeInput(acc.description),
-            rating: Math.max(0, Math.min(5, parseInt(acc.rating || 0)))
+            rating: Math.max(0, Math.min(5, parseInt(acc.rating || 0))),
+            photos: []
           };
         }),
       
@@ -926,7 +1047,7 @@ const MyTravels = () => {
           };
         }),
       
-      // Recommended Foods
+      // Recommended Foods (one photo per food, per user spec).
       recommendedFoods: (newTravel.foodRecommendations || [])
         .filter(food => food.name?.trim())
         .map(food => ({
@@ -1294,21 +1415,15 @@ const MyTravels = () => {
   const categories = apiCategories.map(cat => cat.name);
 
   // Fetch user trips from backend on mount
+  // Note: trip-creation DRAFTS are now handled by `useTripDraft`
+  // (autosaved to localStorage under `gm_trip_draft_{userId}`), so we
+  // no longer need to merge a local "user-travels" list with status
+  // = 'draft' entries. The cached list here is just the backend-
+  // published trips for snappy UX.
   useEffect(() => {
     let isMounted = true;
     setLoadingUserTrips(true);
 
-    const loadLocalDrafts = () => {
-      try {
-        const cached = localStorage.getItem("user-travels");
-        if (!cached) return [];
-        const all = JSON.parse(cached);
-        return Array.isArray(all) ? all.filter(t => t.status === 'draft') : [];
-      } catch (e) {
-        return [];
-      }
-    };
-    
     // Show cached data immediately (stale-while-revalidate) for snappy UX
     const cachedUserTrips = localStorage.getItem("user-trips-backend");
     if (cachedUserTrips) {
@@ -1316,7 +1431,7 @@ const MyTravels = () => {
         const parsed = JSON.parse(cachedUserTrips);
         if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
           setUserTrips(parsed);
-          setTravels([...parsed.map(normalizeBackendTrip), ...loadLocalDrafts()]);
+          setTravels(parsed.map(normalizeBackendTrip));
         }
       } catch (e) {
         console.warn('⚠️ Failed to parse cached user trips');
@@ -1330,7 +1445,7 @@ const MyTravels = () => {
           // Extract content array from paginated response
           const trips = response.data.content;
           setUserTrips(trips);
-          setTravels([...trips.map(normalizeBackendTrip), ...loadLocalDrafts()]);
+          setTravels(trips.map(normalizeBackendTrip));
           // Cache the trips
           localStorage.setItem("user-trips-backend", JSON.stringify(trips));
         }
@@ -1372,9 +1487,11 @@ const MyTravels = () => {
     if (selectedTravelType.main === 'multi' && selectedDestinationIndex !== "" && selectedDestinationIndex !== undefined) {
       // Limpar estados de edição quando muda destino
       setEditingPointIndex(null);
-      setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
-      setReferencePointImagePreviews([]);
-      setAccommodationImagePreviews([]);
+      setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
+      // (Removed: global reference-point image previews — per-item
+       // previews live inside each ref-point card.)
+      // (Removed: global accommodation image previews — per-item
+       // previews live inside each accommodation card.)
     }
   }, [selectedDestinationIndex, selectedTravelType.main]);
 
@@ -2105,26 +2222,6 @@ const MyTravels = () => {
           [name]: [...(prevState[name] || []), ...newFiles],
         }));
         setGeneralInfoImagePreviews((prev) => [...prev, ...previews]);
-      } else if (name === 'accommodationImages') {
-        const newFiles = Array.from(files);
-        const previews = newFiles.map((file) => URL.createObjectURL(file));
-        setNewTravel((prevState) => {
-          const updatedAccommodations = [...prevState.accommodations];
-          updatedAccommodations[0] = {
-            ...updatedAccommodations[0],
-            images: [...(updatedAccommodations[0].images || []), ...newFiles]
-          };
-          return { ...prevState, accommodations: updatedAccommodations };
-        });
-        setAccommodationImagePreviews((prev) => [...prev, ...previews]);
-      } else if (name === 'images_foodRecommendations') {
-        const newFiles = Array.from(files);
-        const previews = newFiles.map((file) => URL.createObjectURL(file));
-        setNewTravel((prevState) => ({
-          ...prevState,
-          [name]: [...(prevState[name] || []), ...newFiles],
-        }));
-        setFoodRecommendationImagePreviews((prev) => [...prev, ...previews]);
       } else if (name === 'images_localTransport') {
         const newFiles = Array.from(files);
         const previews = newFiles.map((file) => URL.createObjectURL(file));
@@ -2133,14 +2230,6 @@ const MyTravels = () => {
           [name]: [...(prevState[name] || []), ...newFiles],
         }));
         setTransportImagePreviews((prev) => [...prev, ...previews]);
-      } else if (name === 'images_referencePoints') {
-        const newFiles = Array.from(files);
-        const previews = newFiles.map((file) => URL.createObjectURL(file));
-        setNewTravel((prevState) => ({
-          ...prevState,
-          [name]: [...(prevState[name] || []), ...newFiles],
-        }));
-        setReferencePointImagePreviews((prev) => [...prev, ...previews]);
       }
     } else if (name.startsWith('accommodations')) {
       const parts = name.split('.');
@@ -2254,20 +2343,21 @@ const MyTravels = () => {
     }
     setNewTravel((prev) => {
       const updatedRecommendations = [...prev.foodRecommendations];
+      const payload = {
+        name: newFoodRecommendation.name,
+        description: newFoodRecommendation.description,
+        // Single photo per food recommendation (per the user's spec).
+        // We keep the raw File for the post-create upload step.
+        photoFile: newFoodRecommendation.photoFile || null,
+      };
       if (editingFoodIndex !== null) {
-        updatedRecommendations[editingFoodIndex] = {
-          name: newFoodRecommendation.name,
-          description: newFoodRecommendation.description
-        };
+        updatedRecommendations[editingFoodIndex] = payload;
       } else {
-        updatedRecommendations.push({
-          name: newFoodRecommendation.name,
-          description: newFoodRecommendation.description
-        });
+        updatedRecommendations.push(payload);
       }
       return { ...prev, foodRecommendations: updatedRecommendations };
     });
-    setNewFoodRecommendation({ name: '', description: '' });
+    setNewFoodRecommendation({ name: '', description: '', photoFile: null, photoPreview: null });
     setEditingFoodIndex(null);
     setToast({ message: 'Recomendação alimentar adicionada/editada com sucesso!', type: 'success', show: true });
   };
@@ -2279,7 +2369,7 @@ const MyTravels = () => {
       return { ...prev, foodRecommendations: updatedRecommendations };
     });
     setEditingFoodIndex(null);
-    setNewFoodRecommendation({ name: '', description: '' });
+    setNewFoodRecommendation({ name: '', description: '', photoFile: null, photoPreview: null });
     showToast('Recomendação alimentar removida com sucesso!', 'success');
     setToast({ message: 'Recomendação alimentar removida com sucesso!', type: 'success', show: true });
   };
@@ -2288,9 +2378,14 @@ const MyTravels = () => {
     e.stopPropagation();
     const recommendation = newTravel.foodRecommendations[index];
     if (recommendation) {
+      // When editing, the photo is already a backend URL (after a previous
+      // save) — there's no File to re-upload. We expose the URL as the
+      // preview so the user still sees the existing image.
       setNewFoodRecommendation({
         name: recommendation.name || '',
-        description: recommendation.description || ''
+        description: recommendation.description || '',
+        photoFile: null,
+        photoPreview: recommendation.photoUrl || null,
       });
       setEditingFoodIndex(index);
     }
@@ -2298,7 +2393,7 @@ const MyTravels = () => {
 
   const handleCancelEditFood = (e) => {
     e.stopPropagation();
-    setNewFoodRecommendation({ name: '', description: '' });
+    setNewFoodRecommendation({ name: '', description: '', photoFile: null, photoPreview: null });
     setEditingFoodIndex(null);
   };
 
@@ -2384,20 +2479,20 @@ const MyTravels = () => {
       // Para destino único, trabalhar diretamente com newTravel
       setNewTravel((prev) => {
         const updatedPoints = [...prev.pointsOfInterest];
+        // Per-point photos (per user spec: photos belong to each reference
+        // point, not to a global pool). Raw File objects are kept for the
+        // post-create upload step.
+        const payload = {
+          name: newPointOfInterest.name,
+          description: newPointOfInterest.description || '',
+          type: newPointOfInterest.type,
+          link: newPointOfInterest.link,
+          photoFiles: newPointOfInterest.photoFiles || [],
+        };
         if (editingPointIndex !== null) {
-          updatedPoints[editingPointIndex] = {
-            name: newPointOfInterest.name,
-            description: newPointOfInterest.description || '',
-            type: newPointOfInterest.type,
-            link: newPointOfInterest.link
-          };
+          updatedPoints[editingPointIndex] = payload;
         } else {
-          updatedPoints.push({
-            name: newPointOfInterest.name,
-            description: newPointOfInterest.description || '',
-            type: newPointOfInterest.type,
-            link: newPointOfInterest.link
-          });
+          updatedPoints.push(payload);
         }
         return { ...prev, pointsOfInterest: updatedPoints };
       });
@@ -2433,17 +2528,19 @@ const MyTravels = () => {
             name: newPointOfInterest.name,
             description: newPointOfInterest.description || '',
             type: newPointOfInterest.type,
-            link: newPointOfInterest.link
+            link: newPointOfInterest.link,
+            photoFiles: newPointOfInterest.photoFiles || [],
           };
         } else {
           updatedPoints.push({
             name: newPointOfInterest.name,
             description: newPointOfInterest.description || '',
             type: newPointOfInterest.type,
-            link: newPointOfInterest.link
+            link: newPointOfInterest.link,
+            photoFiles: newPointOfInterest.photoFiles || [],
           });
         }
-        
+
         setPointsOfInterestByDestination(prev => ({
           ...prev,
           [destinationKey]: updatedPoints
@@ -2451,7 +2548,7 @@ const MyTravels = () => {
       }
     }
 
-    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
     setEditingPointIndex(null);
     setToast({ message: 'Ponto de referência adicionado/editado com sucesso!', type: 'success', show: true });
   };
@@ -2476,7 +2573,7 @@ const MyTravels = () => {
     }
     
     setEditingPointIndex(null);
-    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
     setToast({ message: 'Ponto de referência removido com sucesso!', type: 'success', show: true });
   };
 
@@ -2493,11 +2590,15 @@ const MyTravels = () => {
     }
     
     if (point) {
+      // On edit: photos are already backend URLs (no File to re-upload).
+      // We still expose them as previews so the user sees what's saved.
       setNewPointOfInterest({
         name: point.name || '',
         description: point.description || '',
         type: point.type || '',
-        link: point.link || ''
+        link: point.link || '',
+        photoFiles: [],
+        photoPreviews: Array.isArray(point.photoUrls) ? point.photoUrls : [],
       });
       setEditingPointIndex(index);
     }
@@ -2505,7 +2606,7 @@ const MyTravels = () => {
 
   const handleCancelEditPoint = (e) => {
     e.stopPropagation();
-    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
     setEditingPointIndex(null);
   };
 
@@ -2718,9 +2819,9 @@ const MyTravels = () => {
       setGroupMembers(travelToEdit.groupData.members);
     }
     
-    setNewFoodRecommendation({ name: '', description: '' });
+    setNewFoodRecommendation({ name: '', description: '', photoFile: null, photoPreview: null });
     setEditingFoodIndex(null);
-    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
     setEditingPointIndex(null);
     setNewItineraryDay({ day: '', activities: [''] });
     setEditingItineraryDay(null);
@@ -2777,22 +2878,19 @@ const MyTravels = () => {
     }
 
     if (travelToEdit.accommodations && Array.isArray(travelToEdit.accommodations)) {
-      const accommodationImages = travelToEdit.accommodations[0]?.images || [];
-      const previews = accommodationImages.map((image) =>
-        image instanceof File ? URL.createObjectURL(image) : image
-      );
-      setAccommodationImagePreviews(previews);
+      // (Removed: global accommodation image previews — per-item
+       // previews live inside each accommodation card.)
     } else {
-      setAccommodationImagePreviews([]);
+      // (Removed: global accommodation image previews — per-item
+       // previews live inside each accommodation card.)
     }
 
     if (travelToEdit.images_foodRecommendations && Array.isArray(travelToEdit.images_foodRecommendations)) {
-      const previews = travelToEdit.images_foodRecommendations.map((image) =>
-        image instanceof File ? URL.createObjectURL(image) : image
-      );
-      setFoodRecommendationImagePreviews(previews);
+      // (Removed: global food image previews — per-item previews
+      // live on each recommendation card.)
     } else {
-      setFoodRecommendationImagePreviews([]);
+      // (Removed: global food image previews — per-item previews
+      // live on each recommendation card.)
     }
 
     if (travelToEdit.images_localTransport && Array.isArray(travelToEdit.images_localTransport)) {
@@ -2805,26 +2903,29 @@ const MyTravels = () => {
     }
 
     if (travelToEdit.images_referencePoints && Array.isArray(travelToEdit.images_referencePoints)) {
-      const previews = travelToEdit.images_referencePoints.map((image) =>
-        image instanceof File ? URL.createObjectURL(image) : image
-      );
-      setReferencePointImagePreviews(previews);
+      // (Removed: global reference-point image previews — per-item
+       // previews live on each ref-point card.)
     } else {
-      setReferencePointImagePreviews([]);
+      // (Removed: global reference-point image previews — per-item
+       // previews live on each ref-point card.)
     }
   };
 
   // ===== LOAD BACKEND TRIP INTO FORM FOR EDITING =====
   const handleLoadBackendTrip = async (backendTripId) => {
     try {
-      const tripToEdit = userTrips.find(t => (t.tripId || t.id) === backendTripId);
-      if (!tripToEdit) {
+      // Fetch fresh data from the backend (single round-trip). This
+      // is more reliable than the local `userTrips` state which can
+      // be stale if the user edited a trip on another device.
+      const res = await request('GET', `/trips/${backendTripId}/edit-details`);
+      const trip = res.data || res;
+      if (!trip || !trip.id) {
         setToast({ message: '❌ Viagem não encontrada!', type: 'error', show: true });
         return;
       }
 
       // Transform backend trip data to frontend form state
-      const frontendTrip = transformBackendTripToFrontend(tripToEdit);
+      const frontendTrip = transformBackendTripToFrontend(trip);
       if (!frontendTrip) {
         setToast({ message: '❌ Erro ao carregar dados da viagem!', type: 'error', show: true });
         return;
@@ -2840,9 +2941,9 @@ const MyTravels = () => {
       setSelectedTravelType({ main: 'single', isGroup: false });
 
       // Reset editing states
-      setNewFoodRecommendation({ name: '', description: '' });
+      setNewFoodRecommendation({ name: '', description: '', photoFile: null, photoPreview: null });
       setEditingFoodIndex(null);
-      setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+      setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
       setEditingPointIndex(null);
       setNewItineraryDay({ day: '', activities: [''] });
       setEditingItineraryDay(null);
@@ -2901,15 +3002,10 @@ const MyTravels = () => {
       if (response.data?.content) {
         const trips = response.data.content;
         setUserTrips(trips);
-        const localDrafts = (() => {
-          try {
-            const cached = localStorage.getItem("user-travels");
-            if (!cached) return [];
-            const all = JSON.parse(cached);
-            return Array.isArray(all) ? all.filter(t => t.status === 'draft') : [];
-          } catch (e) { return []; }
-        })();
-        setTravels([...trips.map(normalizeBackendTrip), ...localDrafts]);
+        // Local drafts are now handled by `useTripDraft` (autosaved to
+        // localStorage). The user-trip list comes purely from the
+        // backend paginated endpoint.
+        setTravels(trips.map(normalizeBackendTrip));
         localStorage.setItem("user-trips-backend", JSON.stringify(trips));
       }
     } catch (error) {
@@ -2984,23 +3080,29 @@ const MyTravels = () => {
       }
     }
 
-    // 5. Food photos — flat array mapped positionally to created food entities
+    // 5. Food photos — at most 1 per food, owned by the food itself
+    //    (per the user's spec; replaces the previous global pool).
     const createdFoods = createdTripData?.recommendedFoods || [];
-    const foodPhotos = newTravel.images_foodRecommendations || [];
-    for (let i = 0; i < Math.min(foodPhotos.length, createdFoods.length); i++) {
+    for (let i = 0; i < createdFoods.length; i++) {
       const foodId = createdFoods[i]?.id;
-      if (foodId && foodPhotos[i] instanceof File) {
-        await uploadSingle(`/trips/${tripId}/media/foods/${foodId}/photo`, foodPhotos[i]);
+      const photoFile = newTravel.foodRecommendations?.[i]?.photoFile;
+      if (foodId && photoFile instanceof File) {
+        await uploadSingle(`/trips/${tripId}/media/foods/${foodId}/photo`, photoFile);
       }
     }
 
-    // 6. Reference point photos — flat array mapped positionally to created reference points
+    // 6. Reference point photos — multiple per point, owned by the point
+    //    itself (per the user's spec; replaces the previous global pool).
     const createdRefPoints = createdTripData?.referencePoints || [];
-    const refPhotos = newTravel.images_referencePoints || [];
-    for (let i = 0; i < Math.min(refPhotos.length, createdRefPoints.length); i++) {
+    for (let i = 0; i < createdRefPoints.length; i++) {
       const refId = createdRefPoints[i]?.id;
-      if (refId && refPhotos[i] instanceof File) {
-        await uploadSingle(`/trips/${tripId}/media/reference-points/${refId}/photos`, refPhotos[i]);
+      const photos = newTravel.pointsOfInterest?.[i]?.photoFiles || [];
+      if (refId) {
+        for (const file of photos) {
+          if (file instanceof File) {
+            await uploadSingle(`/trips/${tripId}/media/reference-points/${refId}/photos`, file);
+          }
+        }
       }
     }
 
@@ -3019,7 +3121,7 @@ const MyTravels = () => {
         setSaveAction(null);
         return;
       }
-      
+
       // Guardar como rascunho (sem validação completa)
       const draftTravel = {
         ...newTravel,
@@ -3042,6 +3144,8 @@ const MyTravels = () => {
         showToast('📝 Viagem guardada como rascunho! Pode continuar a editar depois.', 'success');
       }
       setSaveAction(null);
+      // Draft save is a "checkpoint" the user explicitly requested, so
+      // wiping the form is the expected behaviour.
       resetForm();
       return;
     }
@@ -3079,12 +3183,45 @@ const MyTravels = () => {
     }
 
     // ===== SINGLE DESTINATION: SUBMIT TO BACKEND =====
+    // ── PRE-FLIGHT VALIDATION (mirrors backend constraints) ──────
+    // We re-run the size/type/required checks here so we don't ping the
+    // backend for a payload we already know is bad — and so the user
+    // gets the same kind of message whether they trip the frontend OR
+    // the backend validation. `validateForm()` above only checks the
+    // user-facing required fields; this catches the rest.
+    const formMedia = {
+      coverPhoto: newTravel.highlightImage instanceof File ? newTravel.highlightImage : null,
+      generalPhotos: (newTravel.images_generalInformation || []).filter((f) => f instanceof File),
+      videos: (newTravel.travelVideos || []).filter((f) => f instanceof File),
+      accommodationPhotos: (newTravel.accommodations || []).map((a) => a.images || []),
+      referencePointPhotos: (newTravel.pointsOfInterest || []).map((p) => p.photoFiles || []),
+      foodPhotos: (newTravel.foodRecommendations || []).map((f) => f.photoFile).filter(Boolean),
+    };
+    const preflight = validateTripForm(newTravel, formMedia);
+    if (!preflight.valid) {
+      // All errors in one modal — no more "first 3 + counter". The user
+      // can see every problem, jump to the right tab, and fix them all
+      // in one pass before resubmitting.
+      setFormErrors(preflight.errors);
+      setErrorCountsBySection(countErrorsBySection(preflight.errors));
+      setShowErrorsModal(true);
+      console.warn('[tripValidation] form rejected:', preflight.errors);
+      setSaveAction(null);
+      // DO NOT reset — the user needs their data to fix the issue.
+      return;
+    }
+
+    // Validation passed → clear any stale error UI before the POST.
+    setFormErrors([]);
+    setErrorCountsBySection({});
+    setShowErrorsModal(false);
+
     setIsSubmittingTrip(true);
-    
+
     try {
       // Transform frontend data to backend format (includes validation & sanitization)
       const backendTripData = await transformTravelToBackendFormat();
-      
+
       if (!backendTripData) {
         setIsSubmittingTrip(false);
         return;
@@ -3107,18 +3244,31 @@ const MyTravels = () => {
         }
 
         showToast('✅ Viagem publicada com sucesso!', 'success');
-        
+
         // Refresh the backend trips list so the new trip appears immediately
         await refreshUserTrips();
+        // Clear the autosaved draft so the next "create new" starts
+        // fresh. Without this, the form would rehydrate the just-
+        // published trip on the next visit.
+        clearDraft();
       }
-      
+
       setSaveAction(null);
+      // Success — only now do we wipe the form.
       resetForm();
-      
+
     } catch (error) {
       console.error('❌ Erro ao publicar viagem:', error);
-      
-      // Fallback: Store locally if backend fails
+
+      // ── PRESERVE FORM ON ERROR ──────────────────────────────────
+      // The user filled in 15+ fields, picked 6 sub-entities, and
+      // uploaded photos. Losing that to a transient 5xx / 429 / network
+      // hiccup is awful UX. We keep the form populated so they can
+      // fix the issue (e.g. lower a rating, shorten a text) and retry.
+
+      // We still save a local "draft_sync_pending" copy so the user has
+      // a backup in localStorage, but we DO NOT call resetForm() — the
+      // form is the source of truth until publish succeeds.
       const localTravel = {
         ...newTravel,
         status: 'draft_sync_pending',
@@ -3126,9 +3276,9 @@ const MyTravels = () => {
         travelType: selectedTravelType,
         multiDestinations: null,
         groupData: selectedTravelType.isGroup ? { members: groupMembers, admin: user.firstName } : null,
-        syncError: error.message
+        syncError: error?.response?.data?.message || error.message || 'Erro desconhecido',
       };
-      
+
       if (isEditing) {
         const updatedTravels = travels.map(t => t.id === editTravelId ? localTravel : t);
         setTravels(updatedTravels);
@@ -3138,15 +3288,35 @@ const MyTravels = () => {
         setTravels(updatedTravels);
         localStorage.setItem("user-travels", JSON.stringify(updatedTravels));
       }
-      
-      setToast({ 
-        message: '⚠️ Falha ao sincronizar com backend. Viagem guardada localmente. Tente novamente depois.', 
-        type: 'error', 
-        show: true 
-      });
-      
+
+      // Backend may have its own per-field validation. If the error
+      // response carries a single `message`, we treat it as a top-level
+      // error and surface it in the same modal so the user can still
+      // see all the client-side errors alongside it.
+      const backendMsg = error?.response?.data?.message;
+      if (backendMsg && !preflight.valid) {
+        // preflight already showed the modal; just add the backend msg
+        // to the existing list.
+        setFormErrors((prev) => [
+          { section: 'general', sectionLabel: 'Informações Gerais', sectionIcon: '📋', itemIndex: null, itemLabel: null, field: 'backend', message: `Backend: ${backendMsg}` },
+          ...prev,
+        ]);
+      } else if (backendMsg) {
+        setFormErrors([{
+          section: 'general', sectionLabel: 'Informações Gerais', sectionIcon: '📋',
+          itemIndex: null, itemLabel: null, field: 'backend', message: backendMsg,
+        }]);
+        setErrorCountsBySection({ general: 1 });
+        setShowErrorsModal(true);
+      } else {
+        // No specific message from the backend — keep the form populated
+        // and show a brief toast so the user knows something failed but
+        // doesn't lose what they typed.
+        showToast('⚠️ Falha ao sincronizar com backend. Os seus dados foram mantidos no formulário — pode corrigir e tentar novamente.', 'error');
+      }
+
       setSaveAction(null);
-      resetForm();
+      // ← resetForm() REMOVED — see comment above.
     } finally {
       setIsSubmittingTrip(false);
     }
@@ -3221,14 +3391,17 @@ const MyTravels = () => {
     setVideosPreviews([]); // Reset dos previews dos vídeos
     setVideosInfo([]); // Reset das informações dos vídeos
     setGeneralInfoImagePreviews([]);
-    setAccommodationImagePreviews([]);
-    setFoodRecommendationImagePreviews([]);
+    // (Removed: global accommodation image previews — per-item
+     // previews live inside each accommodation card.)
+    // (Removed: global food image previews — per-item previews live
+     // on each recommendation card.)
     setTransportImagePreviews([]);
-    setReferencePointImagePreviews([]);
+    // (Removed: global reference-point image previews — per-item
+     // previews live on each ref-point card.)
     setEditingFoodIndex(null);
-    setNewFoodRecommendation({ name: '', description: '' });
+    setNewFoodRecommendation({ name: '', description: '', photoFile: null, photoPreview: null });
     setEditingPointIndex(null);
-    setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+    setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
     setEditingItineraryDay(null);
     setNewItineraryDay({ day: '', activities: [''] });
     setItineraryError('');
@@ -3261,13 +3434,23 @@ const MyTravels = () => {
       setToast({ message: 'Selecione Destino Único ou Multidestino.', type: 'error', show: true });
       return;
     }
-    // Preparar dados iniciais com datas vazias
-    setNewTravel(prev => ({
-      ...prev,
-      startDate: '',
-      endDate: '',
-      travelType: selectedTravelType
-    }));
+
+    // Draft recovery — if the user has a saved draft for this
+    // account AND the draft's travel type matches the type they
+    // just selected, restore it. Otherwise start fresh.
+    const saved = loadDraft();
+    if (saved && saved.travelType && saved.travelType.main === selectedTravelType.main) {
+      setNewTravel({ ...saved, travelType: selectedTravelType });
+      showToast('📝 Rascunho recuperado. Continue de onde parou.', 'success');
+    } else {
+      setNewTravel(prev => ({
+        ...prev,
+        startDate: '',
+        endDate: '',
+        travelType: selectedTravelType,
+      }));
+    }
+
     setIsTravelTypeModalOpen(false);
     setIsModalOpen(true);
     setActiveTab('generalInfo');
@@ -3353,12 +3536,14 @@ const MyTravels = () => {
       }));
       
       // Limpar previews de imagens
-      setReferencePointImagePreviews([]);
-      setAccommodationImagePreviews([]);
+      // (Removed: global reference-point image previews — per-item
+       // previews live inside each ref-point card.)
+      // (Removed: global accommodation image previews — per-item
+       // previews live inside each accommodation card.)
       
       // Reset dos estados de edição
       setEditingPointIndex(null);
-      setNewPointOfInterest({ name: '', description: '', type: '', link: '' });
+      setNewPointOfInterest({ name: '', description: '', type: '', link: '', photoFiles: [], photoPreviews: [] });
       
       setToast({ 
         message: 'Dados de pontos de referência e estadia foram limpos devido à mudança de localização!', 
@@ -3951,7 +4136,25 @@ const MyTravels = () => {
                     flex: '1'
                   }}>
                      {isEditing ? '✏️' : ''} {newTravel.name && newTravel.name.trim() ? newTravel.name : (isEditing ? 'Editar Viagem' : 'Adicionar Viagem')}
-                  </span>
+                   </span>
+                   {hasSavedDraft && !isEditing && (
+                     <span
+                       title="Rascunho guardado automaticamente — feche a página sem perder o que escreveu"
+                       style={{
+                         display: 'inline-flex',
+                         alignItems: 'center',
+                         gap: '6px',
+                         padding: '4px 10px',
+                         borderRadius: '999px',
+                         background: 'rgba(43, 182, 163, 0.12)',
+                         color: '#1a8b7c',
+                         fontSize: '12px',
+                         fontWeight: 600,
+                       }}
+                     >
+                       💾 Rascunho guardado
+                     </span>
+                   )}
            
                   <div 
                     className="modal-header-buttons" 
@@ -4302,30 +4505,70 @@ const MyTravels = () => {
             )}
 
             <div className="tab-nav">
-              <button onClick={() => handleTabChange('generalInfo')} className={activeTab === 'generalInfo' ? 'active' : ''}>
-                1 - Informações Gerais
-              </button>
-              <button onClick={() => handleTabChange('prices')} className={activeTab === 'prices' ? 'active' : ''}>
-                2 - Preços da Viagem
-              </button>
-              <button onClick={() => handleTabChange('accommodation')} className={activeTab === 'accommodation' ? 'active' : ''}>
-                3 - Estadia
-              </button>
-              <button onClick={() => handleTabChange('food')} className={activeTab === 'food' ? 'active' : ''}>
-                4 - Alimentação
-              </button>
-              <button onClick={() => handleTabChange('transport')} className={activeTab === 'transport' ? 'active' : ''}>
-                5 - Transportes
-              </button>
-              <button onClick={() => handleTabChange('pointsOfInterest')} className={activeTab === 'pointsOfInterest' ? 'active' : ''}>
-                6 - Pontos de Referência
-              </button>
-              <button onClick={() => handleTabChange('itinerary')} className={activeTab === 'itinerary' ? 'active' : ''}>
-                7 - Itinerário da Viagem
-              </button>
-              <button onClick={() => handleTabChange('negativePoints')} className={activeTab === 'negativePoints' ? 'active' : ''}>
-                8 - Pontos Negativos
-              </button>
+              {/*
+                The badge shown next to a tab label is driven by
+                `errorCountsBySection` (section → count). Tabs without
+                a section mapping (prices, transport, group) never show
+                a badge. The `tabErrorSection` map below translates the
+                tab key into a validation section name.
+              */}
+              {(() => null)()}
+              <TabButtonWithBadge
+                tab="generalInfo"
+                label="1 - Informações Gerais"
+                active={activeTab === 'generalInfo'}
+                onClick={handleTabChange}
+                errorCount={(errorCountsBySection.general || 0) + (errorCountsBySection.media || 0)}
+              />
+              <TabButtonWithBadge
+                tab="prices"
+                label="2 - Preços da Viagem"
+                active={activeTab === 'prices'}
+                onClick={handleTabChange}
+                errorCount={0}
+              />
+              <TabButtonWithBadge
+                tab="accommodation"
+                label="3 - Estadia"
+                active={activeTab === 'accommodation'}
+                onClick={handleTabChange}
+                errorCount={errorCountsBySection.accommodations || 0}
+              />
+              <TabButtonWithBadge
+                tab="food"
+                label="4 - Alimentação"
+                active={activeTab === 'food'}
+                onClick={handleTabChange}
+                errorCount={errorCountsBySection.foods || 0}
+              />
+              <TabButtonWithBadge
+                tab="transport"
+                label="5 - Transportes"
+                active={activeTab === 'transport'}
+                onClick={handleTabChange}
+                errorCount={0}
+              />
+              <TabButtonWithBadge
+                tab="pointsOfInterest"
+                label="6 - Pontos de Referência"
+                active={activeTab === 'pointsOfInterest'}
+                onClick={handleTabChange}
+                errorCount={errorCountsBySection.referencePoints || 0}
+              />
+              <TabButtonWithBadge
+                tab="itinerary"
+                label="7 - Itinerário da Viagem"
+                active={activeTab === 'itinerary'}
+                onClick={handleTabChange}
+                errorCount={errorCountsBySection.itinerary || 0}
+              />
+              <TabButtonWithBadge
+                tab="negativePoints"
+                label="8 - Pontos Negativos"
+                active={activeTab === 'negativePoints'}
+                onClick={handleTabChange}
+                errorCount={errorCountsBySection.negativePoints || 0}
+              />
               {selectedTravelType.isGroup && (
                 <button onClick={() => handleTabChange('group')} className={activeTab === 'group' ? 'active' : ''}>
                   {selectedTravelType.main === 'multi' ? '9' : '9'} - Viagem em Grupo
@@ -4337,18 +4580,27 @@ const MyTravels = () => {
               {activeTab === 'generalInfo' && (
 
                 <>
+                  {/* Top-of-tab error summary — shows all errors for the
+                      current section. Renders nothing when there are
+                      none, so it's safe to leave here unconditionally. */}
+                  <SectionErrorPanel
+                    section="general"
+                    errors={errorsForSection('general')}
+                  />
 <br></br>
 <div className="LeftPosition">
                     <label style={{textAlign: 'center', width: '100%'}}>📝 Nome da Viagem: <span style={{color: 'red'}}>*</span></label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={newTravel.name}
-                      onChange={handleChange}
-                      required
-                      placeholder="Ex.: Viagem à cidade de Coimbra"
-                      title="Digite um nome descritivo para a sua viagem"
-                    />
+                    <FieldError error={fieldError('general', 'title')}>
+                      <input
+                        type="text"
+                        name="name"
+                        value={newTravel.name}
+                        onChange={handleChange}
+                        required
+                        placeholder="Ex.: Viagem à cidade de Coimbra"
+                        title="Digite um nome descritivo para a sua viagem"
+                      />
+                    </FieldError>
                     <div style={{
                       fontSize: '12px',
                       color: newTravel.name.length > 100 ? '#d32f2f' : '#4caf50',
@@ -4655,15 +4907,17 @@ const MyTravels = () => {
                           <label style={{textAlign: 'center', width: '100%'}}>
                             📝 Descrição Curta: <span style={{color: 'red'}}>*</span>
                           </label>
-                          <input
-                            type="text"
-                            name="description"
-                            value={newTravel.description}
-                            onChange={handleChange}
-                            placeholder="Ex.: Uma aventura incrível pelas ruas históricas de Lisboa, descobrindo sabores e tradições únicas..."
-                            maxLength="350"
-                            title="Descrição breve que aparecerá como prévia da viagem (máximo 350 caracteres)"
-                          />
+                          <FieldError error={fieldError('general', 'tripSummary')}>
+                            <input
+                              type="text"
+                              name="description"
+                              value={newTravel.description}
+                              onChange={handleChange}
+                              placeholder="Ex.: Uma aventura incrível pelas ruas históricas de Lisboa, descobrindo sabores e tradições únicas..."
+                              maxLength="350"
+                              title="Descrição breve que aparecerá como prévia da viagem (máximo 350 caracteres)"
+                            />
+                          </FieldError>
                           <div className={`char-counter ${newTravel.description.length > 280 ? 'warning' : ''} ${newTravel.description.length > 330 ? 'danger' : ''}`}>
                             {newTravel.description.length}/350 caracteres
                           </div>
@@ -4673,16 +4927,18 @@ const MyTravels = () => {
                           <label style={{textAlign: 'center', width: '100%'}}>
                             📖 Descrição Longa: <span style={{color: 'red'}}>*</span>
                           </label>
-                          <textarea
-                            name="longDescription"
-                            value={newTravel.longDescription}
-                            onChange={handleChange}
-                            placeholder="Conte a história completa da sua viagem! Descreva os lugares que visitou, as experiências que viveu, as pessoas que conheceu, os sabores que experimentou, os momentos mais marcantes... Seja detalhado e inspire outros viajantes com a sua experiência única!"
-                            rows="8"
-                            maxLength="6000"
-                            title="Descrição completa e detalhada da sua experiência de viagem (máximo 6000 caracteres)"
-                            style={{ resize: 'vertical', minHeight: '150px', overflow: 'hidden' }}
-                          />
+                          <FieldError error={fieldError('general', 'tripDescription')}>
+                            <textarea
+                              name="longDescription"
+                              value={newTravel.longDescription}
+                              onChange={handleChange}
+                              placeholder="Conte a história completa da sua viagem! Descreva os lugares que visitou, as experiências que viveu, as pessoas que conheceu, os sabores que experimentou, os momentos mais marcantes... Seja detalhado e inspire outros viajantes com a sua experiência única!"
+                              rows="8"
+                              maxLength="6000"
+                              title="Descrição completa e detalhada da sua experiência de viagem (máximo 6000 caracteres)"
+                              style={{ resize: 'vertical', minHeight: '150px', overflow: 'hidden' }}
+                            />
+                          </FieldError>
                           <div className={`char-counter ${newTravel.longDescription.length > 4500 ? 'warning' : ''} ${newTravel.longDescription.length > 5400 ? 'danger' : ''}`}>
                             {newTravel.longDescription.length}/6000 caracteres
                           </div>
@@ -4694,16 +4950,18 @@ const MyTravels = () => {
 
                     <div className="description-section">
                       <label style={{textAlign: 'center', width: '100%'}}>🌡️ Temperatura/Clima:</label>
-                      <input
-                        type="text"
-                        name="climate"
-                        value={newTravel.climate}
-                        onChange={handleChange}
-                        placeholder="Ex.: Média do Clima foi de 30º, apanhamos uma excelente temperatura!"
-                        maxLength="350"
-                        title="Informações sobre o clima e temperatura durante a viagem (máximo 350 caracteres)"
-                        style={{width: '100%'}}
-                      />
+                      <FieldError error={fieldError('general', 'weather')}>
+                        <input
+                          type="text"
+                          name="climate"
+                          value={newTravel.climate}
+                          onChange={handleChange}
+                          placeholder="Ex.: Média do Clima foi de 30º, apanhamos uma excelente temperatura!"
+                          maxLength="350"
+                          title="Informações sobre o clima e temperatura durante a viagem (máximo 350 caracteres)"
+                          style={{width: '100%'}}
+                        />
+                      </FieldError>
                       <div className={`char-counter ${newTravel.climate.length > 280 ? 'warning' : ''} ${newTravel.climate.length > 330 ? 'danger' : ''}`}>
                         {newTravel.climate.length}/350 caracteres
                       </div>
@@ -5034,6 +5292,10 @@ const MyTravels = () => {
 
               {activeTab === 'accommodation' && (
                 <div className="tab-content">
+                  <SectionErrorPanel
+                    section="accommodations"
+                    errors={errorsForSection('accommodations')}
+                  />
                   {/* Seletor de destino para viagens multidestino */}
                   {selectedTravelType.main === 'multi' && (
                     <div style={{ 
@@ -5379,59 +5641,15 @@ const MyTravels = () => {
                       <p>Nenhum alojamento adicionado ainda.</p>
                     )}
                   </div>
-
-                  <div className="RightPosition">
-                    <label>📷 Fotografias da Estadia:</label>
-                    <div className="image-upload-container">
-                      <input
-                        type="file"
-                        name="accommodationImages"
-                        onChange={handleChange}
-                        accept="image/*"
-                        multiple
-                        id="accommodationImagesInput"
-                        className="image-input"
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor="accommodationImagesInput" className="upload-button" title="Adicione fotos do alojamento onde ficou hospedado">
-                        <span role="img" aria-label="câmera">📸</span> Adicionar Fotos da Estadia
-                      </label>
-                      {accommodationImagePreviews.length > 0 ? (
-                        <div className="general-info-image-previews">
-                          {accommodationImagePreviews.map((preview, imgIndex) => (
-                            <div key={imgIndex} className="general-info-image-preview-container">
-                              <img src={preview} alt={`Preview da foto do alojamento ${imgIndex + 1}`} className="general-info-image-preview" />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newPreviews = accommodationImagePreviews.filter((_, i) => i !== imgIndex);
-                                  setAccommodationImagePreviews(newPreviews);
-                                  setNewTravel((prev) => {
-                                    const updatedAccommodations = [...prev.accommodations];
-                                    updatedAccommodations[0] = {
-                                      ...updatedAccommodations[0],
-                                      images: updatedAccommodations[0].images.filter((_, i) => i !== imgIndex)
-                                    };
-                                    return { ...prev, accommodations: updatedAccommodations };
-                                  });
-                                }}
-                                className="remove-preview-button"
-                              >
-                                Remover
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="upload-placeholder">Nenhuma foto selecionada. Adicione fotos para destacar o alojamento!</p>
-                      )}
-                    </div>
-                  </div>
                 </div>
               )}
 
               {activeTab === 'food' && (
                 <div className="tab-content">
+                  <SectionErrorPanel
+                    section="foods"
+                    errors={errorsForSection('foods')}
+                  />
                   <div className="RightPosition">
                     <h3>🍽️ Recomendações Alimentares</h3>
                     {Array.isArray(newTravel.foodRecommendations) && newTravel.foodRecommendations.length > 0 ? (
@@ -5505,6 +5723,54 @@ const MyTravels = () => {
                         {newFoodRecommendation.description.length}/500 caracteres
                       </small>
 
+                      <br />
+                      <label style={{textAlign: 'center', width: '100%'}}>📷 Foto da Recomendação (opcional, 1 foto):</label>
+                      <div className="image-upload-container" style={{ marginTop: '8px' }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id="foodRecommendationSinglePhotoInput"
+                          className="image-input"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            // Per-item: replace any previous pick (max 1).
+                            if (newFoodRecommendation.photoPreview) {
+                              URL.revokeObjectURL(newFoodRecommendation.photoPreview);
+                            }
+                            setNewFoodRecommendation((prev) => ({
+                              ...prev,
+                              photoFile: file,
+                              photoPreview: URL.createObjectURL(file),
+                            }));
+                            e.target.value = '';
+                          }}
+                        />
+                        <label htmlFor="foodRecommendationSinglePhotoInput" className="upload-button" title="Adicione 1 foto deste prato/restaurante">
+                          <span role="img" aria-label="câmera">📸</span> {newFoodRecommendation.photoFile || newFoodRecommendation.photoPreview ? 'Trocar Foto' : 'Adicionar Foto'}
+                        </label>
+                        {newFoodRecommendation.photoPreview && (
+                          <div className="image-previews" style={{ marginTop: '10px' }}>
+                            <div className="image-preview-container">
+                              <img src={newFoodRecommendation.photoPreview} alt="Preview da foto" className="image-preview" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (newFoodRecommendation.photoPreview) {
+                                    URL.revokeObjectURL(newFoodRecommendation.photoPreview);
+                                  }
+                                  setNewFoodRecommendation((prev) => ({ ...prev, photoFile: null, photoPreview: null }));
+                                }}
+                                className="remove-preview-button"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="action-buttons">
                         <button
                           onClick={(e) => handleAddOrEditFoodRecommendation(e)}
@@ -5520,50 +5786,6 @@ const MyTravels = () => {
                           >
                             ❌ Cancelar
                           </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="image-upload-section">
-                      <label>📷 Fotografias das Recomendações Alimentares:</label>
-                      <div className="image-upload-container">
-                        <input
-                          type="file"
-                          name="images_foodRecommendations"
-                          onChange={handleChange}
-                          accept="image/*"
-                          multiple
-                          id="foodRecommendationImagesInput"
-                          className="image-input"
-                          style={{ display: 'none' }}
-                        />
-                        <label htmlFor="foodRecommendationImagesInput" className="upload-button" title="Adicione fotos de pratos e restaurantes que recomenda">
-                          <span role="img" aria-label="câmera">📸</span> Adicionar Fotos das Recomendações Alimentares
-                        </label>
-                        {foodRecommendationImagePreviews.length > 0 ? (
-                          <div className="image-previews">
-                            {foodRecommendationImagePreviews.map((preview, index) => (
-                              <div key={index} className="image-preview-container">
-                                <img src={preview} alt={`Preview da foto de recomendação alimentar ${index + 1}`} className="image-preview" />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newPreviews = foodRecommendationImagePreviews.filter((_, i) => i !== index);
-                                    setFoodRecommendationImagePreviews(newPreviews);
-                                    setNewTravel((prev) => ({
-                                      ...prev,
-                                      images_foodRecommendations: prev.images_foodRecommendations.filter((_, i) => i !== index),
-                                    }));
-                                  }}
-                                  className="remove-preview-button"
-                                >
-                                  Remover
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="upload-placeholder">Nenhuma foto selecionada. Adicione fotos para destacar as suas recomendações alimentares!</p>
                         )}
                       </div>
                     </div>
@@ -5764,6 +5986,10 @@ const MyTravels = () => {
 
               {activeTab === 'pointsOfInterest' && (
                 <div className="tab-content">
+                  <SectionErrorPanel
+                    section="referencePoints"
+                    errors={errorsForSection('referencePoints')}
+                  />
                   {/* Seletor de destino para viagens multidestino */}
                   {selectedTravelType.main === 'multi' && (
                     <div style={{ 
@@ -5912,6 +6138,60 @@ const MyTravels = () => {
                         {newPointOfInterest.description.length}/1000 caracteres
                       </small>
 
+                      <br />
+                      <label style={{textAlign: 'center', width: '100%'}}>📷 Fotos deste Ponto de Referência (múltiplas, opcionais):</label>
+                      <div className="image-upload-container" style={{ marginTop: '8px' }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          id="referencePointPhotosInput"
+                          className="image-input"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length === 0) return;
+                            const previews = files.map((f) => URL.createObjectURL(f));
+                            setNewPointOfInterest((prev) => ({
+                              ...prev,
+                              // Per-item: append, do not replace (multiple allowed).
+                              photoFiles: [...(prev.photoFiles || []), ...files],
+                              photoPreviews: [...(prev.photoPreviews || []), ...previews],
+                            }));
+                            e.target.value = '';
+                          }}
+                        />
+                        <label htmlFor="referencePointPhotosInput" className="upload-button" title="Adicione fotos deste ponto de interesse">
+                          <span role="img" aria-label="câmera">📸</span> {newPointOfInterest.photoFiles?.length || newPointOfInterest.photoPreviews?.length ? 'Adicionar Mais Fotos' : 'Adicionar Fotos'}
+                        </label>
+                        {(newPointOfInterest.photoPreviews || []).length > 0 && (
+                          <div className="image-previews" style={{ marginTop: '10px' }}>
+                            {newPointOfInterest.photoPreviews.map((preview, index) => (
+                              <div key={index} className="image-preview-container">
+                                <img src={preview} alt={`Preview da foto ${index + 1}`} className="image-preview" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Revoke only blob URLs (those we created).
+                                    if (preview.startsWith('blob:')) {
+                                      URL.revokeObjectURL(preview);
+                                    }
+                                    setNewPointOfInterest((prev) => ({
+                                      ...prev,
+                                      photoFiles: (prev.photoFiles || []).filter((_, i) => i !== index),
+                                      photoPreviews: (prev.photoPreviews || []).filter((_, i) => i !== index),
+                                    }));
+                                  }}
+                                  className="remove-preview-button"
+                                >
+                                  Remover
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="action-buttons">
                         <button
                           onClick={(e) => handleAddOrEditPointOfInterest(e)}
@@ -5932,56 +6212,16 @@ const MyTravels = () => {
                         )}
                       </div>
                     </div>
-
-                    <div className="image-upload-section">
-                      <label>📷 Fotografias dos Pontos de Referência:</label>
-                      <div className="general-info-image-upload-container">
-                        <input
-                          type="file"
-                          name="images_referencePoints"
-                          onChange={handleChange}
-                          accept="image/*"
-                          multiple
-                          id="referencePointImagesInput"
-                          className="image-input"
-                          style={{ display: 'none' }}
-                        />
-                        <label htmlFor="referencePointImagesInput" className="upload-button" title="Adicione fotos dos locais de interesse e pontos de referência">
-                          <span role="img" aria-label="câmera">📸</span> Adicionar Fotos dos Pontos de Referência
-                        </label>
-                        {referencePointImagePreviews.length > 0 ? (
-                          <div className="general-info-image-previews">
-                            {referencePointImagePreviews.map((preview, index) => (
-                              <div key={index} className="general-info-image-preview-container">
-                                <img src={preview} alt={`Preview da foto de ponto de referência ${index + 1}`} className="general-info-image-preview" />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newPreviews = referencePointImagePreviews.filter((_, i) => i !== index);
-                                    setReferencePointImagePreviews(newPreviews);
-                                    setNewTravel((prev) => ({
-                                      ...prev,
-                                      images_referencePoints: prev.images_referencePoints.filter((_, i) => i !== index),
-                                    }));
-                                  }}
-                                  className="remove-preview-button"
-                                >
-                                  Remover
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="upload-placeholder">Nenhuma foto selecionada. Adicione fotos para destacar os pontos de referência!</p>
-                        )}
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
 
               {activeTab === 'itinerary' && (
                 <div className="tab-content">
+                  <SectionErrorPanel
+                    section="itinerary"
+                    errors={errorsForSection('itinerary')}
+                  />
                   <div className="RightPosition">
                     <h3>🗓️ Itinerário da Viagem</h3>
                     <p><strong>Duração Total:</strong> {calculateTripDays()} dias</p>
@@ -6042,25 +6282,67 @@ const MyTravels = () => {
                       {itineraryError && (
                         <p className="error-message" style={{color: '#d32f2f', fontSize: '12px', marginTop: '5px'}}>{itineraryError}</p>
                       )}
-<br></br><br></br>
-                      <label style={{textAlign: 'center', width: '100%'}}>🎯 Atividades:</label>
-                      <textarea
-                        name="activities-text"
-                        value={newItineraryDay.activities.join('\n')}
-                        onChange={(e) => {
-                          const activities = e.target.value.split('\n').filter(a => a.trim() !== '');
-                          setNewItineraryDay(prev => ({...prev, activities: activities.length > 0 ? activities : ['']}));
-                        }}
-                        placeholder="Ex.: Visita ao museu, Almoço no restaurante X, Passeio pela cidade..."
-                        maxLength="1500"
-                        title="Descreva todas as atividades deste dia (máximo 1500 caracteres, uma por linha)"
-                        rows="8"
-                        style={{width: '100%', resize: 'vertical', minHeight: '200px', overflow: 'hidden', wordWrap: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap'}}
-                      />
-                      <small style={{fontSize: '12px', color: (newItineraryDay.activities.join('\n').length > 1200) ? '#ff9800' : '#6c757d', display: 'block', marginTop: '5px'}}>
-                        {newItineraryDay.activities.join('\n').length}/1500 caracteres
+<br></br>
+                      <label style={{textAlign: 'center', width: '100%'}}>🎯 Atividades deste dia:</label>
+                      <small style={{ display: 'block', textAlign: 'center', color: '#6c757d', marginTop: '4px', marginBottom: '8px' }}>
+                        Adicione uma atividade de cada vez. Use a ordem para definir a sequência.
                       </small>
-                      
+
+                      {/*
+                        Itinerary is now a real list (per user spec) — each
+                        activity is its own input with add/remove buttons
+                        instead of one giant textarea where the user had to
+                        split lines manually. This gives proper validation
+                        per activity, drag-to-reorder-ready, and shows the
+                        total count at a glance.
+                      */}
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        {newItineraryDay.activities.map((activity, actIndex) => (
+                          <li key={actIndex} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ minWidth: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#007bff', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 'bold' }}>
+                              {actIndex + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={activity}
+                              onChange={(e) => {
+                                const next = [...newItineraryDay.activities];
+                                next[actIndex] = e.target.value;
+                                setNewItineraryDay((prev) => ({ ...prev, activities: next }));
+                              }}
+                              placeholder={`Atividade ${actIndex + 1} (ex.: Visita ao museu, Almoço no restaurante X, Passeio pela cidade)`}
+                              maxLength={200}
+                              title={`Atividade ${actIndex + 1} (máximo 200 caracteres)`}
+                              style={{ flex: 1, padding: '8px 10px', borderRadius: '5px', border: '1px solid #ced4da' }}
+                            />
+                            {newItineraryDay.activities.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = newItineraryDay.activities.filter((_, i) => i !== actIndex);
+                                  setNewItineraryDay((prev) => ({ ...prev, activities: next }));
+                                }}
+                                title="Remover esta atividade"
+                                style={{ padding: '6px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={() => setNewItineraryDay((prev) => ({ ...prev, activities: [...prev.activities, ''] }))}
+                        style={{ marginTop: '4px', padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '13px' }}
+                        title="Adicionar nova atividade a este dia"
+                      >
+                        ➕ Adicionar Atividade
+                      </button>
+                      <small style={{ fontSize: '12px', color: (newItineraryDay.activities.join('').length > 1200) ? '#ff9800' : '#6c757d', display: 'block', marginTop: '8px' }}>
+                        {newItineraryDay.activities.filter((a) => a.trim()).length} atividade(s) · {newItineraryDay.activities.join('').length} caracteres
+                      </small>
+
                       <div className="action-buttons" style={{marginTop: '15px'}}>
                         <button
                           onClick={(e) => handleAddOrEditItineraryDay(e)}
@@ -6087,6 +6369,10 @@ const MyTravels = () => {
 
               {activeTab === 'negativePoints' && (
                 <div className="tab-content">
+                  <SectionErrorPanel
+                    section="negativePoints"
+                    errors={errorsForSection('negativePoints')}
+                  />
                   <div className="RightPosition">
                     <h3>⚠️ Pontos Negativos</h3>
                     {Array.isArray(newTravel.negativePoints) && newTravel.negativePoints.length > 0 ? (
@@ -6598,6 +6884,19 @@ const MyTravels = () => {
         type={toast.type}
         show={toast.show}
         onClose={closeToast}
+      />
+
+      {/* Validation error modal — shows ALL errors grouped by section.
+          Triggered by validateTripForm in handleAddTravel (pre-flight
+          check) and by backend errors that come back as a top-level
+          message. Clicking "Ir para a secção" closes the modal and
+          switches to the relevant tab so the user can fix issues in
+          place. The form state is preserved across open/close. */}
+      <TripErrorsModal
+        isOpen={showErrorsModal}
+        errors={formErrors}
+        onClose={() => setShowErrorsModal(false)}
+        onJumpToSection={(tab) => handleTabChange(tab)}
       />
     </div>
   );

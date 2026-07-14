@@ -12,6 +12,7 @@ import Travels from './pages/Travels';
 import TravelDetails from './components/TravelDetails';
 import MyTravels from './pages/MyTravels';
 import ViewProfile from './pages/ViewProfile';
+import EditProfile from './pages/EditProfile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import HelpSupport from './pages/HelpSupport';
@@ -80,7 +81,7 @@ const App = () => {
             <Route index element={<MyTravels />} />
           </Route>
           <Route path="/profile/edit/:username" element={<ProtectedRoute />}>
-            <Route index element={<ViewProfile />} />
+            <Route index element={<EditProfile />} />
           </Route>
           <Route path="/profile/:username" element={<ProtectedRoute />}>
             <Route index element={<UserProfile />} />

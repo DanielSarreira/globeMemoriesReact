@@ -1,17 +1,28 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { getAuthToken, getRole, decodeJwt, STORAGE_KEYS } from '../axios_helper';
 
 const AdminProtectedRoute = () => {
-  // Verificar se há token de admin no localStorage
-  const adminToken = localStorage.getItem('adminToken');
-  const isLoadingAuth = localStorage.getItem('isLoadingAuth') === 'true';
+  const location = useLocation();
+  const token = getAuthToken(STORAGE_KEYS.ADMIN);
+  const role = getRole(STORAGE_KEYS.ADMIN);
 
-  // Enquanto carrega, não renderiza nada
-  if (isLoadingAuth) {
-    return null;
+  if (!token) {
+    return <Navigate to="/admin/login" replace state={{ from: location }} />;
   }
 
-  return adminToken ? <Outlet /> : <Navigate to="/admin/login" replace />;
+  // Defense in depth: enforce the role at the route level too.
+  if (role !== 'ADMIN') {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  // Soft check on expiry (server is the source of truth)
+  const decoded = decodeJwt(token);
+  if (decoded?.exp && decoded.exp * 1000 < Date.now()) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default AdminProtectedRoute;

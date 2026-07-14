@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
-import { FaChevronUp, FaPlus, FaPlane, FaGlobe } from 'react-icons/fa';
+import { FaChevronUp, FaPlane } from 'react-icons/fa';
 
 const MainLayout = () => {
   const location = useLocation();

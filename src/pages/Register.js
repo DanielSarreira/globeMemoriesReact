@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { request, setAuthHeader } from '../axios_helper';
+import { request, setAuthHeader, uploadFile } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
 import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
 import TermsModal from '../components/TermsModal';
+import ProfilePhotoUploader from '../components/ProfilePhotoUploader';
 
 import '../styles/pages/register-travel.css';
 import logoImg from '../images/Globe-Memories.png';
@@ -226,6 +227,11 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // Optional profile photo picked during registration. We upload it
+  // AFTER the user account is created, so the photo upload is part of
+  // a 2-step flow (POST /register → POST /photos/upload) and the form
+  // can be submitted even without picking a photo.
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsModalTab, setTermsModalTab] = useState('terms');
   const { setUser } = useAuth();
@@ -546,6 +552,38 @@ const Register = () => {
       localStorage.setItem("user", JSON.stringify(response.data));
       setUser(response.data);
       showToast('Registo realizado com sucesso! Bem-vindo!', 'success');
+
+      // 2-step profile photo upload: if the user picked a photo during
+      // registration, POST it now that the account exists. We update
+      // the in-memory + localStorage user with the new photo URL so
+      // the rest of the app reflects it without a refresh.
+      if (profilePhotoFile) {
+        try {
+          const photoRes = await uploadFile('/photos/upload', profilePhotoFile);
+          // uploadFile returns the axios response; the backend returns
+          // a FileUploadResponseDto with .data.fileUrl and .data.publicUrl
+          const fileUrl = photoRes?.data?.fileUrl;
+          if (fileUrl) {
+            // We set BOTH `profilePhoto` (canonical backend field) and
+            // `profilePicture` (legacy alias used by the Header/Sidebar/
+            // Home) so every consumer reflects the new photo without a
+            // refresh.
+            const updatedUser = {
+              ...response.data,
+              profilePhoto: fileUrl,
+              profilePicture: fileUrl,
+            };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+        } catch (photoErr) {
+          // Photo upload is best-effort — the account is already
+          // created and the user can add a photo later from their
+          // profile page. We just log + show a soft warning.
+          console.warn('Profile photo upload failed (account was created):', photoErr);
+          showToast('Conta criada, mas não foi possível carregar a foto. Pode adicioná-la mais tarde no seu perfil.', 'info');
+        }
+      }
       
       // Aguardar um pouco antes de redirecionar para mostrar o toast
       setTimeout(() => {
@@ -665,7 +703,22 @@ const Register = () => {
             <div className="travel-slogan">Viaje. Explore. Lembre. Compartilhe.</div>
           </div>
           <form onSubmit={handleSubmit} className="login-travel-form">
-            
+
+            {/* ── Profile photo (optional) ───────────────────────────
+                The user can pick a photo now or upload one later from
+                their profile page. We upload it AFTER the account is
+                created, so the submit flow stays a 2-step POST. */}
+            <div className="register-photo-section">
+              <ProfilePhotoUploader
+                currentPhoto={null}
+                onFileChange={setProfilePhotoFile}
+                disabled={isSubmitting}
+              />
+              <p className="register-photo-hint">
+                📸 A foto de perfil é opcional — pode adicioná-la ou trocá-la mais tarde.
+              </p>
+            </div>
+
             {/* Primeira linha: Primeiro Nome + Último Nome */}
             <div className="form-row">
               <div className="input-group">

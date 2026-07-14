@@ -1,0 +1,411 @@
+/* =========================================================================
+   Modern trip-planner theme — Instagram-inspired card aesthetic with the
+   Globe Memories brand identity (warm earth + teal accent).
+
+   Design goals:
+   - Soft, layered shadows (like Instagram's story cards)
+   - Rounded 16px cards with subtle gradient overlays
+   - Pill-shaped buttons + chips
+   - Tab strip with a sliding underline indicator
+   - Inputs feel "lifted" when focused
+   - All transitions are 180ms cubic-bezier(0.4, 0, 0.2, 1)
+   ========================================================================= */
+
+/* Brand palette (overrides for the planner specifically) */
+:root {
+  --gm-bg: #fafafa;
+  --gm-card: #ffffff;
+  --gm-border: #ececec;
+  --gm-text: #1c1e21;
+  --gm-text-soft: #65676b;
+  --gm-accent: #2bb6a3;            /* teal — main accent (brand) */
+  --gm-accent-strong: #1a8b7c;
+  --gm-warm: #f6a560;               /* warm peach (secondary) */
+  --gm-pink: #e36b7e;               /* for invalid/required state */
+  --gm-red: #e74c3c;
+  --gm-radius-lg: 16px;
+  --gm-radius-md: 12px;
+  --gm-radius-sm: 8px;
+  --gm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --gm-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --gm-shadow-3: 0 12px 28px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Form cards: lift + soft border on focus-within ────────────── */
+.travel-planner-content .form-section,
+.travel-planner-content .description-section,
+.travel-planner-content .description-field,
+.travel-planner-content .accommodation-item,
+.travel-planner-content .reference-point-item,
+.travel-planner-content .recommendation-item,
+.travel-planner-content .negative-point-item,
+.travel-planner-content .itinerary-item,
+.travel-planner-content .left,
+.travel-planner-content .RightPosition,
+.travel-planner-content .form-row,
+.travel-planner-content .modal-form-content > div,
+.travel-planner-content .image-upload-section {
+  background: var(--gm-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--gm-shadow-1);
+  transition: box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.travel-planner-content .form-row { padding: 12px 16px; }
+.travel-planner-content .image-upload-section { padding: 14px 16px; }
+
+.travel-planner-content .form-section:hover,
+.travel-planner-content .accommodation-item:hover,
+.travel-planner-content .reference-point-item:hover,
+.travel-planner-content .recommendation-item:hover,
+.travel-planner-content .negative-point-item:hover,
+.travel-planner-content .itinerary-item:hover {
+  box-shadow: var(--gm-shadow-2);
+  border-color: rgba(43, 182, 163, 0.18);
+}
+
+/* ── Inputs: cleaner defaults, focus ring, soft fill on focus ─── */
+.travel-planner-content input[type="text"],
+.travel-planner-content input[type="number"],
+.travel-planner-content input[type="date"],
+.travel-planner-content input[type="email"],
+.travel-planner-content input[type="password"],
+.travel-planner-content input[type="search"],
+.travel-planner-content textarea,
+.travel-planner-content select {
+  border: 1.5px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  background: var(--gm-card);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--gm-text);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.travel-planner-content input:focus,
+.travel-planner-content textarea:focus,
+.travel-planner-content select:focus {
+  outline: none;
+  border-color: var(--gm-accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(43, 182, 163, 0.12);
+}
+.travel-planner-content input::placeholder,
+.travel-planner-content textarea::placeholder {
+  color: #b0b3b8;
+  font-weight: 400;
+}
+
+/* ── Labels: tighter, with a brand-colored required star ────────── */
+.travel-planner-content label,
+.travel-planner-content .form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gm-text-soft);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+.travel-planner-content label > span[style*="red"],
+.travel-planner-content label > .required-star {
+  color: var(--gm-pink) !important;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* ── Tabs: pill row with sliding underline ─────────────────────── */
+.travel-planner-content .tab-nav {
+  display: flex !important;
+  gap: 6px !important;
+  padding: 6px !important;
+  background: var(--gm-card) !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--gm-border) !important;
+  box-shadow: var(--gm-shadow-1) !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin;
+}
+.travel-planner-content .tab-nav button {
+  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
+  background: transparent !important;
+  color: var(--gm-text-soft) !important;
+  border: none !important;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease !important;
+  position: relative;
+}
+.travel-planner-content .tab-nav button:hover {
+  color: var(--gm-text) !important;
+  background: rgba(43, 182, 163, 0.08) !important;
+}
+.travel-planner-content .tab-nav button.active {
+  background: linear-gradient(135deg, var(--gm-accent) 0%, var(--gm-accent-strong) 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(43, 182, 163, 0.28) !important;
+}
+.travel-planner-content .tab-nav button.active:hover {
+  color: white !important;
+  background: linear-gradient(135deg, var(--gm-accent) 0%, var(--gm-accent-strong) 100%) !important;
+}
+
+/* Tab error badge: pill above the label, with a soft glow */
+.travel-planner-content .tab-error-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  padding: 0 7px !important;
+  margin-left: 6px !important;
+  background: var(--gm-pink) !important;
+  color: white !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  line-height: 1 !important;
+  box-shadow: 0 0 0 2px white, 0 2px 6px rgba(227, 107, 126, 0.45) !important;
+  animation: gm-pill-pulse 1.8s ease-in-out infinite !important;
+}
+@keyframes gm-pill-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* ── Primary / secondary buttons: pill-shaped, with subtle gradient ── */
+.travel-planner-content .button,
+.travel-planner-content button.button-success,
+.travel-planner-content button.button-danger,
+.travel-planner-content button.button-primary,
+.travel-planner-content button.button-secondary {
+  border-radius: 999px !important;
+  padding: 10px 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease, color 150ms ease !important;
+  border: none !important;
+  font-size: 13px !important;
+  cursor: pointer;
+}
+.travel-planner-content .button:hover,
+.travel-planner-content button.button-success:hover,
+.travel-planner-content button.button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+}
+.travel-planner-content .button:active,
+.travel-planner-content button.button-success:active,
+.travel-planner-content button.button-primary:active {
+  transform: translateY(0);
+}
+.travel-planner-content button.button-success {
+  background: linear-gradient(135deg, var(--gm-accent) 0%, var(--gm-accent-strong) 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(43, 182, 163, 0.32) !important;
+}
+.travel-planner-content button.button-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #c0392b 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.32) !important;
+}
+.travel-planner-content button.button-secondary {
+  background: var(--gm-card) !important;
+  color: var(--gm-text) !important;
+  border: 1.5px solid var(--gm-border) !important;
+}
+.travel-planner-content button.button-secondary:hover {
+  background: var(--gm-bg) !important;
+  border-color: var(--gm-text-soft) !important;
+}
+
+/* ── Upload buttons: distinct teal CTA ─────────────────────────── */
+.travel-planner-content .upload-button {
+  background: linear-gradient(135deg, rgba(43, 182, 163, 0.10) 0%, rgba(43, 182, 163, 0.05) 100%) !important;
+  color: var(--gm-accent-strong) !important;
+  border: 1.5px dashed rgba(43, 182, 163, 0.45) !important;
+  border-radius: var(--gm-radius-md) !important;
+  padding: 12px 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  display: block;
+  text-align: center;
+}
+.travel-planner-content .upload-button:hover {
+  background: linear-gradient(135deg, rgba(43, 182, 163, 0.18) 0%, rgba(43, 182, 163, 0.08) 100%) !important;
+  border-color: var(--gm-accent) !important;
+  color: var(--gm-accent-strong) !important;
+}
+
+/* ── Image previews: rounded, with a remove pill ───────────────── */
+.travel-planner-content .image-preview-container,
+.travel-planner-content .general-info-image-preview-container {
+  border-radius: var(--gm-radius-md) !important;
+  overflow: hidden;
+  box-shadow: var(--gm-shadow-1);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  position: relative;
+}
+.travel-planner-content .image-preview-container:hover,
+.travel-planner-content .general-info-image-preview-container:hover {
+  transform: scale(1.02);
+  box-shadow: var(--gm-shadow-2);
+}
+.travel-planner-content .remove-preview-button {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.travel-planner-content .image-preview-container:hover .remove-preview-button,
+.travel-planner-content .general-info-image-preview-container:hover .remove-preview-button {
+  opacity: 1;
+}
+
+/* ── Header bar (configurações, rascunho, publicar, fechar) ───── */
+.travel-planner-content .modal-header-buttons button {
+  border-radius: 999px !important;
+  padding: 9px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10) !important;
+  transition: transform 150ms ease, box-shadow 150ms ease !important;
+}
+.travel-planner-content .modal-header-buttons button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* ── Section title (h3 inside the form) ────────────────────────── */
+.travel-planner-content h3 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--gm-text) !important;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+  margin-bottom: 12px !important;
+}
+
+/* ── SectionErrorPanel: softer, more on-brand ──────────────────── */
+.travel-planner-content .section-error-panel,
+.section-error-panel {
+  background: linear-gradient(135deg, #fff5f5 0%, #fff0f0 100%) !important;
+  border: 1px solid #fad5d5 !important;
+  border-left: 4px solid var(--gm-pink) !important;
+  border-radius: var(--gm-radius-md) !important;
+  box-shadow: 0 2px 8px rgba(227, 107, 126, 0.10) !important;
+  font-size: 13px !important;
+}
+.section-error-panel > div:first-child {
+  color: #b03048 !important;
+  font-size: 14px !important;
+}
+
+/* ── Stars rating ─────────────────────────────────────────────── */
+.travel-planner-content .star-rating,
+.travel-planner-content .star {
+  font-size: 26px !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+  transition: transform 100ms ease, color 100ms ease;
+}
+.travel-planner-content .star:hover,
+.travel-planner-content .star.active {
+  transform: scale(1.1);
+}
+
+/* ── Character counter (subtle, color-shifts on threshold) ──────── */
+.travel-planner-content .char-counter {
+  font-size: 11px !important;
+  color: var(--gm-text-soft) !important;
+  margin-top: 4px;
+  font-weight: 500;
+}
+.travel-planner-content .char-counter.warning,
+.travel-planner-content .char-counter.danger {
+  font-weight: 600;
+}
+
+/* ── Per-item photo uploader (inside each form card) ──────────── */
+.travel-planner-content .image-upload-container {
+  background: var(--gm-bg);
+  border-radius: var(--gm-radius-md);
+  padding: 8px;
+}
+
+/* ── Empty state placeholder (e.g. no ref points yet) ──────────── */
+.travel-planner-content .empty-state,
+.travel-planner-content .no-blocked-users {
+  background: linear-gradient(135deg, #fafafa 0%, #fff 100%);
+  border: 1.5px dashed var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--gm-text-soft);
+}
+.travel-planner-content .empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+  opacity: 0.65;
+}
+
+/* ── Activity list (per-day) ──────────────────────────────────── */
+.travel-planner-content .activities-list,
+.travel-planner-content .itinerary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.travel-planner-content .itinerary-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 14px 16px !important;
+}
+
+/* ── Numeric activity badge (1, 2, 3, ...) in itinerary ────────── */
+.travel-planner-content span[style*="border-radius: 50%"] {
+  background: linear-gradient(135deg, var(--gm-accent) 0%, var(--gm-accent-strong) 100%) !important;
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(43, 182, 163, 0.30) !important;
+}
+
+/* ── FieldError inline ─────────────────────────────────────────── */
+.travel-planner-content .field-error-wrapper.has-error {
+  /* Just a subtle padding to separate the message from the input */
+  margin-bottom: 2px;
+}
+.travel-planner-content .field-error-message {
+  background: #fff5f5;
+  padding: 6px 10px !important;
+  border-radius: var(--gm-radius-sm) !important;
+  border-left: 3px solid var(--gm-pink) !important;
+  font-size: 12px !important;
+  color: #b03048 !important;
+  margin-top: 6px !important;
+}
+
+/* ── Responsive niceties ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .travel-planner-content .form-section,
+  .travel-planner-content .accommodation-item,
+  .travel-planner-content .reference-point-item,
+  .travel-planner-content .recommendation-item,
+  .travel-planner-content .itinerary-item {
+    padding: 14px 16px;
+  }
+}

@@ -1,82 +1,121 @@
-/* home.css */
+/* home.css — Premium travel homepage.
+   Photography-first, immersive sections, editorial feel. */
 
-/* Hero Section */
+/* ── Hero Section ──────────────────────────────────────────────── */
 .hero-section {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
+  position: relative;
+  min-height: 75vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--gray-900);
+  border-radius: 0 0 var(--radius-3xl) var(--radius-3xl);
+  margin: 0;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 105, 186, 0.3) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(248, 143, 0, 0.15) 100%
+  );
+  z-index: 1;
+}
+
+.hero-section .hero-content {
+  position: relative;
+  z-index: 2;
   text-align: center;
-  padding: 80px 20px;
-  margin-bottom: 40px;
+  max-width: 720px;
+  padding: var(--space-10) var(--space-6);
+  color: white;
 }
 
 .hero-title {
-  font-size: 3rem;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-size: var(--text-5xl);
+  font-weight: var(--font-weight-extrabold);
+  margin: 0 0 var(--space-5) 0;
+  letter-spacing: var(--tracking-tight);
+  color: white;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  line-height: 1.05;
 }
 
 .hero-subtitle {
-  font-size: 1.3rem;
-  margin: 0 0 30px 0;
-  opacity: 0.9;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-normal);
+  margin: 0 auto var(--space-8);
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 560px;
+  line-height: var(--leading-relaxed);
 }
 
 .hero-cta {
-  background-color: white;
-  color: var(--primary-color);
-  padding: 15px 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--brand-blue);
+  color: white;
+  padding: 14px 32px;
   border: none;
-  border-radius: 25px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  border-radius: var(--radius-2xl);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-base);
+  box-shadow: 0 4px 20px rgba(0, 105, 186, 0.35);
+  text-decoration: none;
 }
 
 .hero-cta:hover {
+  background: var(--brand-blue-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 105, 186, 0.45);
+  text-decoration: none;
 }
 
-/* Seções da página principal */
+/* ── Home Sections ─────────────────────────────────────────────── */
 .home-section {
-  padding: 60px 20px;
-  max-width: 1200px;
+  padding: var(--space-12) var(--space-6);
+  max-width: var(--max-width-2xl);
   margin: 0 auto;
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 50px;
-}
-
-.section-title {
-  color: var(--text-color);
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 15px 0;
-}
-
-.section-subtitle {
-  color: var(--text-muted);
-  font-size: 1.2rem;
-  margin: 0;
-  max-width: 600px;
+  margin-bottom: var(--space-10);
+  max-width: 640px;
   margin-left: auto;
   margin-right: auto;
 }
 
-/* Grid de features */
+.section-title {
+  color: var(--text-primary);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--space-3) 0;
+  letter-spacing: var(--tracking-tight);
+}
+
+.section-subtitle {
+  color: var(--text-tertiary);
+  font-size: var(--text-lg);
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+
+/* ── Feature Grid ──────────────────────────────────────────────── */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 60px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-10);
 }
 
 .feature-card {

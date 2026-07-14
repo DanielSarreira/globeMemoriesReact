@@ -1,10 +1,10 @@
 // src/components/admin/AdminDashboard.js
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  FaUsers, FaList, FaLanguage, FaGlobeAmericas, 
-  FaBus, FaFileAlt, FaHistory, FaCog, 
+import { request, clearAuthToken, STORAGE_KEYS } from '../../axios_helper';
+import {
+  FaUsers, FaList, FaLanguage, FaGlobeAmericas,
+  FaBus, FaFileAlt, FaHistory, FaCog,
   FaBell, FaUserShield, FaSignOutAlt, FaChartLine,
   FaHome, FaDatabase, FaShieldAlt, FaHandsHelping,
   FaFlag, FaComments, FaQuestion, FaTrophy, FaEnvelope,
@@ -40,7 +40,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Estado para as estatísticas
   const [stats, setStats] = useState({
     totalUsers: 0,
     usersLast24h: 0,
@@ -49,41 +48,52 @@ const AdminDashboard = () => {
     totalTravels: 0,
     activeUsers: 0,
     bannedUsers: 0,
+    pendingUserReports: 0,
+    pendingTripReports: 0,
+    pendingFeedback: 0,
+    totalForumQuestions: 0,
+    totalFeedback: 0,
   });
+  const [statsError, setStatsError] = useState(null);
 
   useEffect(() => {
-    // Verificar autenticação
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-    }
+    let isMounted = true;
 
-    // Buscar estatísticas
     const fetchStats = async () => {
       try {
-        const { data } = await axios.get('/api/statistics', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
-        });
-        setStats(data);
-      } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
-        // Dados mock para teste
+        const response = await request('GET', '/admin/dashboard/stats');
+        if (!isMounted) return;
+        const data = response.data || {};
         setStats({
-          totalUsers: 150,
-          usersLast24h: 5,
-          usersLast7Days: 20,
-          usersLast30Days: 50,
-          totalTravels: 300,
-          activeUsers: 120,
-          bannedUsers: 5,
+          totalUsers: data.totalUsers ?? 0,
+          usersLast24h: data.usersLast24h ?? 0,
+          usersLast7Days: data.usersLast7Days ?? 0,
+          usersLast30Days: data.usersLast30Days ?? 0,
+          totalTravels: data.totalTrips ?? 0,
+          activeUsers: data.activeUsers ?? 0,
+          bannedUsers: data.bannedUsers ?? 0,
+          pendingUserReports: data.pendingUserReports ?? 0,
+          pendingTripReports: data.pendingTripReports ?? 0,
+          pendingFeedback: data.pendingFeedback ?? 0,
+          totalForumQuestions: data.totalForumQuestions ?? 0,
+          totalFeedback: data.totalFeedback ?? 0,
         });
+        setStatsError(null);
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Erro ao buscar estatísticas:', error);
+        setStatsError(error?.response?.data?.message || 'Não foi possível carregar estatísticas.');
       }
     };
+
     fetchStats();
-  }, [navigate]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
+    clearAuthToken(STORAGE_KEYS.ADMIN);
     localStorage.removeItem('adminLoginAttempts');
     localStorage.removeItem('adminLastFailedLogin');
     navigate('/admin/login');
@@ -205,41 +215,55 @@ const AdminDashboard = () => {
                 {/* Seção de estatísticas principais */}
                 <div className="stats-container" style={{ marginTop: '30px' }}>
                   <h2>📊 Estatísticas em Tempo Real</h2>
+                  {statsError && (
+                    <div
+                      style={{
+                        background: '#fff3cd',
+                        color: '#856404',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        marginBottom: '15px',
+                        border: '1px solid #ffeaa7',
+                      }}
+                    >
+                      ⚠️ {statsError} (a mostrar zeros)
+                    </div>
+                  )}
                   <div className="stats-grid">
                     <div className="stat-card" style={{ borderLeft: '4px solid #0066cc' }}>
                       <FaUsers style={{ fontSize: '2.5rem', color: '#0066cc', marginBottom: '10px' }} />
                       <h3>Total de Utilizadores</h3>
                       <p>{stats.totalUsers}</p>
                     </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #28a745' }}>
-                      <FaChartLine style={{ fontSize: '2.5rem', color: '#28a745', marginBottom: '10px' }} />
-                      <h3>Últimas 24 Horas</h3>
-                      <p>{stats.usersLast24h}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #17a2b8' }}>
-                      <FaChartLine style={{ fontSize: '2.5rem', color: '#17a2b8', marginBottom: '10px' }} />
-                      <h3>Últimos 7 Dias</h3>
-                      <p>{stats.usersLast7Days}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #ffc107' }}>
-                      <FaChartLine style={{ fontSize: '2.5rem', color: '#ffc107', marginBottom: '10px' }} />
-                      <h3>Últimos 30 Dias</h3>
-                      <p>{stats.usersLast30Days}</p>
-                    </div>
                     <div className="stat-card" style={{ borderLeft: '4px solid #ff9900' }}>
                       <FaGlobeAmericas style={{ fontSize: '2.5rem', color: '#ff9900', marginBottom: '10px' }} />
                       <h3>Total de Viagens</h3>
                       <p>{stats.totalTravels}</p>
                     </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #28a745' }}>
-                      <FaUsers style={{ fontSize: '2.5rem', color: '#28a745', marginBottom: '10px' }} />
-                      <h3>Utilizadores Ativos</h3>
-                      <p>{stats.activeUsers}</p>
+                    <div className="stat-card" style={{ borderLeft: '4px solid #17a2b8' }}>
+                      <FaQuestion style={{ fontSize: '2.5rem', color: '#17a2b8', marginBottom: '10px' }} />
+                      <h3>Perguntas no Fórum</h3>
+                      <p>{stats.totalForumQuestions}</p>
+                    </div>
+                    <div className="stat-card" style={{ borderLeft: '4px solid #6610f2' }}>
+                      <FaEnvelope style={{ fontSize: '2.5rem', color: '#6610f2', marginBottom: '10px' }} />
+                      <h3>Feedback Recebido</h3>
+                      <p>{stats.totalFeedback}</p>
                     </div>
                     <div className="stat-card" style={{ borderLeft: '4px solid #dc3545' }}>
-                      <FaShieldAlt style={{ fontSize: '2.5rem', color: '#dc3545', marginBottom: '10px' }} />
-                      <h3>Utilizadores Banidos</h3>
-                      <p>{stats.bannedUsers}</p>
+                      <FaFlag style={{ fontSize: '2.5rem', color: '#dc3545', marginBottom: '10px' }} />
+                      <h3>Denúncias de Viagem Pendentes</h3>
+                      <p>{stats.pendingTripReports}</p>
+                    </div>
+                    <div className="stat-card" style={{ borderLeft: '4px solid #fd7e14' }}>
+                      <FaUserShield style={{ fontSize: '2.5rem', color: '#fd7e14', marginBottom: '10px' }} />
+                      <h3>Denúncias de Utilizadores Pendentes</h3>
+                      <p>{stats.pendingUserReports}</p>
+                    </div>
+                    <div className="stat-card" style={{ borderLeft: '4px solid #ffc107' }}>
+                      <FaBell style={{ fontSize: '2.5rem', color: '#ffc107', marginBottom: '10px' }} />
+                      <h3>Feedback Pendente</h3>
+                      <p>{stats.pendingFeedback}</p>
                     </div>
                   </div>
                 </div>

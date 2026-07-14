@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
 // ...existing code...
 import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClock, FaUserPlus, FaChartBar, FaMapMarkerAlt } from 'react-icons/fa';
-import api from '../axios_helper';
+import api, { toFullMediaUrl } from '../axios_helper';
 
 const UserProfile = () => {
   const { user } = useAuth();
@@ -37,6 +37,12 @@ const UserProfile = () => {
     other: false,
   });
   const [otherTravelReason, setOtherTravelReason] = useState('');
+
+  // Cached categories from the backend. Loaded once on mount so we
+  // can resolve the category IDs in TripDto (returned by both
+  // `/trips/my-trips` and `/trips/user/{id}/public`) to their
+  // human-readable names in the trip cards.
+  const [apiCategories, setApiCategories] = useState([]);
   
   const [reportReasons, setReportReasons] = useState({
     inappropriate: false,
@@ -53,32 +59,62 @@ const UserProfile = () => {
   const [relationshipLoading, setRelationshipLoading] = useState(false);
   const [actionError, setActionError] = useState('');
 
-  const mapTripSummaryToUiTrip = (trip, ownerUsername) => ({
-    id: trip.id,
-    name: trip.title || 'Viagem',
-    description: trip.description || '',
-    startDate: trip.startDate,
-    endDate: trip.endDate,
-    country: trip.country || '',
-    city: trip.city || '',
-    user: ownerUsername,
-    category: [],
-    days: trip.startDate && trip.endDate
-      ? Math.max(
-        1,
-        Math.ceil(
-          Math.abs(new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24)
-        )
-      )
-      : 0,
-    price: trip.totalPrice || trip.totalCost || 0,
-    stars: Math.round(trip.tripRating || trip.rating || 0),
-    rating: trip.tripRating || trip.rating || 0,
-    likes: 0,
-    comments: [],
-    highlightImage: 'https://via.placeholder.com/300',
-    isHidden: Boolean(trip.isHidden),
-  });
+  // Resolve a TripDto payload from the paginated endpoints
+  // (`/trips/my-trips` and `/trips/user/{id}/public`) into the UI
+  // shape the trip cards expect.
+  const mapTripSummaryToUiTrip = (trip, ownerUsername, apiCategories) => {
+    // City names are NOT stored in TripDto (only IDs). We pull the
+    // name from the first accommodation's `city` field as a
+    // convenient fallback. For trips without accommodations the city
+    // stays '' (the user can re-pick it on the edit form).
+    const cityName = (Array.isArray(trip.accommodations) && trip.accommodations[0]?.city)
+      || '';
+
+    // Prefer the backend's `tripDurationDays` (it handles same-day
+    // trips and timezone quirks) and fall back to the calendar math
+    // for older rows that don't carry it.
+    const days = (typeof trip.tripDurationDays === 'number' && trip.tripDurationDays > 0)
+      ? trip.tripDurationDays
+      : (trip.startDate && trip.endDate
+          ? Math.max(
+              1,
+              Math.ceil(
+                Math.abs(new Date(trip.endDate) - new Date(trip.startDate)) / (1000 * 60 * 60 * 24)
+              ) + 1
+            )
+          : 0);
+
+    return {
+      id: trip.id,
+      name: trip.title || 'Viagem',
+      description: trip.tripDescription || trip.tripSummary || '',
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      country: trip.country || '',
+      city: cityName,
+      user: ownerUsername,
+      // TripDto only stores category IDs; resolve to names using the
+      // apiCategories cache.
+      category: (trip.categories || []).map((id) => {
+        const c = (apiCategories || []).find((x) => x.id === id);
+        return c ? c.name : null;
+      }).filter(Boolean),
+      days,
+      // TripDto keeps the price at `cost.total` (a nested object).
+      // The flat `totalPrice` / `totalCost` keys are legacy fallbacks.
+      price: trip.cost?.total ?? trip.totalPrice ?? trip.totalCost ?? 0,
+      stars: Math.round(trip.tripRating ?? trip.rating ?? 0),
+      rating: trip.tripRating ?? trip.rating ?? 0,
+      likes: 0,
+      comments: [],
+      // First photo URL — resolved through toFullMediaUrl so the
+      // browser can fetch the actual file (relative path → full URL).
+      highlightImage: (Array.isArray(trip.photos) && trip.photos[0])
+        ? toFullMediaUrl(trip.photos[0])
+        : 'https://via.placeholder.com/300',
+      isHidden: Boolean(trip.isHidden),
+    };
+  };
 
   const mapReportReasonToApiReason = (reasons) => {
     if (reasons.harassment || reasons.abusive) return 'HARASSMENT';
@@ -166,7 +202,7 @@ const UserProfile = () => {
         };
 
         const tripPosts = detailed.tripPosts || [];
-        const mappedTrips = tripPosts.map((trip) => mapTripSummaryToUiTrip(trip, profileUsername));
+        const mappedTrips = tripPosts.map((trip) => mapTripSummaryToUiTrip(trip, profileUsername, apiCategories));
 
         setProfileUserId(resolvedUserId);
         setProfile(detailedProfile);
@@ -214,6 +250,66 @@ const UserProfile = () => {
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, user?.id]);
+
+  // ── Categories cache (loaded once on mount) ───────────────────
+  // We need the category names to render trip cards — TripDto only
+  // carries category IDs. Cheap, one-shot fetch.
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/categories')
+      .then((res) => {
+        if (!cancelled && Array.isArray(res.data)) {
+          setApiCategories(res.data);
+        }
+      })
+      .catch(() => { /* best-effort — cards just show IDs */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Paginated trips loader ───────────────────────────────────
+  // The profile endpoint no longer returns the trip list (we keep the
+  // payload small for fast profile renders). Trips are fetched
+  // lazily + paginated from the dedicated endpoints:
+  //   - Own profile  : GET /trips/my-trips?page=N&size=6
+  //   - Other profile: GET /trips/user/{id}/public?page=N&size=6
+  // The first page is loaded as soon as `profileUserId` is known;
+  // subsequent pages are loaded by the "Carregar mais" button.
+  const TRIPS_PAGE_SIZE = 6;
+  const [tripsPage, setTripsPage] = useState(0);
+  const [tripsHasMore, setTripsHasMore] = useState(false);
+  const [loadingTrips, setLoadingTrips] = useState(false);
+
+  const fetchTripsPage = useCallback(async (page) => {
+    if (!profileUserId || loadingTrips) return;
+    setLoadingTrips(true);
+    try {
+      const isOwnProfile = user && user.username === username;
+      const url = isOwnProfile
+        ? `/trips/my-trips?page=${page}&size=${TRIPS_PAGE_SIZE}`
+        : `/trips/user/${profileUserId}/public?page=${page}&size=${TRIPS_PAGE_SIZE}`;
+      const res = await api.get(url);
+      const pageContent = res.data?.content || [];
+      const newTrips = pageContent.map((trip) => mapTripSummaryToUiTrip(trip, username, apiCategories));
+      setTravels((prev) => (page === 0 ? newTrips : [...prev, ...newTrips]));
+      setTripsPage(page);
+      setTripsHasMore(pageContent.length >= TRIPS_PAGE_SIZE);
+    } catch (err) {
+      console.warn('Failed to load trips page', page, err);
+      setTripsHasMore(false);
+    } finally {
+      setLoadingTrips(false);
+    }
+  }, [profileUserId, username, user, apiCategories, loadingTrips]);
+
+  // Reset & load first page whenever the profile changes.
+  useEffect(() => {
+    if (!profileUserId) return;
+    setTravels([]);
+    setTripsPage(-1); // -1 = "not loaded yet"
+    setTripsHasMore(true);
+    fetchTripsPage(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileUserId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

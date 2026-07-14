@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { request, setAuthHeader } from '../axios_helper';
+import { request, setAuthHeader, getUserAvatar } from '../axios_helper';
 import {
   FaHome,
   FaPlane,
@@ -145,7 +145,7 @@ const Sidebar = () => {
         )}
         <div className="profile-avatar">
           <img
-            src={user?.profilePicture || '/static/media/avatar.55c3eb5641681d05db07.jpg'}
+            src={getUserAvatar(user) || '/static/media/avatar.55c3eb5641681d05db07.jpg'}
             alt="Avatar do viajante"
             className="avatar"
           />

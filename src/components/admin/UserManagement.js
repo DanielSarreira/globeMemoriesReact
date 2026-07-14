@@ -1,310 +1,137 @@
 // src/components/admin/UserManagement.js
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import { request } from '../../axios_helper';
 import Toast from '../Toast';
 import '../../styles/Admin.css';
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([
-    // Mock data
-    { _id: '1', firstName:'Tiago', lastName:'Miranda', username: 'tiago', email: 'tiago@example.com', isBanned: false, banExpiration: null, createdAt: '2024-01-15' },
-    { _id: '2', firstName:'Ana', lastName:'Assis', username: 'ana', email: 'ana@example.com', isBanned: true, banExpiration: '2025-03-26', createdAt: '2024-03-20' },
-    { _id: '3', firstName:'João', lastName:'Silva', username: 'joao', email: 'joao@example.com', isBanned: false, banExpiration: null, createdAt: '2024-05-10' },
-    { _id: '4', firstName:'Maria', lastName:'Santos', username: 'maria', email: 'maria@example.com', isBanned: false, banExpiration: null, createdAt: '2024-06-12' },
-    { _id: '5', firstName:'Pedro', lastName:'Costa', username: 'pedro', email: 'pedro@example.com', isBanned: true, banExpiration: '2025-12-31', createdAt: '2024-02-28' },
-  ]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [users, setUsers] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '', show: false });
 
-  useEffect(() => {
-    // Placeholder para chamada à API
-    const fetchUsers = async () => {
-      // const { data } = await axios.get('/api/users', {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
-      // });
-      // setUsers(data);
-    };
-    fetchUsers();
-  }, []);
+  const showToast = (m, t) => setToast({ message: m, type: t, show: true });
+  const closeToast = () => setToast({ ...toast, show: false });
 
-  useEffect(() => {
-    // Aplicar filtros e pesquisa
-    let filtered = users;
-
-    // Filtro de pesquisa
-    if (searchTerm) {
-      filtered = filtered.filter(user => 
-        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtro de status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(user => 
-        statusFilter === 'active' ? !user.isBanned : user.isBanned
-      );
-    }
-
-    setFilteredUsers(filtered);
-  }, [users, searchTerm, statusFilter]);
-
-  const showToast = (message, type) => {
-    setToast({ message, type, show: true });
-  };
-
-  const closeToast = () => {
-    setToast({ ...toast, show: false });
-  };
-
-  const handleBan = async (id, type, duration) => {
-    const user = users.find(u => u._id === id);
-    if (!user) return;
-
-    const confirmMessage = type === 'permanent' 
-      ? `Tem a certeza que deseja banir permanentemente o utilizador ${user.firstName} ${user.lastName}?`
-      : `Tem a certeza que deseja banir o utilizador ${user.firstName} ${user.lastName} por ${duration} dias?`;
-    
-    if (!window.confirm(confirmMessage)) return;
-
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Placeholder para chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setUsers(users.map(user =>
-        user._id === id
-          ? { 
-              ...user, 
-              isBanned: true, 
-              banExpiration: type === 'temporary' 
-                ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString().split('T')[0] 
-                : null 
-            }
-          : user
-      ));
-      
-      const banMessage = type === 'permanent' 
-        ? `Utilizador ${user.firstName} ${user.lastName} banido permanentemente!`
-        : `Utilizador ${user.firstName} ${user.lastName} banido por ${duration} dias!`;
-      
-      showToast(banMessage, 'success');
-    } catch (error) {
-      console.error('Erro ao banir utilizador:', error);
-      showToast('Erro ao banir utilizador. Tente novamente.', 'error');
+      const r = await request('GET', '/admin/users', { params: { page, size: 20, search: search.trim() || undefined } });
+      setUsers(r.data?.content || []);
+      setTotalPages(r.data?.totalPages || 0);
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Erro a carregar utilizadores.', 'error');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, search]);
 
-  const handleUnban = async (id) => {
-    const user = users.find(u => u._id === id);
-    if (!user) return;
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-    if (!window.confirm(`Tem a certeza que deseja desbanir o utilizador ${user.firstName} ${user.lastName}?`)) return;
-
-    setIsLoading(true);
+  const changeRole = async (user, role) => {
+    if (!window.confirm(`Alterar o role de ${user.username} para ${role}?`)) return;
     try {
-      // Placeholder para chamada à API
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      setUsers(users.map(user =>
-        user._id === id ? { ...user, isBanned: false, banExpiration: null } : user
-      ));
-      
-      showToast(`Utilizador ${user.firstName} ${user.lastName} desbaneado com sucesso!`, 'success');
-    } catch (error) {
-      console.error('Erro ao desbanir utilizador:', error);
-      showToast('Erro ao desbanir utilizador. Tente novamente.', 'error');
-    } finally {
-      setIsLoading(false);
+      await request('PUT', `/admin/users/${user.id}/role`, { role });
+      showToast('Role atualizado.', 'success');
+      fetchUsers();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Erro a alterar role.', 'error');
     }
   };
 
-  const handleDelete = async (id) => {
-    const user = users.find(u => u._id === id);
-    if (!user) return;
-
-    const confirmMessage = `ATENÇÃO: Esta ação é irreversível!\n\nTem a certeza que deseja eliminar permanentemente o utilizador ${user.firstName} ${user.lastName}?\n\nTodos os dados, viagens e conteúdos serão perdidos.`;
-    
-    if (!window.confirm(confirmMessage)) return;
-
-    const finalConfirm = window.prompt('Para confirmar, digite "ELIMINAR" (em maiúsculas):');
-    if (finalConfirm !== 'ELIMINAR') {
-      showToast('Eliminação cancelada. Texto de confirmação incorreto.', 'info');
+  const remove = async (user) => {
+    if (!window.confirm(`Eliminar permanentemente ${user.username}?`)) return;
+    const confirm = window.prompt('Digite "ELIMINAR" para confirmar:');
+    if (confirm !== 'ELIMINAR') {
+      showToast('Eliminação cancelada.', 'info');
       return;
     }
-
-    setIsLoading(true);
     try {
-      // Placeholder para chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setUsers(users.filter(user => user._id !== id));
-      showToast(`Utilizador ${user.firstName} ${user.lastName} eliminado permanentemente.`, 'success');
-    } catch (error) {
-      console.error('Erro ao eliminar utilizador:', error);
-      showToast('Erro ao eliminar utilizador. Tente novamente.', 'error');
-    } finally {
-      setIsLoading(false);
+      await request('DELETE', `/admin/users/${user.id}`);
+      showToast('Utilizador eliminado.', 'success');
+      fetchUsers();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Erro a eliminar.', 'error');
     }
   };
 
-  const handleExportCSV = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Nome,Username,Email,Estado,Data de Registo\n"
-      + filteredUsers.map(u => 
-          `${u.firstName} ${u.lastName},${u.username},${u.email},${u.isBanned ? 'Banido' : 'Ativo'},${u.createdAt || 'N/A'}`
-        ).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `utilizadores_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
+  const exportCsv = () => {
+    const rows = ['Nome,Username,Email,Role,Data'];
+    users.forEach((u) => {
+      rows.push(`"${u.firstName} ${u.lastName}",${u.username},${u.email},${u.role || 'USER'},${u.birthDate || ''}`);
+    });
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `utilizadores_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    document.body.removeChild(link);
-    
-    showToast('✓ Ficheiro CSV exportado com sucesso!', 'success');
+    window.URL.revokeObjectURL(url);
   };
 
   return (
     <div className="admin-section-admin">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
         <h2 style={{ margin: 0 }}>Gestão de Utilizadores</h2>
-        <button 
-          className="admin-export-btn"
-          onClick={handleExportCSV}
-        >
-          <span>📥</span>
-          Exportar CSV
-        </button>
+        <button className="admin-export-btn" onClick={exportCsv}><span>📥</span> Exportar CSV</button>
       </div>
 
-      {/* Estatísticas */}
-      <div className="stats-grid-admin" style={{ marginBottom: '25px' }}>
-        <div className="stat-card-admin">
-          <h3>Total</h3>
-          <p>{users.length}</p>
-        </div>
-        <div className="stat-card-admin">
-          <h3>Ativos</h3>
-          <p style={{ color: '#28a745' }}>{users.filter(u => !u.isBanned).length}</p>
-        </div>
-        <div className="stat-card-admin">
-          <h3>Banidos</h3>
-          <p style={{ color: '#dc3545' }}>{users.filter(u => u.isBanned).length}</p>
-        </div>
-      </div>
-
-      {/* Barra de pesquisa e filtros */}
       <div className="admin-search-bar">
         <input
           type="text"
           placeholder="🔍 Pesquisar por nome, username ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
         />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">Todos os Estados</option>
-          <option value="active">Apenas Ativos</option>
-          <option value="banned">Apenas Banidos</option>
-        </select>
       </div>
 
-      {filteredUsers.length === 0 ? (
-        <div style={{
-          padding: '40px',
-          textAlign: 'center',
-          background: '#f8f9fa',
-          borderRadius: '12px',
-          color: '#6c757d'
-        }}>
-          <p style={{ fontSize: '1.2rem', margin: 0 }}>
-            {searchTerm || statusFilter !== 'all' 
-              ? '🔍 Nenhum utilizador encontrado com os filtros aplicados' 
-              : 'Nenhum utilizador registado'}
-          </p>
-        </div>
+      {isLoading ? (
+        <p>A carregar...</p>
       ) : (
-        <table className="admin-table-admin">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredUsers.map(user => (
-            <tr key={user._id}>
-              <td>{user.firstName} {user.lastName}</td>
-              <td>{user.username}</td>
-              <td>{user.email}</td>
-              <td>{user.isBanned ? `Banido até ${user.banExpiration || 'Permanente'}` : 'Ativo'}</td>
-              <td>
-                {!user.isBanned && (
-                  <>
-                    <button 
-                      className="btn-warning-admin" 
-                      onClick={() => handleBan(user._id, 'temporary', 7)}
-                      disabled={isLoading}
-                      style={{ opacity: isLoading ? 0.6 : 1 }}
-                    >
-                      {isLoading ? 'A processar...' : 'Banir 7 Dias'}
-                    </button>
-                    <button 
-                      className="btn-danger-admin" 
-                      onClick={() => handleBan(user._id, 'permanent')}
-                      disabled={isLoading}
-                      style={{ opacity: isLoading ? 0.6 : 1 }}
-                    >
-                      {isLoading ? 'A processar...' : 'Banir Permanente'}
-                    </button>
-                  </>
-                )}
-                {user.isBanned && (
-                  <button 
-                    className="btn-success-admin" 
-                    onClick={() => handleUnban(user._id)}
-                    disabled={isLoading}
-                    style={{ opacity: isLoading ? 0.6 : 1 }}
-                  >
-                    {isLoading ? 'A processar...' : 'Desbanir'}
-                  </button>
-                )}
-                <button 
-                  className="btn-danger-admin" 
-                  onClick={() => handleDelete(user._id)}
-                  disabled={isLoading}
-                  style={{ opacity: isLoading ? 0.6 : 1 }}
-                >
-                  {isLoading ? 'A processar...' : 'Eliminar'}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <>
+          <table className="admin-table-admin">
+            <thead>
+              <tr><th>Nome</th><th>Username</th><th>Email</th><th>Role</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.firstName} {u.lastName}</td>
+                  <td>{u.username}</td>
+                  <td>{u.email}</td>
+                  <td>
+                    <span className={`role-badge role-${(u.role || 'USER').toLowerCase()}`}>
+                      {u.role || 'USER'}
+                    </span>
+                  </td>
+                  <td>
+                    {u.role !== 'ADMIN' && (
+                      <button className="btn-warning-admin" onClick={() => changeRole(u, 'ADMIN')}>Tornar Admin</button>
+                    )}
+                    {u.role === 'ADMIN' && (
+                      <button className="btn-warning-admin" onClick={() => changeRole(u, 'USER')}>Rebaixar</button>
+                    )}
+                    <button className="btn-danger-admin" onClick={() => remove(u)} style={{ marginLeft: '6px' }}>Eliminar</button>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>Sem utilizadores.</td></tr>
+              )}
+            </tbody>
+          </table>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '15px' }}>
+              <button className="btn-secondary-admin" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Anterior</button>
+              <span>Página {page + 1} de {totalPages}</span>
+              <button className="btn-secondary-admin" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>Próxima</button>
+            </div>
+          )}
+        </>
       )}
-
-      {/* Toast para feedback */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        show={toast.show}
-        onClose={closeToast}
-      />
+      <Toast message={toast.message} type={toast.type} show={toast.show} onClose={closeToast} />
     </div>
   );
 };

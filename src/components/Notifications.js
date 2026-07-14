@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 // ...existing code...
 
 // Dados mockados para notificações (simulando o backend)
@@ -14,7 +13,6 @@ const mockNotifications = [
 ];
 
 const Notifications = () => {
-  const { user } = useAuth();
   const [notifications, setNotifications] = useState(mockNotifications);
 
   // Função para agrupar notificações por período

@@ -1,17 +1,25 @@
-/* Main CSS File - Imports all modular styles */
+/* ========================================================================
+   Globe Memories — Main Stylesheet
+   Design-driven, photography-first, premium travel platform.
+   ======================================================================== */
 
-/* Global Styles */
+/* ── Design System (Tokens) ────────────────────────────────────── */
+@import './design-system.css';
+
+/* ── Font Loading ─────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── Global Styles ─────────────────────────────────────────────── */
 @import './globals.css';
 
-/* Fix para inputs - DEVE SER IMPORTADO ANTES DE OUTROS ESTILOS */
+/* ── Base Fixes ───────────────────────────────────────────────── */
 @import './fix-inputs.css';
 
-/* Layout */
+/* ── Layout ────────────────────────────────────────────────────── */
 @import './layout.css';
 
-/* Components */
+/* ── Components ────────────────────────────────────────────────── */
 @import './components/buttons.css';
-@import './components/card.css';
 @import './components/comments.css';
 @import './components/feed.css';
 @import './components/forms.css';
@@ -20,25 +28,32 @@
 @import './components/install-app.css';
 @import './components/modal.css';
 @import './components/navigation.css';
-/* ...existing code... */
 @import './components/notifications.css';
 @import './components/scroll.css';
 @import './components/sidebar.css';
 @import './components/splash-screen.css';
 @import './components/stats.css';
 @import './components/toast.css';
+@import './components/trip-errors-modal.css';
+@import './components/profile-photo-uploader.css';
+@import './pages/register-photo.css';
+@import './pages/edit-profile.css';
+@import './pages/trip-planner-modern.css';
 
-/* Pages */
+/* Cards imported last so they override any conflicting styles */
+@import './components/card.css';
+
+/* ── Pages ─────────────────────────────────────────────────────── */
 @import './pages/achievements.css';
 @import './pages/auth.css';
 @import './pages/future-travels.css';
 @import './pages/help-support.css';
 @import './pages/home.css';
-@import './pages/interactive-map.css';
 @import './pages/login-register.css';
 @import './pages/my-travels.css';
 @import './pages/notfound.css';
 @import './pages/profile.css';
+@import './pages/profile-load-more.css';
 @import './pages/qanda.css';
 @import './pages/reset-password.css';
 @import './pages/statistics.css';
@@ -49,8 +64,11 @@
 @import './pages/weather.css';
 @import './pages/SettingsAndPrivacy.css';
 
-/* Admin Styles */
+/* ── Admin ─────────────────────────────────────────────────────── */
 @import './Admin.css';
 
-/* Tablet Styles - Importado por último para ter prioridade */
+/* ── Responsive Overrides ──────────────────────────────────────── */
 @import './tablet.css';
+
+/* ── Force Light Mode (no dark mode) ───────────────────────────── */
+@import './force-light-mode.css';

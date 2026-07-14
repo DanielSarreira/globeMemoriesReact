@@ -7,26 +7,69 @@ import axios from 'axios';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const API_TIMEOUT = parseInt(process.env.REACT_APP_API_TIMEOUT || '10000');
 
+// Storage keys for different token spaces
+export const STORAGE_KEYS = {
+  USER: 'auth_token',
+  ADMIN: 'adminToken',
+  USER_DATA: 'user',
+  ADMIN_DATA: 'adminUser',
+};
+
 // =============================================
 // Token Management
 // =============================================
 
-export const getAuthToken = () => {
-  const token = window.localStorage.getItem('auth_token');
-  return token && token !== 'null' ? token : null;
+export const getAuthToken = (key = STORAGE_KEYS.USER) => {
+  if (typeof window === 'undefined') return null;
+  const token = window.localStorage.getItem(key);
+  return token && token !== 'null' && token !== 'undefined' ? token : null;
 };
 
-export const setAuthHeader = (token) => {
+export const setAuthHeader = (token, key = STORAGE_KEYS.USER) => {
+  if (typeof window === 'undefined') return;
   if (token) {
-    window.localStorage.setItem('auth_token', token);
+    window.localStorage.setItem(key, token);
   } else {
-    window.localStorage.removeItem('auth_token');
+    window.localStorage.removeItem(key);
   }
 };
 
-export const clearAuthToken = () => {
-  window.localStorage.removeItem('auth_token');
-  window.localStorage.removeItem('user');
+export const clearAuthToken = (key = STORAGE_KEYS.USER) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(key);
+  if (key === STORAGE_KEYS.USER) {
+    window.localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+  } else if (key === STORAGE_KEYS.ADMIN) {
+    window.localStorage.removeItem(STORAGE_KEYS.ADMIN_DATA);
+  }
+};
+
+export const clearAllAuth = () => {
+  clearAuthToken(STORAGE_KEYS.USER);
+  clearAuthToken(STORAGE_KEYS.ADMIN);
+};
+
+// =============================================
+// Decode JWT (lightweight, no validation)
+// =============================================
+// Note: this only decodes; signature is verified server-side.
+
+export const decodeJwt = (token) => {
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decodeURIComponent(escape(json)));
+  } catch (e) {
+    return null;
+  }
+};
+
+export const getRole = (key = STORAGE_KEYS.USER) => {
+  const token = getAuthToken(key);
+  const decoded = decodeJwt(token);
+  return decoded?.role || decoded?.['https://globe-memories/role'] || null;
 };
 
 // =============================================
@@ -47,15 +90,16 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = getAuthToken();
+    // Pick the right token based on the URL path
+    const isAdminRequest = typeof config.url === 'string' && config.url.includes('/admin/');
+    const key = isAdminRequest ? STORAGE_KEYS.ADMIN : STORAGE_KEYS.USER;
+    const token = getAuthToken(key);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // =============================================
@@ -65,19 +109,34 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 - Token expirado
-    if (error.response?.status === 401) {
-      clearAuthToken();
-      window.location.href = '/login';
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    const isAdminRequest = typeof url === 'string' && url.includes('/admin/');
+
+    if (status === 401) {
+      // Token invalid or expired for the current namespace
+      if (typeof window !== 'undefined') {
+        if (isAdminRequest) {
+          clearAuthToken(STORAGE_KEYS.ADMIN);
+          // Don't redirect the user app if the failure was on the admin namespace
+          if (window.location.pathname.startsWith('/admin')) {
+            window.location.href = '/admin/login';
+          }
+        } else {
+          clearAuthToken(STORAGE_KEYS.USER);
+          if (!window.location.pathname.startsWith('/admin')) {
+            window.location.href = '/login';
+          }
+        }
+        window.dispatchEvent(new CustomEvent('auth:logout', { detail: { isAdmin: isAdminRequest } }));
+      }
     }
 
-    // Handle 403 - Sem permissão
-    if (error.response?.status === 403) {
+    if (status === 403 && process.env.NODE_ENV === 'development') {
       console.error('Acesso negado:', error.response.data);
     }
 
-    // Handle 500 - Erro servidor
-    if (error.response?.status === 500) {
+    if (status === 500 && process.env.NODE_ENV === 'development') {
       console.error('Erro no servidor:', error.response.data);
     }
 
@@ -86,48 +145,41 @@ axiosInstance.interceptors.response.use(
 );
 
 // =============================================
-// Request Helper (Legacy Support)
+// Request Helper
 // =============================================
 
-export const request = (method, url, data) => {
-  const headers = {};
-  const token = getAuthToken();
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return axiosInstance({
+/**
+ * Make an authenticated request. Supports `params` for query strings and `signal`
+ * for cancellation via AbortController.
+ */
+export const request = (method, url, data, options = {}) => {
+  const { params, signal, headers, timeout } = options;
+  const config = {
     method,
     url,
-    headers,
-    data,
-  });
+    headers: { ...(headers || {}) },
+  };
+  if (params) config.params = params;
+  if (signal) config.signal = signal;
+  if (timeout) config.timeout = timeout;
+  if (data !== undefined) config.data = data;
+  return axiosInstance(config);
 };
 
 // =============================================
 // Media / Files Utilities
 // =============================================
-
-export const BASE_FILES_URL = `${API_BASE_URL}/files`;
-
-/**
- * Convert a relative fileUrl returned by the backend (e.g. "trip-photos/abc.jpg")
- * to a full public URL suitable for use in <img src> or <video src>.
- * Returns null for falsy input. Passes through already-absolute URLs unchanged.
- */
-export const toFullMediaUrl = (path) => {
-  if (!path) return null;
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `${BASE_FILES_URL}/${path}`;
-};
+// Re-exported from utils/mediaUrl so the test file can import them
+// without dragging in axios (which has ESM syntax CRA's Jest setup
+// doesn't transform by default).
+export { BASE_FILES_URL, toFullMediaUrl, getUserAvatar } from './utils/mediaUrl';
 
 /**
  * Upload a single file to a backend media endpoint using multipart/form-data.
  * The field name is "file" as required by all media upload endpoints.
  * Do NOT set Content-Type manually — axios/browser sets the multipart boundary.
  */
-export const uploadFile = (url, file) => {
+export const uploadFile = (url, file, onUploadProgress) => {
   const form = new FormData();
   form.append('file', file);
   return axiosInstance({
@@ -137,6 +189,7 @@ export const uploadFile = (url, file) => {
     headers: {
       'Content-Type': undefined,
     },
+    onUploadProgress,
   });
 };
 

@@ -1,0 +1,19 @@
+.admin-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  color: #57606a;
+}
+
+.admin-placeholder__title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #1f2328;
+}
+
+.admin-placeholder__message {
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 480px;
+  margin: 0 auto;
+}

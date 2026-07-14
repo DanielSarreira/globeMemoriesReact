@@ -1,119 +1,128 @@
-/* globals.css */
+/* globals.css — Base element resets, typography & body styles.
+   Design tokens live in design-system.css; this file only applies
+   them to raw HTML elements. */
 
-/* --------------------------------------- Variáveis Globais e Configurações Gerais --------------------------------------- */
-:root {
-  /* Cores principais */
-  --primary-color: #0066cc;
-  --primary-color-hover: #004a94;
-  --primary-light: rgba(0, 102, 204, 0.1);
-  --primary-dark: #003d7a;
-  
-  /* Cores secundárias */
-  --secondary-color: #ff9900;
-  --secondary-color-hover: #e68a00;
-  --secondary-light: rgba(255, 153, 0, 0.1);
-  --secondary-dark: #cc7700;
-  
-  /* Cores de estado */
-  --success-color: #28a745;
-  --success-light: rgba(40, 167, 69, 0.1);
-  --warning-color: #ffc107;
-  --warning-light: rgba(255, 193, 7, 0.1);
-  --error-color: #dc3545;
-  --error-light: rgba(220, 53, 69, 0.1);
-  --info-color: #17a2b8;
-  --info-light: rgba(23, 162, 184, 0.1);
-  
-  /* Cores de texto */
-  --text-color: #2c3e50;
-  --text-secondary: #6c757d;
-  --text-muted: #95a5a6;
-  --text-light: #f8f9fa;
-  --text-dark: #212529;
-  
-  /* Cores de fundo */
-  --background-color: #ffffff;
-  --background-light: #f8f9fa;
-  --background-dark: #343a40;
-  --background-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --background-overlay: rgba(0, 0, 0, 0.5);
-  
-  /* Cores de borda e sombra */
-  --border-color: #dee2e6;
-  --border-light: #e9ecef;
-  --border-dark: #adb5bd;
-  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
-  
-  /* Cores de cartão */
-  --card-background: #ffffff !important;
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  
-  /* Cores de botão */
-  --button-primary: #0066cc;
-  --button-primary-hover: #004a94;
-  --button-secondary: var(--secondary-color);
-  --button-secondary-hover: var(--secondary-color-hover);
-  --button-success: #28a745;
-  --button-success-hover: #218838;
-  --button-danger: #dc3545;
-  --button-danger-hover: #c82333;
-  --button-warning: #ffc107;
-  --button-warning-hover: #e0a800;
-  --button-info: #17a2b8;
-  --button-info-hover: #138496;
-  
-  /* Cores de input */
-  --input-background: #ffffff;
-  --input-border: #ced4da;
-  --input-border-focus: #80bdff;
-  --input-placeholder: #6c757d;
-  
-  /* Cores de hover e active */
-  --hover-color: #f8f9fa;
-  --active-color: #e9ecef;
-  --link-hover: #0056b3;
-  
-  /* Espaçamentos */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 3rem;
-  
-  /* Border radius */
-  --border-radius-sm: 0.25rem;
-  --border-radius: 0.375rem;
-  --border-radius-lg: 0.5rem;
-  --border-radius-xl: 10px !important;
-  --border-radius-xxl: 1.5rem;
-  --border-radius-full: 9999px;
-  
-  /* Transições */
-  --transition-fast: 0.15s ease-in-out;
-  --transition-normal: 0.3s ease-in-out;
-  --transition-slow: 0.5s ease-in-out;
-  
-  /* Z-index */
-  --z-dropdown: 1000;
-  --z-sticky: 1020;
-  --z-fixed: 1030;
-  --z-modal-backdrop: 1040;
-  --z-modal: 1050;
-  --z-popover: 1060;
-  --z-tooltip: 1070;
-  
-  /* Layout */
-  width: 100%;
-  height: 100vh;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: column;
+/* ── Base ────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── Typography ───────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+h1 { font-size: var(--text-4xl); font-weight: var(--font-weight-bold); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+h5 { font-size: var(--text-lg); }
+h6 { font-size: var(--text-base); }
+
+p {
+  margin-top: 0;
+  margin-bottom: 1em;
+  color: var(--text-secondary);
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover {
+  color: var(--brand-blue-hover);
+  text-decoration: underline;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+svg {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Selection ────────────────────────────────────────────────── */
+::selection {
+  background: var(--brand-blue-light);
+  color: var(--brand-blue-dark);
+}
+
+/* ── Focus ────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
+
+/* ── Horizontal Rule ──────────────────────────────────────────── */
+hr {
+  border: none;
+  border-top: 1px solid var(--border-primary);
+  margin: var(--space-8) 0;
+}
+
+/* ── Lists ────────────────────────────────────────────────────── */
+ul, ol {
+  padding-left: 1.25em;
+  color: var(--text-secondary);
+}
+
+/* ── Code ─────────────────────────────────────────────────────── */
+code, pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
 /* Estilos gerais */
 html, body {
   touch-action: pan-x pan-y;
@@ -925,4 +934,25 @@ button:disabled {
   .install-modal-body {
     padding: 15px;
   }
+}
+
+/* -- Additional Animations --------------------------------------- */
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

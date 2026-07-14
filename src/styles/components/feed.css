@@ -24,21 +24,7 @@
   font-size: 1.1rem;
 }
 
-/* Estilos do item do feed */
-.feed-item {
-  background-color: var(--card-background);
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color);
-  transition: transform 0.2s ease;
-}
-
-.feed-item:hover {
-  transform: translateY(-2px);
-}
-
+/* Estilos do item do feed — base layout handled by card.css */
 .feed-item-header {
   display: flex;
   align-items: center;

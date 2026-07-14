@@ -1,0 +1,31 @@
+/* TripErrorsModal — shows all validation errors grouped by section */
+
+.trip-errors-modal {
+  /* The base .confirm-modal-content already provides padding, border,
+     background, border-radius. We override only the parts that conflict
+     with the multi-section scroll layout. */
+  padding: 0 !important;
+}
+
+.trip-errors-modal section {
+  /* Each group is its own <section> for accessibility. */
+  scroll-margin-top: 8px;
+}
+
+.trip-errors-modal ul {
+  /* Reset list spacing for our flat error rows. */
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trip-errors-modal button:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .trip-errors-modal {
+    width: 96% !important;
+  }
+}

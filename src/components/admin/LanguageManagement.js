@@ -1,132 +1,148 @@
 // src/components/admin/LanguageManagement.js
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import { request } from '../../axios_helper';
+import Toast from '../Toast';
+import { FaExclamationCircle } from 'react-icons/fa';
 import '../../styles/Admin.css';
 
 const LanguageManagement = () => {
-  const [languages, setLanguages] = useState([
-    // Mock data
-    { _id: '1', name: 'Português', code: 'pt' },
-    { _id: '2', name: 'Inglês', code: 'en' },
-    { _id: '3', name: 'Italiano', code: 'it' },
-    { _id: '4', name: 'francês', code: 'fr' },
-    { _id: '5', name: 'espanhol', code: 'es' },
-  ]);
-  const [newLanguage, setNewLanguage] = useState({ name: '', code: '' });
-  const [editingLanguage, setEditingLanguage] = useState(null); // Estado para o idioma em edição
+  const [languages, setLanguages] = useState([]);
+  const [form, setForm] = useState({ name: '', code: '' });
+  const [editing, setEditing] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: '', show: false });
 
-  useEffect(() => {
-    // Placeholder para chamada à API
-    const fetchLanguages = async () => {
-      // const { data } = await axios.get('/api/languages', {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
-      // });
-      // setLanguages(data);
-    };
-    fetchLanguages();
+  const showToast = (m, t) => setToast({ message: m, type: t, show: true });
+  const closeToast = () => setToast({ ...toast, show: false });
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const r = await request('GET', '/admin/languages');
+      setLanguages(r.data || []);
+    } catch (e) {
+      showToast('Erro ao carregar línguas.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Função para criar um novo idioma
-  const handleCreate = async () => {
-    // Placeholder para chamada à API
-    setLanguages([...languages, { _id: Date.now().toString(), ...newLanguage }]);
-    setNewLanguage({ name: '', code: '' });
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const validate = (name, value) => {
+    if (name === 'name' && !value.trim()) return 'Nome é obrigatório';
+    if (name === 'code') {
+      if (!value.trim()) return 'Código é obrigatório';
+      if (!/^[a-z]{2,5}$/.test(value.trim())) return 'Código deve ter 2-5 letras minúsculas';
+    }
+    return '';
   };
 
-  // Função para iniciar a edição de um idioma
-  const handleEdit = (language) => {
-    setEditingLanguage(language);
-    setNewLanguage({ name: language.name, code: language.code });
+  const handleChange = (field, value) => {
+    setForm((p) => ({ ...p, [field]: value }));
+    setErrors((p) => ({ ...p, [field]: validate(field, value) }));
   };
 
-  // Função para salvar as alterações de um idioma
-  const handleUpdate = async () => {
-    // Placeholder para chamada à API
-    setLanguages(
-      languages.map((language) =>
-        language._id === editingLanguage._id
-          ? { ...language, name: newLanguage.name, code: newLanguage.code }
-          : language
-      )
-    );
-    setEditingLanguage(null); // Limpa o estado de edição
-    setNewLanguage({ name: '', code: '' }); // Limpa o formulário
+  const save = async () => {
+    const errs = {};
+    Object.keys(form).forEach((k) => {
+      const e = validate(k, form[k]);
+      if (e) errs[k] = e;
+    });
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      showToast('Corrija os erros no formulário', 'error');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      if (editing) {
+        await request('PUT', `/admin/languages/${editing.id}`, form);
+        showToast('Língua atualizada.', 'success');
+      } else {
+        await request('POST', '/admin/languages', form);
+        showToast('Língua criada.', 'success');
+      }
+      setForm({ name: '', code: '' });
+      setEditing(null);
+      await fetch();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Erro a guardar língua.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Função para cancelar a edição
-  const handleCancelEdit = () => {
-    setEditingLanguage(null);
-    setNewLanguage({ name: '', code: '' });
-  };
-
-  // Função para eliminar um idioma
-  const handleDelete = async (id) => {
-    // Placeholder para chamada à API
-    setLanguages(languages.filter((language) => language._id !== id));
+  const remove = async (id) => {
+    if (!window.confirm('Eliminar esta língua?')) return;
+    setIsLoading(true);
+    try {
+      await request('DELETE', `/admin/languages/${id}`);
+      showToast('Língua eliminada.', 'success');
+      await fetch();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Erro a eliminar.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="admin-section-admin">
-      <h2>Gestão de Idiomas</h2>
-      <div className="form-group-admin">
+      <h2>Gestão de Línguas</h2>
+      <div className="form-group-admin" style={{ marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="Nome do Idioma"
-          value={newLanguage.name}
-          onChange={(e) => setNewLanguage({ ...newLanguage, name: e.target.value })}
+          placeholder="Nome (ex: Português)"
+          value={form.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          disabled={isLoading}
+          maxLength={55}
         />
+        {errors.name && <div className="field-error"><FaExclamationCircle /> {errors.name}</div>}
         <input
           type="text"
-          placeholder="Código (ex.: pt)"
-          value={newLanguage.code}
-          onChange={(e) => setNewLanguage({ ...newLanguage, code: e.target.value })}
+          placeholder="Código ISO (ex: pt)"
+          value={form.code}
+          onChange={(e) => handleChange('code', e.target.value.toLowerCase())}
+          disabled={isLoading}
+          maxLength={5}
+          style={{ marginTop: '10px' }}
         />
-        {editingLanguage ? (
-          <>
-            <button className="btn-primary-admin" onClick={handleUpdate}>
-              Guardar Alterações
-            </button>
-            <button className="btn-danger-admin" onClick={handleCancelEdit}>
-              Cancelar
-            </button>
-          </>
-        ) : (
-          <button className="btn-primary-admin" onClick={handleCreate}>
-            Adicionar Idioma
-          </button>
-        )}
+        {errors.code && <div className="field-error"><FaExclamationCircle /> {errors.code}</div>}
+        <div style={{ marginTop: '10px' }}>
+          {editing ? (
+            <>
+              <button className="btn-primary-admin" onClick={save} disabled={isLoading}>Guardar</button>
+              <button className="btn-danger-admin" onClick={() => { setEditing(null); setForm({ name: '', code: '' }); }}>Cancelar</button>
+            </>
+          ) : (
+            <button className="btn-primary-admin" onClick={save} disabled={isLoading}>Adicionar Língua</button>
+          )}
+        </div>
       </div>
       <table className="admin-table-admin">
         <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Código</th>
-            <th>Ações</th>
-          </tr>
+          <tr><th>Nome</th><th>Código</th><th>Ações</th></tr>
         </thead>
         <tbody>
-          {languages.map((language) => (
-            <tr key={language._id}>
-              <td>{language.name}</td>
-              <td>{language.code}</td>
+          {languages.map((l) => (
+            <tr key={l.id}>
+              <td>{l.name}</td>
+              <td>{l.code}</td>
               <td>
-                <button
-                  className="btn-warning-admin"
-                  onClick={() => handleEdit(language)}
-                >
-                  Editar
-                </button>
-                <button
-                  className="btn-danger-admin"
-                  onClick={() => handleDelete(language._id)}
-                >
-                  Eliminar
-                </button>
+                <button className="btn-warning-admin" onClick={() => { setEditing(l); setForm({ name: l.name, code: l.code }); }}>Editar</button>
+                <button className="btn-danger-admin" onClick={() => remove(l.id)} style={{ marginLeft: '6px' }}>Eliminar</button>
               </td>
             </tr>
           ))}
+          {languages.length === 0 && (
+            <tr><td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>Nenhuma língua registada.</td></tr>
+          )}
         </tbody>
       </table>
+      <Toast message={toast.message} type={toast.type} show={toast.show} onClose={closeToast} />
     </div>
   );
 };

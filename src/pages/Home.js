@@ -707,13 +707,13 @@ const Home = () => {
     }
   };
 
-  const handleCommentLike = (travelId, commentId, parentIds = []) => {
+  const handleCommentLike = async (travelId, commentId, parentIds = []) => {
     if (!user) {
       return;
     }
 
     const key = `${travelId}-${parentIds.join('-')}-${commentId}`;
-    
+
     const updateLikes = (comments, path, isLiked) => {
       if (path.length === 0) {
         return comments.map((comment) =>
@@ -729,8 +729,9 @@ const Home = () => {
     };
 
     const isLiked = likedComments.includes(key);
+
+    // Optimistic UI update
     setLikedComments((prev) => (isLiked ? prev.filter((k) => k !== key) : [...prev, key]));
-    
     setFeedTravels((prev) =>
       prev.map((travel) =>
         travel.id === travelId
@@ -738,6 +739,27 @@ const Home = () => {
           : travel
       )
     );
+
+    // Persist to backend
+    try {
+      if (isLiked) {
+        await request('DELETE', `/trips/${travelId}/comments/${commentId}/like`);
+      } else {
+        await request('POST', `/trips/${travelId}/comments/${commentId}/like`);
+      }
+    } catch (err) {
+      // Revert optimistic update on error
+      setLikedComments((prev) => (isLiked ? [...prev, key] : prev.filter((k) => k !== key)));
+      setFeedTravels((prev) =>
+        prev.map((travel) =>
+          travel.id === travelId
+            ? { ...travel, comments: updateLikes(travel.comments, parentIds, !isLiked) }
+            : travel
+        )
+      );
+      const msg = err.response?.data?.message || 'Erro ao atualizar gosto no comentário.';
+      showToast(msg, 'error');
+    }
   };
 
   const toggleReply = (key) => {
@@ -1151,11 +1173,10 @@ const Home = () => {
     pushIf(travel.highlightImage);
 
     // Order: general info, accommodations, food, transport, reference points, any other common props
+    // (The legacy `images_*` global pools were removed — per-item
+     // photos live on each sub-entity.)
     pushIf(travel.images_generalInformation);
-    pushIf(travel.images_accommodations);
-    pushIf(travel.accommodationImagePreviews);
     pushIf(travel.images_foodRecommendations);
-    pushIf(travel.images_referencePoints);
     pushIf(travel.images_localTransport);
     pushIf(travel.images_transport);
     pushIf(travel.transportImagePreviews);

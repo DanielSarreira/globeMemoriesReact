@@ -1,0 +1,99 @@
+/* Dual-handle range slider — CSS only, no external deps. */
+
+.range-slider {
+  position: relative;
+  height: 36px;
+  margin: 8px 0 24px;
+  touch-action: none;
+}
+
+.range-slider__track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #d0d7de;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.range-slider__range {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  background: #1f6feb;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.range-slider__input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 36px;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.range-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #1f6feb;
+  cursor: grab;
+  pointer-events: auto;
+  margin-top: 0;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.range-slider__input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+.range-slider__input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #1f6feb;
+  cursor: grab;
+  pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.range-slider__input--low { z-index: 1; }
+.range-slider__input--high { z-index: 1; }
+
+/* Stacking trick: when the low thumb crosses the high thumb, give it priority */
+.range-slider__input--high:hover,
+.range-slider__input--high:focus { z-index: 3; }
+
+.range-slider__marks {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  right: 0;
+  height: 16px;
+  pointer-events: none;
+}
+
+.range-slider__mark {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #57606a;
+  white-space: nowrap;
+}

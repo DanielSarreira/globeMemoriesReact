@@ -5,11 +5,12 @@ import '../styles/components/modern-filters.css';
 // ...existing code...
 import { FaStar, FaFlag, FaEllipsisV } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
-import Slider from '@mui/material/Slider';
+import RangeSlider from '../components/RangeSlider';
 import { useAuth } from '../context/AuthContext';
 import Toast from '../components/Toast';
 import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
 import { travelsModalUtils } from '../utils/modalUtils';
+import { convertEmojiCode } from '../utils/emojiCode';
 import defaultAvatar from '../images/assets/avatar.jpg';
 
 const Travels = () => {
@@ -158,22 +159,10 @@ const Travels = () => {
             startDate: trip.startDate,
             endDate: trip.endDate,
             category: (trip.categories || []).map(cat => cat.categoryName || cat.name || ''),
-            categories_full: (trip.categories || []).map(cat => {
-              const emojiMap = {
-                ':city_dusk:': '🌆',
-                ':herb:': '🌿',
-                ':classical_building:': '🏛️',
-                ':beach_with_umbrella:': '🏖️',
-                ':mountain:': '⛰️',
-                ':fork_and_knife:': '🍽️',
-                ':airplane:': '✈️',
-                ':tent:': '⛺'
-              };
-              return {
-                name: cat.categoryName || cat.name || '',
-                icon: emojiMap[cat.categoryIcon] || '📌'
-              };
-            }),
+            categories_full: (trip.categories || []).map(cat => ({
+              name: cat.categoryName || cat.name || '',
+              icon: convertEmojiCode(cat.categoryIcon) || '📌'
+            })),
             comments: [],
             images_generalInformation: [],
             images_accommodations: [],
@@ -585,13 +574,12 @@ const Travels = () => {
             <div className="modern-filter-group">
               <label className="modern-filter-label">⭐ Avaliação</label>
               <div style={{ padding: '15px 10px' }}>
-                <Slider
+                <RangeSlider
                   value={ratingRange}
-                  onChange={(event, newValue) => {
+                  onChange={(newValue) => {
                     setRatingRange(newValue);
                     setCurrentPage(0);
                   }}
-                  valueLabelDisplay="auto"
                   min={1}
                   max={5}
                   step={1}
@@ -657,10 +645,9 @@ const Travels = () => {
               
               <div className="modern-modal-group">
                 <label className="modern-modal-label">💰 Preço Total da Viagem:</label>
-                <Slider
+                <RangeSlider
                   value={priceRange}
                   onChange={handlePriceChange}
-                  valueLabelDisplay="auto"
                   min={0}
                   max={5000}
                 />
@@ -669,10 +656,9 @@ const Travels = () => {
 
               <div className="modern-modal-group">
                 <label className="modern-modal-label">📅 Número de Dias da Viagem:</label>
-                <Slider
+                <RangeSlider
                   value={daysRange}
                   onChange={handleDaysChange}
-                  valueLabelDisplay="auto"
                   min={1}
                   max={365}
                 />

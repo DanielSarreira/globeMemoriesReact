@@ -1,0 +1,6 @@
+/* ProfilePhotoUploader — hover overlay */
+
+.profile-photo-uploader:hover .profile-photo-uploader-overlay,
+.profile-photo-uploader-overlay:focus-visible {
+  opacity: 1 !important;
+}

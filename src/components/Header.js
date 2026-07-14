@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaBell, FaUserEdit, FaMap, FaTrophy, FaMapMarkedAlt, FaCaretDown, FaGlobe, FaSun, FaAdn, FaBan, FaCog } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaUserCircle, FaSignOutAlt, FaUserEdit, FaMap, FaTrophy, FaCaretDown, FaSun, FaAdn, FaCog } from 'react-icons/fa';
 import defaultAvatar from '../images/assets/avatar1.jpg';
 import TravelsData from '../data/travelsData';
-import { request, setAuthHeader } from '../axios_helper';
-import axios from 'axios';
+import { request, setAuthHeader, getUserAvatar } from '../axios_helper';
 import { useWeather } from '../context/WeatherContext';
 import Toast from './Toast';
 import SuggestionButton from './SuggestionButton';
@@ -66,10 +65,10 @@ const Header = () => {
       try {
         if (mounted) setIsLoading(true);
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=celsius&timezone=auto`;
-        
-        const res = await axios.get(url, { 
+
+        const res = await request('GET', url, null, {
           signal: controller.signal,
-          timeout: 8000 // Timeout de 8 segundos
+          timeout: 8000
         });
         
         if (!mounted || controller.signal.aborted) return;
@@ -239,7 +238,7 @@ const Header = () => {
             >
               <div className="profile-icon-wrapper">
                 <img
-                  src={user.profilePicture || defaultAvatar}
+                  src={getUserAvatar(user) || defaultAvatar}
                   alt="Foto de perfil"
                   className="header-profile-image"
                   onError={(e) => { e.target.src = 'https://via.placeholder.com/30'; }}
