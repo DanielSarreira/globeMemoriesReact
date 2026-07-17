@@ -216,33 +216,83 @@ const StarRating = ({ rating, onRatingChange, maxStars = 5 }) => {
   );
 };
 
-// Converts a backend /trips/my-trips list entry into the shape expected by the display cards
-const normalizeBackendTrip = (trip) => {
+// Converts a backend /trips/my-trips list entry (TripDto) into the shape
+// expected by the display cards on this page. Mirrors the logic of
+// `mapTripSummaryToUiTrip` in UserProfile.js so the two pages render
+// the same data for the same trip.
+//
+// TripDto carries:
+//   - id, userId
+//   - title, tripSummary, tripDescription, weather
+//   - startDate, endDate, tripDurationDays, bookingDate
+//   - tripRating, country
+//   - cost.total (the price — see backend CostDto)
+//   - cities (List<Long>), categories (List<Long>),
+//     languagesSpoken (List<Long>), tripPrivacy
+//   - accommodations, recommendedFoods, referencePoints,
+//     tripTransports, negativePoints
+//   - photos, videos
+const normalizeBackendTrip = (trip, apiCategories = []) => {
+  // City names are NOT stored in TripDto (only IDs). Fall back to the
+  // first accommodation's city (a name string) when available.
+  const cityName =
+    (Array.isArray(trip.accommodations) && trip.accommodations[0]?.city) || '';
+
+  // Prefer the backend's `tripDurationDays` (handles same-day trips
+  // and timezone quirks) and fall back to calendar math for legacy
+  // rows.
   const startDate = trip.startDate;
   const endDate = trip.endDate;
-  const tripDurationDays = (startDate && endDate)
-    ? Math.max(1, Math.round((new Date(endDate) - new Date(startDate)) / 86400000))
-    : 0;
+  const days =
+    typeof trip.tripDurationDays === 'number' && trip.tripDurationDays > 0
+      ? trip.tripDurationDays
+      : startDate && endDate
+      ? Math.max(
+          1,
+          Math.ceil(
+            Math.abs(new Date(endDate) - new Date(startDate)) /
+              (1000 * 60 * 60 * 24)
+          ) + 1,
+        )
+      : 0;
 
   return {
-    id: trip.tripId,
-    name: trip.tripTitle || 'Sem título',
-    description: trip.tripSummary || '',
-    city: trip.citiesVisited?.[0] || '',
-    country: trip.countriesVisited?.[0] || '',
-    countryName: trip.countriesVisited?.[0] || '',
-    days: tripDurationDays,
-    tripDurationDays,
-    price: String(trip.totalCosts ?? ''),
-    cost: { total: trip.totalCosts },
-    stars: trip.tripRating || 0,
-    tripRating: trip.tripRating || 0,
-    category: (trip.categories || []).map(c => `${c.categoryIcon || ''} ${c.categoryName || ''}`.trim()),
-    highlightImage: toFullMediaUrl(trip.tripPhoto) || null,
+    id: trip.id,
+    name: trip.title || 'Sem título',
+    description: trip.tripDescription || trip.tripSummary || '',
     startDate,
     endDate,
-    status: 'published',
+    country: trip.country || '',
+    city: cityName,
+    countryName: trip.country || '',
+    days,
+    tripDurationDays: days,
+    // TripDto keeps the price at `cost.total` (a nested object).
+    price: trip.cost?.total ?? trip.totalPrice ?? trip.totalCost ?? 0,
+    cost: { total: trip.cost?.total ?? 0 },
+    stars: Math.round(trip.tripRating ?? trip.rating ?? 0),
+    tripRating: trip.tripRating ?? trip.rating ?? 0,
+    // TripDto only stores category IDs — resolve to names using the
+    // cached categories list (populated on mount).
+    category: (trip.categories || [])
+      .map((id) => {
+        const c = apiCategories.find((x) => x.id === id);
+        return c ? c.name : null;
+      })
+      .filter(Boolean),
+    // First photo URL — resolved through toFullMediaUrl so the
+    // browser can fetch the actual file (relative → full URL).
+    highlightImage:
+      Array.isArray(trip.photos) && trip.photos[0]
+        ? toFullMediaUrl(trip.photos[0])
+        : 'https://via.placeholder.com/300',
+    isHidden: Boolean(trip.isHidden),
     privacy: (trip.tripPrivacy || 'public').toLowerCase(),
+    totalLikes: trip.totalLikes ?? 0,
+    totalComments: 0, // TripDto doesn't carry a comment count today
+    // Fields needed elsewhere on this page — keep the same shape the
+    // rest of the component expects.
+    status: 'published',
     travelType: { main: 'single', isGroup: false },
     groupData: null,
     multiDestinations: null,
@@ -251,10 +301,8 @@ const normalizeBackendTrip = (trip) => {
     transportMethods: [],
     pointsOfInterest: [],
     negativePoints: [],
-    travelVideos: [],
-    images_generalInformation: [],
-    totalLikes: trip.totalLikes || 0,
-    totalComments: trip.totalComments || 0,
+    travelVideos: Array.isArray(trip.videos) ? trip.videos : [],
+    images_generalInformation: Array.isArray(trip.photos) ? trip.photos : [],
   };
 };
 
@@ -1431,7 +1479,7 @@ const MyTravels = () => {
         const parsed = JSON.parse(cachedUserTrips);
         if (isMounted && Array.isArray(parsed) && parsed.length > 0) {
           setUserTrips(parsed);
-          setTravels(parsed.map(normalizeBackendTrip));
+          setTravels(parsed.map((t) => normalizeBackendTrip(t, apiCategories)));
         }
       } catch (e) {
         console.warn('⚠️ Failed to parse cached user trips');
@@ -1445,7 +1493,7 @@ const MyTravels = () => {
           // Extract content array from paginated response
           const trips = response.data.content;
           setUserTrips(trips);
-          setTravels(trips.map(normalizeBackendTrip));
+          setTravels(trips.map((t) => normalizeBackendTrip(t, apiCategories)));
           // Cache the trips
           localStorage.setItem("user-trips-backend", JSON.stringify(trips));
         }
@@ -3005,7 +3053,7 @@ const MyTravels = () => {
         // Local drafts are now handled by `useTripDraft` (autosaved to
         // localStorage). The user-trip list comes purely from the
         // backend paginated endpoint.
-        setTravels(trips.map(normalizeBackendTrip));
+        setTravels(trips.map((t) => normalizeBackendTrip(t, apiCategories)));
         localStorage.setItem("user-trips-backend", JSON.stringify(trips));
       }
     } catch (error) {

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import defaultAvatar from '../images/assets/avatar.jpg';
 // ...existing code...
 import { FaCheck, FaStar, FaFlag, FaBan, FaEllipsisV, FaEdit, FaUserMinus, FaClock, FaUserPlus, FaChartBar, FaMapMarkerAlt } from 'react-icons/fa';
-import api, { toFullMediaUrl } from '../axios_helper';
+import api, { toFullMediaUrl, getUserAvatar } from '../axios_helper';
 
 const UserProfile = () => {
   const { user } = useAuth();
@@ -816,9 +816,10 @@ const UserProfile = () => {
           <div className="profile-avatar-section">
             <div className="profile-picture-container">
               <img
-                src={profile.profilePicture || defaultAvatar}
+                src={getUserAvatar(profile) || defaultAvatar}
                 alt={`${profile.username}'s avatar`}
                 className="profile-picture"
+                onError={(e) => { e.currentTarget.src = defaultAvatar; }}
               />
               <div className="profile-picture-overlay">
                 <div className="profile-status-indicator">
