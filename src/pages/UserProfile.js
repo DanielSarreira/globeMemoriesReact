@@ -178,10 +178,6 @@ const UserProfile = () => {
         const detailed = detailedResponse.data || {};
         const profileUsername = detailed.username || username;
 
-        const coverPhoto = localStorage.getItem(`${username}_coverPhoto`) || '';
-        const coverPhotoScale = parseFloat(localStorage.getItem(`${username}_coverPhotoScale`)) || 1;
-        const coverPhotoPosition = JSON.parse(localStorage.getItem(`${username}_coverPhotoPosition`) || '{"x":0,"y":0}');
-
         const detailedProfile = {
           id: detailed.id || resolvedUserId,
           username: profileUsername,
@@ -196,9 +192,9 @@ const UserProfile = () => {
           privacy: detailed.privacy || 'public',
           followers: [],
           following: [],
-          coverPhoto,
-          coverPhotoScale,
-          coverPhotoPosition,
+          // The cover is part of the shared backend profile. localStorage made
+          // it visible only on the device where it was selected.
+          coverPhoto: detailed.coverPhoto ? toFullMediaUrl(detailed.coverPhoto) : '',
         };
 
         const tripPosts = detailed.tripPosts || [];
@@ -781,22 +777,23 @@ const UserProfile = () => {
 
   // Lógica para coverPhoto e transformações
   const coverPhoto = profile?.coverPhoto;
-  const coverPhotoScale = profile?.coverPhotoScale || 1;
-  const coverPhotoPosition = profile?.coverPhotoPosition || { x: 0, y: 0 };
-
   return (
     <div className="user-profile-page">
       <header
         className="profile-header"
         style={coverPhoto ? {
-          backgroundImage: `url(${coverPhoto})`,
-          backgroundSize: `cover`,
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
           overflow: 'hidden',
           position: 'relative',
         } : {}}
       >
+        {coverPhoto && (
+          <img
+            className="profile-cover-image"
+            src={coverPhoto}
+            alt=""
+            aria-hidden="true"
+          />
+        )}
         {/* Overlay para escurecer a imagem e garantir legibilidade */}
         {coverPhoto && (
           <div style={{

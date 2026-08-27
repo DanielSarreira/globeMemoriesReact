@@ -34,6 +34,10 @@ const EditProfile = () => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [originalPhoto, setOriginalPhoto] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverRemoved, setCoverRemoved] = useState(false);
+  const [originalCover, setOriginalCover] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,6 +80,11 @@ const EditProfile = () => {
         setCurrentPhoto(photo);
         setOriginalPhoto(photo);
         setPhotoRemoved(false);
+        const cover = res.data.coverPhoto || null;
+        setCoverPreview(cover ? toFullMediaUrl(cover) : null);
+        setOriginalCover(cover);
+        setCoverFile(null);
+        setCoverRemoved(false);
       } catch (err) {
         showToast(err.response?.data?.message || 'Não foi possível carregar o perfil.', 'error');
       } finally {
@@ -90,6 +99,20 @@ const EditProfile = () => {
     setToast({ message, type, show: true });
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 3000);
   };
+
+  const mergeAuthenticatedUser = (patch) => {
+    setUser((currentUser) => {
+      const updatedUser = { ...(currentUser || user), ...patch };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  };
+
+  useEffect(() => () => {
+    if (coverPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(coverPreview);
+    }
+  }, [coverPreview]);
 
   const handleField = (e) => {
     const { name, value } = e.target;
@@ -121,6 +144,30 @@ const EditProfile = () => {
     } else {
       setCurrentPhoto(null);
     }
+  };
+
+  const handleCoverChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Selecione um ficheiro de imagem válido.', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('A foto de capa não pode exceder 5 MB.', 'error');
+      return;
+    }
+    if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+    setCoverRemoved(false);
+  };
+
+  const handleCoverRemove = () => {
+    if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    setCoverFile(null);
+    setCoverPreview(null);
+    setCoverRemoved(true);
   };
 
   const handleSave = async (e) => {
@@ -161,13 +208,10 @@ const EditProfile = () => {
           // `profilePicture` (legacy alias used by some components
           // like the Header) so every consumer renders the new photo
           // immediately without a refresh.
-          const updated = {
-            ...user,
+          mergeAuthenticatedUser({
             profilePhoto: newUrl,
             profilePicture: newUrl,
-          };
-          setUser(updated);
-          localStorage.setItem('user', JSON.stringify(updated));
+          });
         }
       } else if (photoRemoved && originalPhoto) {
         // The backend exposes DELETE /photos/profile (note: this is
@@ -180,9 +224,18 @@ const EditProfile = () => {
           // user can retry.
           console.warn('Photo delete failed:', delErr);
         }
-        const updated = { ...user, profilePhoto: null, profilePicture: null };
-        setUser(updated);
-        localStorage.setItem('user', JSON.stringify(updated));
+        mergeAuthenticatedUser({ profilePhoto: null, profilePicture: null });
+      }
+
+      // 3. Cover photo uses its own authenticated endpoint and persists in
+      // PostgreSQL, so it is visible on every browser and to other users.
+      if (coverFile) {
+        const coverResponse = await uploadFile('/photos/cover', coverFile);
+        const newCover = coverResponse?.data?.fileUrl || null;
+        mergeAuthenticatedUser({ coverPhoto: newCover });
+      } else if (coverRemoved && originalCover) {
+        await request('DELETE', '/photos/cover');
+        mergeAuthenticatedUser({ coverPhoto: null });
       }
 
       showToast('Perfil atualizado com sucesso!', 'success');
@@ -236,6 +289,37 @@ const EditProfile = () => {
               ⚠️ A foto actual será removida quando guardar.
             </p>
           )}
+        </section>
+
+        <section className="edit-profile-card edit-profile-cover-card">
+          <h2>🖼️ Foto de Capa</h2>
+          <p className="edit-profile-card-hint">
+            Esta imagem aparece no topo do perfil. Formatos JPG, PNG ou WebP, até 5 MB.
+          </p>
+          <div className="edit-profile-cover-preview">
+            {coverPreview ? (
+              <img src={coverPreview} alt="Pré-visualização da foto de capa" />
+            ) : (
+              <span>Sem foto de capa</span>
+            )}
+          </div>
+          <div className="edit-profile-cover-actions">
+            <label className="edit-profile-btn-secondary" htmlFor="cover-photo-input">
+              Selecionar imagem
+            </label>
+            <input
+              id="cover-photo-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleCoverChange}
+              disabled={saving}
+            />
+            {coverPreview && (
+              <button type="button" className="edit-profile-btn-danger" onClick={handleCoverRemove} disabled={saving}>
+                Remover capa
+              </button>
+            )}
+          </div>
         </section>
 
         {/* Identity card */}

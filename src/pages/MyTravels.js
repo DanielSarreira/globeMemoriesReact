@@ -5699,7 +5699,7 @@ const MyTravels = () => {
                     errors={errorsForSection('foods')}
                   />
                   <div className="RightPosition">
-                    <h3>🍽️ Recomendações Alimentares</h3>
+                    <h3>🍽️ Recomendações Alimentares <small>(opcional)</small></h3>
                     {Array.isArray(newTravel.foodRecommendations) && newTravel.foodRecommendations.length > 0 ? (
                       <ul className="recommendations-list">
                         {newTravel.foodRecommendations.map((recommendation, index) => (

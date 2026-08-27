@@ -1333,6 +1333,62 @@ h3.question-title{
   }
 }
 
+/* Component-scoped mobile containment for forum comments. */
+@media (max-width: 768px) {
+  .qanda-page-modern {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .qanda-page-modern .question-card-modern,
+  .qanda-page-modern .comments-container-modern,
+  .qanda-page-modern .comments-list-modern,
+  .qanda-page-modern .comment-content-modern,
+  .qanda-page-modern .comment-form-wrapper-modern,
+  .qanda-page-modern .comment-input-container,
+  .qanda-page-modern .reply-input-wrapper {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .qanda-page-modern .comments-container-modern {
+    padding: 1rem;
+    overflow: hidden;
+  }
+
+  .qanda-page-modern .comment-main,
+  .qanda-page-modern .add-comment-modern {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .qanda-page-modern .comment-avatar-modern,
+  .qanda-page-modern .comment-user-avatar {
+    width: 36px;
+    height: 36px;
+    margin: 0;
+  }
+
+  .qanda-page-modern .comment-input-modern {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .qanda-page-modern .replies-container-modern {
+    width: auto;
+    max-width: none;
+    margin-left: 18px;
+    padding-left: 10px;
+  }
+}
+
 /* Estados de carregamento e vazio */
 .loading-state {
   display: flex;

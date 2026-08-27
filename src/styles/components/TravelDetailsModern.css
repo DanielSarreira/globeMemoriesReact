@@ -20,10 +20,6 @@
   box-sizing: border-box;
 }
 
-.content{
-  padding-left: 0px !important;
-}
-
 /* ==================== MAIN CONTAINER ==================== */
 .travel-details-container-travel-details {
   min-height: 100vh;
@@ -5728,5 +5724,85 @@ display: none;
   .comments-modal-travel-details .reply-user-avatar {
     width: 28px;
     height: 28px;
+  }
+}
+
+/* Keep these guards last: this legacy file contains later duplicate rules. */
+.travel-details-container-travel-details img {
+  image-orientation: from-image;
+}
+
+@media (max-width: 768px) {
+  .travel-details-container-travel-details,
+  .travel-details-container-travel-details .moreDetails-travel-details,
+  .travel-details-container-travel-details .tab-content-travels-travel-details,
+  .travel-details-container-travel-details .tab-content-travels,
+  .travel-details-container-travel-details .points-gallery,
+  .travel-details-container-travel-details .general-gallery {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .travel-details-container-travel-details .travel-details-description-travel-details,
+  .travel-details-container-travel-details .moreDetails-travel-details {
+    margin-inline: 10px;
+  }
+
+  .travel-details-container-travel-details .tab-content-travels-travel-details {
+    padding: 1rem;
+    overflow-x: clip;
+  }
+
+  .travel-details-container-travel-details .tab-content-travels {
+    width: 100%;
+    padding: 1rem;
+    overflow-x: clip;
+  }
+
+  .travel-details-container-travel-details .images-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .travel-details-container-travel-details .image-item,
+  .travel-details-container-travel-details .image-item img {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .travel-details-container-travel-details .comments-modal-travel-details .comments-modal-section {
+    padding: 1rem;
+  }
+
+  .travel-details-container-travel-details .comments-modal-travel-details .comment-main,
+  .travel-details-container-travel-details .comments-modal-travel-details .add-comment-modern {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .travel-details-container-travel-details .comments-modal-travel-details .comment-avatar-modern,
+  .travel-details-container-travel-details .comments-modal-travel-details .comment-user-avatar {
+    width: 36px;
+    height: 36px;
+    margin: 0;
+  }
+
+  .travel-details-container-travel-details .comments-modal-travel-details .comment-content-modern,
+  .travel-details-container-travel-details .comments-modal-travel-details .comment-form-wrapper-modern,
+  .travel-details-container-travel-details .comments-modal-travel-details .comment-input-modern {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 520px) {
+  .travel-details-container-travel-details .images-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

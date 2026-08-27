@@ -212,6 +212,15 @@ describe('tripValidation', () => {
       expect(r.errors).toEqual([]);
     });
 
+    test('food recommendations are optional', () => {
+      const form = baseForm();
+      form.foodRecommendations = [];
+
+      const result = validateTripForm(form, {});
+
+      expect(result.errors.filter((error) => error.section === 'foods')).toEqual([]);
+    });
+
     test('missing required title → invalid with section + field', () => {
       const f = baseForm();
       f.title = '';
