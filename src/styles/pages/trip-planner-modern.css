@@ -18,11 +18,11 @@
   --gm-border: #ececec;
   --gm-text: #1c1e21;
   --gm-text-soft: #65676b;
-  --gm-accent: #2bb6a3;            /* teal — main accent (brand) */
-  --gm-accent-strong: #1a8b7c;
+  --gm-accent: #FF9900;            /* brand accent (orange) */
+  --gm-accent-strong: #E68A00;
   --gm-warm: #f6a560;               /* warm peach (secondary) */
   --gm-pink: #e36b7e;               /* for invalid/required state */
-  --gm-red: #e74c3c;
+  --gm-red: #DC2626;               /* danger red */
   --gm-radius-lg: 16px;
   --gm-radius-md: 12px;
   --gm-radius-sm: 8px;

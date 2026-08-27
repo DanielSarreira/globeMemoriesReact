@@ -1,0 +1,331 @@
+/* src/components/ui/CommentThread.css
+ * Round 85 — rewritten to match the new CommentThread.jsx (clean UTF-8,
+ * avatar + name as buttons, onUserClick navigation, no <a> underlines).
+ *
+ * The previous version had `.gm-ct__author` etc. for an older DOM; the new
+ * DOM uses `.gm-ct__name`, `.gm-ct__name--clickable`, `.gm-ct__avatar--clickable`,
+ * `.gm-ct__text`, `.gm-ct__action`, `.gm-ct__action--liked`, etc. Anything
+ * referencing the old class names is gone.
+ */
+
+.gm-ct {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* ──────────── Count toggle (e.g. "Ver 3 comentários") ──────────── */
+.gm-ct__head-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-2);
+  cursor: pointer;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.gm-ct__head-toggle:hover {
+  background: var(--gm-bg-sunken, rgba(0, 0, 0, 0.04));
+  color: var(--gm-text-1);
+}
+.gm-ct__head-toggle:focus-visible {
+  outline: 2px solid var(--gm-brand, #007BFF);
+  outline-offset: 2px;
+}
+
+/* ──────────── Body wrapper (animated open/close) ──────────── */
+.gm-ct__body-wrap {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ──────────── List ──────────── */
+.gm-ct__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gm-ct__loading,
+.gm-ct__empty {
+  font-size: 13px;
+  color: var(--gm-text-2);
+  text-align: center;
+  padding: 12px 8px;
+}
+
+/* ──────────── One comment row ──────────── */
+.gm-ct__row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+/* Avatar is a <button> in the new version. Reset button defaults so it
+ * behaves like a clickable image: no border, no background, no underline,
+ * no padding. The hover state lives on `.gm-ct__avatar--clickable`.
+ *
+ * The wrapping `<span class="gm-avatar gm-avatar--sm">` (32px) sits
+ * centred inside the 36px button. `display: grid; place-items: center`
+ * guarantees the child never overflows even if the avatar's own width
+ * drifts (e.g. a future regression to a numeric `size` prop). */
+.gm-ct__avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  border-radius: 50%;
+  background: var(--gm-bg-card, #fff);
+  flex-shrink: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  cursor: default;
+  text-decoration: none;
+}
+.gm-ct__avatar > * {
+  width: 32px;
+  height: 32px;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+.gm-ct__avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+.gm-ct__avatar--clickable {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.gm-ct__avatar--clickable:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px var(--gm-brand, #007BFF);
+}
+.gm-ct__avatar:focus-visible {
+  outline: 2px solid var(--gm-brand, #007BFF);
+  outline-offset: 2px;
+}
+
+/* ──────────── Body column ──────────── */
+.gm-ct__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gm-ct__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Name is a <button> when clickable, a <span> otherwise. Both share the
+ * bold look. The button variant adds the brand-blue hover + removes the
+ * default <button> chrome + the <a> underline that would otherwise
+ * appear if a child selector hit it. */
+.gm-ct__name {
+  font-size: 13.5px;
+  font-weight: var(--gm-weight-bold, 700);
+  color: var(--gm-text-1, #0F172A);
+  line-height: 1.2;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-decoration: none;
+  text-align: left;
+  cursor: default;
+  font-family: inherit;
+  letter-spacing: 0;
+}
+.gm-ct__name--clickable {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.gm-ct__name--clickable:hover {
+  color: var(--gm-brand, #007BFF);
+  background: rgba(0, 123, 255, 0.06);
+}
+.gm-ct__name--clickable:focus-visible {
+  outline: 2px solid var(--gm-brand, #007BFF);
+  outline-offset: 2px;
+  color: var(--gm-brand, #007BFF);
+}
+.gm-ct__name--clickable:active {
+  color: var(--gm-brand-dark, #0056b3);
+}
+
+.gm-ct__time {
+  font-size: 11.5px;
+  color: var(--gm-text-3, #6B7280);
+  font-weight: var(--gm-weight-medium, 500);
+  white-space: nowrap;
+}
+
+.gm-ct__text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--gm-text-1, #0F172A);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* ──────────── Actions (like, delete) ──────────── */
+.gm-ct__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.gm-ct__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--gm-text-3, #6B7280);
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: inherit;
+  font-weight: var(--gm-weight-medium, 500);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.gm-ct__action:hover {
+  background: var(--gm-bg-sunken, rgba(0, 0, 0, 0.04));
+  color: var(--gm-text-1, #0F172A);
+}
+.gm-ct__action:focus-visible {
+  outline: 2px solid var(--gm-brand, #007BFF);
+  outline-offset: 2px;
+}
+.gm-ct__action--liked {
+  color: var(--gm-danger, #DC2626);
+}
+.gm-ct__action--danger:hover {
+  color: var(--gm-danger, #DC2626);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* ──────────── Composer ──────────── */
+.gm-ct__composer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gm-divider, rgba(15, 23, 42, 0.08));
+}
+/* Round 85 — the composer avatar is `<Avatar size="sm">` (32px). Keep it
+ * pinned to 32×32 in case the inner <span> ever grows. */
+.gm-ct__composer > .gm-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  max-width: 32px;
+  max-height: 32px;
+  flex-shrink: 0;
+}
+.gm-ct__composer-form {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gm-bg-sunken, rgba(0, 0, 0, 0.04));
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 6px 6px 14px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.gm-ct__composer-form:focus-within {
+  border-color: var(--gm-brand, #007BFF);
+  background: var(--gm-bg-card, #fff);
+}
+.gm-ct__composer-input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--gm-text-1, #0F172A);
+  padding: 6px 0;
+  text-decoration: none;
+}
+.gm-ct__composer-input::placeholder {
+  color: var(--gm-text-3, #6B7280);
+}
+.gm-ct__composer-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.gm-ct__composer-submit {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gm-brand, #007BFF);
+  color: #fff;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.gm-ct__composer-submit:hover:not(:disabled) {
+  background: var(--gm-brand-dark, #0056b3);
+}
+.gm-ct__composer-submit:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.gm-ct__composer-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.gm-ct__composer-submit:focus-visible {
+  outline: 2px solid var(--gm-brand, #0056b3);
+  outline-offset: 2px;
+}
+
+/* ──────────── Mobile (≤720px) ──────────── */
+@media (max-width: 720px) {
+  .gm-ct__row {
+    gap: 8px;
+  }
+  .gm-ct__avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+  }
+  .gm-ct__text {
+    font-size: 13px;
+  }
+}

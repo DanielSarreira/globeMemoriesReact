@@ -1,0 +1,60 @@
+.gm-avatar {
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: var(--gm-radius-pill);
+  overflow: hidden;
+  background: var(--gm-bg-sunken);
+  color: #FFFFFF;
+  font-family: var(--gm-font-sans);
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: -0.02em;
+  user-select: none;
+  flex-shrink: 0;
+  border: 0;
+  /* Round 85 — the `<img>` inside was stretching to its intrinsic size
+   * (1920×1080) when the parent flex container gave the `<span>` an
+   * auto-sized slot. `vertical-align: top` + `flex-shrink: 0` +
+   * `min-width: 0` + `min-height: 0` make the span a stable, intrinsic
+   * block-level element that ALWAYS honours the explicit `width` and
+   * `height` from `.gm-avatar--xs/--sm/--md/--lg/--xl/--2xl` (or the
+   * parent's constrained width if no class is set). Without these
+   * resets the `<img>` falls back to its natural aspect ratio and
+   * can paint at e.g. 1920×1080 in a 40×40 sidebar slot. */
+  vertical-align: top;
+  min-width: 0;
+  min-height: 0;
+  line-height: 0;
+  font-size: 0;
+}
+
+.gm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Defensive: even if a future caller forgets to apply
+   * `.gm-avatar--md`, the image itself must never exceed the
+   * dimensions the parent gives it. */
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.gm-avatar--xs { width: 24px; height: 24px; font-size: 10px; }
+.gm-avatar--sm { width: 32px; height: 32px; font-size: 12px; }
+.gm-avatar--md { width: 40px; height: 40px; font-size: 14px; }
+.gm-avatar--lg { width: 48px; height: 48px; font-size: 16px; }
+/* Round 80 — enlarged the `xl` size from 64px to 125px. The
+   profile hero (mobile) now uses `<Avatar size="xl" />` and
+   the user wants the photo to feel "large and prominent" on
+   the profile page — 64px was barely bigger than a feed
+   avatar. 125px makes the profile photo the visual anchor
+   of the hero, sits half over the cover photo, and matches
+   what Instagram / X / Apple Music do for profile avatars. */
+.gm-avatar--xl { width: 125px; height: 125px; font-size: 20px; }
+.gm-avatar--2xl { width: 96px; height: 96px; font-size: 32px; }
+
+.gm-avatar--ring {
+  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--gm-brand);
+}

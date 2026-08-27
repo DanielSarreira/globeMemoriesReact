@@ -1,22 +1,70 @@
 {
   "name": "Globe Memories",
   "short_name": "Globe Memories",
+  "description": "Rede social para viajantes — descobre, guarda e partilha as tuas viagens pelo mundo. Regista roteiros, partilha fotografia e vídeo, segue outros viajantes.",
   "start_url": "/",
-  "display": "standalone", 
-  "background_color": "#fff",
-  "theme_color": "#fff",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#007BFF",
+  "categories": ["travel", "social", "lifestyle", "photo"],
+  "lang": "pt-PT",
+  "dir": "ltr",
   "icons": [
     {
-      "src": "/icons/favicon.png",
+      "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/favicon2.png",
+      "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "orientation": "portrait",
-  "scope": "/"
+  "shortcuts": [
+    {
+      "name": "Descobrir",
+      "short_name": "Descobrir",
+      "description": "Ver viagens públicas e viajantes",
+      "url": "/travels",
+      "icons": [
+        {
+          "src": "/web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mapa",
+      "short_name": "Mapa",
+      "description": "Mapa interactivo de viagens",
+      "url": "/interactive-map",
+      "icons": [
+        {
+          "src": "/web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Criar viagem",
+      "short_name": "Criar",
+      "description": "Começar uma nova viagem",
+      "url": "/trip/new",
+      "icons": [
+        {
+          "src": "/web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }

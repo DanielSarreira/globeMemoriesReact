@@ -1,0 +1,714 @@
+/* ========================================================================
+   Globe Memories — AppShell v3
+   Premium navigation. Glass desktop sidebar + mobile tab bar + FAB.
+   The single source of truth for navigation across the entire app.
+   ======================================================================== */
+
+.gm-app {
+  min-height: 100dvh;
+  background: var(--gm-bg-page);
+  color: var(--gm-text-1);
+  font-family: var(--gm-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 1024px) {
+  /* The sidebar is collapsed by default (76px) and expands
+     on hover to 244px. The grid reserves only the COLLAPSED
+     width so the main content does not jump when the user
+     hovers. When the sidebar expands, it covers the leftmost
+     168px of the main column (since it's position:sticky
+     and sits in the same grid track) — the user can see the
+     content shift in/out via the hover transition but the
+     grid layout itself stays stable. */
+  .gm-app {
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    min-height: 100dvh;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOBILE TOP BAR
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-app__topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--gm-z-sticky);
+  height: 56px;
+  background: var(--gm-bg-glass-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--gm-divider);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--gm-space-4);
+  gap: var(--gm-space-3);
+}
+
+@media (min-width: 1024px) {
+  .gm-app__topbar { display: none; }
+}
+
+.gm-app__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--gm-text-1);
+  font-weight: var(--gm-weight-extrabold);
+  letter-spacing: var(--gm-tracking-tight);
+  font-size: 16px;
+}
+
+.gm-app__brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--gm-grad-brand);
+  display: grid;
+  place-items: center;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: var(--gm-weight-extrabold);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.32);
+}
+
+.gm-app__topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gm-app__iconbtn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--gm-radius-pill);
+  color: var(--gm-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-app__iconbtn:hover { background: var(--gm-bg-sunken); color: var(--gm-text-1); }
+.gm-app__iconbtn:active { transform: scale(0.94); }
+
+.gm-app__notif-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gm-accent);
+  border: 2px solid var(--gm-bg-card);
+  pointer-events: none;
+}
+
+.gm-app__iconbtn-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Badge que aparece por cima do icon button (ex: bell de
+   notificações no top bar mobile). Situa-se no canto superior
+   direito do botão — `top: 4px; right: 4px` para que o número
+   fique visível mesmo quando o botão está encostado ao limite
+   da top bar. */
+.gm-app__iconbtn-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gm-accent);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: var(--gm-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  border-radius: 999px;
+  border: 2px solid var(--gm-bg-page, #FAFAFB);
+  box-shadow: 0 2px 4px rgba(255, 153, 0, 0.32);
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOBILE BOTTOM TAB BAR + FAB
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-app__tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: var(--gm-z-nav);
+  height: calc(72px + env(safe-area-inset-bottom, 0));
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: var(--gm-bg-glass-strong);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  border-top: 1px solid var(--gm-divider);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+  justify-items: center;
+}
+
+@media (min-width: 1024px) {
+  .gm-app__tabbar { display: none; }
+}
+
+.gm-app__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--gm-text-3);
+  font: inherit;
+  font-size: 10px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-app__tab:active { transform: scale(0.94); }
+
+.gm-app__tab--active {
+  color: var(--gm-brand);
+}
+
+.gm-app__tab--active .gm-app__tab-icon {
+  background: var(--gm-brand-soft);
+}
+
+.gm-app__tab-icon {
+  width: 44px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--gm-radius-pill);
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+/* Botão de logout flutuante no mobile removido (Round 33).
+   O user pediu para remover este elemento — o logout no
+   mobile fica agora acessível apenas pelo botão no sidebar
+   desktop (e pelo ProfileHero do próprio user). A tab bar
+   mobile tem apenas 5 tabs: Início, Descobrir, Mapa, Fórum,
+   Perfil — sem Settings, sem Sair. */
+
+/* FAB (floating action button) — premium */
+.gm-app__fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(72px + 18px);
+  z-index: var(--gm-z-fab);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--gm-grad-brand);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 10px 32px rgba(0, 123, 255, 0.42),
+              0 2px 8px rgba(0, 123, 255, 0.28);
+  transition: transform var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+}
+
+.gm-app__fab:hover { box-shadow: 0 14px 40px rgba(0, 123, 255, 0.55); }
+.gm-app__fab:active { transform: scale(0.95); }
+
+@media (min-width: 1024px) {
+  .gm-app__fab { bottom: 32px; right: 32px; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DESKTOP SIDEBAR
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-app__sidebar {
+  display: none;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  background: var(--gm-bg-card);
+  border-right: 1px solid var(--gm-divider);
+  z-index: var(--gm-z-sticky);
+  flex-direction: column;
+  padding: var(--gm-space-5) var(--gm-space-4);
+  gap: var(--gm-space-5);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Instagram-style: collapsed by default on desktop, expands on hover. */
+  width: 76px;
+  transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  --gm-sidebar-w: 76px;
+}
+
+@media (min-width: 1024px) {
+  .gm-app__sidebar { display: flex; }
+  .gm-app__sidebar:hover { width: 244px; --gm-sidebar-w: 244px; }
+  /* When the JS state explicitly expands (e.g. user clicked a toggle). */
+  .gm-app__sidebar.gm-app__sidebar--expanded { width: 244px; --gm-sidebar-w: 244px; }
+}
+
+/* Labels hidden when collapsed, fade in when expanded. */
+.gm-app__sidebar .gm-app__nav-label,
+.gm-app__sidebar .gm-app__nav-title,
+.gm-app__sidebar .gm-app__nav-section,
+.gm-app__sidebar .gm-app__sidebar-head-text,
+.gm-app__sidebar .gm-app__profile-name,
+.gm-app__sidebar .gm-app__profile-handle,
+.gm-app__sidebar .gm-app__nav-badge {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 0.16s ease, width 0.22s ease;
+  pointer-events: none;
+}
+
+.gm-app__sidebar:hover .gm-app__nav-label,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__nav-label,
+.gm-app__sidebar:hover .gm-app__nav-title,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__nav-title,
+.gm-app__sidebar:hover .gm-app__nav-section,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__nav-section,
+.gm-app__sidebar:hover .gm-app__sidebar-head-text,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__sidebar-head-text,
+.gm-app__sidebar:hover .gm-app__profile-name,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__profile-name,
+.gm-app__sidebar:hover .gm-app__profile-handle,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__profile-handle {
+  opacity: 1;
+  width: auto;
+  pointer-events: auto;
+}
+
+/* The badge needs auto width when revealed. */
+.gm-app__sidebar:hover .gm-app__nav-badge,
+.gm-app__sidebar.gm-app__sidebar--expanded .gm-app__nav-badge {
+  width: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sidebar head: logo container. We intentionally do NOT fix
+   the height — the logo is 100px tall when expanded and 38px
+   when collapsed, so the head grows/shrinks to match (with the
+   transition on the logo height). The logo is left-aligned in
+   both states (matching Instagram) so it does not "jump" when
+   the user hovers in or out. */
+.gm-app__sidebar-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 6px 12px;
+  text-decoration: none;
+  color: var(--gm-text-1);
+  font-weight: var(--gm-weight-extrabold);
+  letter-spacing: var(--gm-tracking-tight);
+  font-size: 17px;
+  overflow: hidden;
+  white-space: nowrap;
+  /* height is determined by the inner logo (100px expanded,
+     38px collapsed) + 12px padding. */
+  min-height: 50px;
+  transition: padding 0.22s ease;
+}
+
+.gm-app__sidebar-head .gm-app__brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+/* Logo (PNG) exibido no header da sidebar e na topbar mobile.
+   No mobile mantemos o tamanho pequeno (36px) para caber na
+   topbar. Na sidebar PC o user pediu para aumentar — vai a
+   100px de altura, centralizado horizontalmente no
+   `sidebar-head`, e a largura limitada a 190px para não
+   esticar logos com aspect ratio largo. */
+.gm-app__sidebar-logo,
+.gm-app__brand-logo {
+  display: block;
+  height: 100px;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+  transition: height 0.22s ease, max-width 0.22s ease;
+}
+
+/* When the sidebar is collapsed, swap the wide logo for a
+   compact icon-only version (the PNG has both a mark-only and
+   a horizontal wordmark; the `.gm-app__brand-logo--mark` class
+   is applied to the icon-only mark). */
+.gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__sidebar-logo {
+  height: 38px;
+  max-width: 38px;
+}
+
+/* Mobile: o logo volta ao tamanho compacto para caber na topbar. */
+@media (max-width: 1023px) {
+  .gm-app__brand-logo {
+    height: 36px;
+    max-width: 180px;
+  }
+}
+
+/* (Sidebar search box removed by request — kept CSS placeholder empty.) */
+
+/* Nav section title */
+.gm-app__nav-title {
+  font-size: 11px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-wide);
+  text-transform: uppercase;
+  color: var(--gm-text-4);
+  margin: 0;
+  padding: 0 12px;
+}
+
+/* Wrapper around primary + personal nav blocks. The wrapper
+   fills the available vertical space and centres the nav
+   items vertically (Instagram-style) in BOTH states. When
+   the sidebar is expanded, the head (logo) grows by ~62px
+   and the profile grows by ~38px, leaving the wrap with
+   less space and a vertical centre that is lower than in
+   the collapsed state. We use a translateY on the expanded
+   wrap to pull the items back up so the centre stays
+   aligned. The exact value (20px) is empirical — the
+   `gap: 8px` of the expanded nav (vs 4px collapsed)
+   and the larger items add a few extra pixels of
+   "centred" content height that the pure geometric
+   calculation does not account for. */
+.gm-app__sidebar-nav-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  justify-content: center;
+  transform: translateY(0);
+  transition: gap 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 1024px) {
+  .gm-app__sidebar:hover .gm-app__sidebar-nav-wrap,
+  .gm-app__sidebar.gm-app__sidebar--expanded .gm-app__sidebar-nav-wrap {
+    flex: 1 1 auto;
+    justify-content: center;
+    /* Pull the wrap UP by 20px to compensate the head
+       growing more than the profile (and the wider gap
+       between expanded items), so the items' vertical
+       centre stays aligned with the collapsed state. */
+    transform: translateY(-20px);
+    gap: 8px;
+  }
+  .gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__sidebar-nav-wrap {
+    gap: 4px;
+    transform: translateY(0);
+  }
+  .gm-app__profile {
+    flex: 0 0 auto;
+  }
+}
+
+/* Nav items */
+.gm-app__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gm-app__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--gm-radius-md);
+  text-decoration: none;
+  color: var(--gm-text-2);
+  font-size: 14px;
+  font-weight: var(--gm-weight-semibold);
+  position: relative;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+  letter-spacing: var(--gm-tracking-normal);
+  /* When collapsed, the icon should be centred. */
+  justify-content: flex-start;
+}
+
+/* Centred icon in collapsed state. IMPORTANT: the icon must
+   stay at the SAME horizontal position whether the sidebar is
+   collapsed or expanded — otherwise the icons "jump" sideways
+   on hover. We achieve that by always anchoring the icon at
+   the same left offset (12px) and, when collapsed, hiding the
+   label with width:0 (no layout shift) and adding matching
+   left+right padding so the item still feels balanced. */
+.gm-app__nav-item { white-space: nowrap; }
+.gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__nav-item {
+  justify-content: flex-start;
+  padding: 9px 12px;
+  gap: 12px;
+}
+
+.gm-app__nav-item:hover {
+  background: var(--gm-bg-sunken);
+  color: var(--gm-text-1);
+}
+
+.gm-app__nav-item--active {
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+}
+
+.gm-app__nav-item--active:hover {
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+}
+
+.gm-app__nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.gm-app__nav-badge {
+  margin-left: auto;
+  background: var(--gm-accent);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: var(--gm-weight-bold);
+  padding: 2px 7px;
+  border-radius: var(--gm-radius-pill);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  min-width: 18px;
+  text-align: center;
+}
+
+.gm-app__nav-divider {
+  height: 1px;
+  background: var(--gm-divider);
+  margin: 8px 8px;
+}
+
+/* Profile section (sticky at bottom of sidebar) */
+.gm-app__profile {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--gm-radius-md);
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+  text-decoration: none;
+  color: var(--gm-text-1);
+  position: relative;
+  justify-content: flex-start;
+}
+
+.gm-app__profile:hover { background: var(--gm-bg-sunken); }
+
+/* Centred profile avatar when collapsed; the text is hidden.
+   Same left padding as the nav items so the avatar stays in
+   the same horizontal position in both states. */
+.gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__profile { justify-content: flex-start; padding: 10px 0px; }
+.gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__profile .gm-app__iconbtn { display: none; }
+
+.gm-app__profile-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.16s ease, max-width 0.22s ease;
+}
+
+/* When collapsed, the profile-info wrapper takes no width. */
+.gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__profile-info {
+  max-width: 0;
+  opacity: 0;
+}
+
+.gm-app__profile-name {
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gm-app__profile-handle {
+  font-size: 11px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+}
+
+/* Auth (login) sidebar item */
+.gm-app__sidebar-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--gm-bg-sunken);
+  border-radius: var(--gm-radius-md);
+  margin-top: auto;
+  overflow: hidden;
+  max-height: 200px;
+  transition: max-height 0.22s ease, padding 0.22s ease, opacity 0.16s ease;
+}
+
+/* When collapsed, hide the auth block entirely. */
+.gm-app__sidebar:not(:hover):not(.gm-app__sidebar--expanded) .gm-app__sidebar-auth {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gm-app__sidebar-auth-text {
+  font-size: 13px;
+  color: var(--gm-text-2);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.gm-app__sidebar-auth-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gm-app__btn-primary {
+  flex: 1;
+  appearance: none;
+  border: 0;
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  height: 38px;
+  border-radius: var(--gm-radius-pill);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-app__btn-primary:hover { background: var(--gm-brand-hover); }
+
+.gm-app__btn-ghost {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--gm-text-1);
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--gm-radius-pill);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-app__btn-ghost:hover { background: var(--gm-bg-card); }
+
+/* ════════════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-app__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 100dvh;
+}
+
+/* Padding so content doesn't sit under the tab bar on mobile */
+.gm-app__content {
+  flex: 1;
+}
+
+@media (max-width: 1023px) {
+  .gm-app__content {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
+  }
+  /* Mobile edge-to-edge: o conteúdo desenha-se até aos limites
+     do ecrã. Cada página é responsável pelo seu próprio padding
+     interno. Top de 5px para o conteúdo não colar no header. */
+  .gm-app__content > * {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 5px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gm-app__content {
+    /* Room for the floating FAB on desktop */
+    padding-bottom: 32px;
+  }
+}
+
+/* ── Flush layout (full-bleed routes) ──
+   The TripWizard (`/trip/new` and `/trip/:id/edit`) renders
+   edge-to-edge: its own root is `position: fixed; inset: 0`
+   so it doesn't need any shell padding around it. We strip the
+   `padding-bottom` and the `min-height` so there's no wasted
+   scrollable gutter behind the wizard. */
+.gm-app__main--flush {
+  min-height: 0;
+}
+.gm-app__main--flush .gm-app__content {
+  padding-bottom: 0 !important;
+}

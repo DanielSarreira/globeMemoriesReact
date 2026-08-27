@@ -1,0 +1,41 @@
+.gm-text-expand {
+  font-family: var(--gm-font-sans);
+  color: var(--gm-text-1);
+  font-size: var(--gm-text-md);
+  line-height: var(--gm-leading-relaxed);
+  font-weight: var(--gm-weight-regular);
+  letter-spacing: var(--gm-tracking-normal);
+}
+
+.gm-text-expand__text {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--gm-clamp, 6);
+  line-clamp: var(--gm-clamp, 6);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.gm-text-expand__text--open {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  display: block;
+  overflow: visible;
+}
+
+.gm-text-expand__more {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 6px 0 0;
+  font: inherit;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-3);
+  cursor: pointer;
+  transition: color var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-text-expand__more:hover { color: var(--gm-brand); }

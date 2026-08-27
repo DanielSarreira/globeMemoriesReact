@@ -1,17 +1,30 @@
 // src/components/admin/AdminDashboard.js
-import React, { useState, useEffect } from 'react';
+//
+// Round 58 — the backoffice now uses the same design system as the
+// user-facing site (gradient surfaces, soft shadows, lucide icons
+// for the chrome) instead of the legacy flat blue table. The
+// sidebar is grouped by section (Dashboard / Moderação / Dados /
+// Conteúdo / Sistema) with collapsible headers, a top bar with
+// global stats cards, and a content area that uses the same
+// `.gm-card` surface as the rest of the app.
+//
+// The data layer / Routes / behaviour are unchanged — every page
+// still mounts under the same path it did before, so deep-links
+// from existing bookmarks keep working.
+import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { request, clearAuthToken, STORAGE_KEYS } from '../../axios_helper';
 import {
-  FaUsers, FaList, FaLanguage, FaGlobeAmericas,
-  FaBus, FaFileAlt, FaHistory, FaCog,
-  FaBell, FaUserShield, FaSignOutAlt, FaChartLine,
-  FaHome, FaDatabase, FaShieldAlt, FaHandsHelping,
-  FaFlag, FaComments, FaQuestion, FaTrophy, FaEnvelope,
-  FaEye
-} from 'react-icons/fa';
+  Home, BarChart3, Flag, Eye, MessageCircle, HelpCircle,
+  Users, ListTree, Globe2, Languages, Bus, FileText,
+  Trophy, HandHeart, Lightbulb,
+  Bell, Database, ShieldCheck, History, Settings as SettingsIcon, UserCog,
+  LogOut, ChevronDown, Sparkles, AlertTriangle, Heart, Shield,
+  MessageSquare,
+} from 'lucide-react';
 import UserManagement from './UserManagement';
 import UserProfilesManagement from './UserProfilesManagement';
+import UserReports from './UserReports';
 import CategoryManagement from './CategoryManagement';
 import LanguageManagement from './LanguageManagement';
 import CountryManagement from './CountryManagement';
@@ -24,6 +37,7 @@ import AdvancedNotifications from './AdvancedNotifications';
 import RoleManagement from './RoleManagement';
 import BackupManagement from './BackupManagement';
 import SecurityAudit from './SecurityAudit';
+import Statistics from './Statistics';
 import WelcomeModalManagement from './WelcomeModalManagement';
 import ReportsManagement from './ReportsManagement';
 import TravelModeration from './TravelModeration';
@@ -35,6 +49,7 @@ import AdminSuggestionsManager from './AdminSuggestionsManager';
 import logo from '../../images/Globe-Memories.png';
 import '../../styles/Admin.css';
 import '../../styles/components/welcome-modal-management.css';
+import '../../styles/components/admin-modern.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -55,6 +70,13 @@ const AdminDashboard = () => {
     totalFeedback: 0,
   });
   const [statsError, setStatsError] = useState(null);
+  const [openSections, setOpenSections] = useState({
+    Dashboard: true,
+    Moderação: true,
+    Dados: false,
+    Conteúdo: false,
+    Sistema: false,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -87,9 +109,7 @@ const AdminDashboard = () => {
     };
 
     fetchStats();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   const handleLogout = () => {
@@ -99,255 +119,257 @@ const AdminDashboard = () => {
     navigate('/admin/login');
   };
 
-  const menuItems = [
-    { path: '/admin', icon: FaHome, label: 'Dashboard', exact: true },
-    // ========== MODERAÇÃO (NOVO) ==========
-    { path: '/admin/reports', icon: FaFlag, label: '🚩 Denúncias', section: 'Moderação' },
-    { path: '/admin/travel-moderation-complete', icon: FaEye, label: '🛡️ Mod. de Viagens', section: 'Moderação' },
-    { path: '/admin/comments-moderation', icon: FaComments, label: '💬 Mod. de Comentários', section: 'Moderação' },
-    { path: '/admin/qanda-moderation', icon: FaQuestion, label: '❓ Mod. de Q&A', section: 'Moderação' },
-    // ========== GESTÃO DE DADOS ==========
-    { path: '/admin/users', icon: FaUsers, label: 'Gestão de Utilizadores', section: 'Dados' },
-    { path: '/admin/user-profiles', icon: FaUsers, label: '👤 Perfis de Utilizadores', section: 'Dados' },
-    { path: '/admin/categories', icon: FaList, label: 'Categorias', section: 'Dados' },
-    { path: '/admin/countries', icon: FaGlobeAmericas, label: 'Países', section: 'Dados' },
-    { path: '/admin/languages', icon: FaLanguage, label: 'Idiomas', section: 'Dados' },
-    { path: '/admin/transport-methods', icon: FaBus, label: 'Métodos de Transporte', section: 'Dados' },
-    // ========== CONTEÚDO ==========
-    { path: '/admin/content', icon: FaFileAlt, label: 'Gestão de Conteúdo', section: 'Conteúdo' },
-    { path: '/admin/achievements', icon: FaTrophy, label: '🏆 Achievements', section: 'Conteúdo' },
-    { path: '/admin/welcome-modal', icon: FaHandsHelping, label: 'Modal de Boas-Vindas', section: 'Conteúdo' },
-    { path: '/admin/suggestions', icon: FaComments, label: '💡 Sugestões/Feedback', section: 'Conteúdo' },
-    // ========== SISTEMA ==========
-    { path: '/admin/notifications', icon: FaBell, label: 'Notificações', section: 'Sistema' },
-    { path: '/admin/advanced-notifications', icon: FaBell, label: '📨 Notificações Avançadas', section: 'Sistema' },
-    { path: '/admin/backup', icon: FaDatabase, label: 'Gestão de Backups', section: 'Sistema' },
-    { path: '/admin/security', icon: FaShieldAlt, label: 'Auditoria de Segurança', section: 'Sistema' },
-    { path: '/admin/logs', icon: FaHistory, label: 'Logs de Atividade', section: 'Sistema' },
-    { path: '/admin/settings', icon: FaCog, label: 'Configurações', section: 'Sistema' },
-    { path: '/admin/roles', icon: FaUserShield, label: 'Gestão de Permissões', section: 'Sistema' },
-  ];
+  // Menu grouped by section. Round 58 — collapsed by default
+  // everywhere except the current active section so the sidebar
+  // isn't a wall of links on first paint.
+  const menuItems = useMemo(() => [
+    { path: '/admin', icon: Home, label: 'Dashboard', exact: true, section: 'Dashboard' },
+    { path: '/admin/statistics', icon: BarChart3, label: 'Estatísticas Detalhadas', section: 'Dashboard' },
+    { path: '/admin/reports', icon: Flag, label: 'Denúncias de Viagens', section: 'Moderação', badge: stats.pendingTripReports },
+    { path: '/admin/user-reports', icon: Shield, label: 'Denúncias de Utilizadores', section: 'Moderação', badge: stats.pendingUserReports },
+    { path: '/admin/travel-moderation-complete', icon: Eye, label: 'Mod. de Viagens', section: 'Moderação' },
+    { path: '/admin/comments-moderation', icon: MessageCircle, label: 'Mod. de Comentários', section: 'Moderação' },
+    { path: '/admin/qanda-moderation', icon: HelpCircle, label: 'Mod. de Q&A', section: 'Moderação' },
+    { path: '/admin/users', icon: Users, label: 'Utilizadores', section: 'Dados' },
+    { path: '/admin/user-profiles', icon: Users, label: 'Perfis de Utilizadores', section: 'Dados' },
+    { path: '/admin/categories', icon: ListTree, label: 'Categorias', section: 'Dados' },
+    { path: '/admin/countries', icon: Globe2, label: 'Países', section: 'Dados' },
+    { path: '/admin/languages', icon: Languages, label: 'Idiomas', section: 'Dados' },
+    { path: '/admin/transport-methods', icon: Bus, label: 'Métodos de Transporte', section: 'Dados' },
+    { path: '/admin/content', icon: FileText, label: 'Gestão de Conteúdo', section: 'Conteúdo' },
+    { path: '/admin/achievements', icon: Trophy, label: 'Achievements', section: 'Conteúdo' },
+    { path: '/admin/welcome-modal', icon: HandHeart, label: 'Modal de Boas-Vindas', section: 'Conteúdo' },
+    { path: '/admin/suggestions', icon: Lightbulb, label: 'Sugestões/Feedback', section: 'Conteúdo', badge: stats.pendingFeedback },
+    { path: '/admin/notifications', icon: Bell, label: 'Notificações', section: 'Sistema' },
+    { path: '/admin/advanced-notifications', icon: Bell, label: 'Notificações Avançadas', section: 'Sistema' },
+    { path: '/admin/backup', icon: Database, label: 'Gestão de Backups', section: 'Sistema' },
+    { path: '/admin/security', icon: ShieldCheck, label: 'Auditoria de Segurança', section: 'Sistema' },
+    { path: '/admin/logs', icon: History, label: 'Logs de Atividade', section: 'Sistema' },
+    { path: '/admin/settings', icon: SettingsIcon, label: 'Configurações', section: 'Sistema' },
+    { path: '/admin/roles', icon: UserCog, label: 'Gestão de Permissões', section: 'Sistema' },
+  ], [stats]);
+
+  const grouped = useMemo(() => {
+    const out = { Dashboard: [], Moderação: [], Dados: [], Conteúdo: [], Sistema: [] };
+    menuItems.forEach((it) => { if (out[it.section]) out[it.section].push(it); });
+    return out;
+  }, [menuItems]);
 
   const isActive = (path, exact = false) => {
-    if (exact) {
-      return location.pathname === path;
-    }
+    if (exact) return location.pathname === path;
     return location.pathname.startsWith(path);
   };
 
+  // Keep the section of the current route open.
+  useEffect(() => {
+    const activeSection = menuItems.find((it) => isActive(it.path, it.exact))?.section;
+    if (activeSection) setOpenSections((s) => ({ ...s, [activeSection]: true }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const toggleSection = (s) => setOpenSections((o) => ({ ...o, [s]: !o[s] }));
+
+  const sectionLabels = {
+    Dashboard: 'Dashboard',
+    'Moderação': 'Moderação',
+    Dados: 'Gestão de Dados',
+    'Conteúdo': 'Conteúdo',
+    Sistema: 'Sistema',
+  };
+
+  const sectionIcons = {
+    Dashboard: BarChart3,
+    'Moderação': ShieldCheck,
+    Dados: Database,
+    'Conteúdo': Sparkles,
+    Sistema: SettingsIcon,
+  };
+
   return (
-    <div className="admin-dashboard-admin">
-      <div className="sidebar-admin">
-        <Link to="/admin">
-          <img src={logo} alt="Globe Memories Logo" className="sidebar-logo" />
+    <div className="adm-app">
+      {/* ── Sidebar ─────────────────────────────────────── */}
+      <aside className="adm-sidebar">
+        <Link to="/admin" className="adm-sidebar__brand">
+          <img src={logo} alt="Globe Memories" />
+          <div>
+            <strong>Globe Memories</strong>
+            <span>Administração</span>
+          </div>
         </Link>
-        <nav>
-          <ul>
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <li key={item.path}>
-                  <Link 
-                    to={item.path} 
-                    className={isActive(item.path, item.exact) ? 'active' : ''}
-                  >
-                    <Icon style={{ marginRight: '12px', fontSize: '1.1rem' }} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-            <li style={{ marginTop: '30px' }}>
-              <button 
-                onClick={handleLogout} 
-                className="btn-danger-admin"
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                <FaSignOutAlt />
-                Terminar Sessão
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </div>
-      <div className="content-admin">
-        <Routes>
-          {/* ========== MODERAÇÃO (NOVO) ========== */}
-          <Route path="/reports" element={<ReportsManagement />} />
-          <Route path="/travel-moderation-complete" element={<TravelModerationComplete />} />
-          <Route path="/travel-moderation" element={<TravelModeration />} />
-          <Route path="/comments-moderation" element={<CommentsModeration />} />
-          <Route path="/qanda-moderation" element={<QandAModeration />} />
-          
-          {/* ========== GESTÃO DE DADOS ========== */}
-          <Route path="/users" element={<UserManagement />} />
-          <Route path="/user-profiles" element={<UserProfilesManagement />} />
-          <Route path="/categories" element={<CategoryManagement />} />
-          <Route path="/languages" element={<LanguageManagement />} />
-          <Route path="/countries" element={<CountryManagement />} />
-          <Route path="/transport-methods" element={<TransportMethodManagement />} />
-          
-          {/* ========== CONTEÚDO ========== */}
-          <Route path="/content" element={<ContentManagement />} />
-          <Route path="/achievements" element={<AchievementsManagement />} />
-          <Route path="/welcome-modal" element={<WelcomeModalManagement />} />
-          <Route path="/suggestions" element={<AdminSuggestionsManager />} />
-          
-          {/* ========== SISTEMA ========== */}
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/advanced-notifications" element={<AdvancedNotifications />} />
-          <Route path="/backup" element={<BackupManagement />} />
-          <Route path="/security" element={<SecurityAudit />} />
-          <Route path="/logs" element={<ActivityLogs />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/roles" element={<RoleManagement />} />
-          <Route
-            path="/"
-            element={
-              <div>
-                <div className="welcome-admin">
-                  <h2>🌍 Bem-vindo ao Backoffice do Globe Memories</h2>
-                  <p style={{ fontSize: '1.05rem', marginTop: '10px' }}>
-                    Painel de controlo e gestão da plataforma
-                  </p>
-                </div>
 
-                {/* Seção de estatísticas principais */}
-                <div className="stats-container" style={{ marginTop: '30px' }}>
-                  <h2>📊 Estatísticas em Tempo Real</h2>
-                  {statsError && (
-                    <div
-                      style={{
-                        background: '#fff3cd',
-                        color: '#856404',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        marginBottom: '15px',
-                        border: '1px solid #ffeaa7',
-                      }}
-                    >
-                      ⚠️ {statsError} (a mostrar zeros)
-                    </div>
-                  )}
-                  <div className="stats-grid">
-                    <div className="stat-card" style={{ borderLeft: '4px solid #0066cc' }}>
-                      <FaUsers style={{ fontSize: '2.5rem', color: '#0066cc', marginBottom: '10px' }} />
-                      <h3>Total de Utilizadores</h3>
-                      <p>{stats.totalUsers}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #ff9900' }}>
-                      <FaGlobeAmericas style={{ fontSize: '2.5rem', color: '#ff9900', marginBottom: '10px' }} />
-                      <h3>Total de Viagens</h3>
-                      <p>{stats.totalTravels}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #17a2b8' }}>
-                      <FaQuestion style={{ fontSize: '2.5rem', color: '#17a2b8', marginBottom: '10px' }} />
-                      <h3>Perguntas no Fórum</h3>
-                      <p>{stats.totalForumQuestions}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #6610f2' }}>
-                      <FaEnvelope style={{ fontSize: '2.5rem', color: '#6610f2', marginBottom: '10px' }} />
-                      <h3>Feedback Recebido</h3>
-                      <p>{stats.totalFeedback}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #dc3545' }}>
-                      <FaFlag style={{ fontSize: '2.5rem', color: '#dc3545', marginBottom: '10px' }} />
-                      <h3>Denúncias de Viagem Pendentes</h3>
-                      <p>{stats.pendingTripReports}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #fd7e14' }}>
-                      <FaUserShield style={{ fontSize: '2.5rem', color: '#fd7e14', marginBottom: '10px' }} />
-                      <h3>Denúncias de Utilizadores Pendentes</h3>
-                      <p>{stats.pendingUserReports}</p>
-                    </div>
-                    <div className="stat-card" style={{ borderLeft: '4px solid #ffc107' }}>
-                      <FaBell style={{ fontSize: '2.5rem', color: '#ffc107', marginBottom: '10px' }} />
-                      <h3>Feedback Pendente</h3>
-                      <p>{stats.pendingFeedback}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ações rápidas */}
-                <div className="admin-section-admin" style={{ marginTop: '30px' }}>
-                  <h2>⚡ Ações Rápidas</h2>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                    gap: '15px',
-                    marginTop: '20px' 
-                  }}>
-                    <button 
-                      className="btn-primary-admin"
-                      onClick={() => navigate('/admin/users')}
-                      style={{ padding: '15px', fontSize: '1rem' }}
-                    >
-                      <FaUsers style={{ marginRight: '8px' }} />
-                      Gerir Utilizadores
-                    </button>
-                    <button 
-                      className="btn-success-admin"
-                      onClick={() => navigate('/admin/content')}
-                      style={{ padding: '15px', fontSize: '1rem' }}
-                    >
-                      <FaFileAlt style={{ marginRight: '8px' }} />
-                      Gerir Conteúdo
-                    </button>
-                    <button 
-                      className="btn-info-admin"
-                      onClick={() => navigate('/admin/logs')}
-                      style={{ padding: '15px', fontSize: '1rem' }}
-                    >
-                      <FaHistory style={{ marginRight: '8px' }} />
-                      Ver Logs
-                    </button>
-                    <button 
-                      className="btn-warning-admin"
-                      onClick={() => navigate('/admin/settings')}
-                      style={{ padding: '15px', fontSize: '1rem' }}
-                    >
-                      <FaCog style={{ marginRight: '8px' }} />
-                      Configurações
-                    </button>
-                  </div>
-                </div>
-
-                {/* Informações do sistema */}
-                <div className="admin-section-admin" style={{ marginTop: '30px' }}>
-                  <h2>ℹ️ Informações do Sistema</h2>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-                    gap: '20px',
-                    marginTop: '20px' 
-                  }}>
-                    <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e9ecef' }}>
-                      <h4 style={{ color: '#495057', marginBottom: '10px' }}>
-                        <FaDatabase style={{ marginRight: '8px', color: '#0066cc' }} />
-                        Versão da Base de Dados
-                      </h4>
-                      <p style={{ fontSize: '1.2rem', color: '#0066cc', fontWeight: 'bold' }}>v1.0.0</p>
-                    </div>
-                    <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e9ecef' }}>
-                      <h4 style={{ color: '#495057', marginBottom: '10px' }}>
-                        <FaShieldAlt style={{ marginRight: '8px', color: '#28a745' }} />
-                        Estado do Sistema
-                      </h4>
-                      <p style={{ fontSize: '1.2rem', color: '#28a745', fontWeight: 'bold' }}>✓ Operacional</p>
-                    </div>
-                    <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e9ecef' }}>
-                      <h4 style={{ color: '#495057', marginBottom: '10px' }}>
-                        <FaCog style={{ marginRight: '8px', color: '#ff9900' }} />
-                        Último Backup
-                      </h4>
-                      <p style={{ fontSize: '1.2rem', color: '#ff9900', fontWeight: 'bold' }}>Hoje às 03:00</p>
-                    </div>
-                  </div>
-                </div>
+        <nav className="adm-sidebar__nav">
+          {Object.keys(grouped).map((section) => {
+            const SectionIcon = sectionIcons[section];
+            const items = grouped[section];
+            const isOpen = openSections[section];
+            const hasActive = items.some((it) => isActive(it.path, it.exact));
+            return (
+              <div key={section} className={`adm-sidebar__group ${isOpen ? 'is-open' : ''} ${hasActive ? 'has-active' : ''}`}>
+                <button
+                  type="button"
+                  className="adm-sidebar__group-head"
+                  onClick={() => toggleSection(section)}
+                  aria-expanded={isOpen}
+                >
+                  <SectionIcon size={15} strokeWidth={2} />
+                  <span>{sectionLabels[section]}</span>
+                  <ChevronDown
+                    size={14}
+                    strokeWidth={2.2}
+                    className={`adm-sidebar__chevron ${isOpen ? 'is-open' : ''}`}
+                  />
+                </button>
+                {isOpen && (
+                  <ul className="adm-sidebar__list">
+                    {items.map((it) => {
+                      const Icon = it.icon;
+                      return (
+                        <li key={it.path}>
+                          <Link
+                            to={it.path}
+                            className={`adm-sidebar__link ${isActive(it.path, it.exact) ? 'is-active' : ''}`}
+                          >
+                            <Icon size={16} strokeWidth={1.8} />
+                            <span>{it.label}</span>
+                            {it.badge > 0 && (
+                              <span className="adm-sidebar__badge">{it.badge}</span>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
-            }
-          />
-        </Routes>
+            );
+          })}
+        </nav>
+
+        <div className="adm-sidebar__foot">
+          <button type="button" className="adm-sidebar__logout" onClick={handleLogout}>
+            <LogOut size={16} strokeWidth={2} /> Terminar sessão
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main ────────────────────────────────────────── */}
+      <div className="adm-main">
+        <div className="adm-topbar">
+          <div className="adm-topbar__title">
+            <span className="adm-topbar__eyebrow">
+              <Sparkles size={14} strokeWidth={2.2} /> Backoffice
+            </span>
+            <h1>{menuItems.find((it) => isActive(it.path, it.exact))?.label || 'Administração'}</h1>
+          </div>
+          <div className="adm-topbar__stats">
+            <div className="adm-topbar__stat">
+              <Users size={16} strokeWidth={2} />
+              <div>
+                <strong>{stats.totalUsers}</strong>
+                <span>utilizadores</span>
+              </div>
+            </div>
+            <div className="adm-topbar__stat">
+              <Eye size={16} strokeWidth={2} />
+              <div>
+                <strong>{stats.totalTravels}</strong>
+                <span>viagens</span>
+              </div>
+            </div>
+            <div className={`adm-topbar__stat ${stats.pendingTripReports + stats.pendingUserReports > 0 ? 'adm-topbar__stat--warn' : ''}`}>
+              <Flag size={16} strokeWidth={2} />
+              <div>
+                <strong>{stats.pendingTripReports + stats.pendingUserReports}</strong>
+                <span>denúncias</span>
+              </div>
+            </div>
+            <div className="adm-topbar__stat">
+              <MessageSquare size={16} strokeWidth={2} />
+              <div>
+                <strong>{stats.totalForumQuestions}</strong>
+                <span>perguntas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {statsError && (
+          <div className="adm-banner adm-banner--warn">
+            <AlertTriangle size={16} strokeWidth={2} />
+            <span>{statsError} (a mostrar zeros)</span>
+          </div>
+        )}
+
+        <div className="adm-content">
+          <Routes>
+            <Route path="reports" element={<ReportsManagement />} />
+            <Route path="user-reports" element={<UserReports />} />
+            <Route path="statistics" element={<Statistics />} />
+            <Route path="travel-moderation-complete" element={<TravelModerationComplete />} />
+            <Route path="travel-moderation" element={<TravelModeration />} />
+            <Route path="comments-moderation" element={<CommentsModeration />} />
+            <Route path="qanda-moderation" element={<QandAModeration />} />
+
+            <Route path="users" element={<UserManagement />} />
+            <Route path="user-profiles" element={<UserProfilesManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="languages" element={<LanguageManagement />} />
+            <Route path="countries" element={<CountryManagement />} />
+            <Route path="transport-methods" element={<TransportMethodManagement />} />
+
+            <Route path="content" element={<ContentManagement />} />
+            <Route path="achievements" element={<AchievementsManagement />} />
+            <Route path="welcome-modal" element={<WelcomeModalManagement />} />
+            <Route path="suggestions" element={<AdminSuggestionsManager />} />
+
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="advanced-notifications" element={<AdvancedNotifications />} />
+            <Route path="backup" element={<BackupManagement />} />
+            <Route path="security" element={<SecurityAudit />} />
+            <Route path="logs" element={<ActivityLogs />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="roles" element={<RoleManagement />} />
+
+            <Route
+              path="/"
+              element={
+                <div className="adm-home">
+                  <h2>
+                    <Heart size={22} strokeWidth={2} /> Bem-vindo ao backoffice
+                  </h2>
+                  <p>Escolhe uma secção na barra lateral para começar. As áreas com itens pendentes estão marcadas com uma insignia.</p>
+
+                  <div className="adm-stats-grid">
+                    <div className="adm-stat-card" style={{ borderLeft: '4px solid #2563eb' }}>
+                      <Users size={28} strokeWidth={1.5} />
+                      <h3>Utilizadores</h3>
+                      <p>{stats.totalUsers}</p>
+                      <span>+{stats.usersLast7Days} últimos 7 dias</span>
+                    </div>
+                    <div className="adm-stat-card" style={{ borderLeft: '4px solid #0ea5e9' }}>
+                      <Eye size={28} strokeWidth={1.5} />
+                      <h3>Viagens</h3>
+                      <p>{stats.totalTravels}</p>
+                      <span>publicadas</span>
+                    </div>
+                    <div className="adm-stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+                      <Flag size={28} strokeWidth={1.5} />
+                      <h3>Denúncias pendentes</h3>
+                      <p>{stats.pendingTripReports + stats.pendingUserReports}</p>
+                      <span>aguardam triagem</span>
+                    </div>
+                    <div className="adm-stat-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+                      <MessageSquare size={28} strokeWidth={1.5} />
+                      <h3>Perguntas no fórum</h3>
+                      <p>{stats.totalForumQuestions}</p>
+                      <span>publicadas</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            />
+          </Routes>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { FaCamera, FaTrash, FaUserCircle } from 'react-icons/fa';
+import { Camera as IconCamera, Trash as IconTrash, UserCircle as IconUser } from 'lucide-react';
 import { toFullMediaUrl } from '../utils/mediaUrl';
+import '../styles/components/profile-photo-uploader.css';
 
 /**
  * Profile-photo uploader with a round preview, used by both Register
@@ -8,6 +9,9 @@ import { toFullMediaUrl } from '../utils/mediaUrl';
  * instantly), and the parent component decides when to actually POST
  * the File to the backend (typically after a successful register
  * or alongside a profile save).
+ *
+ * v3 design: all visuals live in profile-photo-uploader.css and
+ * reference the v3 design tokens. No inline styles.
  *
  * Props:
  *   - currentPhoto: existing backend URL (or null) — shown when no
@@ -71,36 +75,20 @@ const ProfilePhotoUploader = ({
   const displaySrc = preview || resolvedCurrentPhoto;
 
   return (
-    <div
-      className="profile-photo-uploader"
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
-    >
-      <div
-        style={{
-          position: 'relative',
-          width: 140,
-          height: 140,
-          borderRadius: '50%',
-          overflow: 'hidden',
-          background: 'linear-gradient(135deg, #f5f7fa 0%, #e8ecf3 100%)',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.10), 0 0 0 4px white, 0 0 0 5px #e0e6ee',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+    <div className="gm-ppu">
+      <div className="gm-ppu__ring">
         {displaySrc ? (
           <img
             src={displaySrc}
             alt="Pré-visualização da foto de perfil"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            className="gm-ppu__img"
             onError={(e) => {
               // Backend URL returned 404 — fall back to the placeholder
               e.currentTarget.style.display = 'none';
             }}
           />
         ) : (
-          <FaUserCircle size={90} color="#b8c0cc" />
+          <IconUser size={90} strokeWidth={1.25} className="gm-ppu__placeholder" />
         )}
         {/* Hover overlay with camera icon — only when not disabled */}
         {!disabled && (
@@ -108,24 +96,9 @@ const ProfilePhotoUploader = ({
             type="button"
             onClick={() => inputRef.current?.click()}
             aria-label="Escolher foto de perfil"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.45)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: 0,
-              transition: 'opacity 180ms ease',
-              fontSize: 32,
-            }}
-            className="profile-photo-uploader-overlay"
+            className="gm-ppu__overlay"
           >
-            <FaCamera />
+            <IconCamera size={32} strokeWidth={1.5} />
           </button>
         )}
       </div>
@@ -136,68 +109,32 @@ const ProfilePhotoUploader = ({
         accept="image/*"
         onChange={handlePick}
         disabled={disabled}
-        style={{ display: 'none' }}
+        className="gm-ppu__file"
       />
 
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div className="gm-ppu__actions">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={disabled}
-          className="profile-photo-btn"
-          style={{
-            padding: '8px 16px',
-            borderRadius: '999px',
-            background: 'linear-gradient(135deg, #2bb6a3 0%, #1a8b7c 100%)',
-            color: 'white',
-            border: 'none',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.5 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            boxShadow: '0 2px 6px rgba(43, 182, 163, 0.30)',
-          }}
+          className="gm-ppu__btn gm-ppu__btn--primary"
         >
-          <FaCamera /> {currentPhoto || preview ? 'Trocar foto' : 'Adicionar foto'}
+          <IconCamera size={14} strokeWidth={1.75} />
+          {currentPhoto || preview ? 'Trocar foto' : 'Adicionar foto'}
         </button>
         {displaySrc && !disabled && (
           <button
             type="button"
             onClick={handleRemove}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '999px',
-              background: 'transparent',
-              color: '#c0392b',
-              border: '1.5px solid #fad5d5',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            className="gm-ppu__btn gm-ppu__btn--ghost"
           >
-            <FaTrash /> Remover
+            <IconTrash size={14} strokeWidth={1.75} /> Remover
           </button>
         )}
       </div>
 
       {error && (
-        <p
-          role="alert"
-          style={{
-            color: '#c0392b',
-            fontSize: 12,
-            fontWeight: 500,
-            textAlign: 'center',
-            margin: 0,
-            maxWidth: 280,
-          }}
-        >
+        <p role="alert" className="gm-ppu__error">
           {error}
         </p>
       )}

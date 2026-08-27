@@ -1,0 +1,1645 @@
+/* ========================================================================
+   Globe Memories — User Profile
+   Premium flagship. Instagram / Polarsteps inspired. Same design language
+   as the Home v3.1 (Post, AppShell, tokens).
+   ======================================================================== */
+
+.gm-profile {
+  background: var(--gm-bg-page);
+  color: var(--gm-text-1);
+  font-family: var(--gm-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+/* ── Loading / empty / blocked ──────────────────────────── */
+.gm-profile--loading,
+.gm-profile--empty,
+.gm-profile--blocked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gm-space-4);
+  text-align: center;
+  min-height: 60vh;
+  padding: var(--gm-space-12) var(--gm-space-5);
+  color: var(--gm-text-2);
+}
+
+.gm-profile--blocked h2,
+.gm-profile--empty h2 {
+  margin: 0;
+  font-size: var(--gm-text-xl);
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+}
+
+.gm-profile--blocked p,
+.gm-profile--empty p {
+  margin: 0;
+  max-width: 420px;
+  line-height: 1.55;
+  color: var(--gm-text-2);
+}
+
+.gm-profile__blocked-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--gm-bg-sunken);
+  color: var(--gm-text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm-profile__spinner {
+  width: 40px;
+  height: 40px;
+  position: relative;
+}
+.gm-profile__spinner-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid var(--gm-bg-sunken);
+  border-top-color: var(--gm-brand);
+  animation: gm-spin 720ms linear infinite;
+}
+@keyframes gm-spin { to { transform: rotate(360deg); } }
+
+.gm-profile__error {
+  color: var(--gm-danger);
+  font-size: var(--gm-text-sm);
+  font-weight: var(--gm-weight-semibold);
+  margin: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HERO
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__hero {
+  position: relative;
+  background: var(--gm-bg-card);
+  overflow: hidden;
+}
+
+/* Cover */
+.gm-profile__cover {
+  position: relative;
+  height: 220px;
+  background: var(--gm-bg-sunken);
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .gm-profile__cover { height: 320px; }
+}
+
+.gm-profile__cover-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.05);
+  transition: transform 8s var(--gm-ease-out);
+  /* Round 90 — when rendered via ProgressiveImg the wrapper is a
+     `<div>` (the className prop) so the .gm-progimg rules don't
+     conflict. The inner <img> is sized by ProgressiveImg's own CSS
+     (.gm-progimg__img) which sets `width: 100%; height: 100%`;
+     we want object-fit: cover on the <img> for the same visual
+     as the old background-image behaviour. */
+}
+
+.gm-profile__cover-img .gm-progimg__img {
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.05);
+  transition: transform 8s var(--gm-ease-out);
+}
+
+.gm-profile__cover:hover .gm-profile__cover-img,
+.gm-profile__cover:hover .gm-progimg__img {
+  transform: scale(1.12);
+}
+
+.gm-profile__cover-default {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #007BFF 0%, #5BA8FF 50%, #FF9900 100%);
+}
+
+.gm-profile__cover-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top right, rgba(255, 153, 0, 0.35) 0%, transparent 50%),
+              radial-gradient(ellipse at bottom left, rgba(0, 123, 255, 0.45) 0%, transparent 50%);
+}
+
+.gm-profile__cover-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+/* Hero content (over the cover) */
+.gm-profile__hero-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--gm-space-5) var(--gm-space-6);
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  /* Desktop: 100px top margin to clear the cover image and
+     keep a comfortable gap before the avatar / name row. */
+  .gm-profile__hero-content {
+    padding: 100px var(--gm-space-8) var(--gm-space-8);
+  }
+}
+
+.gm-profile__hero-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gm-space-4);
+  margin-top: 0;
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 1024px) {
+  /* The 100px top padding is owned by .gm-profile__hero-content,
+     so the inner row no longer pulls itself up with a negative
+     margin. */
+  .gm-profile__hero-row {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: var(--gm-space-6);
+    margin-top: 0;
+  }
+}
+
+/* Avatar */
+.gm-profile__avatar {
+  appearance: none;
+  background: var(--gm-bg-card);
+  border: 0;
+  padding: 6px;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform var(--gm-dur-base) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+  box-shadow: 0 8px 28px rgba(10, 14, 26, 0.18);
+}
+
+.gm-profile__avatar:hover {
+  transform: scale(1.04);
+  box-shadow: 0 12px 36px rgba(10, 14, 26, 0.24);
+}
+
+.gm-profile__avatar:active { transform: scale(0.97); }
+
+/* The avatar-edit pencil was removed (the user asked for no
+   pencil icon in the profile hero). The class is kept as a
+   no-op so any leftover markup in the wild doesn't break. */
+.gm-profile__avatar-edit { display: none !important; }
+
+/* Info */
+.gm-profile__hero-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--gm-space-3);
+}
+
+@media (min-width: 1024px) {
+  .gm-profile__hero-info { padding-bottom: var(--gm-space-2); }
+}
+
+.gm-profile__hero-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-2);
+  flex-wrap: wrap;
+}
+
+.gm-profile__name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: var(--gm-weight-extrabold);
+  letter-spacing: var(--gm-tracking-tight);
+  line-height: 1.1;
+  color: var(--gm-text-1);
+}
+
+@media (min-width: 1024px) {
+  .gm-profile__name { font-size: 32px; }
+}
+
+.gm-profile__following-badge,
+.gm-profile__own-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: var(--gm-radius-pill);
+  font-size: 11px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.gm-profile__following-badge {
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+}
+
+.gm-profile__own-badge {
+  background: var(--gm-accent-soft);
+  color: var(--gm-accent-hover);
+}
+
+.gm-profile__handle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.gm-profile__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--gm-text-2);
+  font-weight: var(--gm-weight-medium);
+}
+
+.gm-profile__location-icon {
+  color: var(--gm-brand);
+}
+
+/* Actions */
+.gm-profile__hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-2);
+  flex-wrap: wrap;
+  padding-top: var(--gm-space-3);
+}
+
+@media (min-width: 1024px) {
+  .gm-profile__hero-actions { padding-bottom: var(--gm-space-2); }
+}
+
+/* Bio */
+.gm-profile__bio {
+  margin: var(--gm-space-4) 0 0;
+  max-width: 720px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--gm-text-1);
+  white-space: pre-wrap;
+}
+
+/* Stats row (3 large clickable stats) */
+.gm-profile__stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gm-space-2);
+  margin-top: var(--gm-space-5);
+  padding-top: var(--gm-space-5);
+  border-top: 1px solid var(--gm-divider);
+}
+
+@media (min-width: 1024px) {
+  .gm-profile__stats-row {
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+    gap: var(--gm-space-4);
+  }
+}
+
+.gm-profile__stat {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border-radius: var(--gm-radius-md);
+  cursor: default;
+  text-align: center;
+  font-family: inherit;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-profile__stat--clickable { cursor: pointer; }
+.gm-profile__stat--clickable:hover { background: var(--gm-bg-sunken); }
+.gm-profile__stat--clickable:active { transform: scale(0.97); }
+
+.gm-profile__stat-value {
+  font-size: 22px;
+  font-weight: var(--gm-weight-extrabold);
+  color: var(--gm-text-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--gm-tracking-tight);
+  line-height: 1.1;
+}
+
+.gm-profile__stat-label {
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TABS
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__tabs-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--gm-bg-glass-strong);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--gm-divider);
+  border-bottom: 1px solid var(--gm-divider);
+}
+
+.gm-profile__tabs {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gm-space-1);
+  padding: 0 var(--gm-space-4);
+}
+
+.gm-profile__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+  color: var(--gm-text-3);
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: 0.01em;
+  position: relative;
+  border-bottom: 2px solid transparent;
+  transition: color var(--gm-dur-fast) var(--gm-ease-out),
+              border-color var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-profile__tab:hover { color: var(--gm-text-1); }
+.gm-profile__tab--active {
+  color: var(--gm-brand);
+  border-bottom-color: var(--gm-brand);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CONTENT (sections)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--gm-space-6) var(--gm-space-5);
+}
+
+@media (min-width: 1024px) {
+  .gm-profile__content {
+    padding: var(--gm-space-8) var(--gm-space-8);
+  }
+}
+
+.gm-profile__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gm-space-5);
+}
+
+.gm-profile__section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 var(--gm-space-2);
+  font-size: 18px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+}
+
+.gm-profile__section-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--gm-space-3) 0 var(--gm-space-2);
+  font-size: 13px;
+  font-weight: var(--gm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gm-text-3);
+}
+
+.gm-profile__manage-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Sub-tabs (e.g. "As minhas viagens" / "Viagens Guardadas") that
+   sit inside the main tab content, on the owner's profile. */
+.gm-profile__subtabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--gm-bg-sunken);
+  border-radius: var(--gm-radius-lg);
+  width: fit-content;
+  margin: 0 auto 18px;
+}
+
+.gm-profile__subtab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-profile__subtab:hover { color: var(--gm-text-1); }
+
+.gm-profile__subtab.is-on {
+  background: var(--gm-bg-card);
+  color: var(--gm-brand);
+  box-shadow: var(--gm-shadow-sm), 0 0 0 1px var(--gm-border);
+}
+
+.gm-profile__section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--gm-space-12) var(--gm-space-5);
+  gap: var(--gm-space-3);
+  background: var(--gm-bg-card);
+  border-radius: var(--gm-radius-xl);
+  border: 1px dashed var(--gm-border);
+}
+
+.gm-profile__section-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--gm-space-2);
+}
+
+.gm-profile__section-empty h2 {
+  margin: 0;
+  font-size: var(--gm-text-md);
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+}
+
+.gm-profile__section-empty p {
+  margin: 0;
+  max-width: 360px;
+  font-size: var(--gm-text-sm);
+  color: var(--gm-text-2);
+  line-height: 1.55;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GRID OF USER TRAVEL CARDS
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gm-space-4);
+}
+
+@media (min-width: 640px) { .gm-profile__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .gm-profile__grid { grid-template-columns: repeat(3, 1fr); gap: var(--gm-space-5); } }
+
+.gm-profile__more {
+  display: flex;
+  justify-content: center;
+  padding: var(--gm-space-3) 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   STATS GRID (Estatísticas tab)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gm-space-3);
+}
+
+@media (min-width: 640px) {
+  .gm-profile__stats-grid { grid-template-columns: repeat(3, 1fr); gap: var(--gm-space-4); }
+}
+
+.gm-profile__stats-grid--mini {
+  max-width: 720px;
+}
+
+.gm-profile__stat-card {
+  appearance: none;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+  padding: var(--gm-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  text-align: left;
+  font-family: inherit;
+  transition: border-color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+  width: 100%;
+}
+
+.gm-profile__stat-card--clickable { cursor: pointer; }
+.gm-profile__stat-card--clickable:hover {
+  border-color: var(--gm-brand);
+  transform: translateY(-2px);
+  box-shadow: var(--gm-shadow-md);
+}
+.gm-profile__stat-card--clickable:active { transform: scale(0.98); }
+
+.gm-profile__stat-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--gm-radius-md);
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gm-profile__stat-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.gm-profile__stat-card-value {
+  font-size: 18px;
+  font-weight: var(--gm-weight-extrabold);
+  color: var(--gm-text-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--gm-tracking-tight);
+  line-height: 1.1;
+}
+
+.gm-profile__stat-card-label {
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+
+/* ── Top destinations ──────────────────────────────── */
+.gm-profile__top-dests {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gm-space-3);
+  margin-top: var(--gm-space-2);
+}
+
+.gm-profile__top-dests-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gm-space-3);
+}
+
+@media (min-width: 640px) { .gm-profile__top-dests-grid { grid-template-columns: 1fr 1fr; gap: var(--gm-space-4); } }
+
+.gm-profile__top-card {
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+  padding: var(--gm-space-4) var(--gm-space-5);
+}
+
+.gm-profile__top-card h4 {
+  margin: 0 0 var(--gm-space-3);
+  font-size: 14px;
+  font-weight: var(--gm-weight-bold);
+  color: var(--gm-text-1);
+}
+
+.gm-profile__top-card ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gm-space-2);
+}
+
+.gm-profile__top-card li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gm-space-2);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gm-divider);
+  font-size: 13px;
+}
+.gm-profile__top-card li:last-child { border-bottom: 0; }
+
+.gm-profile__top-name { color: var(--gm-text-1); font-weight: var(--gm-weight-semibold); }
+.gm-profile__top-count {
+  color: var(--gm-text-3);
+  font-size: 11px;
+  font-weight: var(--gm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PROFILE TRAVEL CARD (compact)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile-card {
+  position: relative;
+  background: var(--gm-bg-card);
+  border-radius: var(--gm-radius-xl);
+  /* Antes usávamos `overflow: clip` para manter os cantos
+     arredondados da foto, mas isso cortava o menu kebab
+     (botão "Denunciar" do visitante) que precisa de abrir
+     um pop-up flutuante para fora dos limites do card.
+     Mudamos para `overflow: visible`. Os cantos
+     arredondados da foto são preservados pelo
+     `border-radius` da própria `.gm-profile-card__photo`
+     que tem `overflow: hidden` próprio. */
+  overflow: visible;
+  isolation: isolate;
+  box-shadow: var(--gm-shadow-sm);
+  transition: transform var(--gm-dur-base) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+}
+
+@media (min-width: 1024px) {
+  .gm-profile-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--gm-shadow-lg);
+  }
+}
+
+.gm-profile-card__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.gm-profile-card__media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: var(--gm-bg-sunken);
+  /* Como o card-pai tem `overflow: visible` (para o menu
+     kebab poder abrir para fora), temos de aplicar o
+     `border-radius` aqui para manter os cantos arredondados
+     da foto. Senão a foto "transborda" e fica quadrada. */
+  border-top-left-radius: var(--gm-radius-xl);
+  border-top-right-radius: var(--gm-radius-xl);
+  overflow: hidden;
+}
+
+.gm-profile-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 600ms var(--gm-ease-out);
+}
+
+.gm-profile-card:hover .gm-profile-card__photo { transform: scale(1.04); }
+.gm-profile-card__photo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gm-text-3);
+}
+
+.gm-profile-card__media-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.gm-profile-card__spacer { flex: 1; }
+
+.gm-profile-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--gm-radius-pill);
+  background: rgba(15, 18, 28, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: var(--gm-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.gm-profile-card__pill--stars {
+  background: rgba(255, 153, 0, 0.92);
+  font-weight: var(--gm-weight-bold);
+}
+
+.gm-profile-card__pill--price {
+  /* Preço total em accent (amarelo). Combina com o botão
+     Guardar ativo em /travels e em TravelDetails. Tabular
+     nums garante alinhamento entre cards. */
+  background: rgba(255, 153, 0, 0.92);
+  color: #1B1F2A;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: 0.01em;
+}
+
+.gm-profile-card__pill--saved {
+  background: rgba(0, 123, 255, 0.55);
+}
+
+.gm-profile-card__body {
+  position: relative;
+  padding: var(--gm-space-3) var(--gm-space-4) var(--gm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Quando há owner actions dentro do body, abrimos espaço à direita
+   para os botões não taparem o título. */
+.gm-profile-card__body:has(.gm-profile-card__owner-actions) {
+  padding-right: 64px;
+}
+
+.gm-profile-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  line-height: 1.3;
+  color: var(--gm-text-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gm-profile-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+}
+
+/* Categorias visíveis em baixo do país dentro do body. Como
+   `gm-profile-card` tem `overflow: clip`, esta row respeita
+   o border-radius do card mas não fica visualmente cortada. */
+.gm-profile-card__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.gm-profile-card__cat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: var(--gm-radius-pill);
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+  font-size: 10.5px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.gm-profile-card__menu {
+  position: absolute;
+  /* Canto inferior direito do card, em vez do topo superior
+     direito (que costumava colidir com a pill de preço). A
+     âncora é o card via `inset: 0` no `.gm-profile-card`. */
+  bottom: 8px;
+  right: 8px;
+  z-index: 6;
+}
+
+.gm-profile-card__menu-btn {
+  appearance: none;
+  background: rgba(15, 18, 28, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--gm-radius-pill);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-profile-card__menu-btn:hover { background: rgba(15, 18, 28, 0.75); }
+.gm-profile-card__menu-btn:active { transform: scale(0.94); }
+
+.gm-profile-card__menu-pop {
+  position: absolute;
+  /* Como o botão kebab está agora no canto INFERIOR direito
+     (bottom: 8px; right: 8px), o pop-up tem de abrir para
+     CIMA em vez de para baixo. `bottom: 100%` + uma margem
+     igual à altura do botão (~32px) garante que o pop fica
+     totalmente visível sem ser cortado pelo `overflow: clip`
+     do card. */
+  bottom: calc(100% + 4px);
+  right: 0;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-lg);
+  padding: 6px;
+  min-width: 160px;
+  z-index: 10;
+}
+
+.gm-profile-card__menu-pop button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-danger);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+.gm-profile-card__menu-pop button:hover { background: var(--gm-bg-sunken); }
+
+/* ════════════════════════════════════════════════════════════════
+   PRIVACY BADGE (on photo, bottom-left)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile-card__privacy {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--gm-radius-pill);
+  background: rgba(15, 18, 28, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.gm-profile-card__privacy--public {
+  background: rgba(0, 123, 255, 0.55);
+}
+.gm-profile-card__privacy--followers {
+  background: rgba(255, 153, 0, 0.55);
+}
+.gm-profile-card__privacy--private {
+  background: rgba(220, 38, 38, 0.55);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   OWNER ACTIONS (Edit / Delete) — por cima do título da viagem
+   ════════════════════════════════════════════════════════════════
+   Os botões de Editar / Apagar ficam no canto superior direito
+   do `gm-profile-card__body` (em cima do título e da meta-row),
+   não em cima da foto. É o que o user pediu explicitamente: quer
+   ter os controlos de gestão logo junto ao título, em vez de
+   ficarem sobrepostos à imagem. A `.gm-profile-card` tem
+   `overflow: clip` (não `hidden`) para que os botões não sejam
+   cortados pelo border-radius do card. */
+
+.gm-profile-card__owner-actions {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.gm-profile-card__owner-btn {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(15, 18, 28, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 0;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.gm-profile-card__owner-btn:hover {
+  background: rgba(15, 18, 28, 0.78);
+  transform: scale(1.05);
+}
+
+.gm-profile-card__owner-btn:active { transform: scale(0.94); }
+
+.gm-profile-card__owner-btn--danger:hover {
+  background: var(--gm-danger);
+  color: #FFFFFF;
+}
+
+.gm-profile-card__owner-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BUTTONS (shared)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__btn {
+  appearance: none;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+}
+
+.gm-profile__btn:active { transform: scale(0.97); }
+.gm-profile__btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.gm-profile__btn--primary {
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.32);
+}
+.gm-profile__btn--primary,
+.gm-profile__btn--primary:hover,
+.gm-profile__btn--primary:focus,
+.gm-profile__btn--primary:active {
+  color: #FFFFFF;
+}
+.gm-profile__btn--primary > svg {
+  color: #FFFFFF;
+  stroke: currentColor;
+}
+.gm-profile__btn--primary:hover {
+  background: var(--gm-brand-hover);
+  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.42);
+}
+
+.gm-profile__btn--ghost {
+  background: var(--gm-bg-sunken);
+  color: var(--gm-text-1);
+}
+.gm-profile__btn--ghost:hover { background: var(--gm-divider); }
+
+.gm-profile__btn--danger {
+  background: var(--gm-danger);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(224, 56, 79, 0.32);
+}
+.gm-profile__btn--danger:hover { background: #C92B41; }
+
+.gm-profile__iconbtn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--gm-radius-pill);
+  color: var(--gm-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-profile__iconbtn:hover { background: var(--gm-bg-sunken); color: var(--gm-text-1); }
+.gm-profile__iconbtn:active { transform: scale(0.94); }
+
+.gm-profile__menu-wrap {
+  position: relative;
+}
+
+.gm-profile__menu-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-lg);
+  padding: 6px;
+  min-width: 180px;
+  z-index: 50;
+}
+
+.gm-profile__menu-pop button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-text-1);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-profile__menu-pop button:hover { background: var(--gm-bg-sunken); }
+
+/* ════════════════════════════════════════════════════════════════
+   PRIVATE PROFILE STATE
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__private {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--gm-space-16) var(--gm-space-5);
+  gap: var(--gm-space-3);
+  color: var(--gm-text-2);
+}
+
+.gm-profile__private h2 {
+  margin: 0;
+  font-size: var(--gm-text-lg);
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+}
+
+.gm-profile__private p {
+  margin: 0;
+  max-width: 380px;
+  font-size: var(--gm-text-sm);
+  line-height: 1.55;
+  color: var(--gm-text-2);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   REQUEST TOAST (premium, framer-motion)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-profile__request-toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: var(--gm-radius-pill);
+  background: var(--gm-ink);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  box-shadow: var(--gm-shadow-lg);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODALS (premium)
+   ════════════════════════════════════════════════════════════════ */
+
+.gm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--gm-bg-overlay);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gm-space-4);
+  animation: gm-fade-in 200ms var(--gm-ease-out);
+}
+
+@keyframes gm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.gm-modal__panel {
+  position: relative;
+  width: 100%;
+  background: var(--gm-bg-card);
+  border-radius: var(--gm-radius-xl);
+  box-shadow: var(--gm-shadow-xl);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: gm-modal-in 220ms var(--gm-ease-out);
+}
+
+@keyframes gm-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.gm-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  appearance: none;
+  background: var(--gm-bg-sunken);
+  border: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--gm-radius-pill);
+  color: var(--gm-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-modal__close:hover { background: var(--gm-divider); color: var(--gm-text-1); }
+
+.gm-modal__header {
+  padding: var(--gm-space-6) var(--gm-space-6) var(--gm-space-4);
+  border-bottom: 1px solid var(--gm-divider);
+}
+
+.gm-modal__header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+  padding-right: 32px;
+}
+
+.gm-modal__subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--gm-text-3);
+  line-height: 1.4;
+}
+
+.gm-modal__body {
+  padding: var(--gm-space-4) var(--gm-space-6);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.gm-modal__empty {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--gm-text-3);
+  padding: var(--gm-space-6) 0;
+}
+
+.gm-modal__error {
+  margin: 0 0 var(--gm-space-3);
+  padding: 10px 14px;
+  background: rgba(224, 56, 79, 0.08);
+  border: 1px solid rgba(224, 56, 79, 0.18);
+  color: var(--gm-danger);
+  font-size: 12px;
+  font-weight: var(--gm-weight-semibold);
+  border-radius: var(--gm-radius-md);
+}
+
+.gm-modal__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Row used when the modal lists users (Seguidores / A seguir).
+   It contains the clickable Link (avatar + name + handle) on the
+   left and a FollowButton on the right so the user can manage
+   relationships without leaving the modal. No modal "Seguidores"
+   (e só no próprio perfil) o item também tem um botão "Remover"
+   (X) à esquerda do FollowButton. */
+.gm-modal__list-user {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: 6px 10px;
+  border-radius: var(--gm-radius-md);
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-modal__list-user:hover { background: var(--gm-bg-sunken); }
+.gm-modal__list-user > .gm-modal__list-item {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+.gm-modal__list-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.gm-modal__list-actions > .gm-modal__list-action { flex-shrink: 0; }
+
+/* Botão "Remover Seguidor" (X) — aparece no modal de
+   "Seguidores" do próprio perfil. Estilo ghost, vira vermelho
+   no hover para deixar claro que é uma ação destrutiva. */
+.gm-modal__list-remove {
+  appearance: none;
+  background: var(--gm-bg-sunken);
+  border: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--gm-text-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-modal__list-remove:hover {
+  background: rgba(224, 56, 79, 0.12);
+  color: var(--gm-danger);
+  transform: scale(1.05);
+}
+.gm-modal__list-remove:active { transform: scale(0.94); }
+
+/* Row used when the modal lists plain strings (Países / Cidades
+   visitados). Each row has a MapPin icon + the name, no avatar
+   and no follow button. */
+.gm-modal__list-place {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: var(--gm-radius-md);
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-modal__list-place:hover { background: var(--gm-bg-sunken); }
+.gm-modal__list-place-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+  flex-shrink: 0;
+}
+.gm-modal__list-place-name {
+  font-size: 14px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+}
+
+.gm-modal__list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: 10px;
+  border-radius: var(--gm-radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-modal__list-item:hover { background: var(--gm-bg-sunken); }
+
+.gm-modal__list-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.gm-modal__list-name {
+  font-size: 14px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+}
+
+.gm-modal__list-handle {
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+}
+
+.gm-modal__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gm-modal__reason {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              border-color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-modal__reason:hover { background: var(--gm-bg-sunken); }
+.gm-modal__reason--checked {
+  background: var(--gm-brand-soft);
+  border-color: var(--gm-brand);
+}
+
+.gm-modal__reason input {
+  margin-top: 2px;
+  accent-color: var(--gm-brand);
+}
+
+.gm-modal__reason strong {
+  display: block;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+  margin-bottom: 2px;
+}
+
+.gm-modal__reason span {
+  display: block;
+  font-size: 11px;
+  color: var(--gm-text-3);
+  line-height: 1.4;
+}
+
+.gm-modal__textarea {
+  width: 100%;
+  margin-top: var(--gm-space-3);
+  padding: 12px 14px;
+  border-radius: var(--gm-radius-md);
+  border: 1px solid var(--gm-border);
+  background: var(--gm-bg-sunken);
+  font: inherit;
+  font-size: 13px;
+  color: var(--gm-text-1);
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+.gm-modal__textarea:focus { outline: 0; border-color: var(--gm-brand); box-shadow: var(--gm-shadow-focus); }
+
+.gm-modal__footer {
+  padding: var(--gm-space-4) var(--gm-space-6) var(--gm-space-6);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--gm-space-2);
+  border-top: 1px solid var(--gm-divider);
+}
+
+.gm-profile__btn--sm {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: var(--gm-radius-pill);
+}
+
+/* Incoming follow requests card � only shown on the owner's profile
+   when there are pending requests. Sits between the hero and the
+   tab strip. */
+.gm-profile__follow-requests {
+  max-width: 1100px;
+  margin: var(--gm-space-5) auto 0;
+  padding: 0 var(--gm-space-5);
+}
+@media (min-width: 1024px) {
+  .gm-profile__follow-requests {
+    padding: 0 var(--gm-space-8);
+    margin-top: var(--gm-space-6);
+  }
+}
+
+.gm-profile__follow-requests-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--gm-text-1);
+}
+.gm-profile__follow-requests-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+}
+.gm-profile__follow-requests-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--gm-radius-pill);
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: var(--gm-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.gm-profile__follow-requests-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-xl);
+  padding: 8px;
+  box-shadow: var(--gm-shadow-sm);
+}
+
+.gm-profile__follow-requests-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--gm-radius-lg);
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-profile__follow-requests-item:hover { background: var(--gm-bg-sunken); }
+
+.gm-profile__follow-requests-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gm-profile__follow-requests-name {
+  font-size: 13.5px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gm-profile__follow-requests-handle {
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+}
+
+.gm-profile__follow-requests-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* FIX (Apenas para Mim): banner de estatísticas privadas
+   exibido quando o viewer não tem permissão para ver os
+   detalhes do viajante. Mostra um ícone de olho fechado
+   e uma mensagem explicativa, em vez de vários cards com
+   "—" sem contexto. */
+.gm-profile__private-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 20px;
+  background: var(--gm-bg-card);
+  border: 1px dashed var(--gm-border);
+  border-radius: var(--gm-radius-xl);
+  color: var(--gm-text-2);
+}
+.gm-profile__private-stats h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+}
+.gm-profile__private-stats p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--gm-text-2);
+  max-width: 320px;
+  line-height: 1.5;
+}
+.gm-profile__private-stats svg {
+  opacity: 0.5;
+}

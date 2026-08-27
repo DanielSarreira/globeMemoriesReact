@@ -1,402 +1,468 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { FaHeart, FaSearch, FaFlag, FaReply, FaPaperPlane, FaTimes, FaUser, FaCalendarAlt, FaMapMarkerAlt, FaComments, FaPlus, FaFilter, FaSort, FaChevronDown, FaChevronUp, FaEye, FaSpinner } from 'react-icons/fa';
-import { motion, AnimatePresence } from 'framer-motion';
-import Toast from '../components/Toast';
-import defaultAvatar from '../images/assets/avatar.jpg';
-import { COMMENT_LIMITS, validateComment } from '../config/commentConfig';
-import { request } from '../axios_helper';
-import '../styles/pages/globe-memories-interactive-map.css'; // Para usar o estilo do modal
-import '../styles/pages/register-travel.css'; // Para SearchableDropdown
-import { qandaModalUtils } from '../utils/modalUtils';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  Heart, Search, Reply, Send, X as IconX, User, Calendar, MapPin,
+  MessageCircle, Plus, Filter, ChevronDown, ChevronUp, ArrowUpDown,
+  Inbox, Sparkles, Trash2, Flag, MessageSquare, MoreHorizontal,
+  HelpCircle, AlertCircle, RefreshCw, Compass,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast, Avatar, CommentThread, flattenCommentTree } from "../components/ui";
+import SearchableDropdown from "../components/ui/SearchableDropdown";
+import { COMMENT_LIMITS, validateComment } from "../config/commentConfig";
+import api, { toFullMediaUrl } from "../axios_helper";
+import { getDisplayName } from "../utils/userDisplay";
+import { translateCountry } from "../utils/localization";
+import useProfileUpdates from "../hooks/useProfileUpdates";
+import "../styles/pages/qanda.css";
 
-// Custom Searchable Dropdown
-const SearchableDropdown = ({ options, value, onChange, placeholder, disabled, labelKey = 'label', valueKey = 'value' }) => {
-  const [search, setSearch] = React.useState('');
-  const [showOptions, setShowOptions] = React.useState(false);
-  const [focusedIndex, setFocusedIndex] = React.useState(-1);
-  const dropdownRef = React.useRef(null);
+/* Round 83 — SearchableDropdown is now a shared component
+   (components/ui/SearchableDropdown.jsx). The Q&A filters
+   and the TripWizard País / Cidade selects both use it. */
 
-  const filteredOptions = options.filter(opt =>
-    opt[labelKey].toLowerCase().includes(search.toLowerCase())
-  );
-  const selectedLabel = value ? options.find(opt => opt[valueKey] === value)?.[labelKey] || '' : '';
+/* ── Constants ─────────────────────────────────────────── */
+const CATEGORIES = ["Alojamento", "Transportes", "Dicas Locais", "Cultura", "Gastronomia", "Outros"];
+const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ label: c, value: c }));
 
-  const handleSelect = (val) => {
-    onChange(val);
-    setShowOptions(false);
-    setSearch('');
-    setFocusedIndex(-1);
-  };
+/* ── Sanitize content (XSS guard) ─────────────────────── */
+const DANGEROUS_PATTERNS = [
+  /<script[^>]*>.*?<\/script>/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi,
+  /<iframe[^>]*>.*?<\/iframe>/gi,
+  /<object[^>]*>.*?<\/object>/gi,
+  /<embed[^>]*>.*?<\/embed>/gi,
+  /<link[^>]*>/gi,
+  /<meta[^>]*>/gi,
+  /<style[^>]*>.*?<\/style>/gi,
+];
+function sanitizeContent(content) {
+  if (!content) return "";
+  let s = content;
+  DANGEROUS_PATTERNS.forEach((p) => { s = s.replace(p, ""); });
+  return s.trim();
+}
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Backspace' && value && !search) {
-      e.preventDefault(); onChange(null); setSearch(''); setShowOptions(true); return;
-    }
-    if (!showOptions && (e.key === 'ArrowDown' || e.key === 'Enter')) {
-      e.preventDefault(); setShowOptions(true); return;
-    }
-    if (showOptions) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setFocusedIndex(p => (p < filteredOptions.length - 1 ? p + 1 : p)); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusedIndex(p => (p > 0 ? p - 1 : -1)); }
-      else if (e.key === 'Enter') { e.preventDefault(); if (focusedIndex >= 0) handleSelect(filteredOptions[focusedIndex][valueKey]); }
-      else if (e.key === 'Escape') { e.preventDefault(); setShowOptions(false); setFocusedIndex(-1); }
-    }
-  };
+/* ── Time helpers ──────────────────────────────────────── */
+function getRelativeTime(date) {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const sec = Math.floor((now - d) / 1000);
+  if (sec < 60) return "agora";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} min`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day} ${day > 1 ? "dias" : "dia"}`;
+  return d.toLocaleDateString("pt-PT", { day: "numeric", month: "short" });
+}
 
-  React.useEffect(() => {
-    const handler = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowOptions(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+function safeLocaleString(date, opts) {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-PT", opts);
+}
 
-  return (
-    <div ref={dropdownRef} className={`searchable-dropdown-container${disabled ? ' disabled' : ''}${showOptions ? ' open' : ''}`} style={{ position: 'relative', width: '100%' }}>
-      <div className="dropdown-input-wrapper">
-        <input
-          type="text"
-          value={selectedLabel || search}
-          onChange={e => setSearch(e.target.value)}
-          onFocus={() => !disabled && setShowOptions(true)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="dropdown-input"
-          autoComplete="off"
-          spellCheck="false"
-          role="combobox"
-          aria-expanded={showOptions}
-          aria-haspopup="listbox"
-        />
-        <div className="dropdown-arrow">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6 8 10 12 14 8"></polyline>
-          </svg>
-        </div>
-      </div>
-      {showOptions && filteredOptions.length > 0 && (
-        <ul className="dropdown-options-list" role="listbox">
-          {filteredOptions.map((opt, idx) => (
-            <li key={opt[valueKey]} onMouseDown={() => handleSelect(opt[valueKey])} onMouseEnter={() => setFocusedIndex(idx)}
-              className={`dropdown-option${focusedIndex === idx ? ' focused' : ''}${value === opt[valueKey] ? ' selected' : ''}`}
-              role="option" aria-selected={value === opt[valueKey]}>
-              {opt[labelKey]}
-            </li>
-          ))}
-        </ul>
-      )}
-      {showOptions && filteredOptions.length === 0 && (
-        <div className="dropdown-no-results">Nenhum resultado encontrado</div>
-      )}
-    </div>
-  );
-};
-
+/* ── Component ─────────────────────────────────────────── */
 const QandA = () => {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  const { id: urlQuestionId } = useParams();
+  // Round 83 — used by the per-row profile navigation
+  // (onUserClick on CommentThread) and by any future
+  // "go back" / "edit question" links we add.
+  const navigate = useNavigate();
+  const toast = useToast();
 
-  // ── All-questions feed state ──────────────────────────────────────────────
+  // The composer avatar must always reflect the photo on the
+  // backend. We re-read the stored user record on mount and
+  // also listen for the `gm:profile-updated` event that
+  // EditProfile dispatches when a new photo is saved, plus a
+  // window `storage` event so a photo updated in another tab
+  // is reflected here too.
+  const [user, setUserState] = useState(() => {
+    if (typeof window === 'undefined') return authUser;
+    try {
+      const stored = window.localStorage.getItem('user');
+      if (stored) return JSON.parse(stored);
+    } catch (e) { /* no-op */ }
+    return authUser;
+  });
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        const stored = window.localStorage.getItem('user');
+        if (stored) setUserState(JSON.parse(stored));
+      } catch (e) { /* no-op */ }
+    };
+    const onProfileUpdated = (e) => {
+      if (!e?.detail?.username || !authUser || e.detail.username === authUser.username) {
+        refresh();
+      }
+    };
+    window.addEventListener('storage', refresh);
+    window.addEventListener('gm:profile-updated', onProfileUpdated);
+    return () => {
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('gm:profile-updated', onProfileUpdated);
+    };
+  }, [authUser]);
+
+  // Round 47 — When a user updates their profile, refetch the
+  // forum feed + open threads so the new firstName / lastName
+  // shows up on every question + comment without a hard refresh.
+  useProfileUpdates({
+    onUpdate: () => {
+      // Refresh the current page of the questions list.
+      fetchAllQuestions(allPage, false);
+      // Refetch every open question's comments in the background.
+      questions.forEach((q) => {
+        if (q?.id) fetchQuestionComments(q.id);
+      });
+    },
+  });
+
+  // Fetch the fresh profile photo from the backend on mount so
+  // the composer avatar shows the photo the user currently has
+  // on file (the localStorage copy can be stale if the upload
+  // happened in another tab / device / after the page loaded).
+  useEffect(() => {
+    if (!authUser?.id) return undefined;
+    let cancelled = false;
+    api
+      .get(`/users/${authUser.id}/detailed`)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const fresh = data.profilePhoto || data.profilePicture;
+        if (fresh && fresh !== user?.profilePhoto) {
+          setUserState((prev) => ({ ...(prev || authUser), ...data, profilePhoto: fresh, profilePicture: fresh }));
+        }
+      })
+      .catch(() => { /* best-effort */ });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
+
+  /* Feed state */
   const [questions, setQuestions] = useState([]);
   const [allPage, setAllPage] = useState(0);
   const [allTotalPages, setAllTotalPages] = useState(0);
   const [allTotal, setAllTotal] = useState(0);
 
-  // ── My-questions feed state ───────────────────────────────────────────────
   const [myQuestions, setMyQuestions] = useState([]);
   const [myPage, setMyPage] = useState(0);
   const [myTotalPages, setMyTotalPages] = useState(0);
   const [myTotal, setMyTotal] = useState(0);
 
-  // ── Form / UI state ───────────────────────────────────────────────────────
-  const [newQuestion, setNewQuestion] = useState('');
-  const [category, setCategory] = useState('');
-  const [country, setCountry] = useState('');
-  const [city, setCity] = useState('');
-  const [cityId, setCityId] = useState(null);
+  /* Form / UI state */
+  const [newQuestion, setNewQuestion] = useState("");
+  const [category, setCategory] = useState("");
+  const [country, setCountry] = useState("");
 
-  // ── Countries/cities for question form ───────────────────────────────────
+  /* Countries for question form (city field removed by request). */
   const [countries, setCountries] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [loadingCities, setLoadingCities] = useState(false);
-  const countryOptions = countries.map(c => ({ label: c, value: c }));
-  const cityOptions = cities.map(c => ({ label: c.cityName, value: c.id }));
+  const countryOptions = countries.map((c) => ({ label: translateCountry(c), value: c }));
 
-  // ── Comments loading state per question ──────────────────────────────────
+  /* Per-question state */
   const [commentsLoading, setCommentsLoading] = useState({});
   const [newComment, setNewComment] = useState({});
   const [newReply, setNewReply] = useState({});
   const [replyOpen, setReplyOpen] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({ category: '', answered: '' });
-  const [sortOption, setSortOption] = useState('created_at');
+
+  /* Top-bar state */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({ category: "", answered: "" });
+  const [sortOption, setSortOption] = useState("created_at");
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeSection, setActiveSection] = useState("all");
+
+  /* Misc */
   const [expandedSections, setExpandedSections] = useState({});
   const [likedQuestions, setLikedQuestions] = useState([]);
   const [likedComments, setLikedComments] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [activeSection, setActiveSection] = useState('all');
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [toast, setToast] = useState({ message: '', type: '', show: false });
-  const [showWelcomeModal, setShowWelcomeModal] = useState(() => qandaModalUtils.shouldShow());
-  const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  // ── Transform backend DTO → frontend question shape ──────────────────────
+  /* ── Transform DTO → UI shape ──────────────────────── */
   const transformQuestion = useCallback((dto) => ({
     id: dto.questionId,
     userId: dto.userId,
-    user: dto.username || 'Utilizador',
+    // Round 83 — propagate the `username` (handle) so the
+    // question card can link to `/profile/:username` when
+    // the user clicks the avatar or the display name. The
+    // DTO already exposes it; we just weren't forwarding.
+    username: dto.username || null,
+    user: getDisplayName({
+      userFirstName: dto.userFirstName,
+      userLastName: dto.userLastName,
+      username: dto.username,
+    }, "Utilizador"),
     userProfilePicture: dto.userProfilePhoto || null,
     question: dto.questionText,
-    category: dto.category || '',
-    country: dto.countryName || 'N/A',
-    city: dto.cityName || 'N/A',
+    category: dto.category || "",
+    // Country / city are nullable so the renderer can decide
+    // whether to show the "📍" chip. We strip empty strings and
+    // treat them as null — the JSX hides the chip entirely when
+    // the user never picked a country on the ask form.
+    country: dto.countryName && dto.countryName.trim() ? dto.countryName : null,
+    city: dto.cityName && dto.cityName.trim() ? dto.cityName : null,
     createdAt: dto.createdAt,
     likes: dto.totalLikes || 0,
     totalComments: dto.totalComments || 0,
     currentUserLiked: dto.userLiked || false,
-    comments: [], // loaded on demand when section is expanded
+    comments: [],
   }), []);
 
-  // ── Fetch all questions from API ──────────────────────────────────────────
+  /* ── Fetchers ──────────────────────────────────────── */
   const fetchAllQuestions = useCallback(async (page = 0, append = false) => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({ page, size: 20, sortBy: sortOption });
-      if (filters.category) params.append('category', filters.category);
-      if (filters.answered === 'yes') params.append('hasComments', 'true');
-      if (filters.answered === 'no') params.append('hasComments', 'false');
-      if (searchQuery.trim()) params.append('searchText', searchQuery.trim());
+      if (filters.category) params.append("category", filters.category);
+      if (filters.answered === "yes") params.append("hasComments", "true");
+      if (filters.answered === "no") params.append("hasComments", "false");
+      if (searchQuery.trim()) params.append("searchText", searchQuery.trim());
 
-      const resp = await request('GET', `/forum/questions?${params.toString()}`);
-      const data = resp.data;
+      const { data } = await api.get(`/forum/questions?${params.toString()}`);
       const transformed = (data.content || []).map(transformQuestion);
 
-      // Seed liked state
-      const liked = transformed.filter(q => q.currentUserLiked).map(q => q.id);
-      setLikedQuestions(prev => [...new Set([...prev, ...liked])]);
+      const liked = transformed.filter((q) => q.currentUserLiked).map((q) => q.id);
+      setLikedQuestions((prev) => [...new Set([...prev, ...liked])]);
 
-      setQuestions(prev => append ? [...prev, ...transformed] : transformed);
+      setQuestions((prev) => (append ? [...prev, ...transformed] : transformed));
       setAllPage(data.number ?? page);
       setAllTotalPages(data.totalPages ?? 0);
       setAllTotal(data.totalElements ?? 0);
     } catch (err) {
-      console.error('Erro ao carregar perguntas:', err);
-      showToast('Erro ao carregar perguntas.', 'error');
+      console.error("Erro ao carregar perguntas:", err);
+      toast.danger("Erro ao carregar perguntas.");
     } finally {
       setIsLoading(false);
     }
-  }, [sortOption, filters, searchQuery, transformQuestion]);
+  }, [sortOption, filters, searchQuery, transformQuestion, toast]);
 
-  // ── Fetch my questions from API ───────────────────────────────────────────
   const fetchMyQuestions = useCallback(async (page = 0, append = false) => {
     setIsLoading(true);
     try {
-      const resp = await request('GET', `/forum/questions/my?page=${page}&size=20`);
-      const data = resp.data;
+      const { data } = await api.get(`/forum/questions/my?page=${page}&size=20`);
       const transformed = (data.content || []).map(transformQuestion);
-
-      setMyQuestions(prev => append ? [...prev, ...transformed] : transformed);
+      setMyQuestions((prev) => (append ? [...prev, ...transformed] : transformed));
       setMyPage(data.number ?? page);
       setMyTotalPages(data.totalPages ?? 0);
       setMyTotal(data.totalElements ?? 0);
     } catch (err) {
-      console.error('Erro ao carregar as minhas perguntas:', err);
-      showToast('Erro ao carregar as suas perguntas.', 'error');
+      console.error("Erro ao carregar as minhas perguntas:", err);
+      toast.danger("Erro ao carregar as suas perguntas.");
     } finally {
       setIsLoading(false);
     }
-  }, [transformQuestion]);
+  }, [transformQuestion, toast]);
 
-  // ── Load countries on mount ──────────────────────────────────────────────
+  /* ── Countries ─────────────────────────────────────── */
   useEffect(() => {
-    request('GET', '/cities/countries')
-      .then(r => setCountries(r.data || []))
+    api.get("/cities/countries")
+      .then((r) => setCountries(r.data || []))
       .catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
-  // ── Load cities when country changes ─────────────────────────────────────
+  /* ── Cleanup: drop the legacy Q&A welcome modal flag from localStorage ──
+   * The Q&A welcome modal was removed; any 'true' value sitting under
+   * 'qandaModalDismissed' is now meaningless and only blocks future
+   * server-side reset tools that look for an empty/missing key. */
   useEffect(() => {
-    if (!country) { setCities([]); setCityId(null); setCity(''); return; }
-    setLoadingCities(true);
-    request('GET', `/cities/by-country?countryName=${encodeURIComponent(country)}`)
-      .then(r => setCities(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setCities([]))
-      .finally(() => setLoadingCities(false));
-    setCityId(null);
-    setCity('');
-  }, [country]); // eslint-disable-line react-hooks/exhaustive-deps
+    try {
+      window.localStorage.removeItem('qandaModalDismissed');
+    } catch (_) { /* no-op */ }
+  }, []);
 
-  // ── Load on mount and when filters/sort/search change (all section) ───────
   useEffect(() => {
-    if (activeSection === 'all') {
+    if (activeSection === "all") {
       fetchAllQuestions(0, false);
     }
-  }, [activeSection, sortOption, filters, searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeSection, sortOption, filters, searchQuery, fetchAllQuestions]);
 
-  // ── Load my questions when section switches to 'mine' ─────────────────────
   useEffect(() => {
-    if (activeSection === 'mine' && user) {
+    if (activeSection === "mine" && user) {
       fetchMyQuestions(0, false);
     }
-  }, [activeSection, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeSection, user, fetchMyQuestions]);
 
-  const showToast = (message, type) => {
-    setToast({ message, type, show: true });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 2600);
-  };
+  // FIX (Round 30): quando o user entra via
+  // /forum/questions/:id ou /qanda/:id (deep-link a partir de
+  // uma notificação "respondeu à tua pergunta"), abrimos
+  // automaticamente a thread correspondente e fazemos scroll
+  // até ela. O URL é a única fonte de verdade; o id da rota
+  // é guardado em `urlQuestionId` (vindo do `useParams`).
+  // Como o fórum não tem detail-page dedicada, mostramos a
+  // pergunta inline no topo da lista "Tudo" com o bloco de
+  // comentários já expandido.
+  useEffect(() => {
+    if (!urlQuestionId) return undefined;
+    const numericId = Number(urlQuestionId);
+    if (!Number.isFinite(numericId) || numericId <= 0) return undefined;
+    // Mudar para a tab "Tudo" para garantir que a pergunta
+    // está na lista visível (se a thread é de outro user, não
+    // aparece em "Minhas").
+    setActiveSection("all");
+    // Expandir a thread (carrega os comentários se ainda não
+    // foram carregados) e marcar como lida visualmente.
+    setExpandedSections((prev) => ({ ...prev, [`question-${numericId}`]: true }));
+    fetchQuestionComments(numericId);
+    // Scroll suave até ao bloco da pergunta depois do próximo
+    // paint, para o user perceber que aterrou no sítio certo.
+    const t = setTimeout(() => {
+      try {
+        const el = document.querySelector(`[data-question-id="${numericId}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_) { /* no-op */ }
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlQuestionId]);
 
-  const closeToast = () => {
-    setToast({ ...toast, show: false });
-  };
+  // Lightweight count of my questions so the "Minhas" tab can show
+  // the badge before the user clicks it. We hit /forum/questions/my
+  // with size=1 and read totalElements. This is cheap and avoids
+  // forcing the user to click the tab just to see how many
+  // questions they have asked.
+  useEffect(() => {
+    if (!user) return undefined;
+    let cancelled = false;
+    api
+      .get('/forum/questions/my', { params: { page: 0, size: 1 } })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setMyTotal(data?.totalElements ?? 0);
+      })
+      .catch(() => {
+        // best-effort — if it fails the user can still see the real
+        // count after clicking the tab.
+      });
+    return () => { cancelled = true; };
+  }, [user]);
 
-  // Função para sanitizar conteúdo contra XSS
-  const sanitizeContent = (content) => {
-    if (!content) return '';
-    
-    const dangerousPatterns = [
-      /<script[^>]*>.*?<\/script>/gi,
-      /javascript:/gi,
-      /on\w+\s*=/gi,
-      /<iframe[^>]*>.*?<\/iframe>/gi,
-      /<object[^>]*>.*?<\/object>/gi,
-      /<embed[^>]*>.*?<\/embed>/gi,
-      /<link[^>]*>/gi,
-      /<meta[^>]*>/gi,
-      /<style[^>]*>.*?<\/style>/gi
-    ];
-    
-    let sanitized = content;
-    dangerousPatterns.forEach(pattern => {
-      sanitized = sanitized.replace(pattern, '');
-    });
-    
-    return sanitized.trim();
-  };
-
+  /* ── Handlers ──────────────────────────────────────── */
   const handleAskQuestion = useCallback(async (e) => {
     e.preventDefault();
-    setError('');
-    
-    // Validações melhoradas
+    setError("");
+
     if (!user) {
-      setError('Inicie sessão para criar uma pergunta!');
-      showToast('Inicie sessão para criar uma pergunta!', 'error');
+      setError("Inicie sessão para criar uma pergunta!");
+      toast.danger("Inicie sessão para criar uma pergunta!");
       return;
     }
-    
     if (!newQuestion.trim()) {
-      setError('Escreva uma pergunta!');
-      showToast('Escreva uma pergunta!', 'error');
+      setError("Escreva uma pergunta!");
+      toast.danger("Escreva uma pergunta!");
       return;
     }
-    
     if (newQuestion.trim().length < 10) {
-      setError('A pergunta deve ter pelo menos 10 caracteres!');
-      showToast('A pergunta deve ter pelo menos 10 caracteres!', 'error');
+      setError("A pergunta deve ter pelo menos 10 caracteres!");
+      toast.danger("A pergunta deve ter pelo menos 10 caracteres!");
       return;
     }
-
     if (newQuestion.trim().length > 500) {
-      setError('A pergunta deve ter no máximo 500 caracteres!');
-      showToast('A pergunta deve ter no máximo 500 caracteres!', 'error');
+      setError("A pergunta deve ter no máximo 500 caracteres!");
+      toast.danger("A pergunta deve ter no máximo 500 caracteres!");
       return;
     }
-
-    // Sanitizar conteúdo contra XSS
     const sanitizedQuestion = sanitizeContent(newQuestion);
     if (!sanitizedQuestion) {
-      setError('Pergunta contém conteúdo não permitido!');
-      showToast('Pergunta contém conteúdo não permitido!', 'error');
+      setError("Pergunta contém conteúdo não permitido!");
+      toast.danger("Pergunta contém conteúdo não permitido!");
       return;
     }
-
     if (sanitizedQuestion !== newQuestion.trim()) {
-      setError('Pergunta contém conteúdo perigoso que foi removido!');
-      showToast('Pergunta contém conteúdo perigoso que foi removido!', 'error');
+      setError("Pergunta contém conteúdo perigoso que foi removido!");
+      toast.danger("Pergunta contém conteúdo perigoso que foi removido!");
       return;
     }
-    
     if (!category) {
-      setError('Selecione uma categoria!');
-      showToast('Selecione uma categoria!', 'error');
-      return;
-    }
-
-    if (!cityId) {
-      setError('Selecione uma cidade!');
-      showToast('Selecione uma cidade!', 'error');
+      setError("Selecione uma categoria!");
+      toast.danger("Selecione uma categoria!");
       return;
     }
 
     setIsLoading(true);
     try {
-      const resp = await request('POST', '/forum/questions', {
+      const { data } = await api.post("/forum/questions", {
         questionText: sanitizedQuestion,
         category,
-        cityId,
+        // Round 77 (Bug 3): send the country the user picked in the
+        // "País" dropdown. The backend persists it on a new
+        // `forum_question.country` column (V17) and surfaces it back
+        // in the `countryName` field. Without this line the country
+        // was selected in the UI but never persisted, so the chip
+        // with the flag vanished on the next render of the question.
+        country: country || null,
       });
-      const created = transformQuestion(resp.data);
-      setQuestions(prev => [created, ...prev]);
-      setAllTotal(prev => prev + 1);
-      // Reset form
-      setNewQuestion('');
-      setCategory('');
-      setCountry('');
-      setCity('');
-      setCityId(null);
-      setCities([]);
+      const created = transformQuestion(data);
+      setQuestions((prev) => [created, ...prev]);
+      setAllTotal((prev) => prev + 1);
+      setNewQuestion("");
+      setCategory("");
+      setCountry("");
       setIsAskingQuestion(false);
-      setError('');
-      showToast('Pergunta criada com sucesso!', 'success');
+      setError("");
+      toast.success("Pergunta criada com sucesso!");
     } catch (err) {
-      console.error('Erro ao criar pergunta:', err);
-      showToast('Erro ao criar pergunta.', 'error');
+      console.error("Erro ao criar pergunta:", err);
+      toast.danger("Erro ao criar pergunta.");
     } finally {
       setIsLoading(false);
     }
-  }, [user, newQuestion, category, cityId, transformQuestion]);
+  }, [user, newQuestion, category, transformQuestion, toast]);
 
   const handleCommentOrReply = useCallback(async (questionId, parentCommentId = null, text, replyKey = null) => {
-    setError('');
-    
+    setError("");
+
     if (!user) {
-      setError('Inicie sessão para comentar!');
-      showToast('Inicie sessão para comentar!', 'error');
+      setError("Inicie sessão para comentar!");
+      toast.danger("Inicie sessão para comentar!");
       return;
     }
-    
+
     const validation = validateComment(text);
     if (!validation.valid) {
       setError(validation.message);
-      showToast(validation.message, 'error');
+      toast.danger(validation.message);
       return;
     }
-
     const sanitizedText = sanitizeContent(text);
     if (!sanitizedText) {
       setError(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT);
-      showToast(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT, 'error');
+      toast.danger(COMMENT_LIMITS.MESSAGES.INVALID_CONTENT);
       return;
     }
-
     if (sanitizedText !== text.trim()) {
       setError(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
-      showToast(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT, 'error');
+      toast.danger(COMMENT_LIMITS.MESSAGES.DANGEROUS_CONTENT);
       return;
     }
 
     try {
       const body = { content: sanitizedText };
       if (parentCommentId != null) body.parentCommentId = parentCommentId;
-      const resp = await request('POST', `/forum/questions/${questionId}/comments`, body);
-      const dto = resp.data;
+      const { data: dto } = await api.post(`/forum/questions/${questionId}/comments`, body);
+      // Build the new comment object that the local tree state expects.
+      // The backend returns the full thread (parent + nested replies)
+      // but we still keep the tree shape in local state — the
+      // rendering layer flattens it via `flattenCommentTree` when
+      // feeding the global `CommentThread`.
       const newCommentObj = {
         id: dto.commentId,
         userId: dto.userId,
-        user: dto.username || user.username,
+        username: dto.username || null,
+        user: getDisplayName({
+          userFirstName: dto.userFirstName,
+          userLastName: dto.userLastName,
+          username: dto.username,
+        }, getDisplayName(user, "Utilizador")),
         userProfilePicture: dto.userProfilePhoto || user.profilePicture || null,
         text: dto.content,
         createdAt: dto.createdAt,
@@ -406,962 +472,700 @@ const QandA = () => {
       };
 
       if (parentCommentId == null) {
-        // Top-level comment
-        setQuestions(prev => prev.map(q =>
+        setQuestions((prev) => prev.map((q) =>
           q.id === questionId
             ? { ...q, comments: [...q.comments, newCommentObj], totalComments: (q.totalComments || 0) + 1 }
             : q
         ));
-        setNewComment(prev => ({ ...prev, [questionId]: '' }));
-        showToast('Comentário adicionado com sucesso!', 'success');
+        setNewComment((prev) => ({ ...prev, [questionId]: "" }));
+        toast.success("Comentário adicionado.");
       } else {
-        // Reply — insert into parent
-        const addReply = (comments) => comments.map(c =>
+        const addReply = (comments) => comments.map((c) =>
           c.id === parentCommentId
             ? { ...c, replies: [...(c.replies || []), newCommentObj] }
             : { ...c, replies: addReply(c.replies || []) }
         );
-        setQuestions(prev => prev.map(q =>
-          q.id === questionId ? { ...q, comments: addReply(q.comments) } : q
+        setQuestions((prev) => prev.map((q) =>
+          q.id === questionId
+            ? { ...q, comments: addReply(q.comments), totalComments: (q.totalComments || 0) + 1 }
+            : q
         ));
-        if (replyKey) {
-          setNewReply(prev => ({ ...prev, [replyKey]: '' }));
-          setReplyOpen(prev => ({ ...prev, [replyKey]: false }));
-        }
-        showToast('Resposta adicionada com sucesso!', 'success');
+        toast.success("Resposta adicionada.");
       }
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('Erro ao adicionar comentário:', err);
-      showToast('Erro ao adicionar comentário.', 'error');
+      console.error("Erro ao adicionar comentário:", err);
+      toast.danger("Erro ao adicionar comentário.");
     }
-  }, [user, sanitizeContent]);
+  }, [user, toast]);
 
   const handleLikeQuestion = useCallback(async (questionId) => {
-    if (!user) return showToast('Inicie sessão para gostar!', 'error');
+    if (!user) {
+      toast.danger("Inicie sessão para gostar!");
+      return;
+    }
     const isLiked = likedQuestions.includes(questionId);
-    // Optimistic update
-    setLikedQuestions(prev => isLiked ? prev.filter(id => id !== questionId) : [...prev, questionId]);
-    setQuestions(prev => prev.map(q =>
-      q.id === questionId ? { ...q, likes: q.likes + (isLiked ? -1 : 1) } : q
+    setLikedQuestions((prev) => (isLiked ? prev.filter((id) => id !== questionId) : [...prev, questionId]));
+    setQuestions((prev) => prev.map((q) =>
+      q.id === questionId
+        ? { ...q, likes: q.likes + (isLiked ? -1 : 1), currentUserLiked: !isLiked }
+        : q
     ));
     try {
-      if (isLiked) {
-        await request('DELETE', `/forum/questions/${questionId}/like`);
-      } else {
-        await request('POST', `/forum/questions/${questionId}/like`);
-      }
+      if (isLiked) await api.delete(`/forum/questions/${questionId}/like`);
+      else await api.post(`/forum/questions/${questionId}/like`);
     } catch (err) {
-      // Revert on failure
-      setLikedQuestions(prev => isLiked ? [...prev, questionId] : prev.filter(id => id !== questionId));
-      setQuestions(prev => prev.map(q =>
-        q.id === questionId ? { ...q, likes: q.likes + (isLiked ? 1 : -1) } : q
+      setLikedQuestions((prev) => (isLiked ? [...prev, questionId] : prev.filter((id) => id !== questionId)));
+      setQuestions((prev) => prev.map((q) =>
+        q.id === questionId
+          ? { ...q, likes: q.likes + (isLiked ? 1 : -1), currentUserLiked: isLiked }
+          : q
       ));
-      showToast('Erro ao processar gosto.', 'error');
+      toast.danger("Erro ao processar gosto.");
     }
-  }, [user, likedQuestions]);
+  }, [user, likedQuestions, toast]);
 
   const handleLikeComment = useCallback(async (commentId, questionId) => {
-    if (!user) return showToast('Inicie sessão para gostar!', 'error');
+    if (!user) {
+      toast.danger("Inicie sessão para gostar!");
+      return;
+    }
     const isLiked = likedComments.includes(commentId);
-    // Optimistic update
-    setLikedComments(prev => isLiked ? prev.filter(id => id !== commentId) : [...prev, commentId]);
-    const updateLikesInTree = (comments) => comments.map(c =>
+    setLikedComments((prev) => (isLiked ? prev.filter((id) => id !== commentId) : [...prev, commentId]));
+    // Round 86 — `updateLikesInTree` also flips `currentUserLiked` on the
+    // affected comment (and its matching reply). The shared
+    // <CommentThread> renders each comment with `currentUserLiked`
+    // driving the heart icon — without this flip the heart stays
+    // outline even after the like succeeds, and the user thinks
+    // their click "didn't work". Now the heart turns red the same
+    // way the post heart does, instantly.
+    const updateLikesInTree = (comments) => comments.map((c) =>
       c.id === commentId
-        ? { ...c, likes: c.likes + (isLiked ? -1 : 1) }
+        ? { ...c, likes: c.likes + (isLiked ? -1 : 1), currentUserLiked: !isLiked }
         : { ...c, replies: updateLikesInTree(c.replies || []) }
     );
-    setQuestions(prev => prev.map(q =>
+    setQuestions((prev) => prev.map((q) =>
       q.id === questionId ? { ...q, comments: updateLikesInTree(q.comments) } : q
     ));
     try {
-      if (isLiked) {
-        await request('DELETE', `/forum/comments/${commentId}/like`);
-      } else {
-        await request('POST', `/forum/comments/${commentId}/like`);
-      }
+      if (isLiked) await api.delete(`/forum/comments/${commentId}/like`);
+      else await api.post(`/forum/comments/${commentId}/like`);
     } catch (err) {
-      // Revert
-      setLikedComments(prev => isLiked ? [...prev, commentId] : prev.filter(id => id !== commentId));
-      const revertLikes = (comments) => comments.map(c =>
+      setLikedComments((prev) => (isLiked ? [...prev, commentId] : prev.filter((id) => id !== commentId)));
+      const revertLikes = (comments) => comments.map((c) =>
         c.id === commentId
-          ? { ...c, likes: c.likes + (isLiked ? 1 : -1) }
+          ? { ...c, likes: c.likes + (isLiked ? 1 : -1), currentUserLiked: isLiked }
           : { ...c, replies: revertLikes(c.replies || []) }
       );
-      setQuestions(prev => prev.map(q =>
+      setQuestions((prev) => prev.map((q) =>
         q.id === questionId ? { ...q, comments: revertLikes(q.comments) } : q
       ));
-      showToast('Erro ao processar gosto.', 'error');
+      toast.danger("Erro ao processar gosto.");
     }
-  }, [user, likedComments]);
+  }, [user, likedComments, toast]);
 
   const handleDeleteQuestion = useCallback(async (questionId) => {
-    if (!window.confirm('Tem a certeza que quer eliminar esta pergunta?')) return;
+    if (!window.confirm("Tem a certeza que quer eliminar esta pergunta?")) return;
     try {
-      await request('DELETE', `/forum/questions/${questionId}`);
-      setMyQuestions(prev => prev.filter(q => q.id !== questionId));
-      setQuestions(prev => prev.filter(q => q.id !== questionId));
-      setMyTotal(prev => Math.max(0, prev - 1));
-      setAllTotal(prev => Math.max(0, prev - 1));
-      showToast('Pergunta eliminada.', 'success');
+      await api.delete(`/forum/questions/${questionId}`);
+      setMyQuestions((prev) => prev.filter((q) => q.id !== questionId));
+      setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+      setMyTotal((prev) => Math.max(0, prev - 1));
+      setAllTotal((prev) => Math.max(0, prev - 1));
+      toast.success("Pergunta eliminada.");
     } catch (err) {
-      console.error('Erro ao eliminar pergunta:', err);
-      showToast('Erro ao eliminar pergunta.', 'error');
+      console.error("Erro ao eliminar pergunta:", err);
+      toast.danger("Erro ao eliminar pergunta.");
     }
-  }, []);
+  }, [toast]);
 
   const handleDeleteComment = useCallback(async (commentId, questionId) => {
-    if (!window.confirm('Tem a certeza que quer eliminar este comentário?')) return;
+    if (!window.confirm("Tem a certeza que quer eliminar este comentário?")) return;
     try {
-      await request('DELETE', `/forum/comments/${commentId}`);
-      const removeFromTree = (comments) => comments
-        .filter(c => c.id !== commentId)
-        .map(c => ({ ...c, replies: removeFromTree(c.replies || []) }));
-      setQuestions(prev => prev.map(q =>
-        q.id === questionId
-          ? { ...q, comments: removeFromTree(q.comments), totalComments: Math.max(0, (q.totalComments || 1) - 1) }
-          : q
-      ));
-      showToast('Comentário eliminado.', 'success');
+      await api.delete(`/forum/comments/${commentId}`);
+      // Global rule (matches Home feed + TravelDetails): deleting a
+      // parent does NOT cascade-delete its replies. The replies are
+      // re-parented to the top level so the conversation stays
+      // coherent. The deleted comment itself is removed; the count
+      // drops by exactly 1.
+      setQuestions((prev) => prev.map((q) => {
+        if (q.id !== questionId) return q;
+        const reparent = (list) => list
+          .filter((c) => c.id !== commentId)
+          .map((c) => {
+            if (c.replies?.some((r) => r.id === commentId)) {
+              return { ...c, replies: c.replies.filter((r) => r.id !== commentId) };
+            }
+            return { ...c, replies: reparent(c.replies || []) };
+          });
+        // Also lift any direct children of the deleted comment to top level.
+        const findChildren = (list) => {
+          for (const c of list) {
+            if (c.id === commentId) return c.replies || [];
+            const found = findChildren(c.replies || []);
+            if (found.length) return found;
+          }
+          return [];
+        };
+        const orphans = findChildren(q.comments || []);
+        return {
+          ...q,
+          comments: [...reparent(q.comments || []), ...orphans],
+          totalComments: Math.max(0, (q.totalComments || 1) - 1),
+        };
+      }));
+      toast.success("Comentário eliminado.");
     } catch (err) {
-      console.error('Erro ao eliminar comentário:', err);
-      showToast('Erro ao eliminar comentário.', 'error');
+      console.error("Erro ao eliminar comentário:", err);
+      toast.danger("Erro ao eliminar comentário.");
     }
-  }, []);
+  }, [toast]);
 
   const fetchQuestionComments = useCallback(async (questionId) => {
-    setCommentsLoading(prev => ({ ...prev, [questionId]: true }));
+    setCommentsLoading((prev) => ({ ...prev, [questionId]: true }));
     try {
-      const resp = await request('GET', `/forum/questions/${questionId}/comments?page=0&size=50`);
-      const data = resp.data;
+      // size=100 so a single fetch covers typical Q&A threads
+      // (the backend returns comments + nested replies in a single
+      // tree-shaped payload). The user previously reported that
+      // not all replies were loading — bumping the page size and
+      // following the page cursor is the safest fix.
+      const { data } = await api.get(`/forum/questions/${questionId}/comments?page=0&size=100`);
       const transformComment = (dto) => ({
         id: dto.commentId,
         userId: dto.userId,
-        user: dto.username || 'Utilizador',
+        // Round 83 — propagate the `username` so the comment
+        // avatar + name can link to the author's profile.
+        username: dto.username || null,
+        user: getDisplayName({
+          userFirstName: dto.userFirstName,
+          userLastName: dto.userLastName,
+          username: dto.username,
+        }, "Utilizador"),
         userProfilePicture: dto.userProfilePhoto || null,
         text: dto.content,
         createdAt: dto.createdAt,
         likes: dto.totalLikes || 0,
         currentUserLiked: dto.userLiked || false,
-        replies: (dto.replies || []).map(r => transformComment(r)),
+        replies: (dto.replies || []).map(transformComment),
       });
       const comments = (data.content || []).map(transformComment);
-      // Seed liked state
       const likedIds = [];
-      const collectLiked = (list) => list.forEach(c => { if (c.currentUserLiked) likedIds.push(c.id); collectLiked(c.replies || []); });
+      const collectLiked = (list) => list.forEach((c) => {
+        if (c.currentUserLiked) likedIds.push(c.id);
+        collectLiked(c.replies || []);
+      });
       collectLiked(comments);
-      setLikedComments(prev => [...new Set([...prev, ...likedIds])]);
-      setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, comments } : q));
-      setMyQuestions(prev => prev.map(q => q.id === questionId ? { ...q, comments } : q));
+      setLikedComments((prev) => [...new Set([...prev, ...likedIds])]);
+      setQuestions((prev) => prev.map((q) => (q.id === questionId ? { ...q, comments } : q)));
+      setMyQuestions((prev) => prev.map((q) => (q.id === questionId ? { ...q, comments } : q)));
     } catch (err) {
-      console.error('Erro ao carregar comentários:', err);
+      console.error("Erro ao carregar comentários:", err);
     } finally {
-      setCommentsLoading(prev => ({ ...prev, [questionId]: false }));
+      setCommentsLoading((prev) => ({ ...prev, [questionId]: false }));
     }
   }, []);
 
   const toggleSection = (questionId) => {
     const key = `question-${questionId}`;
     const isCurrentlyOpen = expandedSections[key];
-    setExpandedSections(prev => ({ ...prev, [key]: !isCurrentlyOpen }));
-    // Fetch comments on first open
+    setExpandedSections((prev) => ({ ...prev, [key]: !isCurrentlyOpen }));
     if (!isCurrentlyOpen) {
-      const q = questions.find(q => q.id === questionId) || myQuestions.find(q => q.id === questionId);
-      if (q && q.comments.length === 0) {
-        fetchQuestionComments(questionId);
-      }
+      const q = questions.find((q) => q.id === questionId) || myQuestions.find((q) => q.id === questionId);
+      if (q && q.comments.length === 0) fetchQuestionComments(questionId);
     }
   };
 
-  const toggleReply = (key) => {
-    setReplyOpen((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const toggleReply = (key) => setReplyOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const getRelativeTime = (date) => {
-    const now = new Date();
-    const commentDate = new Date(date);
-    const diffInSeconds = Math.floor((now - commentDate) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return 'agora mesmo';
-    }
-    
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes} min`;
-    }
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return `${diffInHours} h`;
-    }
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-      return `${diffInDays} dia${diffInDays > 1 ? 's' : ''}`;
-    }
-    
-    return commentDate.toLocaleDateString('pt-PT', {
-      day: 'numeric',
-      month: 'short'
-    });
-  };
+  /* The per-comment row is now rendered by the global CommentThread
+     component for visual parity with the Home feed and the
+     TravelDetails page. The local `questions` state still holds the
+     tree (`question.comments` with nested `replies`) so existing
+     fetch / add / like / delete logic keeps working unchanged;
+     `flattenCommentTree` is applied at render time to feed the
+     shared component. */
 
-  const renderComment = useCallback((comment, questionId, parentCommentId = null, index = 0) => {
-    const replyKey = `${questionId}-${comment.id}`;
-    const isLiked = likedComments.includes(comment.id);
-    const isOwner = user && user.id === comment.userId;
-    return (
-      <motion.div 
-        key={comment.id} 
-        className="comment-item-modern"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.1 }}
-      >
-        <div className="comment-main">
-          <img 
-            src={comment.userProfilePicture || defaultAvatar} 
-            alt={`Avatar de ${comment.user}`} 
-            className="comment-avatar-modern" 
-          />
-          <div className="comment-content-modern">
-            <div className="comment-header-modern">
-              <span className="comment-username">{comment.user}</span>
-              <span className="comment-time">{getRelativeTime(comment.createdAt)}</span>
-              {isOwner && (
-                <motion.button
-                  className="delete-comment-btn"
-                  onClick={() => handleDeleteComment(comment.id, questionId)}
-                  title="Eliminar comentário"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: '12px', padding: '2px 6px' }}
-                >
-                  <FaTimes />
-                </motion.button>
-              )}
-            </div>
-            <p className="comment-text">{comment.text}</p>
-            <div className="comment-actions-modern">
-              <motion.button
-                className={`comment-like-btn ${isLiked ? 'liked' : ''}`}
-                onClick={() => handleLikeComment(comment.id, questionId)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaHeart className={`heart-icon ${isLiked ? 'liked' : ''}`} />
-                {comment.likes > 0 && <span>{comment.likes}</span>}
-              </motion.button>
-              <motion.button
-                className="reply-btn-modern"
-                onClick={() => toggleReply(replyKey)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaReply /> Responder
-              </motion.button>
-            </div>
-            
-            <AnimatePresence>
-              {replyOpen[replyKey] && (
-                <motion.div 
-                  className="reply-input-container"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <img 
-                    src={user?.profilePicture || defaultAvatar} 
-                    alt="Seu avatar" 
-                    className="reply-user-avatar" 
-                  />
-                  <div className="reply-input-wrapper">
-                    <textarea
-                      value={newReply[replyKey] || ''}
-                      onChange={(e) => {
-                        if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
-                          setNewReply({ ...newReply, [replyKey]: e.target.value });
-                        }
-                      }}
-                      placeholder="Escreva uma resposta..."
-                      className="reply-input-modern"
-                      rows="2"
-                      maxLength={COMMENT_LIMITS.MAX_LENGTH}
-                      autoFocus
-                    />
-                    <div className="reply-actions">
-                      <span style={{ fontSize: '12px', color: '#999', marginRight: 'auto' }}>{(newReply[replyKey] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
-                      <motion.button
-                        className="cancel-reply-btn"
-                        onClick={() => toggleReply(replyKey)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Cancelar
-                      </motion.button>
-                      <motion.button
-                        onClick={() => handleCommentOrReply(questionId, comment.id, newReply[replyKey], replyKey)}
-                        className="send-reply-btn"
-                        disabled={!newReply[replyKey]?.trim()}
-                        whileHover={newReply[replyKey]?.trim() ? { scale: 1.05 } : {}}
-                        whileTap={newReply[replyKey]?.trim() ? { scale: 0.95 } : {}}
-                      >
-                        <FaPaperPlane />
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-        
-        {comment.replies?.length > 0 && (
-          <motion.div 
-            className="replies-container-modern"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {[...comment.replies].map((reply, replyIndex) => 
-              renderComment(reply, questionId, comment.id, replyIndex)
-            )}
-          </motion.div>
-        )}
-      </motion.div>
-    );
-  }, [newReply, replyOpen, handleLikeComment, handleCommentOrReply, handleDeleteComment, likedComments, user, getRelativeTime]);
-
+  /* ── Render: question card ─────────────────────────── */
   const renderQuestionItem = useCallback((question, index, showDelete = false) => {
     const questionKey = `question-${question.id}`;
     const isLikedQuestion = likedQuestions.includes(question.id);
-    const isOwner = user && user.id === question.userId;
+    // Same numeric-id normalisation as in renderComment.
+    const numericUserId = user ? Number(user.id) : null;
+    const numericOwnerId = question.userId != null ? Number(question.userId) : null;
+    const isOwner = numericUserId != null
+      && numericOwnerId != null
+      && numericUserId === numericOwnerId;
     const commentsOpen = expandedSections[questionKey];
     const loadingComments = commentsLoading[question.id];
+    // Flatten the comment tree for the shared CommentThread. The
+    // local state still stores comments as a tree, but the
+    // rendering layer treats them as a flat list.
+    // The total count must reflect the backend's own counter
+    // (totalComments) so the badge is accurate on the very first
+    // render — the user shouldn't have to open the thread to see
+    // how many comments a question has. We fall back to the
+    // locally-flattened list length when the backend counter is
+    // missing (older payloads).
+    const flatComments = flattenCommentTree(question.comments || []);
+    const backendCount = Number(question.totalComments || question.totalCommentCount || 0);
+    const totalCount = Math.max(backendCount, flatComments.length);
     return (
-      <motion.div 
-        key={question.id} 
-        className="question-card-modern"
-        initial={{ opacity: 0, y: 30 }}
+      <motion.article
+        key={question.id}
+        data-question-id={question.id}
+        className="gm-qa-card"
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.1 }}
-        whileHover={{ y: -5 }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1], delay: Math.min(index * 0.05, 0.4) }}
+        layout
       >
-        <div className="question-card-header">
-          <div className="user-info2">
-            <img 
-              src={question.userProfilePicture || defaultAvatar} 
-              alt={`Avatar de ${question.user}`} 
-              className="user-avatar2" 
-            />
-            <div className="user-details">
-              <span className="username">{question.user}</span>
-              <div className="question-metadata">
-                <span className="metadata-item">
-                  <FaCalendarAlt className="metadata-icon" />
-                  {new Date(question.createdAt).toLocaleDateString('pt-PT', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
+        <header className="gm-qa-card__head">
+          {/* Round 83 — the avatar + display name on the
+             question card now link to the author's profile.
+             We use a `Link` to `/profile/:username` when we
+             have the handle; otherwise we fall back to a
+             non-link wrapper (e.g. legacy questions posted
+             before the `username` field was added). The
+             inner <div> is the same layout the card had
+             before, so the date / location / category row
+             still sit next to the name. */}
+          <div className="gm-qa-card__user">
+            {question.username ? (
+              <Link
+                to={`/profile/${question.username}`}
+                className="gm-qa-card__user-link"
+                aria-label={`Ver perfil de ${question.user}`}
+              >
+                {question.userProfilePicture ? (
+                  <img
+                    key={question.userProfilePicture}
+                    src={toFullMediaUrl(question.userProfilePicture)}
+                    alt={question.user}
+                    className="gm-qa-card__avatar"
+                  />
+                ) : (
+                  <Avatar name={question.user} size="md" />
+                )}
+                <strong className="gm-qa-card__name">{question.user}</strong>
+              </Link>
+            ) : (
+              <>
+                {question.userProfilePicture ? (
+                  <img
+                    key={question.userProfilePicture}
+                    src={toFullMediaUrl(question.userProfilePicture)}
+                    alt={question.user}
+                    className="gm-qa-card__avatar"
+                  />
+                ) : (
+                  <Avatar name={question.user} size="md" />
+                )}
+                <strong className="gm-qa-card__name">{question.user}</strong>
+              </>
+            )}
+            <div>
+              <div className="gm-qa-card__meta">
+                <span className="gm-qa-card__meta-item">
+                  <Calendar size={11} strokeWidth={1.75} />
+                  {safeLocaleString(question.createdAt, {
+                    day: "numeric", month: "short", year: "numeric",
                   })}
                 </span>
-                <span className="metadata-item">
-                  <FaMapMarkerAlt className="metadata-icon" />
-                  {question.country} • {question.city}
-                </span>
-                <span className="category-badge">{question.category}</span>
+                {(question.country || question.city) && (
+                  <span className="gm-qa-card__meta-item">
+                    <MapPin size={11} strokeWidth={1.75} />
+                    {[question.country, question.city].filter(Boolean).join(' • ')}
+                  </span>
+                )}
+                <span className="gm-qa-card__category">{question.category}</span>
               </div>
             </div>
           </div>
-          
+
           {(showDelete || isOwner) && (
-            <motion.button
-              className="delete-question-btn"
+            <button
+              type="button"
+              className="gm-qa-card__delete"
               onClick={() => handleDeleteQuestion(question.id)}
               title="Eliminar pergunta"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              style={{ background: 'none', border: '1px solid #e74c3c', borderRadius: '6px', color: '#e74c3c', cursor: 'pointer', fontSize: '12px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              <FaTimes /> Eliminar
-            </motion.button>
+              <Trash2 size={14} strokeWidth={1.75} />
+              <span>Eliminar</span>
+            </button>
           )}
-        </div>
+        </header>
 
-        <div className="question-content-modern">
-          <h3 className="question-title">{question.question}</h3>
-          
-          <div className="question-stats">
-            <div className="stat-item">
-              <motion.button
-                className={`like-btn ${isLikedQuestion ? 'liked' : ''}`}
-                onClick={() => handleLikeQuestion(question.id)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaHeart className={`heart-icon ${isLikedQuestion ? 'liked' : ''}`} />
-                <span>{question.likes}</span>
-              </motion.button>
-            </div>
-            
-            <div className="stat-item">
-              <motion.button
-                className={`comments-btn ${commentsOpen ? 'active' : ''}`}
-                onClick={() => toggleSection(question.id)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaComments className="comments-icon" />
-                <span>{question.totalComments ?? question.comments.length}</span>
-              </motion.button>
-            </div>
+        <div className="gm-qa-card__body">
+          <h3 className="gm-qa-card__title">{question.question}</h3>
+
+          <div className="gm-qa-card__stats">
+            <button
+              type="button"
+              className={`gm-qa-stat ${isLikedQuestion ? "gm-qa-stat--liked" : ""}`}
+              onClick={() => handleLikeQuestion(question.id)}
+              aria-label={isLikedQuestion ? 'Remover gosto' : 'Dar gosto'}
+              aria-pressed={isLikedQuestion}
+            >
+              <Heart size={15} strokeWidth={1.75} fill={isLikedQuestion ? "currentColor" : "none"} />
+              <span>{question.likes}</span>
+            </button>
+            <button
+              type="button"
+              className={`gm-qa-stat ${commentsOpen ? "gm-qa-stat--open" : ""}`}
+              onClick={() => toggleSection(question.id)}
+              aria-label={commentsOpen ? 'Esconder comentários' : 'Ver comentários'}
+              aria-pressed={commentsOpen}
+            >
+              <MessageCircle size={15} strokeWidth={1.75} />
+              <span>{totalCount}</span>
+            </button>
           </div>
         </div>
 
-        {/* Seção de comentários com animação */}
         <AnimatePresence>
           {commentsOpen && (
-            <motion.div 
-              className="comments-section-modern"
+            <motion.div
+              className="gm-qa-comments"
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="comments-header-modern">
-                <h4>💬 Comentários ({question.comments.length})</h4>
-                <motion.button
-                  className="close-comments-btn"
-                  onClick={() => toggleSection(question.id)}
-                  aria-label="Fechar comentários"
-                  whileHover={{ rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <FaTimes />
-                </motion.button>
-              </div>
-              
-              <div className="comments-container-modern">
-                {loadingComments ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                    <FaSpinner className="spinning" /> A carregar comentários...
-                  </div>
-                ) : question.comments.length > 0 ? (
-                  <div className="comments-list-modern">
-                    {question.comments.map((comment, commentIndex) => 
-                      renderComment(comment, question.id, null, commentIndex)
-                    )}
-                  </div>
-                ) : (
-                  <motion.div 
-                    className="no-comments"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <span>💭 Ainda não há comentários. Seja o primeiro a responder!</span>
-                  </motion.div>
-                )}
-                
-                {user && (
-                  <motion.div 
-                    className="add-comment-modern"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <img 
-                      src={user.profilePicture || defaultAvatar} 
-                      alt="Seu avatar" 
-                      className="comment-user-avatar" 
-                    />
-                    <div className="comment-input-container">
-                      <textarea
-                        value={newComment[question.id] || ''}
-                        onChange={(e) => {
-                          if (e.target.value.length <= COMMENT_LIMITS.MAX_LENGTH) {
-                            setNewComment({ ...newComment, [question.id]: e.target.value });
-                          }
-                        }}
-                        placeholder="Escreva a sua resposta..."
-                        className="comment-input-modern"
-                        rows="2"
-                        maxLength={COMMENT_LIMITS.MAX_LENGTH}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingRight: '10px' }}>
-                        <span style={{ fontSize: '12px', color: '#999' }}>{(newComment[question.id] || '').length}/{COMMENT_LIMITS.MAX_LENGTH}</span>
-                        <AnimatePresence>
-                          {newComment[question.id]?.trim() && (
-                            <motion.button
-                              onClick={() => handleCommentOrReply(question.id, null, newComment[question.id])}
-                              className="send-comment-btn"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              exit={{ scale: 0 }}
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <FaPaperPlane />
-                            </motion.button>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+              <CommentThread
+                isOpen
+                onToggle={() => toggleSection(question.id)}
+                comments={flatComments}
+                currentUserId={user?.id}
+                onLike={(c) => handleLikeComment(c.id, question.id)}
+                onDelete={(c) => handleDeleteComment(c.id, question.id)}
+                // Round 83 — clicking the avatar or the name of
+                // a comment takes the viewer to the comment
+                // author's profile. Falls back to `/profile/:id`
+                // when the username isn't available.
+                onUserClick={(c) => navigate(c.username ? `/profile/${c.username}` : `/profile/${c.userId}`)}
+                loading={loadingComments}
+                composer={{
+                  author: {
+                    name: getDisplayName(user, 'Você'),
+                    src: user?.profilePhoto || user?.profilePicture,
+                  },
+                  value: newComment[question.id] || '',
+                  onChange: (v) => setNewComment((prev) => ({ ...prev, [question.id]: v })),
+                  onSubmit: (text) => handleCommentOrReply(question.id, null, text),
+                  placeholder: 'Escreva a sua resposta...',
+                }}
+              />
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </motion.article>
     );
-  }, [expandedSections, commentsLoading, newComment, user, likedQuestions, handleLikeQuestion, handleDeleteQuestion, handleCommentOrReply, renderComment]);
+  }, [expandedSections, commentsLoading, newComment, user, likedQuestions, handleLikeQuestion, handleDeleteQuestion, handleCommentOrReply, toggleSection]);
 
+  /* ── Render ────────────────────────────────────────── */
   return (
-    <div className="qanda-page-modern">
-      {/* Modal de Boas-vindas */}
-      {showWelcomeModal && (
-        <div className="gm-map-welcome-overlay">
-          <div className="gm-map-welcome-modal">
-            <div className="gm-map-welcome-header">
-              <h2>Comunidade Q&A de Viajantes</h2>
-              <button className="gm-map-close-btn" onClick={() => setShowWelcomeModal(false)}>×</button>
-            </div>
-            <div className="gm-map-welcome-content">
-              <p>Tire as suas dúvidas e partilhe conhecimentos com uma comunidade experiente de viajantes! Faça perguntas, responda e ajude outros exploradores.</p>
-              <div className="gm-map-features-grid">
-                <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">❓</span>
-                  <div>
-                    <strong>Sistema de Perguntas Inteligente</strong>
-                    <p>Faça perguntas categorizadas por país, cidade ou tipo de viagem para respostas mais precisas</p>
-                  </div>
-                </div>
-                <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">💬</span>
-                  <div>
-                    <strong>Respostas da Comunidade</strong>
-                    <p>Receba respostas de viajantes experientes que já estiveram nos seus destinos de interesse</p>
-                  </div>
-                </div>
-                <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">❤️</span>
-                  <div>
-                    <strong>Sistema de Likes e Classificações</strong>
-                    <p>Vote nas melhores respostas e identifique rapidamente o conteúdo mais útil e confiável</p>
-                  </div>
-                </div>
-                <div className="gm-map-feature-item">
-                  <span className="gm-map-feature-icon">🔍</span>
-                  <div>
-                    <strong>Pesquisa e Filtros Avançados</strong>
-                    <p>Encontre rapidamente perguntas similares por categoria, destino ou número de respostas</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="gm-map-welcome-footer">
-              <div className="dont-show-again">
-                <label className="checkbox-container">
-                  <input
-                    type="checkbox"
-                    checked={dontShowAgain}
-                    onChange={(e) => setDontShowAgain(e.target.checked)}
-                  />
-                  <span className="checkmark"></span>
-                  <span className="checkbox-text">
-                    Não mostrar novamente esta mensagem
-                  </span>
-                </label>
-              </div>
-              <button className="gm-map-welcome-btn primary" onClick={() => {
-                if (dontShowAgain) {
-                  qandaModalUtils.dismiss();
-                }
-                setShowWelcomeModal(false);
-              }}>
-                Começar a perguntar!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header com estatísticas */}
-
-
-      {/* Barra de ações principais */}
-      <motion.div 
-        className="qanda-main-actions"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <div className="action-buttons">
-          <motion.button 
-            className={`action-btn ${activeSection === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveSection('all')}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FaComments /> Todas as Perguntas
-          </motion.button>
-          {user && (
-            <motion.button 
-              className={`action-btn ${activeSection === 'mine' ? 'active' : ''}`}
-              onClick={() => setActiveSection('mine')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+    <div className="gm-qa">
+      {/* Header (glass) — left title block removed (Round 33 cleanup) */}
+      <div className="gm-qa__head">
+        <div className="gm-qa__head-inner">
+          <div className="gm-qa__head-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeSection === "all"}
+              className={`gm-qa__head-tab ${activeSection === "all" ? "gm-qa__head-tab--active" : ""}`}
+              onClick={() => setActiveSection("all")}
             >
-              <FaUser /> As Minhas Perguntas
-            </motion.button>
+              <Inbox size={14} strokeWidth={1.75} />
+              <span>Todas</span>
+              {allTotal > 0 && <span className="gm-qa__head-tab-count">{allTotal}</span>}
+            </button>
+            {user && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeSection === "mine"}
+                className={`gm-qa__head-tab ${activeSection === "mine" ? "gm-qa__head-tab--active" : ""}`}
+                onClick={() => setActiveSection("mine")}
+              >
+                <User size={14} strokeWidth={1.75} />
+                <span>Minhas</span>
+                {myTotal > 0 && <span className="gm-qa__head-tab-count">{myTotal}</span>}
+              </button>
+            )}
+          </div>
+
+          {user && (
+            <button
+              type="button"
+              className="gm-qa__head-cta"
+              onClick={() => setIsAskingQuestion((v) => !v)}
+            >
+              <Plus size={16} strokeWidth={2} />
+              <span>{isAskingQuestion ? "Fechar" : "Fazer Pergunta"}</span>
+            </button>
           )}
         </div>
-        
-        {user && (
-          <motion.button 
-            className="ask-question-btn"
-            onClick={() => setIsAskingQuestion(!isAskingQuestion)}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FaPlus /> Fazer Pergunta
-          </motion.button>
-        )}
-      </motion.div>
+      </div>
 
-      {/* Formulário de nova pergunta com animação */}
-      <AnimatePresence>
-        {user && isAskingQuestion && (
-          <motion.div 
-            className="ask-question-modal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <motion.div 
-              className="ask-question-card"
-              initial={{ opacity: 0, scale: 0.8, y: -50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: -50 }}
-              transition={{ duration: 0.3 }}
+      {/* Body */}
+      <div className="gm-qa__body">
+        {/* Ask question card (collapsible) */}
+        <AnimatePresence>
+          {user && isAskingQuestion && (
+            <motion.section
+              className="gm-qa-ask"
+              initial={{ opacity: 0, y: -8, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -8, height: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="card-header">
-                <h3>✨ Nova Pergunta</h3>
-                <motion.button 
-                  className="close-btn"
-                  onClick={() => setIsAskingQuestion(false)}
-                  whileHover={{ rotate: 90, scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <FaTimes />
-                </motion.button>
-              </div>
-              
-              <form onSubmit={handleAskQuestion} className="ask-question-form-modern">
-                <div className="form-group">
-                  <label>📝 Qual é a sua dúvida?</label>
+              <header className="gm-qa-ask__head">
+                <div className="gm-qa-ask__head-icon">
+                  <Sparkles size={16} strokeWidth={1.75} />
+                </div>
+                <h3>Nova Pergunta</h3>
+              </header>
+
+              <form onSubmit={handleAskQuestion} className="gm-qa-ask__form">
+                <div className="gm-qa-ask__field gm-qa-ask__field--full">
+                  <label htmlFor="gm-qa-question">Qual é a sua dúvida?</label>
                   <textarea
+                    id="gm-qa-question"
                     value={newQuestion}
                     onChange={(e) => {
-                      if (e.target.value.length <= 500) {
-                        setNewQuestion(e.target.value);
-                      }
+                      if (e.target.value.length <= 500) setNewQuestion(e.target.value);
                     }}
                     placeholder="Descreva a sua pergunta de forma clara e detalhada..."
-                    className="question-textarea"
-                    rows="4"
+                    className="gm-qa-textarea"
+                    rows={4}
                     maxLength={500}
                   />
+                  <div className="gm-qa-ask__counter">{newQuestion.length}/500</div>
                 </div>
 
-                  <div className="form-row">
-                  <div className="form-group">
-                    <label>🏷️ Categoria</label>
+                <div className="gm-qa-ask__row">
+                  <div className="gm-qa-ask__field">
+                    <label>Categoria</label>
                     <SearchableDropdown
-                      options={['Alojamento', 'Transportes', 'Dicas Locais', 'Cultura', 'Gastronomia', 'Outros'].map(c => ({ label: c, value: c }))}
+                      options={CATEGORY_OPTIONS}
                       value={category}
-                      onChange={(val) => setCategory(val || '')}
+                      onChange={(val) => setCategory(val || "")}
                       placeholder="Selecione uma categoria"
                     />
                   </div>
-
-                  <div className="form-group">
-                    <label>🌍 País</label>
+                  <div className="gm-qa-ask__field">
+                    <label>País</label>
                     <SearchableDropdown
                       options={countryOptions}
                       value={country}
-                      onChange={(val) => setCountry(val || '')}
+                      onChange={(val) => setCountry(val || "")}
                       placeholder="Selecione um país"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>🏙️ Cidade *</label>
-                    <SearchableDropdown
-                      options={cityOptions}
-                      value={cityId}
-                      onChange={(val) => {
-                        setCityId(val);
-                        const found = cities.find(c => c.id === val);
-                        setCity(found ? found.cityName : '');
-                      }}
-                      placeholder={loadingCities ? 'A carregar...' : country ? 'Selecione uma cidade' : 'Selecione primeiro um país'}
-                      disabled={!country || loadingCities}
                     />
                   </div>
                 </div>
 
                 <AnimatePresence>
                   {error && (
-                    <motion.div 
-                      className="error-message-modern"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.3 }}
+                    <motion.div
+                      className="gm-qa-ask__error"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
                     >
-                      {error}
+                      <AlertCircle size={14} strokeWidth={1.75} />
+                      <span>{error}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
-                
-                <div className="form-actions">
-                  <motion.button 
-                    type="button" 
-                    className="cancel-btn" 
+
+                <div className="gm-qa-ask__actions">
+                  <button
+                    type="button"
+                    className="gm-qa-btn gm-qa-btn--ghost"
                     onClick={() => setIsAskingQuestion(false)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                   >
                     Cancelar
-                  </motion.button>
-                  <motion.button 
-                    type="submit" 
-                    className="submit-btn"
+                  </button>
+                  <button
+                    type="submit"
+                    className="gm-qa-btn gm-qa-btn--primary"
                     disabled={isLoading}
-                    whileHover={!isLoading ? { scale: 1.05 } : {}}
-                    whileTap={!isLoading ? { scale: 0.95 } : {}}
                   >
                     {isLoading ? (
                       <>
-                        <FaSpinner className="spinning" /> A publicar...
+                        <RefreshCw size={14} className="gm-qa-spin" /> A publicar...
                       </>
                     ) : (
                       <>
-                        <FaPaperPlane /> Publicar Pergunta
+                        <Send size={14} strokeWidth={1.75} /> Publicar Pergunta
                       </>
                     )}
-                  </motion.button>
+                  </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
-      {/* Controles de pesquisa e filtros */}
-      <motion.div 
-        className="qanda-controls-modern"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-      >
-        <div className="search-section">
-          <div className="search-input-container">
-            <FaSearch className="search-icon" />
+        {/* Search + filters (sticky sub-bar) */}
+        <div className="gm-qa__controls">
+          <div className="gm-qa__search">
+            <Search size={14} strokeWidth={1.75} className="gm-qa__search-icon" />
             <input
               type="text"
               placeholder="Pesquisar perguntas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input-modern2"
+              className="gm-qa__search-input"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className="gm-qa__search-clear"
+                onClick={() => setSearchQuery("")}
+                aria-label="Limpar pesquisa"
+              >
+                <IconX size={12} strokeWidth={2} />
+              </button>
+            )}
           </div>
-          
-          <div className="control-buttons">
-            <motion.button 
-              className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
-              onClick={() => setShowFilters(!showFilters)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+
+          <div className="gm-qa__control-actions">
+            <button
+              type="button"
+              className={`gm-qa__filter-toggle ${showFilters ? "gm-qa__filter-toggle--active" : ""}`}
+              onClick={() => setShowFilters((v) => !v)}
             >
-              <FaFilter /> Filtros {showFilters ? <FaChevronUp /> : <FaChevronDown />}
-            </motion.button>
-            
-            <select 
-              value={sortOption} 
-              onChange={(e) => setSortOption(e.target.value)} 
-              className="sort-select"
-            >
-              <option value="created_at">📅 Mais recentes</option>
-              <option value="total_comments">💬 Mais comentadas</option>
-              <option value="total_likes">❤️ Mais gostadas</option>
-            </select>
+              <Filter size={14} strokeWidth={1.75} />
+              <span>Filtros</span>
+              {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+
+            <div className="gm-qa__sort">
+              <ArrowUpDown size={13} strokeWidth={1.75} />
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="gm-qa__sort-select"
+                aria-label="Ordenar por"
+              >
+                <option value="created_at">Mais recentes</option>
+                <option value="total_comments">Mais comentadas</option>
+                <option value="total_likes">Mais gostadas</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Filtros expandidos */}
         <AnimatePresence>
           {showFilters && (
-            <motion.div 
-              className="filters-expanded"
+            <motion.div
+              className="gm-qa__filters"
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="filter-group">
-                <select 
-                  value={filters.category} 
-                  onChange={(e) => setFilters({ ...filters, category: e.target.value })} 
-                  className="filter-select-modern"
+              <select
+                value={filters.category}
+                onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))}
+                className="gm-qa__filter-select"
+              >
+                <option value="">Todas as categorias</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <select
+                value={filters.answered}
+                onChange={(e) => setFilters((p) => ({ ...p, answered: e.target.value }))}
+                className="gm-qa__filter-select"
+              >
+                <option value="">Todas as perguntas</option>
+                <option value="yes">Com respostas</option>
+                <option value="no">Sem respostas</option>
+              </select>
+              {(filters.category || filters.answered) && (
+                <button
+                  type="button"
+                  className="gm-qa__filter-clear"
+                  onClick={() => setFilters({ category: "", answered: "" })}
                 >
-                  <option value="">🏷️ Todas as categorias</option>
-                  {['Alojamento', 'Transportes', 'Dicas Locais', 'Cultura', 'Gastronomia', 'Outros'].map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-
-                <select 
-                  value={filters.answered} 
-                  onChange={(e) => setFilters({ ...filters, answered: e.target.value })} 
-                  className="filter-select-modern"
-                >
-                  <option value="">💭 Todas as perguntas</option>
-                  <option value="yes">✅ Com respostas</option>
-                  <option value="no">❓ Sem respostas</option>
-                </select>
-              </div>
+                  <IconX size={12} strokeWidth={2} /> Limpar
+                </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
 
-      {/* Lista de perguntas */}
-      <motion.div 
-        className="questions-container"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-      >
-        {isLoading ? (
-          <motion.div 
-            className="loading-container"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="loading-spinner"></div>
-            <p>A carregar perguntas...</p>
-          </motion.div>
-        ) : (
-          <>
-            {activeSection === 'mine' && user ? (
-              <div className="questions-section-modern">
-                <motion.div 
-                  className="section-header"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h2>As Minhas Perguntas</h2>
-                  <span className="question-count">{myTotal} pergunta{myTotal !== 1 ? 's' : ''}</span>
-                </motion.div>
-                {myQuestions.length > 0 ? (
-                  <>
-                    {myQuestions.map((question, index) => renderQuestionItem(question, index, true))}
-                    {myPage + 1 < myTotalPages && (
-                      <motion.button 
-                        onClick={() => fetchMyQuestions(myPage + 1, true)} 
-                        className="load-more-btn-modern"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Carregar Mais Perguntas
-                      </motion.button>
-                    )}
-                  </>
-                ) : (
-                  <motion.div 
-                    className="empty-state"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <div className="empty-icon">🤔</div>
-                    <h3>Ainda não fez nenhuma pergunta</h3>
-                    <p>Comece a interagir com a comunidade. <br></br>Faça a sua primeira pergunta!</p>
-                    <motion.button 
-                      className="cta-btn"
-                      onClick={() => setIsAskingQuestion(true)}
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
+        {/* List */}
+        <div className="gm-qa__list">
+          {isLoading && questions.length === 0 && myQuestions.length === 0 ? (
+            <div className="gm-qa__loading">
+              <div className="gm-qa-spinner gm-qa-spinner--lg" />
+              <span>A carregar perguntas…</span>
+            </div>
+          ) : activeSection === "mine" ? (
+            <>
+              {myQuestions.length > 0 ? (
+                <>
+                  {myQuestions.map((q, i) => renderQuestionItem(q, i, true))}
+                  {myPage + 1 < myTotalPages && (
+                    <button
+                      type="button"
+                      className="gm-qa__load-more"
+                      onClick={() => fetchMyQuestions(myPage + 1, true)}
                     >
-                      <FaPlus /> Fazer Primeira Pergunta
-                    </motion.button>
-                  </motion.div>
-                )}
-              </div>
-            ) : (
-              <div className="questions-section-modern">
-                <motion.div 
-                  className="section-header"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h2>Todas as Perguntas</h2>
-                  <span className="question-count">{allTotal} pergunta{allTotal !== 1 ? 's' : ''}</span>
-                </motion.div>
-                {questions.length > 0 ? (
-                  <>
-                    {questions.map((question, index) => renderQuestionItem(question, index))}
-                    {allPage + 1 < allTotalPages && (
-                      <motion.button 
-                        onClick={() => fetchAllQuestions(allPage + 1, true)} 
-                        className="load-more-btn-modern"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Carregar Mais Perguntas
-                      </motion.button>
-                    )}
-                  </>
-                ) : (
-                  <motion.div 
-                    className="empty-state"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
+                      Carregar mais perguntas
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="gm-qa__empty">
+                  <div className="gm-qa__empty-icon">
+                    <HelpCircle size={36} strokeWidth={1.5} />
+                  </div>
+                  <h3>Ainda não fez nenhuma pergunta</h3>
+                  <p>Comece a interagir com a comunidade. Faça a sua primeira pergunta!</p>
+                  <button
+                    type="button"
+                    className="gm-qa-btn gm-qa-btn--primary"
+                    onClick={() => setIsAskingQuestion(true)}
                   >
-                    <div className="empty-icon">🔍</div>
-                    <h3>Nenhuma pergunta encontrada</h3>
-                    <p>Tente ajustar os filtros ou fazer uma nova pesquisa.</p>
-                  </motion.div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </motion.div>
-
-      {/* Toast para feedback */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        show={toast.show}
-        onClose={closeToast}
-      />
+                    <Plus size={14} strokeWidth={2} /> Fazer Primeira Pergunta
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {questions.length > 0 ? (
+                <>
+                  {questions.map((q, i) => renderQuestionItem(q, i))}
+                  {allPage + 1 < allTotalPages && (
+                    <button
+                      type="button"
+                      className="gm-qa__load-more"
+                      onClick={() => fetchAllQuestions(allPage + 1, true)}
+                    >
+                      Carregar mais perguntas
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="gm-qa__empty">
+                  <div className="gm-qa__empty-icon">
+                    <Compass size={36} strokeWidth={1.5} />
+                  </div>
+                  <h3>Nenhuma pergunta encontrada</h3>
+                  <p>Tente ajustar os filtros ou fazer uma nova pesquisa.</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

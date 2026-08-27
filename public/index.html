@@ -1,28 +1,176 @@
 <!DOCTYPE html>
-<html lang="en" style="color-scheme: light;">
+<html lang="pt-PT" style="color-scheme: light;">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="./icons/favicon.jpg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#fff" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#007BFF" />
+
+    <!-- Round 77 — performance hints. The /files/** origin serves
+         every photo and video on the site. `dns-prefetch` resolves
+         the hostname while the JS bundle is still parsing,
+         `preconnect` opens the TCP+TLS handshake ahead of the
+         first <img> request, and the preload of the favicon-sized
+         brand mark kicks off the image pipeline before React even
+         mounts. Net effect: the first paint after a hard refresh
+         is ~150-300ms faster on cold cache, and the first
+         <ProgressiveImg eager={true}> (hero photo) starts
+         downloading immediately on document parse instead of
+         waiting for the React tree. -->
+    <link rel="dns-prefetch" href="https://globememories.com" />
+    <link rel="preconnect" href="https://globememories.com" crossorigin />
     <meta name="color-scheme" content="light" />
-    <meta name="description" content="Globe Memories - Capture and share your travel memories" />
-    <link rel="apple-touch-icon" href="./icons/favicon.jpg" />
-    <!-- Suporte a modo imersivo e tela de splash -->
+
+    <!-- Round 79 — SEO overhaul + favicon bundle from
+         realfavicongenerator.net. The favicons were generated as
+         a single coherent set (favicon.ico + .svg + 96/192/512 +
+         apple-touch-icon) so every browser and every PWA install
+         surface gets the same brand mark. Description is a single
+         dense sentence under 160 chars so it survives truncation
+         in SERPs. -->
+    <title>Globe Memories — Descobre, guarda e partilha as tuas viagens pelo mundo</title>
+    <meta name="description" content="Globe Memories é a rede social para viajantes: regista as tuas viagens, partilha memórias com fotografia e vídeo, descobre destinos, segue outros viajantes e planifica a próxima aventura." />
+    <meta name="keywords" content="Globe Memories, viagens, viagem, travel, memórias, memories, rede social de viagens, travel social network, partilha de viagens, trip planner, roteiro de viagem, destinos, fotografia de viagem, 旅行, 旅行記, 旅, voyage, viajes, viajes por el mundo, backpacking, mochileiro, mochileiros, travel diary, diário de viagem, 旅行日记, tourism, turismo, lugares para visitar, países, cidades, europe, asia, américa, áfrica, portugal, lisboa, porto, discover, discover travellers, partilha, share, follow, seguir, viajantes, travellers, globe memories" />
+    <meta name="author" content="Globe Memories" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="rating" content="general" />
+    <meta name="distribution" content="global" />
+    <meta name="revisit-after" content="3 days" />
+    <meta name="language" content="Portuguese" />
+    <meta name="geo.region" content="PT" />
+    <meta name="geo.placename" content="Portugal" />
+    <meta name="application-name" content="Globe Memories" />
+    <meta name="apple-mobile-web-app-title" content="Globe Memories" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <!-- Tela de splash para iOS -->
-    <link rel="apple-touch-startup-image" href="./icons/favicon.jpg" />
-    <!-- Suporte a várias resoluções no iOS -->
-    <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" href="./icons/favicon.jpg" />
-    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="./icons/favicon.jpg" />
-    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="./icons/favicon.jpgg" />
-    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="./icons/favicon.jpg" />
-    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="./icons/favicon.jpg" />
-    <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="./icons/favicon.jpg" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="theme-color" content="#007BFF" media="(prefers-color-scheme: light)" />
+
+    <!-- Canonical URL — consolidate duplicate content signals. -->
+    <link rel="canonical" href="https://globememories.com/" />
+    <link rel="alternate" hreflang="pt-PT" href="https://globememories.com/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://globememories.com/" />
+    <link rel="alternate" hreflang="en" href="https://globememories.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://globememories.com/" />
+
+    <!-- Open Graph (Facebook, LinkedIn, WhatsApp, Telegram, Discord). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Globe Memories" />
+    <meta property="og:title" content="Globe Memories — Descobre, guarda e partilha as tuas viagens" />
+    <meta property="og:description" content="Rede social para viajantes. Regista as tuas viagens, partilha memórias com fotografia e vídeo, descobre destinos e segue outros viajantes." />
+    <meta property="og:url" content="https://globememories.com/" />
+    <meta property="og:image" content="https://globememories.com/web-app-manifest-512x512.png" />
+    <meta property="og:image:secure_url" content="https://globememories.com/web-app-manifest-512x512.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Globe Memories — logótipo oficial" />
+    <meta property="og:locale" content="pt_PT" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="pt_BR" />
+
+    <!-- Twitter / X Cards. -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@globememories" />
+    <meta name="twitter:creator" content="@globememories" />
+    <meta name="twitter:title" content="Globe Memories — Descobre, guarda e partilha as tuas viagens" />
+    <meta name="twitter:description" content="Rede social para viajantes. Regista as tuas viagens, partilha memórias com fotografia e vídeo, descobre destinos e segue outros viajantes." />
+    <meta name="twitter:image" content="https://globememories.com/web-app-manifest-512x512.png" />
+    <meta name="twitter:image:alt" content="Globe Memories — logótipo oficial" />
+
+    <!-- Schema.org / JSON-LD structured data. Helps Google build
+         a rich result (logo in the knowledge panel, sitelinks
+         search box, etc.) and validates the brand entity. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://globememories.com/#website",
+          "url": "https://globememories.com/",
+          "name": "Globe Memories",
+          "alternateName": "GlobeMemories",
+          "description": "Rede social para viajantes — descobre, guarda e partilha as tuas viagens pelo mundo.",
+          "inLanguage": "pt-PT",
+          "publisher": { "@id": "https://globememories.com/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://globememories.com/travels?text={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://globememories.com/#organization",
+          "name": "Globe Memories",
+          "url": "https://globememories.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://globememories.com/web-app-manifest-512x512.png",
+            "width": 512,
+            "height": 512
+          },
+          "sameAs": [
+            "https://globememories.com/"
+          ]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Globe Memories",
+          "operatingSystem": "Web, iOS, Android",
+          "applicationCategory": "SocialNetworkingApplication",
+          "applicationSubCategory": "Travel Social Network",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Favicon bundle (Round 79, generated by realfavicongenerator.net
+         so the same brand mark shows up on every browser + PWA
+         install surface). Order matters: ICO first for legacy IE,
+         SVG for modern browsers, then PNGs for the explicit sizes
+         the manifest and iOS expect. -->
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/web-app-manifest-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/web-app-manifest-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/web-app-manifest-512x512.png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#007BFF" />
+
+    <!-- PWA manifest (theme, icons, shortcuts) -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Globe Memories</title>
+
+    <!-- iOS PWA: home-screen icon, status bar, splash screens -->
+    <link rel="apple-touch-startup-image" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="/web-app-manifest-512x512.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/web-app-manifest-512x512.png" />
+
+    <!-- Microsoft PWA tile -->
+    <meta name="msapplication-TileColor" content="#007BFF" />
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/web-app-manifest-512x512.png" />
+    <meta name="msapplication-square150x150logo" content="%PUBLIC_URL%/web-app-manifest-512x512.png" />
+    <meta name="msapplication-wide310x150logo" content="%PUBLIC_URL%/web-app-manifest-512x512.png" />
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

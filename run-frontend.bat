@@ -1,3 +1,3 @@
 @echo off
-cd /d C:\Users\danis\Desktop\GitHubRepos\globeMemoriesReact
+cd /d C:\Users\Tiago\Desktop\Globe Memories -  Github\globeMemoriesReact
 call npm start

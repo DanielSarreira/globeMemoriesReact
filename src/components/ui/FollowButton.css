@@ -1,0 +1,97 @@
+/* ========================================================================
+   Globe Memories — FollowButton v3
+   Single source of truth for the "Seguir / Pedir para seguir / Pendente /
+   A seguir" interaction. Sizes, variants, busy state.
+   ======================================================================== */
+
+.gm-follow-btn {
+  appearance: none;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--gm-radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: var(--gm-weight-semibold);
+  user-select: none;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out),
+              border-color var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-follow-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+.gm-follow-btn:active:not(:disabled) { transform: scale(0.97); }
+
+/* Sizes — keep in sync with the rest of the v3 buttons. */
+.gm-follow-btn--sm {
+  font-size: 11.5px;
+  height: 28px;
+  padding: 0 12px;
+}
+.gm-follow-btn--md {
+  font-size: 13px;
+  height: 36px;
+  padding: 0 16px;
+}
+.gm-follow-btn--lg {
+  font-size: 14px;
+  height: 44px;
+  padding: 0 22px;
+}
+
+/* Primary (default "Seguir" / "Pedir para seguir"). */
+.gm-follow-btn--primary {
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 123, 255, 0.28);
+}
+.gm-follow-btn--primary:hover:not(:disabled) {
+  background: var(--gm-brand-hover);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.36);
+}
+
+/* Ghost (secondary — "A seguir", "Pendente"). */
+.gm-follow-btn--ghost {
+  background: var(--gm-bg-sunken);
+  color: var(--gm-text-1);
+  border-color: var(--gm-border);
+}
+.gm-follow-btn--ghost:hover:not(:disabled) {
+  background: var(--gm-bg-card);
+  border-color: var(--gm-text-3);
+}
+
+/* Busy state. */
+.gm-follow-btn--busy {
+  position: relative;
+  pointer-events: none;
+}
+.gm-follow-btn--busy > * { opacity: 0.7; }
+
+/* Skeleton state while the relationship is being detected. */
+.gm-follow-btn--skeleton {
+  background: var(--gm-bg-sunken);
+  cursor: default;
+  min-width: 96px;
+}
+.gm-follow-btn__skeleton {
+  display: block;
+  width: 60%;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg,
+    var(--gm-divider) 0%,
+    var(--gm-bg-card) 50%,
+    var(--gm-divider) 100%);
+  background-size: 200% 100%;
+  animation: gm-follow-shimmer 1.4s infinite;
+}
+@keyframes gm-follow-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}

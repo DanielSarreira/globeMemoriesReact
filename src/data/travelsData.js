@@ -104,7 +104,7 @@ const travels = [
 
   {
     id: 2,
-    name: "Viagem a Lisboa Tiago",
+    name: "Viagem Bejas",
     user: "tiago",
     category: ["Cidade", "Cultural"],
     country: "Portugal",
@@ -196,26 +196,26 @@ const travels = [
 
   {
     id: 3,
-    name: "Viagem a Lisboa",
-    user: "tiago",
+    name: "Viagem a Aveiro",
+    user: "João Santos",
     category: ["Cidade", "Cultural"],
     country: "Portugal",
     city: "Aveiro",
     days: 2,
     language: "Português",
-    climate: "Média do Clima foi de 30º, apanhamos uma excelente temperatura!",
+    climate: "As manhãs foram frias cerca de 8°C, mas as tardes foram mais suaves!",
     localTransport: ["Carro"],
-    startDate: "2025-02-02",
-    endDate: "2025-02-05",
+    startDate: "2025-06-01",
+    endDate: "2025-06-03",
     BookingTripPaymentDate:"2025-01-01",
-    highlightImage: require('../images/highlightImage/aveiro.jpg'),
-    views: 100,
-    price: 70,
+    highlightImage: require('../images/highlightImage/aveiroH.webp'),
+    views: 123,
+    price: 265,
     priceDetails: {
-      hotel: 30,
-      transport: 10,
-      food: 30,
-      extras: 10,
+      hotel: 140,
+      transport: 50,
+      food: 60,
+      extras: 15,
     },
     images_generalInformation: [
       require('../images/travels/aveiro1.jpg'),
@@ -241,9 +241,9 @@ const travels = [
       require('../images/travels/aveiro15.jpg'),
       require('../images/travels/aveiro16.jpg'),
     ],
-    stars: 4,
-    description: "Aveiro é uma cidade portuguesa e capital da sub-região da Região de Aveiro, pertencendo à região do Centro e ao distrito de Aveiro e ainda à antiga província da Beira Litoral. A cidade possui 62.653 habitantes (2021) e é sede do Município de Aveiro que tem uma área total de 197,58 km2, 80 978 habitantes em 2021 e uma densidade populacional de 410 hab./km2, subdividido em 10 freguesias.",
-    longDescription: "Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências única.Descrição longa da viagem A, com detalhes sobre os pontos turísticos visitados, comidas típicas e experiências única.",
+    stars: 5,
+    description: "Fui a Aveiro durante dois dias, numa escapadinha curta mas bem aproveitada. Explorei o centro histórico, caminhei junto aos canais e fiz um passeio de moliceiro para conhecer melhor a cidade. Passei pela zona da Ria, pelas salinas e terminei o dia com um jantar tranquilo, onde provei os tradicionais ovos moles.",
+    longDescription: "No segundo dia, fui até à Costa Nova, com as casas às riscas, e aproveitei para dar uma caminhada junto à praia. Antes de regressar, ainda houve tempo para um café no centro e uma última volta pelas ruas mais emblemáticas da cidade.Foi uma viagem curta, mas suficiente para conhecer o essencial de Aveiro e ficar com vontade de voltar.",
     activities: ["Caminhada nas montanhas", "Passeio de barco", "Visita ao Castelo de São Jorge"],
     accommodations: [
       {
@@ -278,8 +278,8 @@ const travels = [
     negativePoints: "Lorem Ipsun",
 
     // Campos adicionados para compatibilidade com Home.js
-    likes: 60, // Valor inicial de curtidas
-    comments: [], // Array inicial de comentários (vazio por padrão)
+    likes: 13, // Valor inicial de curtidas
+    comments: ["aveiro é lindo!"], // Array inicial de comentários (vazio por padrão)
     privacy: 'public', // Privacidade padrão
     userProfilePicture: 'https://randomuser.me/api/portraits/men/1.jpg', // Foto de perfil placeholder
   },

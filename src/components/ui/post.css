@@ -1,0 +1,611 @@
+/* ========================================================================
+   Post — premium social post.
+   Photo first, story second, metadata third. Threads / Instagram / Polarsteps inspired.
+   ======================================================================== */
+
+.gm-post {
+  background: var(--gm-bg-card);
+  border-bottom: 1px solid var(--gm-divider);
+  padding: var(--gm-space-6) 0 var(--gm-space-2);
+  position: relative;
+  font-family: var(--gm-font-sans);
+  cursor: pointer;
+  transition: background var(--gm-dur-base) var(--gm-ease-out);
+}
+
+.gm-post:last-child { border-bottom: 0; }
+
+@media (min-width: 1024px) {
+  .gm-post {
+    padding: var(--gm-space-8) 0 var(--gm-space-3);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gm-post:hover {
+    background: var(--gm-bg-card-hover);
+  }
+}
+
+/* ── Header ────────────────────────────────────────────── */
+.gm-post__header {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: 0 var(--gm-space-5);
+  margin-bottom: var(--gm-space-4);
+}
+
+@media (min-width: 1024px) {
+  .gm-post__header { padding: 0 var(--gm-space-6); margin-bottom: var(--gm-space-5); }
+}
+
+.gm-post__avatar-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__avatar-btn:hover { transform: scale(1.04); }
+.gm-post__avatar-btn:active { transform: scale(0.96); }
+
+.gm-post__author {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gm-post__author-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: var(--gm-weight-bold);
+  color: var(--gm-text-1);
+  letter-spacing: var(--gm-tracking-tight);
+  line-height: 1.2;
+  /* Botão de navegação para o perfil — alinhado com o avatar
+     à esquerda, que já tem o mesmo comportamento. */
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__author-name:hover { color: var(--gm-brand); }
+.gm-post__author-name:focus-visible {
+  outline: 2px solid var(--gm-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.gm-post__author-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+
+.gm-post__author-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.gm-post__author-meta-row--muted {
+  color: var(--gm-text-4);
+}
+
+.gm-post__author-pin {
+  color: var(--gm-brand);
+  flex-shrink: 0;
+}
+
+.gm-post__more {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--gm-radius-pill);
+  color: var(--gm-text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__more:hover { background: var(--gm-bg-sunken); color: var(--gm-text-1); }
+.gm-post__more:active { transform: scale(0.94); }
+
+.gm-post__menu {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-lg);
+  padding: 6px;
+  z-index: 50;
+  min-width: 220px;
+}
+
+.gm-post__menu button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--gm-radius-sm);
+  color: var(--gm-danger);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__menu button:hover { background: var(--gm-bg-sunken); }
+
+/* ── Title (optional) ──────────────────────────────────── */
+.gm-post__title {
+  margin: 0 var(--gm-space-5) var(--gm-space-4);
+  font-size: 17px;
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  line-height: 1.3;
+  color: var(--gm-text-1);
+}
+
+@media (min-width: 1024px) {
+  .gm-post__title { margin: 0 var(--gm-space-6) var(--gm-space-4); font-size: 19px; }
+}
+
+/* ── Media carousel container (HUGE photo) ─────────────── */
+.gm-post__media {
+  padding: 0 var(--gm-space-4);
+  margin-bottom: var(--gm-space-4);
+}
+
+@media (min-width: 1024px) {
+  .gm-post__media { padding: 0 var(--gm-space-5); margin-bottom: var(--gm-space-5); }
+}
+
+.gm-post__media-frame {
+  position: relative;
+  border-radius: var(--gm-radius-xl);
+  overflow: hidden;
+  background: var(--gm-bg-photo);
+  isolation: isolate;
+  box-shadow: var(--gm-shadow-photo);
+  transition: transform var(--gm-dur-base) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+}
+
+@media (min-width: 1024px) {
+  .gm-post:hover .gm-post__media-frame {
+    transform: translateY(-2px);
+    box-shadow: var(--gm-shadow-photo-hover);
+  }
+}
+
+.gm-post__media-frame .gm-carousel {
+  border-radius: 0;
+}
+
+/* Floating meta pills on top of the photo (categories, stars, price).
+   On desktop the categories wrap in the corner and the rating +
+   price sit on the right. On mobile the overlay hides entirely —
+   categories move to a dedicated chip row under the photo so they
+   never overlap the user's tap targets and stay readable. */
+.gm-post__media-meta {
+  position: absolute;
+  top: 34px;
+  left: 14px;
+  right: 14px;
+  display: none;
+  align-items: flex-start;
+  gap: 6px;
+  z-index: 5;
+  pointer-events: none;
+  max-width: calc(100% - 28px);
+}
+
+.gm-post__media-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.gm-post__media-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--gm-radius-pill);
+  background: rgba(15, 18, 28, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.gm-post__media-meta-side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.gm-post__media-pill--stars {
+  background: rgba(255, 153, 0, 0.92);
+  color: #FFFFFF;
+  font-weight: var(--gm-weight-bold);
+}
+
+.gm-post__media-pill--price {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0A0E1A;
+  font-weight: var(--gm-weight-bold);
+}
+
+/* Round 49 — feed parity with /travels.
+   "Multidestino" pill (brand primary blue) vs "Destino Único" pill
+   (slate). Uses the same color tokens as
+   .gm-travel-card__pill--multi / --single in
+   src/styles/pages/travels.css so the two surfaces match. */
+.gm-post__media-pill--multi {
+  background: rgba(0, 123, 255, 0.92);
+  color: #FFFFFF;
+  font-weight: var(--gm-weight-bold);
+}
+
+.gm-post__media-pill--single {
+  background: rgba(71, 85, 105, 0.92);
+  color: #FFFFFF;
+  font-weight: var(--gm-weight-bold);
+}
+
+.gm-post__media-spacer { flex: 1; }
+
+/* ── Mobile category strip ──────────────────────────────────
+   On phones the categories are surfaced as a clean horizontal row
+   of light pills right under the photo. Static (no scroll, no
+   auto-move) so it stays calm and matches the design system. */
+.gm-post__categories-mobile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 16px 14px 18px;
+}
+
+.gm-post__categories-mobile .gm-post__media-pill {
+  background: var(--gm-bg-soft);
+  color: var(--gm-text);
+  box-shadow: none;
+  border: 1px solid var(--gm-border-soft);
+  font-weight: var(--gm-weight-semibold);
+}
+
+/* Round 49 — make the multi/single modifier pills win over the
+   mobile strip's light base background. Two-class selector gives
+   them the same specificity as the rule above, and they come
+   later in the file so they take effect. */
+.gm-post__categories-mobile .gm-post__media-pill--multi,
+.gm-post__categories-mobile .gm-post__media-pill--single {
+  background-image: none;
+  color: #FFFFFF;
+  border-color: transparent;
+  font-weight: var(--gm-weight-bold);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+.gm-post__categories-mobile .gm-post__media-pill--multi {
+  background: rgba(0, 123, 255, 0.92);
+}
+.gm-post__categories-mobile .gm-post__media-pill--single {
+  background: rgba(71, 85, 105, 0.92);
+}
+
+@media (min-width: 768px) {
+  .gm-post__media-meta {
+    display: flex;
+  }
+  .gm-post__categories-mobile { display: none; }
+}
+
+/* Heart burst on double-tap (Instagram-style) */
+.gm-post__heart-burst {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 10;
+  color: var(--gm-danger);
+  filter: drop-shadow(0 6px 20px rgba(224, 56, 79, 0.45));
+  animation: gm-heart-burst 900ms var(--gm-ease-out) forwards;
+}
+
+@keyframes gm-heart-burst {
+  0%   { opacity: 0; transform: scale(0.4); }
+  20%  { opacity: 1; transform: scale(1.18); }
+  60%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+/* ── Caption (description) ─────────────────────────────── */
+.gm-post__caption {
+  padding: 0 var(--gm-space-5);
+  margin-bottom: var(--gm-space-3);
+}
+
+.gm-post__caption--clickable {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__caption--clickable:hover {
+  background: var(--gm-bg-soft);
+}
+
+@media (min-width: 1024px) {
+  .gm-post__caption { padding: 0 var(--gm-space-6); margin-bottom: var(--gm-space-4); }
+}
+
+.gm-post__caption-text {
+  margin: 0;
+  font-size: 15px;
+  color: var(--gm-text-1);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ── Actions row ──────────────────────────────────────── */
+.gm-post__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--gm-space-2) var(--gm-space-3) 0;
+  margin-top: var(--gm-space-2);
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .gm-post__actions { padding: var(--gm-space-2) var(--gm-space-4) 0; }
+}
+
+.gm-post__action {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--gm-radius-pill);
+  color: var(--gm-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  transition: color var(--gm-dur-fast) var(--gm-ease-out),
+              background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__action:hover { background: var(--gm-bg-sunken); color: var(--gm-text-1); }
+.gm-post__action:active { transform: scale(0.94); }
+
+.gm-post__action-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+}
+
+.gm-post__action--liked { color: var(--gm-danger); }
+.gm-post__action--liked:hover { color: var(--gm-danger); background: rgba(224, 56, 79, 0.08); }
+
+.gm-post__action--saved { color: var(--gm-accent); }
+.gm-post__action--saved:hover { color: var(--gm-accent); background: var(--gm-accent-soft); }
+
+.gm-post__action-spacer { flex: 1; }
+
+/* ── Comments inline ─────────────────────────────────── */
+.gm-post__view-all {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: var(--gm-space-1) var(--gm-space-5) 0;
+  color: var(--gm-text-3);
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  display: block;
+  text-align: left;
+  margin-bottom: var(--gm-space-2);
+  transition: color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-post__view-all:hover { color: var(--gm-brand); }
+
+.gm-post__comments {
+  padding: var(--gm-space-2) var(--gm-space-5) var(--gm-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gm-space-4);
+}
+
+@media (min-width: 1024px) {
+  .gm-post__comments { padding: var(--gm-space-3) var(--gm-space-6) var(--gm-space-2); }
+}
+
+.gm-post__empty-comments {
+  margin: var(--gm-space-3) 0;
+  color: var(--gm-text-3);
+  font-size: var(--gm-text-sm);
+  text-align: center;
+}
+
+/* Inline comment */
+.gm-comment {
+  display: flex;
+  gap: var(--gm-space-3);
+}
+
+.gm-comment__body { flex: 1; min-width: 0; }
+.gm-comment__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  color: var(--gm-text-3);
+}
+.gm-comment__author {
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+}
+.gm-comment__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gm-text-1);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.gm-comment__actions {
+  display: flex;
+  gap: var(--gm-space-4);
+  margin-top: 4px;
+}
+.gm-comment__action {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-comment__action:hover { color: var(--gm-text-1); }
+.gm-comment__action--liked { color: var(--gm-danger); }
+
+.gm-comment__replies {
+  margin-left: var(--gm-space-4);
+  margin-top: var(--gm-space-3);
+  padding-left: var(--gm-space-3);
+  border-left: 1px solid var(--gm-divider);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gm-space-3);
+}
+
+.gm-comment__reply-form {
+  margin-top: var(--gm-space-2);
+  display: flex;
+  gap: var(--gm-space-2);
+}
+.gm-comment__reply-input {
+  flex: 1;
+  background: var(--gm-bg-sunken);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 36px;
+  color: var(--gm-text-1);
+  font-family: inherit;
+}
+.gm-comment__reply-input:focus { outline: 0; border-color: var(--gm-brand); box-shadow: var(--gm-shadow-focus); }
+
+/* Composer */
+.gm-post__composer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gm-space-3);
+  padding: var(--gm-space-4) var(--gm-space-5) 0;
+  border-top: 1px solid var(--gm-divider);
+  margin-top: var(--gm-space-4);
+}
+
+@media (min-width: 1024px) {
+  .gm-post__composer { padding: var(--gm-space-4) var(--gm-space-6) 0; }
+}
+
+.gm-post__composer-input {
+  flex: 1;
+  background: var(--gm-bg-sunken);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 40px;
+  color: var(--gm-text-1);
+  font-family: inherit;
+}
+.gm-post__composer-input:focus { outline: 0; border-color: var(--gm-brand); box-shadow: var(--gm-shadow-focus); }
+
+.gm-post__composer-send {
+  appearance: none;
+  border: 0;
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--gm-radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-base) var(--gm-ease-out);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.28);
+}
+.gm-post__composer-send:hover { background: var(--gm-brand-hover); box-shadow: 0 6px 16px rgba(0, 123, 255, 0.36); }
+.gm-post__composer-send:active { transform: scale(0.94); }
+.gm-post__composer-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }

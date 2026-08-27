@@ -92,7 +92,7 @@ const TripErrorsModal = ({ isOpen, errors = [], onClose, onJumpToSection }) => {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '16px 20px',
-            borderBottom: '2px solid #e74c3c',
+            borderBottom: '2px solid #DC2626',
             backgroundColor: '#fff5f5',
             borderTopLeftRadius: '8px',
             borderTopRightRadius: '8px',
@@ -169,7 +169,7 @@ const TripErrorsModal = ({ isOpen, errors = [], onClose, onJumpToSection }) => {
                   {group.sectionLabel}
                   <span
                     style={{
-                      backgroundColor: '#e74c3c',
+                      backgroundColor: '#DC2626',
                       color: 'white',
                       borderRadius: '12px',
                       padding: '2px 8px',
@@ -224,7 +224,7 @@ const TripErrorsModal = ({ isOpen, errors = [], onClose, onJumpToSection }) => {
                       aria-hidden="true"
                       style={{
                         flexShrink: 0,
-                        color: '#e74c3c',
+                        color: '#DC2626',
                         fontSize: '14px',
                         marginTop: '2px',
                       }}

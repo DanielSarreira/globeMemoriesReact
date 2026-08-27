@@ -1,0 +1,107 @@
+/* src/styles/components/landing-header.css — Round 59
+ *
+ * Small, discreet top bar for the Landing page (anonymous + signed-in).
+ * Fixed to the top, translucent with backdrop-blur so the hero content
+ * peeks through when scrolled.
+ */
+
+.gm-lh {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: calc(100% - 24px);
+  max-width: 960px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 14px 32px -18px rgba(15, 23, 42, 0.22);
+  font-family: inherit;
+}
+
+.gm-lh__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 8px 16px;
+  gap: 10px;
+}
+
+/* Brand */
+.gm-lh__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #0f172a;
+}
+.gm-lh__brand-logo {
+  height: 30px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Nav (right side) */
+.gm-lh__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gm-lh__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.gm-lh__link:hover {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+}
+
+.gm-lh__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.gm-lh__btn:active { transform: translateY(1px); }
+
+.gm-lh__btn--primary {
+  background: linear-gradient(135deg, #2563eb, #006aba);
+  color: #fff;
+  box-shadow: 0 10px 24px -12px rgba(37, 99, 235, 0.55);
+}
+.gm-lh__btn--primary:hover {
+  background: linear-gradient(135deg, #006aba, #005a96);
+  box-shadow: 0 12px 28px -10px rgba(37, 99, 235, 0.65);
+}
+
+/* Compact on tiny screens */
+@media (max-width: 480px) {
+  .gm-lh {
+    top: 8px;
+    width: calc(100% - 16px);
+  }
+  .gm-lh__inner { padding: 6px 8px 6px 12px; }
+  .gm-lh__brand-logo { height: 26px; }
+  .gm-lh__link span { display: none; }
+  .gm-lh__link { padding: 7px 8px; }
+}

@@ -526,7 +526,15 @@ svg.location-icon {
 
 /* Mobile Profile Header Improvements */
 .user-profile-page .profile-header {
-  padding: 1.5rem 1rem !important;
+  /* Round 80 — `padding-top: 85px` reserves space for the
+     enlarged avatar (125px on mobile, 110px on the
+     smallest phones), sitting half above / half below the
+     cover. The avatar pulls itself up with
+     `margin-top: -62px` on .profile-picture-container; this
+     85px of internal padding is the receiving end of that
+     overlap so the avatar isn't clipped by the card's top
+     edge. */
+  padding: 85px 1rem 1.5rem !important;
   margin-bottom: 1.5rem !important;
   border-radius: 16px !important;
   margin-top: 20px;
@@ -544,23 +552,60 @@ svg.location-icon {
 
 .user-profile-page .profile-header-main {
   margin-top: 0;
-  flex-direction: row !important;
+  /* Round 82 — `flex-direction: column` on mobile so the
+     avatar, the name/info block, and the action buttons each
+     get their own row instead of fighting for horizontal
+     space. With `row` the avatar at `width: 100%` would push
+     the name+info into a clipped second line; with `column`
+     every child sits on its own line and `align-items:
+     center` (set on the children individually) keeps the
+     whole profile hero visually centred, exactly like the
+     Instagram / X / LinkedIn mobile profile layout. */
+  flex-direction: column !important;
   gap: 1rem !important;
-  text-align: left !important;
-  align-items: flex-start !important;
+  text-align: center !important;
+  align-items: center !important;
 }
 
 .user-profile-page .profile-avatar-section {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;   /* Round 79 — centraliza o avatar no
+                                hero. O user pediu para a foto de
+                                perfil ficar centrada e a
+                                sobrepor-se à foto da capa. */
   flex-shrink: 0;
+  width: 100%;               /* ocupa a linha toda para o `justify-
+                                content: center` distribuir o
+                                filho único a meio. */
+}
+
+/* Round 82 — when the header is in column mode, the name +
+   location block and the action buttons also need to be
+   centred. They're children of `.profile-header-main`, so we
+   target them by their existing class names. */
+.user-profile-page .profile-header-main .profile-info-section,
+.user-profile-page .profile-header-main .profile-actions-section,
+.user-profile-page .profile-header-main .gm-profile__header-actions {
+  align-items: center !important;
+  text-align: center !important;
 }
 
 .user-profile-page .profile-picture-container {
-  width: 80px !important;
-  height: 80px !important;
-  border: 3px solid #fff !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  /* Round 80 — bigger mobile avatar (125px, matching
+     `.gm-avatar--xl` so the underlying <Avatar size="xl" />
+     fills the wrapper exactly). The container is
+     margin-top: -62.5px (half of 125) so the avatar sits
+     half above / half below the cover photo, with
+     z-index: 2 keeping it on top. The border was bumped
+     from 3px to 4px to give the bigger circle a chunkier
+     outline against the cover image. */
+  width: 125px !important;
+  height: 125px !important;
+  margin-top: -62px !important;
+  position: relative;
+  z-index: 2;
+  border: 4px solid #fff !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18) !important;
 }
 
 .user-profile-page .profile-info-section {
@@ -1235,15 +1280,23 @@ svg.location-icon {
   }
 
   .user-profile-page .profile-header {
-    padding: 1.25rem 0.85rem !important;
+    /* Round 80 — same logic as the regular mobile rule,
+       scaled down for the smallest phones. 75px top padding
+       receives the 110px avatar's 55px negative top. */
+    padding: 75px 0.85rem 1.25rem !important;
     margin-bottom: 1.25rem !important;
     border-radius: 14px !important;
   }
 
   .user-profile-page .profile-picture-container {
-    width: 70px !important;
-    height: 70px !important;
-    border-width: 2px !important;
+    /* Round 80 — scaled-down for the smallest phones.
+       110px keeps the centred + half-overlapping-the-cover
+       look without crowding the bio / name on narrow
+       screens. */
+    width: 110px !important;
+    height: 110px !important;
+    margin-top: -55px !important;
+    border-width: 3px !important;
   }
 
   .user-profile-page .profile-name {
@@ -1623,4 +1676,366 @@ svg.location-icon {
   .user-profile-page .destination-box {
     will-change: transform !important;
   }
+}
+/* =============================================================================
+   Round 46+ � User Travel Card (gm-profile-card) on /profile/{username}
+   These classes are referenced by UserProfile.js#UserTravelCard and were
+   not styled anywhere in the project. Adding the privacy badge styles here
+   so the Rascunho / Privada / P�blica / Seguidores pills render as proper
+   glassmorphism pills in the bottom-left of each trip photo.
+   ========================================================================== */
+
+.gm-profile-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-soft, rgba(15, 23, 42, 0.08));
+  border-radius: var(--radius-2xl, 20px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.gm-profile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg, 0 12px 32px rgba(15, 23, 42, 0.10));
+}
+
+.gm-profile-card__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.gm-profile-card__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-soft, rgba(15, 23, 42, 0.04));
+  overflow: hidden;
+}
+
+.gm-profile-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gm-profile-card:hover .gm-profile-card__photo {
+  transform: scale(1.04);
+}
+
+.gm-profile-card__photo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  background: linear-gradient(135deg, #e2e8f0, #f1f5f9);
+}
+
+.gm-profile-card__media-top {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.gm-profile-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-1, #0f172a);
+}
+
+.gm-profile-card__pill--price {
+  color: #047857;
+  background: rgba(220, 252, 231, 0.95);
+}
+
+/* Privacy badge � bottom-left of the photo, glassmorphism.
+   Round 46+ � Rascunho, Privada, P�blica, Seguidores. */
+.gm-profile-card__privacy {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  z-index: 2;
+  user-select: none;
+}
+
+.gm-profile-card__privacy--draft {
+  color: #ffffff;
+  background: rgba(120, 53, 15, 0.92); /* brown (Rascunho) */
+}
+
+.gm-profile-card__privacy--private {
+  color: #ffffff;
+  background: rgba(71, 85, 105, 0.92); /* slate */
+}
+
+.gm-profile-card__privacy--public {
+  color: #ffffff;
+  background: rgba(22, 163, 74, 0.92); /* green */
+}
+
+.gm-profile-card__privacy--followers {
+  color: #ffffff;
+  background: rgba(37, 99, 235, 0.92); /* blue */
+}
+
+/* Card body */
+.gm-profile-card__body {
+  position: relative;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gm-profile-card__owner-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 3;
+}
+
+.gm-profile-card__owner-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  color: var(--text-1, #0f172a);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.gm-profile-card__owner-btn:hover {
+  background: var(--bg-soft, #f1f5f9);
+}
+
+.gm-profile-card__owner-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.gm-profile-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1, #0f172a);
+  margin: 0;
+  line-height: 1.3;
+  /* Reserve space for the owner-actions buttons (top-right of body) */
+  padding-right: 70px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gm-profile-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-2, #475569);
+  margin: 0;
+}
+
+.gm-profile-card__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.gm-profile-card__cat-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--bg-soft, #f1f5f9);
+  color: var(--text-2, #475569);
+  text-transform: lowercase;
+}
+
+/* Visitor menu (kebab) � used when viewing another user's profile */
+.gm-profile-card__menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+}
+
+.gm-profile-card__menu-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  color: var(--text-1, #0f172a);
+  cursor: pointer;
+}
+
+.gm-profile-card__menu-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 5;
+}
+
+.gm-profile-card__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-1, #0f172a);
+  cursor: pointer;
+  text-align: left;
+}
+
+.gm-profile-card__menu-item:hover {
+  background: var(--bg-soft, #f1f5f9);
+}
+
+.gm-profile-card__menu-item--danger {
+  color: #dc2626;
+}
+
+.gm-profile-card__menu-item--danger:hover {
+  background: rgba(239, 68, 68, 0.10);
+}
+
+/* Grid wrapper for the profile cards */
+.gm-profile__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+  .gm-profile__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Round 46+ � Multi-destination pill in the bottom-left of the
+   profile travel card. Sits to the right of the privacy badge and
+   shows the number of stops in the trip. */
+.gm-profile-card__media-bottom {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
+}
+.gm-profile-card__media-bottom > * {
+  pointer-events: auto;
+}
+.gm-profile-card__multi {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
+  background: rgba(0, 123, 255, 0.92); /* primary brand blue */
+}
+
+/* Round 83 — languages-spoken chip row on the profile hero.
+   Sits under the bio and before the stats row. The label
+   "Línguas" is uppercase + brand-coloured, the chips are
+   soft-blue pills, and the whole block wraps cleanly on
+   narrow viewports. We keep the same height/alignment
+   vocabulary as the rest of the hero so the bio, languages
+   and stats visually line up. */
+.gm-profile__languages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: var(--gm-space-2) 0 var(--gm-space-4);
+}
+.gm-profile__languages-label {
+  font-size: 11px;
+  font-weight: var(--gm-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gm-text-3);
+}
+.gm-profile__languages-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gm-profile__lang-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--gm-brand-soft, rgba(0, 123, 255, 0.10));
+  color: var(--gm-brand, #007BFF);
+  font-size: 12px;
+  font-weight: var(--gm-weight-semibold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }

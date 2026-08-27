@@ -706,7 +706,7 @@
   border: 1px solid var(--border-color);
 }
 
-.travels-header {
+.profile-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -715,7 +715,7 @@
   border-bottom: 2px solid var(--border-color);
 }
 
-.travels-header h2 {
+.profile-section-header h2 {
   color: var(--primary-color);
   font-size: 2rem;
   font-weight: 700;

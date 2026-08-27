@@ -1,0 +1,103 @@
+/* SearchableDropdown — premium searchable combobox.
+   Extracted from pages/qanda.css in Round 83 so the TripWizard
+   País / Cidade selects can use the same look. The visual
+   design (pill-shaped input, sliding panel, focused +
+   selected states) is the same as the Q&A forum filters. */
+
+.gm-dd {
+  position: relative;
+  width: 100%;
+}
+
+.gm-dd__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.gm-dd__input {
+  width: 100%;
+  background: var(--gm-bg-sunken);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-pill);
+  padding: 10px 38px 10px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--gm-text-1);
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              border-color var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-dd__input:focus {
+  outline: none;
+  background: var(--gm-bg-card);
+  border-color: var(--gm-brand);
+  box-shadow: var(--gm-shadow-focus);
+}
+.gm-dd__input.has-value {
+  /* Round 83 — when the user has selected an option, show
+     the value as a normal text field (no sunken background),
+     so it doesn't look like an empty input with placeholder
+     text overlaid. */
+  background: var(--gm-bg-card);
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+}
+
+.gm-dd__arrow {
+  position: absolute;
+  right: 12px;
+  color: var(--gm-text-3);
+  pointer-events: none;
+  transition: transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-dd--open .gm-dd__arrow { transform: rotate(180deg); }
+
+.gm-dd__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  /* Round 85 — bumped from 50 to 1000 so the dropdown panel escapes any
+   * stacking context the wizard's card or step container might create
+   * (e.g. the wizard's sticky top/bottom bars with their own z-index). */
+  z-index: 1000;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-xl);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.gm-dd__option {
+  padding: 9px 12px;
+  border-radius: var(--gm-radius-sm);
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-dd__option--focused { background: var(--gm-bg-sunken); }
+.gm-dd__option--selected { color: var(--gm-brand); background: var(--gm-brand-soft); }
+
+.gm-dd__empty {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 14px;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-md);
+  font-size: 12.5px;
+  color: var(--gm-text-3);
+  text-align: center;
+}
+
+.gm-dd--disabled { opacity: 0.55; pointer-events: none; }

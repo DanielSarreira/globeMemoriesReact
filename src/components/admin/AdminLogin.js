@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaExclamationCircle } from 'react-icons/fa';
 import Toast from '../Toast';
-import { request, setAuthHeader, clearAuthToken, STORAGE_KEYS } from '../../axios_helper';
+import { request, setAuthHeader, STORAGE_KEYS } from '../../axios_helper';
 import logo from '../../images/Globe-Memories.png';
 import '../../styles/Admin.css';
 
 const AdminLogin = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -65,9 +65,8 @@ const AdminLogin = () => {
   const showToast = (message, type) => setToast({ message, type, show: true });
   const closeToast = () => setToast({ ...toast, show: false });
 
-  const validateEmail = (email) => {
-    if (!email.trim()) return 'Email é obrigatório';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Formato de email inválido';
+  const validateIdentifier = (value) => {
+    if (!value || !value.trim()) return 'Username ou email é obrigatório';
     return '';
   };
 
@@ -79,8 +78,8 @@ const AdminLogin = () => {
 
   const validateField = (name, value) => {
     switch (name) {
-      case 'email':
-        return validateEmail(value);
+      case 'identifier':
+        return validateIdentifier(value);
       case 'password':
         return validatePassword(value);
       default:
@@ -135,9 +134,11 @@ const AdminLogin = () => {
 
     try {
       // Backend endpoint: POST /admin/auth/login
-      // CredentialsDto expects { username, password (char[]) } but axios serialises strings fine.
+      // CredentialsDto expects { username, password (char[]) } — backend uses
+      // findByUsername, so the field is the *username* ("admin"), not the email.
+      // We accept both forms in the UI and send whatever the user typed.
       const response = await request('POST', '/admin/auth/login', {
-        username: formData.email, // backend uses username field, frontend calls it "email"
+        username: formData.identifier.trim(),
         password: formData.password,
       });
 
@@ -163,13 +164,13 @@ const AdminLogin = () => {
       setTimeout(() => navigate('/admin'), 1200);
     } catch (err) {
       const status = err?.response?.status;
-      const msg = err?.response?.data?.message;
       if (status === 429) {
-        showToast(msg || 'Demasiadas tentativas. Tente novamente mais tarde.', 'error');
+        showToast('Demasiadas tentativas. Tente novamente mais tarde.', 'error');
       } else if (status === 401) {
+        // Never reveal whether the user exists or the password is wrong
         handleFailedLogin();
       } else {
-        showToast(msg || 'Erro ao iniciar sessão. Tente novamente.', 'error');
+        showToast('Erro ao iniciar sessão. Tente novamente.', 'error');
       }
     } finally {
       setIsSubmitting(false);
@@ -196,30 +197,67 @@ const AdminLogin = () => {
           <br />
           Tempo restante: {Math.floor(blockTimeRemaining / 60)}:
           {(blockTimeRemaining % 60).toString().padStart(2, '0')}
+          <br />
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem('adminLoginAttempts');
+              localStorage.removeItem('adminLastFailedLogin');
+              setLoginAttempts(0);
+              setIsBlocked(false);
+              setBlockTimeRemaining(0);
+              showToast('Bloqueio local removido. Podes tentar de novo.', 'success');
+            }}
+            style={{
+              marginTop: '10px',
+              background: '#fff',
+              color: '#721c24',
+              border: '1px solid #721c24',
+              padding: '6px 14px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px',
+            }}
+          >
+            🔓 Desbloquear agora
+          </button>
         </div>
       )}
 
       <form onSubmit={handleLogin}>
         <div className="form-group-admin">
           <label>
-            Email de Administrador: <span style={{ color: 'red' }}>*</span>
+            Username ou email: <span style={{ color: 'red' }}>*</span>
           </label>
           <input
-            type="email"
-            name="email"
-            value={formData.email}
+            type="text"
+            name="identifier"
+            value={formData.identifier}
             onChange={handleChange}
-            placeholder="admin@globememories.com"
-            className={errors.email ? 'input-error' : ''}
+            placeholder=" "
+            className={errors.identifier ? 'input-error' : ''}
             disabled={isBlocked}
+            autoComplete="username"
+            spellCheck="false"
             required
           />
-          {errors.email && (
-            <div className="field-error" style={{ color: '#e74c3c', fontSize: '14px', marginTop: '5px' }}>
+          {errors.identifier && (
+            <div className="field-error" style={{ color: '#DC2626', fontSize: '14px', marginTop: '5px' }}>
               <FaExclamationCircle style={{ marginRight: '5px' }} />
-              {errors.email}
+              {errors.identifier}
             </div>
           )}
+        </div>
+
+        <div
+          style={{
+            color: '#6c757d',
+            fontSize: '12px',
+            marginBottom: '15px',
+            textAlign: 'center',
+          }}
+        >
+          🔒 Área restrita — acesso apenas a administradores autorizados.
         </div>
 
         <div className="form-group-admin">
@@ -257,7 +295,7 @@ const AdminLogin = () => {
             </button>
           </div>
           {errors.password && (
-            <div className="field-error" style={{ color: '#e74c3c', fontSize: '14px', marginTop: '5px' }}>
+            <div className="field-error" style={{ color: '#DC2626', fontSize: '14px', marginTop: '5px' }}>
               <FaExclamationCircle style={{ marginRight: '5px' }} />
               {errors.password}
             </div>

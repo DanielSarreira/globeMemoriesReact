@@ -226,14 +226,41 @@ export const validateDate = (value, { label, required = false, min, max } = {}) 
  * Sections map 1:1 to the React form tabs so the error modal can
  * render a "Jump to" button per group and we can drive tab badges.
  */
+// Round 41 — TRIP_FORM_SECTIONS aligned with the new wizard structure:
+//   • Step 1 — Destino (country + city)
+//   • Step 2 — O essencial (cover, title, summary, description, rating)
+//   • Step 3 — Datas e custos (start/end/total + breakdown)
+//   • Step 4 — A experiência (4 SUBTABS):
+//       4.1 Informações → categories, languagesSpoken
+//       4.2 Locais      → referencePoints, tripItinerary
+//       4.3 Galeria     → photos + photoCaptions
+//       4.4 Extras      → negativePoints
+//   • Step 5 — Rever e publicar (privacy, publish)
+//
+// `tab` is the route the error modal jumps to when the user clicks a
+// "Jump to" button. The legacy keys (accommodations, foods, etc.) are
+// kept below as ALIASES so the old FutureTravels form (if it ever
+// re-surfaces) still resolves the labels correctly.
 export const TRIP_FORM_SECTIONS = {
-  general: { tab: 'generalInfo', label: 'Informações Gerais', icon: '📋' },
-  accommodations: { tab: 'accommodation', label: 'Estadias', icon: '🏠' },
-  referencePoints: { tab: 'referencePoints', label: 'Pontos de Referência', icon: '📍' },
-  foods: { tab: 'food', label: 'Alimentação', icon: '🍽️' },
-  negativePoints: { tab: 'negativePoints', label: 'Pontos Negativos', icon: '⚠️' },
-  itinerary: { tab: 'itinerary', label: 'Itinerário', icon: '🗓️' },
-  media: { tab: 'generalInfo', label: 'Fotos & Vídeos', icon: '📷' },
+  // Round 41 — new 5-step structure
+  destination: { tab: 'where', label: 'Destino', icon: '📍', step: 0 },
+  essentials: { tab: 'essentials', label: 'O essencial', icon: '✨', step: 1 },
+  when: { tab: 'when', label: 'Datas e custos', icon: '📅', step: 2 },
+  experience: { tab: 'experience', label: 'A experiência', icon: '🌍', step: 3 },
+  experienceInfo: { tab: 'experience', subtab: 'info', label: 'Informações', icon: '🏨', step: 3 },
+  experienceLocais: { tab: 'experience', subtab: 'locais', label: 'Locais', icon: '📍', step: 3 },
+  experienceGaleria: { tab: 'experience', subtab: 'galeria', label: 'Galeria', icon: '📷', step: 3 },
+  experienceExtras: { tab: 'experience', subtab: 'extras', label: 'Extras', icon: '📝', step: 3 },
+  review: { tab: 'review', label: 'Rever e publicar', icon: '🚀', step: 4 },
+  // Legacy aliases — kept so the old FutureTravels/MyTravels form (if
+  // still present in a hidden route) resolves the labels without errors.
+  general: { tab: 'where', label: 'Destino', icon: '📍', step: 0, legacy: true },
+  accommodations: { tab: 'experience', subtab: 'info', label: 'Alojamento', icon: '🏨', step: 3, legacy: true },
+  referencePoints: { tab: 'experience', subtab: 'locais', label: 'Pontos de Referência', icon: '📍', step: 3, legacy: true },
+  foods: { tab: 'experience', subtab: 'info', label: 'Alimentação', icon: '🍽️', step: 3, legacy: true },
+  negativePoints: { tab: 'experience', subtab: 'extras', label: 'Pontos Negativos', icon: '⚠️', step: 3, legacy: true },
+  itinerary: { tab: 'experience', subtab: 'locais', label: 'Itinerário', icon: '🗓️', step: 3, legacy: true },
+  media: { tab: 'experience', subtab: 'galeria', label: 'Fotos & Vídeos', icon: '📷', step: 3, legacy: true },
 };
 
 /**

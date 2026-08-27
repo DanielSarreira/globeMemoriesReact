@@ -1,0 +1,155 @@
+/* ========================================================================
+   Globe Memories — Design Tokens v3
+   Brand: Primary #007BFF · Accent #FF9900
+   Premium social-feed feel. Threads / Instagram / Apple Photos inspired.
+   ======================================================================== */
+
+:root {
+  /* ── Brand ───────────────────────────────────────────── */
+  --gm-brand: #007BFF;
+  --gm-brand-hover: #0066E0;
+  --gm-brand-press: #0052B8;
+  --gm-brand-soft: #E5F0FF;
+  --gm-brand-tint: #F4F8FF;
+
+  --gm-accent: #FF9900;
+  --gm-accent-hover: #E68A00;
+  --gm-accent-soft: #FFF1DC;
+
+  /* ── Neutrals / Text ────────────────────────────── */
+  --gm-ink: #0A0E1A;
+  --gm-text-1: #0A0E1A;
+  --gm-text-2: #4B5263;
+  --gm-text-3: #7A8194;
+  --gm-text-4: #A8AEC0;
+  --gm-text-on-photo: #FFFFFF;
+  --gm-text-on-photo-soft: rgba(255, 255, 255, 0.82);
+  --gm-divider: rgba(10, 14, 26, 0.08);
+  --gm-border: rgba(10, 14, 26, 0.10);
+
+  /* ── Surfaces ─────────────────────────────────── */
+  --gm-bg-page: #FFFFFF;
+  --gm-bg-card: #FFFFFF;
+  --gm-bg-card-hover: #FBFBFD;
+  --gm-bg-sunken: #F6F7F9;
+  --gm-bg-photo: #0A0E1A;
+  --gm-bg-glass: rgba(255, 255, 255, 0.72);
+  --gm-bg-glass-strong: rgba(255, 255, 255, 0.92);
+  --gm-bg-glass-dark: rgba(10, 14, 26, 0.55);
+  --gm-bg-overlay: rgba(10, 14, 26, 0.72);
+
+  /* ── Gradients ─────────────────────────────────── */
+  --gm-grad-brand: linear-gradient(135deg, #007BFF 0%, #5BA8FF 100%);
+  --gm-grad-accent: linear-gradient(135deg, #FF9900 0%, #FFB94D 100%);
+  --gm-grad-midnight: linear-gradient(160deg, #0A0E1A 0%, #1A2240 100%);
+  --gm-grad-aurora: linear-gradient(135deg, #007BFF 0%, #B04BFF 50%, #FF7A8A 100%);
+
+  /* ── Photo overlays ─────────────────────────── */
+  --gm-photo-bottom: linear-gradient(0deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 55%);
+  --gm-photo-top: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 35%);
+
+  /* ── Semantic ─────────────────────────────────── */
+  --gm-success: #10A36B;
+  --gm-warning: #D89000;
+  --gm-danger: #E0384F;
+  --gm-info: #007BFF;
+
+  /* ── Typography ──────────────────────────────── */
+  --gm-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+
+  --gm-text-2xs: 11px;
+  --gm-text-xs:  12px;
+  --gm-text-sm:  13px;
+  --gm-text-base:15px;
+  --gm-text-md:  17px;
+  --gm-text-lg:  19px;
+  --gm-text-xl:  22px;
+  --gm-text-2xl: 28px;
+  --gm-text-3xl: 34px;
+
+  --gm-leading-tight: 1.15;
+  --gm-leading-snug: 1.3;
+  --gm-leading-normal: 1.5;
+  --gm-leading-relaxed: 1.65;
+
+  --gm-tracking-tight: -0.02em;
+  --gm-tracking-normal: 0em;
+  --gm-tracking-wide: 0.04em;
+
+  --gm-weight-regular: 400;
+  --gm-weight-medium: 500;
+  --gm-weight-semibold: 600;
+  --gm-weight-bold: 700;
+  --gm-weight-extrabold: 800;
+
+  /* ── Spacing (4-px grid) ────────────────────── */
+  --gm-space-0: 0;
+  --gm-space-1: 4px;
+  --gm-space-2: 8px;
+  --gm-space-3: 12px;
+  --gm-space-4: 16px;
+  --gm-space-5: 20px;
+  --gm-space-6: 24px;
+  --gm-space-8: 32px;
+  --gm-space-10: 40px;
+  --gm-space-12: 48px;
+  --gm-space-16: 64px;
+  --gm-space-20: 80px;
+  --gm-space-24: 96px;
+
+  /* ── Radius ───────────────────────────────────── */
+  --gm-radius-xs: 6px;
+  --gm-radius-sm: 10px;
+  --gm-radius-md: 14px;
+  --gm-radius-lg: 18px;
+  --gm-radius-xl: 24px;
+  --gm-radius-2xl: 32px;
+  --gm-radius-pill: 9999px;
+
+  /* ── Shadows ─────────────────────────────────── */
+  --gm-shadow-xs:    0 1px 2px rgba(10, 14, 26, 0.04);
+  --gm-shadow-sm:    0 2px 6px rgba(10, 14, 26, 0.06);
+  --gm-shadow-md:    0 6px 18px rgba(10, 14, 26, 0.08);
+  --gm-shadow-lg:    0 14px 36px rgba(10, 14, 26, 0.10);
+  --gm-shadow-xl:    0 28px 72px rgba(10, 14, 26, 0.16);
+  --gm-shadow-photo: 0 24px 60px rgba(10, 14, 26, 0.18);
+  --gm-shadow-photo-hover: 0 32px 80px rgba(10, 14, 26, 0.22);
+  --gm-shadow-focus: 0 0 0 4px rgba(0, 123, 255, 0.18);
+  --gm-shadow-glow:  0 8px 24px rgba(0, 123, 255, 0.32);
+
+  /* ── Motion ──────────────────────────────────── */
+  --gm-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --gm-ease-in:  cubic-bezier(0.55, 0, 1, 0.45);
+  --gm-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --gm-dur-fast: 120ms;
+  --gm-dur-base: 220ms;
+  --gm-dur-slow: 360ms;
+  --gm-dur-hero: 600ms;
+
+  /* ── Layout ──────────────────────────────────── */
+  --gm-feed-max-w: 640px;          /* single-column feed max width */
+  --gm-feed-widescreen-max: 720px;
+  --gm-topbar-h: 56px;
+  --gm-bottomnav-h: 64px;
+
+  /* ── Z-index ─────────────────────────────────── */
+  --gm-z-base: 1;
+  --gm-z-sticky: 100;
+  --gm-z-nav: 200;
+  --gm-z-fab: 300;
+  --gm-z-lightbox: 800;
+  --gm-z-sheet: 850;
+  --gm-z-toast: 1100;
+}
+
+/* ── Reduced motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gm-dur-fast: 0ms;
+    --gm-dur-base: 0ms;
+    --gm-dur-slow: 0ms;
+    --gm-dur-hero: 0ms;
+  }
+}

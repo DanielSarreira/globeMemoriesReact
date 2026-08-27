@@ -1,0 +1,54 @@
+/* src/styles/components/image-trail.css — Round 59
+ *
+ * Used by <ImageTrail> in the Landing hero. Trail items are 24×24 rounded
+ * thumbnails that fade out via the framer-motion animationSequence
+ * configured in the component (default: scale 1.2 → 0 over ~0.6s).
+ */
+
+.gm-trail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gm-trail__item {
+  position: absolute;
+  display: block;
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+}
+
+.gm-trail__frame {
+  position: relative;
+  overflow: hidden;
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+  box-shadow: 0 14px 30px -10px rgba(15, 23, 42, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: #e2e8f0;
+  transition: transform 0.25s ease;
+}
+
+.gm-trail__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.gm-trail__frame:hover img {
+  transform: scale(1.1);
+}
+
+@media (max-width: 640px) {
+  .gm-trail__frame {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+  }
+}

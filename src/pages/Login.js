@@ -1,131 +1,100 @@
-// src/pages/Login.js
-import React, { useState, useEffect, useContext } from 'react';
+// src/pages/Login.js — v3.5 Auth redesign
+// Premium, open, comfortable. No sidebar, no topbar — AuthLayout provides chrome.
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  Loader2,
+  AlertCircle,
+  ArrowRight,
+  Shield,
+  Sparkles,
+  X as IconX,
+  Check,
+  KeyRound,
+} from 'lucide-react';
 import { request, setAuthHeader } from '../axios_helper';
 import { useAuth } from '../context/AuthContext';
-import { FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
-import '../styles/pages/login-travel.css';
+import { useToast } from '../components/ui';
+import { LegalSheet } from '../components/LegalSheet';
+import '../styles/pages/auth5.css';
 
-// Modern travel-themed background video (optional, fallback to gradient if not loaded)
-const YOUTUBE_BG_URL = 'https://www.youtube.com/embed/YFhwEJosUsU?autoplay=1&mute=1&controls=0&loop=1&playlist=YFhwEJosUsU&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1';
-
-// Componente de Toast para feedback
-const Toast = ({ message, type, onClose, show }) => {
-  useEffect(() => {
-    if (show) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 2400); // 2400ms = 2.4 segundos
-      return () => clearTimeout(timer);
-    }
-  }, [show, onClose]);
-
-  if (!show) return null;
-
-  return (
-    <div className={`toast ${type}`}>
-      {message}
-    </div>
-  );
-};
+const BLOCK_DURATION_MS = 15 * 60 * 1000; // 15 min
+const MAX_ATTEMPTS = 5;
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-  });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockTimeRemaining, setBlockTimeRemaining] = useState(0);
-  const [toast, setToast] = useState({ message: '', type: '', show: false });
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
-  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const [resetPasswordData, setResetPasswordData] = useState({
-    token: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+
+  // Forgot / reset password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMessage, setForgotMessage] = useState(null);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [resetData, setResetData] = useState({ token: '', newPassword: '', confirmPassword: '' });
+  const [resetMessage, setResetMessage] = useState(null);
+  const [resetLoading, setResetLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [resetPasswordMessage, setResetPasswordMessage] = useState('');
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+
+  const toast = useToast();
   const { setUser } = useAuth();
   const navigate = useNavigate();
 
-  // Estados para o pop-up de instalação
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [supportsBeforeInstallPrompt, setSupportsBeforeInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-
+  // ── Remember me + initial mount ────────────────────────────────
   useEffect(() => {
-    // Carregar dados salvos se "Remember Me" estava ativo
     const savedUsername = localStorage.getItem('rememberedUsername');
     const wasRemembered = localStorage.getItem('rememberMe') === 'true';
-    
     if (savedUsername && wasRemembered) {
-      setFormData(prev => ({ ...prev, username: savedUsername }));
+      setFormData((prev) => ({ ...prev, username: savedUsername }));
       setRememberMe(true);
     }
 
-    // Detectar se é iOS
-    const userAgent = window.navigator.userAgent;
-    const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-    setIsIOS(isIOSDevice);
-
-    // Detectar se o navegador suporta beforeinstallprompt
-    const supportsPrompt = 'onbeforeinstallprompt' in window;
-    setSupportsBeforeInstallPrompt(supportsPrompt);
-
-    // Detectar se o app está em modo standalone (indicando que foi instalado)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    const isInstalledInLocalStorage = localStorage.getItem('isInstalled') === 'true';
-    setIsInstalled(isStandalone || isInstalledInLocalStorage);
-
-    // Detectar se é um dispositivo móvel
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
+    // Round 57 — if we just got kicked out by the ban filter on another
+    // tab, the AuthContext stashed the server message in sessionStorage.
+    // Surface it here as a danger toast so the user knows why they're
+    // back at the login page.
+    try {
+      const bannedMsg = sessionStorage.getItem('gm:banned-message');
+      if (bannedMsg) {
+        sessionStorage.removeItem('gm:banned-message');
+        // Defer one tick so the toast provider is mounted.
+        setTimeout(() => {
+          toast.danger(bannedMsg, { duration: 10000 });
+        }, 50);
+      }
+    } catch {}
   }, []);
 
-  // Efeito para verificar bloqueio de tentativas
+  // ── Rate limit timer ──────────────────────────────────────────
   useEffect(() => {
     const checkBlockStatus = () => {
-      const lastFailedAttempt = localStorage.getItem('lastFailedLoginAttempt');
-      const attemptCount = parseInt(localStorage.getItem('loginAttemptCount') || '0');
-      
-      if (lastFailedAttempt && attemptCount >= 5) {
-        const timeSinceLastAttempt = Date.now() - parseInt(lastFailedAttempt);
-        const blockDuration = 15 * 60 * 1000; // 15 minutos
-        
-        if (timeSinceLastAttempt < blockDuration) {
+      const lastFailed = localStorage.getItem('lastFailedLoginAttempt');
+      const count = parseInt(localStorage.getItem('loginAttemptCount') || '0', 10);
+
+      if (lastFailed && count >= MAX_ATTEMPTS) {
+        const elapsed = Date.now() - parseInt(lastFailed, 10);
+        if (elapsed < BLOCK_DURATION_MS) {
           setIsBlocked(true);
-          setBlockTimeRemaining(Math.ceil((blockDuration - timeSinceLastAttempt) / 1000));
-          setLoginAttempts(attemptCount);
-        } else {
-          // Reset after block period
-          localStorage.removeItem('lastFailedLoginAttempt');
-          localStorage.removeItem('loginAttemptCount');
-          setIsBlocked(false);
-          setBlockTimeRemaining(0);
-          setLoginAttempts(0);
+          setBlockTimeRemaining(Math.ceil((BLOCK_DURATION_MS - elapsed) / 1000));
+          setLoginAttempts(count);
+          return;
         }
+        localStorage.removeItem('lastFailedLoginAttempt');
+        localStorage.removeItem('loginAttemptCount');
+        setIsBlocked(false);
+        setBlockTimeRemaining(0);
+        setLoginAttempts(0);
       }
     };
 
@@ -134,71 +103,59 @@ const Login = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Funções de validação
+  // ── Validation helpers ────────────────────────────────────────
   const validateUsername = (value) => {
-    if (!value.trim()) return 'O nome de utilizador é obrigatório';
+    if (!value || !value.trim()) return 'O nome de utilizador é obrigatório';
+    if (value.length > 50) return 'O nome de utilizador é demasiado longo';
     if (value.length < 3) return 'O nome de utilizador deve ter pelo menos 3 caracteres';
     if (/\s/.test(value)) return 'O nome de utilizador não pode conter espaços';
-    if (!/^[a-zA-Z0-9._]+$/.test(value)) return 'O nome de utilizador deve conter apenas letras, números, pontos ou underscore';
+    if (!/^[a-zA-Z0-9._]+$/.test(value)) {
+      return 'O nome de utilizador deve conter apenas letras, números, pontos ou underscore';
+    }
     return '';
   };
 
   const validatePasswordLogin = (value) => {
     if (!value) return 'A palavra-passe é obrigatória';
     if (value.length < 8) return 'A palavra-passe deve ter pelo menos 8 caracteres';
+    if (value.length > 128) return 'A palavra-passe é demasiado longa';
     return '';
   };
 
-  // Função para validar campo individual
   const validateField = (name, value) => {
-    let error = '';
     switch (name) {
       case 'username':
-        error = validateUsername(value);
-        break;
+        return validateUsername(value);
       case 'password':
-        error = validatePasswordLogin(value);
-        break;
+        return validatePasswordLogin(value);
       default:
-        break;
+        return '';
     }
-    return error;
   };
 
-  // Função para validar todos os campos
   const validateAllFields = () => {
     const errors = {};
-    Object.keys(formData).forEach(key => {
-      const error = validateField(key, formData[key]);
-      if (error) errors[key] = error;
+    Object.keys(formData).forEach((key) => {
+      const err = validateField(key, formData[key]);
+      if (err) errors[key] = err;
     });
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // Função para mostrar toast
-  const showToast = (message, type) => {
-    setToast({ message, type, show: true });
-  };
-
-  const closeToast = () => {
-    setToast({ ...toast, show: false });
-  };
-
-  // Função para gerenciar tentativas de login
+  // ── Rate-limit helpers ────────────────────────────────────────
   const handleFailedLogin = () => {
-    const currentAttempts = loginAttempts + 1;
-    setLoginAttempts(currentAttempts);
-    localStorage.setItem('loginAttemptCount', currentAttempts.toString());
-    localStorage.setItem('lastFailedLoginAttempt', Date.now().toString());
+    const current = loginAttempts + 1;
+    setLoginAttempts(current);
+    localStorage.setItem('loginAttemptCount', String(current));
+    localStorage.setItem('lastFailedLoginAttempt', String(Date.now()));
 
-    if (currentAttempts >= 5) {
+    if (current >= MAX_ATTEMPTS) {
       setIsBlocked(true);
-      setBlockTimeRemaining(15 * 60); // 15 minutos
-      showToast('Muitas tentativas falhadas. Conta bloqueada por 15 minutos.', 'error');
+      setBlockTimeRemaining(15 * 60);
+      toast.danger('Muitas tentativas falhadas. Conta bloqueada por 15 minutos.');
     } else {
-      const remainingAttempts = 5 - currentAttempts;
-      showToast(`Credenciais incorretas. ${remainingAttempts} tentativa(s) restante(s).`, 'error');
+      toast.danger(`Credenciais incorretas. ${MAX_ATTEMPTS - current} tentativa(s) restante(s).`);
     }
   };
 
@@ -210,1186 +167,587 @@ const Login = () => {
     localStorage.removeItem('lastFailedLoginAttempt');
   };
 
-  // Função para formatar tempo de bloqueio
   const formatBlockTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  useEffect(() => {
-    if (isMobile && !isInstalled) {
-      setShowInstallPrompt(true);
-    }
-
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    window.addEventListener('appinstalled', () => {
-      localStorage.setItem('isInstalled', 'true');
-      setIsInstalled(true);
-      setShowInstallPrompt(false);
-    });
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', () => {});
-    };
-  }, [isMobile, isInstalled]);
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      try {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          localStorage.setItem('isInstalled', 'true');
-          setIsInstalled(true);
-        }
-        setDeferredPrompt(null);
-      } catch (error) {
-        console.error('Erro ao instalar PWA:', error);
-      }
-      setShowInstallPrompt(false);
-    }
-  };
-
-  const handleDismiss = () => {
-    setShowInstallPrompt(false);
-  };
-
+  // ── Change handlers ───────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-
-    // Validar campo em tempo real
-    const error = validateField(name, value);
-    setFieldErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
+    // eslint-disable-next-line no-control-regex
+    const sanitized = value.replace(/[ -]/g, '');
+    setFormData((prev) => ({ ...prev, [name]: sanitized }));
+    const err = validateField(name, sanitized);
+    setFieldErrors((prev) => ({ ...prev, [name]: err }));
   };
 
+  // ── Submit ────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (isSubmitting || isBlocked) return;
 
-    // Validar todos os campos
     if (!validateAllFields()) {
-      showToast('Por favor, corrija os erros no formulário antes de continuar.', 'error');
+      toast.danger('Por favor, corrija os erros no formulário antes de continuar.');
       return;
     }
 
     setIsSubmitting(true);
-    setErrorMessage('');
-    setSuccessMessage('');
-
     try {
-      await onLogin(e, formData.username, formData.password);
-    } catch (error) {
-      console.error('Erro no login:', error);
+      await onLogin(formData.username, formData.password);
+    } catch (err) {
+      console.error('Erro no login:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const onLogin = async (event, username, password) => {
-    event.preventDefault();
-    
+  const onLogin = async (username, password) => {
     try {
-      const response = await request(
-        "POST",
-        "/login",
-        {
-          username: username,
-          password: password,
-        }
-      );
-      
+      const response = await request('POST', '/auth/login', { username, password });
       setAuthHeader(response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data));
-      
-      // Reset login attempts on successful login
+      localStorage.setItem('user', JSON.stringify(response.data));
+
       resetLoginAttempts();
-      
-      // Implementar funcionalidade "Remember Me"
+
       if (rememberMe) {
         localStorage.setItem('rememberedUsername', username);
         localStorage.setItem('rememberMe', 'true');
-        // Definir token com expiração mais longa se "Remember Me" estiver ativo
         localStorage.setItem('rememberMeToken', response.data.token);
       } else {
         localStorage.removeItem('rememberedUsername');
         localStorage.removeItem('rememberMe');
         localStorage.removeItem('rememberMeToken');
       }
-      
+
       setUser(response.data);
-      showToast(`Bem-vindo, ${response.data.firstName || username}!`, 'success');
-      
-      // Aguardar um pouco antes de redirecionar para mostrar o toast
-      setTimeout(() => {
-        navigate("/");
-      }, 1500);
-      
+      toast.success(`Bem-vindo, ${response.data.firstName || username}!`);
+
+      setTimeout(() => navigate('/'), 1500);
     } catch (error) {
       setAuthHeader(null);
       console.error('Erro no login:', error);
-      
-      // Handle failed login attempt
       handleFailedLogin();
-      
-      // Verificar tipos específicos de erro
+
+      const serverMsg = error.response?.data?.message;
       if (error.response?.status === 401) {
-        // Não especificar qual campo está errado por segurança
         setFieldErrors({});
+      } else if (error.response?.status === 403) {
+        // Round 57 — banned account. Backend now returns a precise reason
+        // ("Conta suspensa: <motivo>") so we surface it to the user.
+        const bannedMsg = serverMsg && serverMsg.toLowerCase().includes('suspensa')
+          ? serverMsg
+          : 'Conta suspensa. Contacta o suporte para mais informações.';
+        toast.danger(bannedMsg, { duration: 10000 });
       } else if (error.response?.status === 429) {
-        showToast('Demasiadas tentativas. Tente novamente mais tarde.', 'error');
+        toast.danger('Demasiadas tentativas. Tente novamente mais tarde.');
       } else if (error.response?.status === 400) {
-        showToast('Dados inválidos. Verifique as informações inseridas.', 'error');
+        toast.danger('Dados inválidos. Verifique as informações inseridas.');
       } else if (error.response?.status === 500) {
-        showToast('Erro no servidor. Tente novamente mais tarde.', 'error');
+        toast.danger('Erro no servidor. Tente novamente mais tarde.');
       } else if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
-        showToast('Erro de ligação. Verifique a sua ligação à internet e tente novamente.', 'error');
+        toast.danger('Erro de ligação. Verifique a sua ligação à internet e tente novamente.');
       } else {
-        showToast('Erro ao iniciar sessão. Tente novamente mais tarde.', 'error');
+        toast.danger('Erro ao iniciar sessão. Tente novamente mais tarde.');
       }
     }
   };
 
+  // ── Forgot password ───────────────────────────────────────────
+  const openForgotPassword = () => {
+    setShowForgotModal(true);
+    setForgotEmail('');
+    setForgotMessage(null);
+  };
+
+  const closeForgotPassword = () => {
+    setShowForgotModal(false);
+    setForgotEmail('');
+    setForgotMessage(null);
+    setForgotLoading(false);
+  };
+
   const handleForgotPassword = async () => {
-    if (!forgotPasswordEmail.trim()) {
-      setForgotPasswordMessage('Por favor, insira o seu nome de utilizador ou email.');
+    if (!forgotEmail.trim()) {
+      setForgotMessage({ kind: 'error', text: 'Por favor, insira o seu nome de utilizador ou email.' });
       return;
     }
+    setForgotLoading(true);
+    setForgotMessage(null);
 
-    setForgotPasswordLoading(true);
-    setForgotPasswordMessage('');
+    // Simulated — the real `/forgot-password` endpoint isn't wired yet on the backend.
+    await new Promise((r) => setTimeout(r, 2000));
+    setForgotMessage({ kind: 'success', text: 'Email de recuperação enviado! Verifique a sua caixa de entrada.' });
 
-    try {
-      // Simular chamada para o backend (será implementado posteriormente)
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simular delay de rede
-      
-      // Por enquanto, apenas simular sucesso
-      setForgotPasswordMessage('✅ Email de recuperação enviado! Verifique a sua caixa de entrada.');
-      
-      // Em produção, aqui seria feita a chamada real:
-      // const response = await request('POST', '/forgot-password', { email: forgotPasswordEmail });
-      
-      // Após 2 segundos, fechar o modal de forgot password e abrir o modal de reset
-      setTimeout(() => {
-        setShowForgotPasswordModal(false);
-        setForgotPasswordEmail('');
-        setForgotPasswordMessage('');
-        setShowResetPasswordModal(true);
-      }, 2000);
-      
-    } catch (error) {
-      setForgotPasswordMessage('❌ Erro ao enviar email. Tente novamente.');
-    } finally {
-      setForgotPasswordLoading(false);
-    }
+    setTimeout(() => {
+      setShowForgotModal(false);
+      setForgotEmail('');
+      setForgotMessage(null);
+      setShowResetModal(true);
+    }, 2000);
+    setForgotLoading(false);
+  };
+
+  // ── Reset password ────────────────────────────────────────────
+  const closeResetModal = () => {
+    setShowResetModal(false);
+    setResetData({ token: '', newPassword: '', confirmPassword: '' });
+    setResetMessage(null);
+    setResetLoading(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
   };
 
   const handleResetPasswordChange = (e) => {
     const { name, value } = e.target;
-    setResetPasswordData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+    // eslint-disable-next-line no-control-regex
+    const sanitized = value.replace(/[ -]/g, '');
+    setResetData((prev) => ({ ...prev, [name]: sanitized }));
   };
 
-  const validatePassword = (password) => {
-    const minLength = 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (password.length < minLength) {
-      return 'A palavra-passe deve ter pelo menos 8 caracteres.';
-    }
-    if (!hasUpperCase) {
-      return 'A palavra-passe deve conter pelo menos uma letra maiúscula.';
-    }
-    if (!hasLowerCase) {
-      return 'A palavra-passe deve conter pelo menos uma letra minúscula.';
-    }
-    if (!hasNumbers) {
-      return 'A palavra-passe deve conter pelo menos um número.';
-    }
-    if (!hasSpecialChar) {
+  const validatePasswordStrength = (password) => {
+    if (password.length < 8) return 'A palavra-passe deve ter pelo menos 8 caracteres.';
+    if (!/[A-Z]/.test(password)) return 'A palavra-passe deve conter pelo menos uma letra maiúscula.';
+    if (!/[a-z]/.test(password)) return 'A palavra-passe deve conter pelo menos uma letra minúscula.';
+    if (!/\d/.test(password)) return 'A palavra-passe deve conter pelo menos um número.';
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       return 'A palavra-passe deve conter pelo menos um carácter especial.';
     }
     return null;
   };
 
   const handleResetPassword = async () => {
-    setResetPasswordMessage('');
-
-    // Validações
-    if (!resetPasswordData.token.trim()) {
-      setResetPasswordMessage('Código de recuperação é obrigatório.');
+    setResetMessage(null);
+    if (!resetData.token.trim()) {
+      setResetMessage({ kind: 'error', text: 'Código de recuperação é obrigatório.' });
+      return;
+    }
+    if (!resetData.newPassword.trim()) {
+      setResetMessage({ kind: 'error', text: 'Nova palavra-passe é obrigatória.' });
+      return;
+    }
+    if (!resetData.confirmPassword.trim()) {
+      setResetMessage({ kind: 'error', text: 'Confirmação da palavra-passe é obrigatória.' });
+      return;
+    }
+    const pwdError = validatePasswordStrength(resetData.newPassword);
+    if (pwdError) {
+      setResetMessage({ kind: 'error', text: pwdError });
+      return;
+    }
+    if (resetData.newPassword !== resetData.confirmPassword) {
+      setResetMessage({ kind: 'error', text: 'As palavras-passe não coincidem.' });
       return;
     }
 
-    if (!resetPasswordData.newPassword.trim()) {
-      setResetPasswordMessage('Nova palavra-passe é obrigatória.');
-      return;
-    }
+    setResetLoading(true);
+    await new Promise((r) => setTimeout(r, 2000));
+    setResetMessage({ kind: 'success', text: 'Palavra-passe alterada com sucesso!' });
 
-    if (!resetPasswordData.confirmPassword.trim()) {
-      setResetPasswordMessage('Confirmação da palavra-passe é obrigatória.');
-      return;
-    }
-
-    // Validar força da palavra-passe
-    const passwordError = validatePassword(resetPasswordData.newPassword);
-    if (passwordError) {
-      setResetPasswordMessage(passwordError);
-      return;
-    }
-
-    // Verificar se as palavras-passe coincidem
-    if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
-      setResetPasswordMessage('As palavras-passe não coincidem.');
-      return;
-    }
-
-    setResetPasswordLoading(true);
-
-    try {
-      // Simular chamada para o backend
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular sucesso
-      setResetPasswordMessage('✅ Palavra-passe alterada com sucesso!');
-      
-      // Em produção, seria algo como:
-      // await request('POST', '/reset-password', {
-      //   token: resetPasswordData.token,
-      //   newPassword: resetPasswordData.newPassword
-      // });
-      
-      // Fechar modal após 2 segundos e mostrar mensagem de sucesso no login
-      setTimeout(() => {
-        setShowResetPasswordModal(false);
-        setResetPasswordData({ token: '', newPassword: '', confirmPassword: '' });
-        setResetPasswordMessage('');
-        setSuccessMessage('Palavra-passe alterada com sucesso! Inicie sessão com a sua nova palavra-passe.');
-      }, 2000);
-      
-    } catch (error) {
-      setResetPasswordMessage('❌ Erro ao alterar palavra-passe. Tente novamente.');
-    } finally {
-      setResetPasswordLoading(false);
-    }
+    setTimeout(() => {
+      closeResetModal();
+      toast.success('Palavra-passe alterada com sucesso! Inicie sessão com a sua nova palavra-passe.');
+    }, 1500);
+    setResetLoading(false);
   };
 
-  const closeForgotPasswordModal = () => {
-    setShowForgotPasswordModal(false);
-    setForgotPasswordEmail('');
-    setForgotPasswordMessage('');
-    setForgotPasswordLoading(false);
-  };
-
-  const closeResetPasswordModal = () => {
-    setShowResetPasswordModal(false);
-    setResetPasswordData({ token: '', newPassword: '', confirmPassword: '' });
-    setResetPasswordMessage('');
-    setResetPasswordLoading(false);
-    setShowNewPassword(false);
-    setShowConfirmPassword(false);
-  };
+  // ── Render ────────────────────────────────────────────────────
+  const submitLabel = isSubmitting
+    ? 'A entrar…'
+    : isBlocked
+    ? `Bloqueado (${formatBlockTime(blockTimeRemaining)})`
+    : 'Entrar';
 
   return (
-    <>
-      {/* Travel-themed animated background */}
-      <div className="login-travel-bg">
-        <iframe
-          src={YOUTUBE_BG_URL}
-          title="Login Background Video"
-          frameBorder="0"
-          allow="autoplay; fullscreen"
-          allowFullScreen
-          tabIndex="-1"
-          aria-hidden="true"
-          style={{ pointerEvents: 'none' }}
-        />
-        {/* Gradient overlay for glassmorphism effect */}
-        <div className="login-travel-gradient" />
-        {/* Travel icons floating animation */}
-        <div className="travel-icons-floating">
-          <span role="img" aria-label="airplane">✈️</span>
-          <span role="img" aria-label="palm">🌴</span>
-          <span role="img" aria-label="mountain">🏔️</span>
-          <span role="img" aria-label="camera">📷</span>
-          <span role="img" aria-label="beach">🏖️</span>
-        </div>
-      </div>
-      <div className="login-travel-wrapper">
-        <div className="login-travel-card">
-          <div className="login-travel-header">
-            <img src={require('../images/Globe-Memories.png')} alt="Globe Memories Logo" className="travel-logo-img" /><br></br>
-            <div className="travel-slogan">Viaje. Explore. Lembre. Compartilhe.</div>
-          </div>
-          <form onSubmit={handleSubmit} className="login-travel-form">
-            <div className="input-group">
-              <label>Nome de Utilizador: <span style={{color: 'red'}}>*</span></label>
+    <div className="gm-auth5">
+      <header className="gm-auth5__header">
+        <span className="gm-auth5__eyebrow">
+          <Sparkles size={12} strokeWidth={2} /> Viaje · Explore · Lembre
+        </span>
+        {/* Round 59+ — Logo removed from this header. The bigger
+            brand mark now lives in the AuthLayout (gm-auth-layout
+            __logo-wrap) so it's consistent between /login and
+            /register and isn't duplicated. */}
+      </header>
+
+      <div className="gm-auth5__card">
+        <form onSubmit={handleSubmit} className="gm-auth5__form" noValidate>
+          {/* Username */}
+          <div className="gm-auth5__field">
+            <label htmlFor="login-username" className="gm-auth5__label">
+              <Mail size={12} strokeWidth={2} />
+              Nome de utilizador
+              <span className="gm-auth5__required" aria-hidden="true">*</span>
+            </label>
+            <div className={`gm-auth5__input-wrap${fieldErrors.username ? ' gm-auth5__input-wrap--error' : ''}`}>
+              <span className="gm-auth5__input-icon">
+                <Mail size={18} strokeWidth={1.75} />
+              </span>
               <input
+                id="login-username"
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                placeholder="Insira o seu nome de utilizador *"
-                className={fieldErrors.username ? 'input-error' : ''}
-                required
+                placeholder="Insira o seu nome de utilizador"
                 autoComplete="username"
                 disabled={isBlocked}
+                aria-invalid={Boolean(fieldErrors.username)}
+                aria-describedby={fieldErrors.username ? 'login-username-error' : undefined}
               />
-              {fieldErrors.username && (
-                <div className="field-error">
-                  <FaExclamationCircle style={{ marginRight: '5px' }} />
-                  {fieldErrors.username}
-                </div>
-              )}
             </div>
-            <div className="input-group">
-              <label>Palavra-passe: <span style={{color: 'red'}}>*</span></label>
-              <div className="password-group-inline">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Insira a sua palavra-passe *"
-                  className={fieldErrors.password ? 'input-error' : ''}
-                  required
-                  autoComplete="current-password"
-                  disabled={isBlocked}
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                  disabled={isBlocked}
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+            {fieldErrors.username && (
+              <div id="login-username-error" className="gm-auth5__error" role="alert">
+                <AlertCircle size={12} strokeWidth={2} />
+                {fieldErrors.username}
               </div>
-              {fieldErrors.password && (
-                <div className="field-error">
-                  <FaExclamationCircle style={{ marginRight: '5px' }} />
-                  {fieldErrors.password}
-                </div>
-              )}
-            </div>
-            <div className="login-travel-options">
-              <label className="remember-me">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                  disabled={isBlocked}
-                />
-                Lembrar-me
-              </label>
+            )}
+          </div>
+
+          {/* Password */}
+          <div className="gm-auth5__field">
+            <label htmlFor="login-password" className="gm-auth5__label">
+              <Lock size={12} strokeWidth={2} />
+              Palavra-passe
+              <span className="gm-auth5__required" aria-hidden="true">*</span>
+            </label>
+            <div className={`gm-auth5__input-wrap${fieldErrors.password ? ' gm-auth5__input-wrap--error' : ''}`}>
+              <span className="gm-auth5__input-icon">
+                <Lock size={18} strokeWidth={1.75} />
+              </span>
+              <input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Insira a sua palavra-passe"
+                autoComplete="current-password"
+                disabled={isBlocked}
+                className="has-icon-right"
+                aria-invalid={Boolean(fieldErrors.password)}
+                aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
+              />
               <button
                 type="button"
-                className="forgot-password"
-                onClick={() => setShowForgotPasswordModal(true)}
+                className="gm-auth5__toggle"
+                onClick={() => setShowPassword((v) => !v)}
                 disabled={isBlocked}
+                aria-label={showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
+                tabIndex={-1}
               >
-                Esqueceu a palavra-passe?
+                {showPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
               </button>
             </div>
-
-            {/* Avisos de segurança */}
-            {loginAttempts > 0 && loginAttempts < 5 && (
-              <div style={{
-                padding: '10px',
-                backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                border: '1px solid rgba(255, 193, 7, 0.3)',
-                borderRadius: '8px',
-                color: '#856404',
-                fontSize: '0.9rem',
-                textAlign: 'center',
-                margin: '10px 0'
-              }}>
-                ⚠️ {5 - loginAttempts} tentativa(s) restante(s) antes do bloqueio
+            {fieldErrors.password && (
+              <div id="login-password-error" className="gm-auth5__error" role="alert">
+                <AlertCircle size={12} strokeWidth={2} />
+                {fieldErrors.password}
               </div>
             )}
-
-            {isBlocked && (
-              <div style={{
-                padding: '12px',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                border: '1px solid rgba(220, 53, 69, 0.3)',
-                borderRadius: '8px',
-                color: '#721c24',
-                fontSize: '0.9rem',
-                textAlign: 'center',
-                margin: '10px 0'
-              }}>
-                🔒 Conta bloqueada por excesso de tentativas. Tempo restante: {formatBlockTime(blockTimeRemaining)}
-              </div>
-            )}
-            {errorMessage && (
-              <div className="error-message">
-                <FaExclamationCircle /> {errorMessage}
-              </div>
-            )}
-            {successMessage && (
-              <div className="success-message">
-                <FaCheckCircle /> {successMessage}
-              </div>
-            )}
-            <button 
-              type="submit" 
-              className="login-travel-btn" 
-              disabled={isSubmitting || isBlocked}
-            >
-              {isSubmitting ? 'A Entrar...' : isBlocked ? `Bloqueado (${formatBlockTime(blockTimeRemaining)})` : 'Entrar'}
-            </button>
-          </form>
-          <div className="login-travel-register">
-            <span>Ainda não tem conta?</span>
-            <Link to="/register" className="register-btn">
-              Registar Agora
-            </Link>
           </div>
+
+          {/* Remember + forgot */}
+          <div className="gm-auth5__row">
+            <label className="gm-auth5__check">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isBlocked}
+              />
+              Lembrar-me
+            </label>
+            <button
+              type="button"
+              className="gm-auth5__link"
+              onClick={openForgotPassword}
+              disabled={isBlocked}
+            >
+              Esqueci-me da palavra-passe
+            </button>
+          </div>
+
+          {/* Attempts warning */}
+          {loginAttempts > 0 && loginAttempts < MAX_ATTEMPTS && (
+            <div className="gm-auth5__notice gm-auth5__notice--warning" role="status">
+              <AlertCircle size={14} strokeWidth={2} />
+              {MAX_ATTEMPTS - loginAttempts} tentativa(s) restante(s) antes do bloqueio.
+            </div>
+          )}
+
+          {/* Block notice */}
+          {isBlocked && (
+            <div className="gm-auth5__notice gm-auth5__notice--danger" role="status">
+              <Shield size={14} strokeWidth={2} />
+              Conta bloqueada por excesso de tentativas. Tempo restante: {formatBlockTime(blockTimeRemaining)}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="gm-auth5__submit"
+            disabled={isSubmitting || isBlocked}
+          >
+            {isSubmitting && <Loader2 size={18} className="gm-spinner" strokeWidth={2} />}
+            <span>{submitLabel}</span>
+            {!isSubmitting && !isBlocked && <ArrowRight size={18} strokeWidth={2} />}
+          </button>
+        </form>
+
+        <div className="gm-auth5__footer">
+          <span>Não tens conta?</span>
+          <Link to="/register" className="gm-auth5__footer-link">
+            Regista-te <ArrowRight size={14} strokeWidth={2.5} />
+          </Link>
         </div>
       </div>
-      {/* ...existing code for modals and install prompt... */}
 
-      {/* Modal de Redefinir Palavra-passe */}
-      {showResetPasswordModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0,0,0,0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          backdropFilter: 'blur(5px)'
-        }} onClick={closeResetPasswordModal}>
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: '20px',
-            padding: '40px',
-            width: '90%',
-            maxWidth: '500px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.3)',
-            position: 'relative',
-            textAlign: 'center',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }} onClick={(e) => e.stopPropagation()}>
+      {/* ── Forgot password modal ──────────────────────────────── */}
+      {showForgotModal && (
+        <div
+          className="gm-auth5__modal-overlay"
+          onClick={closeForgotPassword}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="forgot-modal-title"
+        >
+          <div className="gm-auth5__modal-panel" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={closeResetPasswordModal}
-              style={{
-                position: 'absolute',
-                top: '15px',
-                right: '20px',
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#666',
-                transition: 'color 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.color = '#333'}
-              onMouseLeave={(e) => e.target.style.color = '#666'}
+              type="button"
+              className="gm-auth5__modal-close"
+              onClick={closeForgotPassword}
+              aria-label="Fechar"
             >
-              ✕
+              <IconX size={18} strokeWidth={2} />
             </button>
-            
-            <div style={{ marginBottom: '30px' }}>
-              <h2 style={{
-                color: '#333',
-                fontSize: '1.8rem',
-                marginBottom: '10px',
-                fontWeight: 'bold'
-              }}>🔐 Redefinir Palavra-passe</h2>
-              <p style={{
-                color: '#666',
-                fontSize: '1rem',
-                lineHeight: '1.5'
-              }}>
-                Insira o código recebido por email e defina a sua nova palavra-passe.
-              </p>
-            </div>
 
-            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                color: '#333',
-                fontWeight: '500'
-              }}>Código de Recuperação:</label>
-              <input
-                type="text"
-                name="token"
-                value={resetPasswordData.token}
-                onChange={handleResetPasswordChange}
-                placeholder="Insira o código recebido por email"
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '2px solid #e0e0e0',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  transition: 'border-color 0.3s ease',
-                  fontFamily: 'inherit',
-                  textAlign: 'center',
-                  letterSpacing: '2px',
-                  fontWeight: 'bold'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#007bff'}
-                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                color: '#333',
-                fontWeight: '500'
-              }}>Nova Palavra-passe:</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  name="newPassword"
-                  value={resetPasswordData.newPassword}
-                  onChange={handleResetPasswordChange}
-                  placeholder="Insira a sua nova palavra-passe"
-                  style={{
-                    width: '100%',
-                    padding: '15px 45px 15px 15px',
-                    borderRadius: '10px',
-                    border: '2px solid #e0e0e0',
-                    fontSize: '1rem',
-                    outline: 'none',
-                    transition: 'border-color 0.3s ease',
-                    fontFamily: 'inherit'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#007bff'}
-                  onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#666',
-                    fontSize: '1.1rem'
-                  }}
-                >
-                  {showNewPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+            <div className="gm-auth5__modal-header">
+              <div className="gm-auth5__modal-icon">
+                <Shield size={22} strokeWidth={1.75} />
               </div>
-            </div>
-
-            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                color: '#333',
-                fontWeight: '500'
-              }}>Confirmar Nova Palavra-passe:</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={resetPasswordData.confirmPassword}
-                  onChange={handleResetPasswordChange}
-                  placeholder="Confirme a sua nova palavra-passe"
-                  style={{
-                    width: '100%',
-                    padding: '15px 45px 15px 15px',
-                    borderRadius: '10px',
-                    border: '2px solid #e0e0e0',
-                    fontSize: '1rem',
-                    outline: 'none',
-                    transition: 'border-color 0.3s ease',
-                    fontFamily: 'inherit'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#007bff'}
-                  onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: '#666',
-                    fontSize: '1.1rem'
-                  }}
-                >
-                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </div>
-            </div>
-
-            {/* Requisitos da palavra-passe */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '10px',
-              padding: '15px',
-              margin: '15px 0',
-              border: '1px solid #e9ecef',
-              textAlign: 'left'
-            }}>
-              <h4 style={{ 
-                color: '#333', 
-                fontSize: '0.9rem', 
-                marginBottom: '10px'
-              }}>
-                🛡️ Requisitos da Palavra-passe:
-              </h4>
-              <ul style={{ 
-                color: '#666', 
-                fontSize: '0.8rem', 
-                paddingLeft: '20px',
-                margin: 0
-              }}>
-                <li>Pelo menos 8 caracteres</li>
-                <li>Uma letra maiúscula</li>
-                <li>Uma letra minúscula</li>
-                <li>Um número</li>
-                <li>Um carácter especial (!@#$%^&*)</li>
-              </ul>
-            </div>
-
-            {resetPasswordMessage && (
-              <div style={{
-                padding: '12px',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                backgroundColor: resetPasswordMessage.includes('✅') ? '#d4edda' : '#f8d7da',
-                color: resetPasswordMessage.includes('✅') ? '#155724' : '#721c24',
-                border: `1px solid ${resetPasswordMessage.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
-                fontSize: '0.9rem'
-              }}>
-                {resetPasswordMessage}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-              <button
-                onClick={closeResetPasswordModal}
-                style={{
-                  padding: '12px 25px',
-                  borderRadius: '25px',
-                  border: '2px solid #ddd',
-                  background: 'transparent',
-                  color: '#666',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  fontFamily: 'inherit'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#999';
-                  e.target.style.color = '#333';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = '#ddd';
-                  e.target.style.color = '#666';
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleResetPassword}
-                disabled={resetPasswordLoading}
-                style={{
-                  padding: '12px 25px',
-                  borderRadius: '25px',
-                  border: 'none',
-                  background: resetPasswordLoading ? '#ccc' : 'linear-gradient(135deg, #007bff, #0056b3)',
-                  color: '#fff',
-                  cursor: resetPasswordLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
-                  fontFamily: 'inherit'
-                }}
-                onMouseEnter={(e) => {
-                  if (!resetPasswordLoading) {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(0,123,255,0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!resetPasswordLoading) {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 15px rgba(0,123,255,0.3)';
-                  }
-                }}
-              >
-                {resetPasswordLoading ? '🔄 Alterando...' : '🔐 Alterar Palavra-passe'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Esqueceu a Palavra-passe */}
-      {showForgotPasswordModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: 'rgba(0,0,0,0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(5px)'
-        }} onClick={closeForgotPasswordModal}>
-          <div style={{
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: '20px',
-            padding: '40px',
-            width: '90%',
-            maxWidth: '450px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.3)',
-            position: 'relative',
-            textAlign: 'center'
-          }} onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={closeForgotPasswordModal}
-              style={{
-                position: 'absolute',
-                top: '15px',
-                right: '20px',
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#666',
-                transition: 'color 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.color = '#333'}
-              onMouseLeave={(e) => e.target.style.color = '#666'}
-            >
-              ✕
-            </button>
-            
-            <div style={{ marginBottom: '30px' }}>
-              <h2 style={{
-                color: '#333',
-                fontSize: '1.8rem',
-                marginBottom: '10px',
-                fontWeight: 'bold'
-              }}>🔐 Recuperar Palavra-passe</h2>
-              <p style={{
-                color: '#666',
-                fontSize: '1rem',
-                lineHeight: '1.5'
-              }}>
+              <h2 id="forgot-modal-title" className="gm-auth5__modal-title">
+                Recuperar palavra-passe
+              </h2>
+              <p className="gm-auth5__modal-sub">
                 Insira o seu nome de utilizador ou email para receber as instruções de recuperação.
               </p>
             </div>
 
-            <div style={{ marginBottom: '25px' }}>
-              <input
-                type="text"
-                value={forgotPasswordEmail}
-                onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                placeholder="Nome de utilizador ou email"
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  borderRadius: '10px',
-                  border: '2px solid #e0e0e0',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  transition: 'border-color 0.3s ease',
-                  fontFamily: 'inherit'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#007bff'}
-                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-              />
+            <div className="gm-auth5__modal-body">
+              <div className="gm-auth5__field">
+                <label htmlFor="forgot-email" className="gm-auth5__label">
+                  <Mail size={12} strokeWidth={2} />
+                  Nome de utilizador ou email
+                </label>
+                <div className="gm-auth5__input-wrap">
+                  <span className="gm-auth5__input-icon">
+                    <Mail size={18} strokeWidth={1.75} />
+                  </span>
+                  <input
+                    id="forgot-email"
+                    type="text"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="Nome de utilizador ou email"
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
+              {forgotMessage && (
+                <div
+                  className={`gm-auth5__modal-msg gm-auth5__modal-msg--${forgotMessage.kind}`}
+                  role={forgotMessage.kind === 'error' ? 'alert' : 'status'}
+                >
+                  {forgotMessage.kind === 'success' ? <Check size={14} strokeWidth={2} /> : <AlertCircle size={14} strokeWidth={2} />}
+                  {forgotMessage.text}
+                </div>
+              )}
             </div>
 
-            {forgotPasswordMessage && (
-              <div style={{
-                padding: '12px',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                backgroundColor: forgotPasswordMessage.includes('✅') ? '#d4edda' : '#f8d7da',
-                color: forgotPasswordMessage.includes('✅') ? '#155724' : '#721c24',
-                border: `1px solid ${forgotPasswordMessage.includes('✅') ? '#c3e6cb' : '#f5c6cb'}`,
-                fontSize: '0.9rem'
-              }}>
-                {forgotPasswordMessage}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+            <div className="gm-auth5__modal-actions">
               <button
-                onClick={closeForgotPasswordModal}
-                style={{
-                  padding: '12px 25px',
-                  borderRadius: '25px',
-                  border: '2px solid #ddd',
-                  background: 'transparent',
-                  color: '#666',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  fontFamily: 'inherit'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#999';
-                  e.target.style.color = '#333';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = '#ddd';
-                  e.target.style.color = '#666';
-                }}
+                type="button"
+                className="gm-auth5__btn gm-auth5__btn--ghost"
+                onClick={closeForgotPassword}
+                disabled={forgotLoading}
               >
                 Cancelar
               </button>
               <button
+                type="button"
+                className="gm-auth5__btn gm-auth5__btn--primary"
                 onClick={handleForgotPassword}
-                disabled={forgotPasswordLoading}
-                style={{
-                  padding: '12px 25px',
-                  borderRadius: '25px',
-                  border: 'none',
-                  background: forgotPasswordLoading ? '#ccc' : 'linear-gradient(135deg, #007bff, #0056b3)',
-                  color: '#fff',
-                  cursor: forgotPasswordLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
-                  fontFamily: 'inherit'
-                }}
-                onMouseEnter={(e) => {
-                  if (!forgotPasswordLoading) {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(0,123,255,0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!forgotPasswordLoading) {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 15px rgba(0,123,255,0.3)';
-                  }
-                }}
+                disabled={forgotLoading}
               >
-                {forgotPasswordLoading ? '📧 Enviando...' : '📧 Enviar Email'}
+                {forgotLoading ? <Loader2 size={16} className="gm-spinner" strokeWidth={2} /> : <Mail size={16} strokeWidth={1.75} />}
+                {forgotLoading ? 'A enviar…' : 'Enviar email'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Pop-up de instalação */}
-      {showInstallPrompt && !isInstalled && (
-        <div className="install-prompt-overlay" onClick={handleDismiss}>
-          <div className="install-prompt" onClick={(e) => e.stopPropagation()} style={{ width: '95%', maxWidth: '600px' }}>
-            <button className="install-prompt-close" onClick={handleDismiss}>
-              ✕
+      {/* ── Reset password modal ───────────────────────────────── */}
+      {showResetModal && (
+        <div
+          className="gm-auth5__modal-overlay"
+          onClick={closeResetModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-modal-title"
+        >
+          <div className="gm-auth5__modal-panel" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="gm-auth5__modal-close"
+              onClick={closeResetModal}
+              aria-label="Fechar"
+            >
+              <IconX size={18} strokeWidth={2} />
             </button>
-            
-            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-              <img 
-                src="./icons/favicon.jpg" 
-                alt="Globe Memories" 
-                style={{
-                  width: '100px',
-                  height: '100px',
-                  borderRadius: '25px',
-                  boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
-                  marginBottom: '15px'
-                }}
-              />
-              <h2 style={{
-                color: '#333',
-                fontSize: '1.6rem',
-                marginBottom: '8px',
-                fontWeight: 'bold'
-              }}>📱 Instale o Globe Memories!</h2>
-              <p style={{
-                color: '#666',
-                fontSize: '0.95rem',
-                margin: 0
-              }}>
-                Acesso rápido e offline
+
+            <div className="gm-auth5__modal-header">
+              <div className="gm-auth5__modal-icon">
+                <KeyRound size={22} strokeWidth={1.75} />
+              </div>
+              <h2 id="reset-modal-title" className="gm-auth5__modal-title">
+                Redefinir palavra-passe
+              </h2>
+              <p className="gm-auth5__modal-sub">
+                Insira o código recebido por email e defina a sua nova palavra-passe.
               </p>
             </div>
 
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '15px',
-              marginBottom: '20px',
-              border: '1px solid #e9ecef'
-            }}>
-              {supportsBeforeInstallPrompt ? (
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    marginBottom: '12px'
-                  }}>
-                    <span style={{ fontSize: '1.3rem', marginTop: '2px' }}>⚡</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Acesso Instantâneo</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Abra o app direto do seu ecrã inicial</p>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    marginBottom: '12px'
-                  }}>
-                    <span style={{ fontSize: '1.3rem', marginTop: '2px' }}>🔒</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Segurança Total</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Funciona offline em muitos casos</p>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px'
-                  }}>
-                    <span style={{ fontSize: '1.3rem', marginTop: '2px' }}>✨</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Experiência Premium</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Interface nativa e otimizada</p>
-                    </div>
-                  </div>
+            <div className="gm-auth5__modal-body">
+              <div className="gm-auth5__field">
+                <label htmlFor="reset-token" className="gm-auth5__label">
+                  <KeyRound size={12} strokeWidth={2} />
+                  Código de recuperação
+                </label>
+                <div className="gm-auth5__input-wrap gm-auth5__input-wrap--no-leading">
+                  <input
+                    id="reset-token"
+                    type="text"
+                    name="token"
+                    value={resetData.token}
+                    onChange={handleResetPasswordChange}
+                    placeholder="Insira o código recebido por email"
+                    style={{ textAlign: 'center', letterSpacing: '0.2em', fontWeight: 700 }}
+                  />
                 </div>
-              ) : isIOS ? (
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    marginBottom: '15px'
-                  }}>
-                    <span style={{ fontSize: '1.8rem' }}>📤</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Passo 1: Toque em Partilhar</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Botão na barra inferior do navegador</p>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px'
-                  }}>
-                    <span style={{ fontSize: '1.8rem' }}>➕</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Passo 2: Selecione "Ecrã Principal"</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Opção disponível no menu de partilha</p>
-                    </div>
-                  </div>
+              </div>
+
+              <div className="gm-auth5__field">
+                <label htmlFor="reset-new" className="gm-auth5__label">
+                  <Lock size={12} strokeWidth={2} />
+                  Nova palavra-passe
+                </label>
+                <div className="gm-auth5__input-wrap">
+                  <span className="gm-auth5__input-icon">
+                    <Lock size={18} strokeWidth={1.75} />
+                  </span>
+                  <input
+                    id="reset-new"
+                    type={showNewPassword ? 'text' : 'password'}
+                    name="newPassword"
+                    value={resetData.newPassword}
+                    onChange={handleResetPasswordChange}
+                    placeholder="Insira a sua nova palavra-passe"
+                    className="has-icon-right"
+                  />
+                  <button
+                    type="button"
+                    className="gm-auth5__toggle"
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    aria-label={showNewPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
+                    tabIndex={-1}
+                  >
+                    {showNewPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+                  </button>
                 </div>
-              ) : (
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    marginBottom: '15px'
-                  }}>
-                    <span style={{ fontSize: '1.8rem' }}>⋮</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Passo 1: Abra o Menu</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Ícone com três pontos no canto superior</p>
-                    </div>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px'
-                  }}>
-                    <span style={{ fontSize: '1.8rem' }}>➕</span>
-                    <div>
-                      <p style={{
-                        color: '#333',
-                        fontWeight: '600',
-                        fontSize: '0.95rem',
-                        margin: '0 0 4px 0'
-                      }}>Passo 2: "Instalar" ou "Ecrã inicial"</p>
-                      <p style={{
-                        color: '#666',
-                        fontSize: '0.85rem',
-                        margin: 0
-                      }}>Procure esta opção no menu</p>
-                    </div>
-                  </div>
+              </div>
+
+              <div className="gm-auth5__field">
+                <label htmlFor="reset-confirm" className="gm-auth5__label">
+                  <Lock size={12} strokeWidth={2} />
+                  Confirmar nova palavra-passe
+                </label>
+                <div className="gm-auth5__input-wrap">
+                  <span className="gm-auth5__input-icon">
+                    <Lock size={18} strokeWidth={1.75} />
+                  </span>
+                  <input
+                    id="reset-confirm"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={resetData.confirmPassword}
+                    onChange={handleResetPasswordChange}
+                    placeholder="Confirme a sua nova palavra-passe"
+                    className="has-icon-right"
+                  />
+                  <button
+                    type="button"
+                    className="gm-auth5__toggle"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    aria-label={showConfirmPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="gm-auth5__req">
+                <div className="gm-auth5__req-title">
+                  <Shield size={12} strokeWidth={2} />
+                  Requisitos da palavra-passe
+                </div>
+                <ul className="gm-auth5__req-list">
+                  <li>Pelo menos 8 caracteres</li>
+                  <li>Uma letra maiúscula</li>
+                  <li>Uma letra minúscula</li>
+                  <li>Um número</li>
+                  <li>Um carácter especial (!@#$%^&amp;*)</li>
+                </ul>
+              </div>
+
+              {resetMessage && (
+                <div
+                  className={`gm-auth5__modal-msg gm-auth5__modal-msg--${resetMessage.kind}`}
+                  role={resetMessage.kind === 'error' ? 'alert' : 'status'}
+                >
+                  {resetMessage.kind === 'success' ? <Check size={14} strokeWidth={2} /> : <AlertCircle size={14} strokeWidth={2} />}
+                  {resetMessage.text}
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <div className="gm-auth5__modal-actions">
               <button
-                onClick={handleDismiss}
-                style={{
-                  padding: '12px 25px',
-                  borderRadius: '25px',
-                  border: '2px solid #ddd',
-                  background: 'transparent',
-                  color: '#666',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  fontFamily: 'inherit'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#999';
-                  e.target.style.color = '#333';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = '#ddd';
-                  e.target.style.color = '#666';
-                }}
+                type="button"
+                className="gm-auth5__btn gm-auth5__btn--ghost"
+                onClick={closeResetModal}
+                disabled={resetLoading}
               >
-                Agora Não
+                Cancelar
               </button>
-              {supportsBeforeInstallPrompt && (
-                <button
-                  onClick={handleInstall}
-                  style={{
-                    padding: '12px 25px',
-                    borderRadius: '25px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #007bff, #0056b3)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '0.95rem',
-                    fontWeight: 'bold',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 15px rgba(0,123,255,0.3)',
-                    fontFamily: 'inherit'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(0,123,255,0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 15px rgba(0,123,255,0.3)';
-                  }}
-                >
-                  ✨ Instalar Agora
-                </button>
-              )}
+              <button
+                type="button"
+                className="gm-auth5__btn gm-auth5__btn--primary"
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+              >
+                {resetLoading ? <Loader2 size={16} className="gm-spinner" strokeWidth={2} /> : <Lock size={16} strokeWidth={1.75} />}
+                {resetLoading ? 'A alterar…' : 'Alterar palavra-passe'}
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Toast para feedback */}
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        show={toast.show}
-        onClose={closeToast}
-      />
-    </>
+    </div>
   );
 };
 

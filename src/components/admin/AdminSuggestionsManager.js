@@ -33,7 +33,14 @@ const AdminSuggestionsManager = () => {
   const fetch = useCallback(async () => {
     setIsLoading(true);
     try {
-      const r = await request('GET', '/admin/feedback', {
+      // Round 59 — was passing `{ params: {...} }` as the 3rd argument
+      // to `request`, which the helper interprets as `data` (request
+      // body). On a GET, axios serialises that into a JSON body and
+      // Spring may reject the request or simply ignore the params —
+      // net effect: filters like `feedbackType` were never reaching
+      // the server, and in some setups Spring would return an error
+      // for GET-with-body. Pass the options object as the 4th arg.
+      const r = await request('GET', '/admin/feedback', null, {
         params: { status, feedbackType: type, page, size: 20 },
       });
       setItems(r.data?.content || []);

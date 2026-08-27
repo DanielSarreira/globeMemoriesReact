@@ -1,34 +1,24 @@
-import React, { useEffect } from 'react';
-import PropTypes from 'prop-types';
+// Legacy Toast component (replaced by src/components/ui/Toast.jsx).
+// Kept as a stub so admin pages and legacy imports don't break.
+// New code should use the global useToast() from src/components/ui.
 
-const Toast = ({ message, type, isVisible, show, onClose }) => {
-  // Suportar tanto 'isVisible' quanto 'show' para compatibilidade
-  const shouldShow = isVisible !== undefined ? isVisible : show;
-  
+import React, { useEffect } from "react";
+
+const Toast = ({ message, type, show, onClose, isVisible }) => {
+  const visible = show ?? isVisible;
   useEffect(() => {
-    if (shouldShow) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 2400); // 2400ms = 2.4 segundos
-      return () => clearTimeout(timer);
+    if (visible) {
+      const t = setTimeout(() => onClose && onClose(), 2400);
+      return () => clearTimeout(t);
     }
-  }, [shouldShow, onClose]);
+  }, [visible, onClose]);
 
-  if (!shouldShow) return null;
-
+  if (!visible || !message) return null;
   return (
-    <div className={`toast ${type}`}>
+    <div className={`toast ${type || "info"}`} role="status" aria-live="polite">
       {message}
     </div>
   );
-};
-
-Toast.propTypes = {
-  message: PropTypes.string.isRequired,
-  type: PropTypes.oneOf(['success', 'error', 'info']).isRequired,
-  isVisible: PropTypes.bool,
-  show: PropTypes.bool,
-  onClose: PropTypes.func.isRequired,
 };
 
 export default Toast;

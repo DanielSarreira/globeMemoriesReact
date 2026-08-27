@@ -1,0 +1,100 @@
+.gm-toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--gm-bottomnav-h, 0px) + 24px);
+  transform: translateX(-50%);
+  z-index: var(--gm-z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100% - 32px);
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .gm-toast-host {
+    left: auto;
+    right: 32px;
+    bottom: 32px;
+    transform: none;
+    align-items: flex-end;
+  }
+}
+
+.gm-toast {
+  pointer-events: auto;
+  min-width: 280px;
+  max-width: 420px;
+  background: var(--gm-bg-card);
+  color: var(--gm-text-1);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-lg);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--gm-font-sans);
+  font-size: var(--gm-text-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.gm-toast--success .gm-toast__icon { color: var(--gm-success); }
+.gm-toast--info    .gm-toast__icon { color: var(--gm-brand); }
+.gm-toast--danger  .gm-toast__icon { color: var(--gm-danger); }
+.gm-toast--loading .gm-toast__icon { color: var(--gm-brand); }
+
+/* Round 85 — loading icon spins. We add an inline class to the
+ * `<span class="gm-toast__icon">` wrapper so the lucide `Loader2`
+ * becomes a CSS-animated spinner without touching the icon component. */
+.gm-toast--loading .gm-toast__icon svg {
+  animation: gm-toast-spin 0.9s linear infinite;
+}
+@keyframes gm-toast-spin {
+  to { transform: rotate(360deg); }
+}
+/* Loading toasts have no progress bar (they live until dismissed). */
+.gm-toast--loading .gm-toast__progress { display: none; }
+
+.gm-toast__icon { display: inline-flex; flex-shrink: 0; }
+.gm-toast__body { flex: 1; min-width: 0; line-height: 1.4; }
+.gm-toast__action {
+  border: 0;
+  background: transparent;
+  color: var(--gm-brand);
+  font-weight: var(--gm-weight-semibold);
+  cursor: pointer;
+  font-size: var(--gm-text-sm);
+  padding: 0;
+}
+.gm-toast__action:hover { color: var(--gm-brand-hover); }
+.gm-toast__dismiss {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--gm-text-3);
+  display: inline-flex;
+  padding: 0;
+}
+.gm-toast__dismiss:hover { color: var(--gm-text-1); }
+
+.gm-toast__progress {
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 2px;
+  background: var(--gm-brand);
+  width: 100%;
+  transform-origin: left;
+  animation: gm-toast-progress linear forwards;
+}
+.gm-toast--success .gm-toast__progress { background: var(--gm-success); }
+.gm-toast--info    .gm-toast__progress { background: var(--gm-brand); }
+.gm-toast--danger  .gm-toast__progress { background: var(--gm-danger); }
+
+@keyframes gm-toast-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

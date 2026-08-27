@@ -1,6 +1,7 @@
 // src/components/admin/CommentsModeration.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { request } from '../../axios_helper';
+import { getDisplayName } from '../../utils/userDisplay';
 import Toast from '../Toast';
 import { FaTrash, FaComment } from 'react-icons/fa';
 import '../../styles/Admin.css';
@@ -68,7 +69,7 @@ const CommentsModeration = () => {
             {comments.map((c) => (
               <tr key={`${c.tripId}-${c.id}`}>
                 <td>{c.tripTitle}</td>
-                <td>{c.username || c.userId}</td>
+                <td>{getDisplayName(c, c.userId)}</td>
                 <td style={{ maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.content}</td>
                 <td>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</td>
                 <td>

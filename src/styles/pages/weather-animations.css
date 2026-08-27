@@ -31,14 +31,21 @@
    CÉUS CLAROS - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu limpo com sol */
+/* DIA - Céu limpo com sol (Round 80 — iOS-Weather look)
+   Paleta iOS Weather: azul-céu saturado no topo, ciano
+   claro a meio, branco-quente em baixo. O sol amarelo
+   grande mantém-se no WeatherAnimation.jsx. O gradient
+   vertical (180deg) dá a profundidade que o Apple Weather
+   usa no card "My Location". */
 .weather-bg-clear {
-  background: linear-gradient(135deg, #87CEEB 0%, #E0F6FF 50%, #B0E0E6 100%);
+  background: linear-gradient(180deg, #1E5DA8 0%, #3F84D6 30%, #6FA8E8 60%, #A6CEEC 85%, #D8ECF6 100%);
 }
 
-/* NOITE - Céu estrelado */
+/* NOITE - Céu estrelado (iOS Weather night)
+   Azul marinho profundo no topo, transição para quase
+   preto. Estrelas e lua vêm do WeatherAnimation.jsx. */
 .weather-bg-clear-night {
-  background: linear-gradient(135deg, #000814 0%, #0B1A2F 50%, #1a1f3a 100%);
+  background: linear-gradient(180deg, #0A1A3A 0%, #142852 35%, #1F3263 70%, #2A3F6E 100%);
 }
 
 /* SOL (DIA) */
@@ -120,14 +127,18 @@
    NUVENS - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu com poucas nuvens */
+/* DIA - Céu com poucas nuvens (iOS Weather cloudy day)
+   Cinza azulado claro, mais saturado que a versão anterior.
+   Mantém-se claro para legibilidade da temperatura branca. */
 .weather-bg-cloudy {
-  background: linear-gradient(135deg, #cbd5e1 0%, #B0C4DE 50%, #a8b8d8 100%);
+  background: linear-gradient(180deg, #5A708A 0%, #7A8FA8 35%, #95A5B8 65%, #B5C2D2 100%);
 }
 
-/* NOITE - Céu nublado escuro */
+/* NOITE - Céu nublado escuro (iOS Weather cloudy night)
+   Cinza azulado escuro, com leve tom violeta para combinar
+   com a paleta night do iOS. */
 .weather-bg-cloudy-night {
-  background: linear-gradient(135deg, #1a2541 0%, #2d3a52 50%, #1e293b 100%);
+  background: linear-gradient(180deg, #1F2A3A 0%, #2D3A52 40%, #3A4A66 75%, #4A5A78 100%);
 }
 
 /* Elemento nuvem */
@@ -215,14 +226,17 @@
    CHUVA - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu cinzento chuvoso */
+/* DIA - Céu cinzento chuvoso (iOS Weather rainy day)
+   Cinza chumbo saturado, ligeiramente mais claro no fundo
+   para legibilidade do card de stats brancos. */
 .weather-bg-rain {
-  background: linear-gradient(135deg, #4A5568 0%, #556B7A 50%, #3d4556 100%);
+  background: linear-gradient(180deg, #3A4A5A 0%, #4F5E6E 35%, #65778A 70%, #7A8B9C 100%);
 }
 
-/* NOITE - Céu muito escuro chuvoso */
+/* NOITE - Céu muito escuro chuvoso (iOS Weather rainy night)
+   Quase preto no topo, com leve azul-acinzentado. */
 .weather-bg-rain-night {
-  background: linear-gradient(135deg, #1a1f2e 0%, #252d3a 50%, #1a1f2e 100%);
+  background: linear-gradient(180deg, #0E1A28 0%, #1A2535 35%, #28384A 70%, #384858 100%);
 }
 
 .rain-container {
@@ -271,14 +285,19 @@
    NEVE - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu branco de neve */
+/* DIA - Céu branco de neve (iOS Weather snowy day)
+   Branco azulado muito claro, com tom azulado no topo para
+   profundidade. Texto passa a preto automaticamente (não
+   branco) — mas como o nosso hero tem overlay de cor branca
+   translúcida, mantém a temperatura visível. */
 .weather-bg-snow {
-  background: linear-gradient(135deg, #e0e7ff 0%, #f0f9ff 50%, #e0f2fe 100%);
+  background: linear-gradient(180deg, #88A0C0 0%, #B0C0D5 30%, #D0DCE8 60%, #E8EFF5 100%);
 }
 
-/* NOITE - Céu escuro de neve */
+/* NOITE - Céu escuro de neve (iOS Weather snowy night)
+   Cinza azulado escuro frio. */
 .weather-bg-snow-night {
-  background: linear-gradient(135deg, #1a2332 0%, #2a3a4a 50%, #1a2332 100%);
+  background: linear-gradient(180deg, #1F2A38 0%, #2F3A4A 35%, #3F4A5A 70%, #4A5565 100%);
 }
 
 .snowflake {
@@ -333,14 +352,17 @@
    NEVOEIRO - DAY & NIGHT
    ============================================ */
 
-/* DIA - Nevoeiro claro */
+/* DIA - Nevoeiro claro (iOS Weather foggy day)
+   Cinza pérola claro, com leve tom lilás para combinar com
+   a paleta day do iOS. */
 .weather-bg-fog {
-  background: linear-gradient(135deg, #d4d4d8 0%, #D1D5DB 50%, #c4b5fd 100%);
+  background: linear-gradient(180deg, #8890A0 0%, #A0A8B8 35%, #B8C0CC 65%, #CCD2DC 100%);
 }
 
-/* NOITE - Nevoeiro escuro */
+/* NOITE - Nevoeiro escuro (iOS Weather foggy night)
+   Cinza azulado escuro. */
 .weather-bg-fog-night {
-  background: linear-gradient(135deg, #2a2f3a 0%, #3a3f4a 50%, #2a2f3a 100%);
+  background: linear-gradient(180deg, #2A2F3A 0%, #3A3F4A 35%, #4A4F5A 70%, #5A5F6A 100%);
 }
 
 .fog-layer {
@@ -386,24 +408,26 @@
    TROVÃO/TEMPESTADE - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu de tempestade escuro */
+/* DIA - Céu de tempestade escuro (iOS Weather thunderstorm day)
+   Cinza muito escuro com flash branco no momento do raio. */
 .weather-bg-storm {
-  background: linear-gradient(135deg, #3a4555 0%, #4a5568 50%, #2d3b4a 100%);
+  background: linear-gradient(180deg, #2A3548 0%, #3A4A60 30%, #4A5A72 60%, #5A6A82 100%);
   animation: stormFlash 0.15s ease-in 4s infinite;
 }
 
-/* NOITE - Céu de tempestade muito escuro */
+/* NOITE - Céu de tempestade muito escuro (iOS Weather storm night)
+   Quase preto com flash branco. */
 .weather-bg-storm-night {
-  background: linear-gradient(135deg, #1a1f2a 0%, #2a2f3a 50%, #1a1f2a 100%);
-  animation: stormFlash 0.15s ease-in 4s infinite;
+  background: linear-gradient(180deg, #0A0F18 0%, #141A28 35%, #1F2535 70%, #2A3040 100%);
+  animation: stormFlashNight 0.15s ease-in 4s infinite;
 }
 
 @keyframes stormFlash {
-  0%, 5%, 10%, 100% { 
-    background: linear-gradient(135deg, #3a4555 0%, #4a5568 50%, #2d3b4a 100%);
+  0%, 5%, 10%, 100% {
+    background: linear-gradient(180deg, #2A3548 0%, #3A4A60 30%, #4A5A72 60%, #5A6A82 100%);
   }
-  2.5%, 7.5% { 
-    background: linear-gradient(135deg, #5a6575 0%, #6a7588 50%, #4d5b6a 100%);
+  2.5%, 7.5% {
+    background: linear-gradient(180deg, #5A6A82 0%, #6A7A92 30%, #7A8AA2 60%, #8A9AB2 100%);
   }
 }
 
@@ -412,11 +436,11 @@
 }
 
 @keyframes stormFlashNight {
-  0%, 5%, 10%, 100% { 
-    background: linear-gradient(135deg, #1a1f2a 0%, #2a2f3a 50%, #1a1f2a 100%);
+  0%, 5%, 10%, 100% {
+    background: linear-gradient(180deg, #0A0F18 0%, #141A28 35%, #1F2535 70%, #2A3040 100%);
   }
-  2.5%, 7.5% { 
-    background: linear-gradient(135deg, #3a3f4a 0%, #4a4f5a 50%, #3a3f4a 100%);
+  2.5%, 7.5% {
+    background: linear-gradient(180deg, #3A3F52 0%, #4A4F62 35%, #5A5F72 70%, #6A6F82 100%);
   }
 }
 
@@ -463,14 +487,17 @@
    VENTO - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu nublado com vento */
+/* DIA - Céu nublado com vento (iOS Weather windy day)
+   Cinza claro azulado, com leve tom verde-azulado para
+   coerência com a paleta day. */
 .weather-bg-wind {
-  background: linear-gradient(135deg, #6b7280 0%, #9E9E9E 50%, #a1a5ab 100%);
+  background: linear-gradient(180deg, #5A7088 0%, #7A8CA4 35%, #95A6BC 65%, #B0BEC8 100%);
 }
 
-/* NOITE - Céu escuro com vento */
+/* NOITE - Céu escuro com vento (iOS Weather windy night)
+   Cinza azulado escuro. */
 .weather-bg-wind-night {
-  background: linear-gradient(135deg, #3a4555 0%, #4a5568 50%, #3a4555 100%);
+  background: linear-gradient(180deg, #1F2A3A 0%, #2F3A4A 35%, #3F4A5A 70%, #4F5A6A 100%);
 }
 
 .wind-gust {
@@ -497,14 +524,16 @@
    GRANIZO - DAY & NIGHT
    ============================================ */
 
-/* DIA - Céu com granizo */
+/* DIA - Céu com granizo (iOS Weather hail day)
+   Cinza azulado escuro, mais frio e metálico. */
 .weather-bg-hail {
-  background: linear-gradient(135deg, #334155 0%, #475569 50%, #64748b 100%);
+  background: linear-gradient(180deg, #3A4A5A 0%, #4F5E70 35%, #65778A 70%, #7A8C9E 100%);
 }
 
-/* NOITE - Céu escuro com granizo */
+/* NOITE - Céu escuro com granizo (iOS Weather hail night)
+   Quase preto, com leve azul-acinzentado. */
 .weather-bg-hail-night {
-  background: linear-gradient(135deg, #1a2332 0%, #2a3442 50%, #1a2332 100%);
+  background: linear-gradient(180deg, #0E1A28 0%, #1A2535 35%, #28384A 70%, #384858 100%);
 }
 
 .hailstone {

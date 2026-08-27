@@ -27,8 +27,8 @@ const SectionErrorPanel = ({ section, errors = [] }) => {
       data-testid={`section-error-panel-${section}`}
       style={{
         backgroundColor: '#fff5f5',
-        border: '1px solid #e74c3c',
-        borderLeft: '4px solid #e74c3c',
+        border: '1px solid #DC2626',
+        borderLeft: '4px solid #DC2626',
         borderRadius: '6px',
         padding: '12px 16px',
         margin: '12px 0',

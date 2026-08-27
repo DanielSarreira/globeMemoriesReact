@@ -1,0 +1,828 @@
+/* ========================================================================
+   Globe Memories â€” Notifications v3
+   Glass header, grouped feed, premium items, mobile-first.
+   ======================================================================== */
+
+.gm-notif {
+  position: relative;
+  min-height: 100%;
+  background: var(--gm-bg-page);
+  display: flex;
+  flex-direction: column;
+  /* Inherits the global page rhythm from .gm-page in layout.css. */
+  width: 100%;
+  margin: 0;
+  padding: 24px 16px 80px;
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .gm-notif { padding: 28px 20px 80px; gap: 28px; }
+}
+@media (min-width: 1024px) {
+  .gm-notif { padding: 32px 24px 80px; gap: 32px; }
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   HEADER (glass)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-notif__head {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: 18px 0 14px;
+  width: 100%;
+  flex-wrap: wrap;
+  background: var(--gm-bg-glass-strong);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--gm-divider);
+}
+
+.gm-notif__head-info { flex: 1; min-width: 0; }
+
+.gm-notif__head-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--gm-grad-brand);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 22px rgba(0, 123, 255, 0.32),
+              inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.gm-notif__head-pulse {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gm-accent);
+  border: 2px solid var(--gm-bg-card);
+  box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.6);
+  animation: gm-notif-pulse 1.8s var(--gm-ease-out) infinite;
+}
+
+@keyframes gm-notif-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(255, 153, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0); }
+}
+
+.gm-notif__head-info {
+  min-width: 0;
+}
+
+.gm-notif__head-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: var(--gm-weight-extrabold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+  line-height: 1.1;
+}
+
+.gm-notif__head-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: var(--gm-weight-medium);
+  color: var(--gm-text-3);
+}
+
+.gm-notif__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.gm-notif__head-btn {
+  appearance: none;
+  background: var(--gm-bg-sunken);
+  border: 1px solid transparent;
+  color: var(--gm-text-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: var(--gm-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out),
+              border-color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-notif__head-btn:hover {
+  background: var(--gm-bg-card);
+  color: var(--gm-text-1);
+  border-color: var(--gm-border);
+}
+.gm-notif__head-btn:active { transform: scale(0.97); }
+.gm-notif__head-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.gm-notif__head-btn--primary {
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 123, 255, 0.32);
+}
+.gm-notif__head-btn--primary:hover {
+  background: var(--gm-brand-hover);
+  border-color: transparent;
+  color: #FFFFFF;
+}
+
+/* Hide label on very small screens, keep only icon */
+@media (max-width: 480px) {
+  .gm-notif__head-btn span { display: none; }
+  .gm-notif__head-btn { padding: 9px 10px; }
+  .gm-notif__head-btn--primary { padding: 9px 12px; }
+  .gm-notif__head-btn--primary span { display: inline; }
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TABS (segmented, glass)
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-notif__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gm-space-3);
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.gm-notif__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 0 14px;
+}
+
+.gm-notif__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out);
+  position: relative;
+}
+
+.gm-notif__tab:hover { color: var(--gm-text-1); }
+.gm-notif__tab--active {
+  background: var(--gm-bg-card);
+  color: var(--gm-text-1);
+  box-shadow: var(--gm-shadow-sm),
+              0 0 0 1px var(--gm-border);
+}
+
+.gm-notif__tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--gm-bg-sunken);
+  font-size: 11px;
+  font-weight: var(--gm-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--gm-text-2);
+  line-height: 1;
+}
+.gm-notif__tab-count--accent {
+  background: var(--gm-accent);
+  color: #FFFFFF;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   BODY
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-notif__body {
+  flex: 1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* â”€â”€ Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.gm-notif__error {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: 16px 20px;
+  background: var(--gm-danger-soft);
+  color: var(--gm-danger);
+  border: 1px solid var(--gm-danger);
+  border-radius: var(--gm-radius-lg);
+  margin-bottom: 20px;
+}
+
+.gm-notif__error-info { flex: 1; min-width: 0; }
+.gm-notif__error-info strong {
+  display: block;
+  font-size: 14px;
+  font-weight: var(--gm-weight-bold);
+  margin-bottom: 2px;
+}
+.gm-notif__error-info p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--gm-text-2);
+}
+
+.gm-notif__error-retry {
+  appearance: none;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  color: var(--gm-text-1);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: var(--gm-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-notif__error-retry:hover { background: var(--gm-bg-sunken); }
+
+/* â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.gm-notif__skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gm-notif__skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gm-space-3);
+  padding: 16px;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+}
+
+.gm-notif__skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(90deg,
+    var(--gm-bg-sunken) 0%,
+    var(--gm-divider) 50%,
+    var(--gm-bg-sunken) 100%);
+  background-size: 200% 100%;
+  animation: gm-shimmer 1.4s infinite;
+  flex-shrink: 0;
+}
+
+.gm-notif__skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gm-notif__skeleton-line {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg,
+    var(--gm-bg-sunken) 0%,
+    var(--gm-divider) 50%,
+    var(--gm-bg-sunken) 100%);
+  background-size: 200% 100%;
+  animation: gm-shimmer 1.4s infinite;
+}
+.gm-notif__skeleton-line--lg { width: 70%; height: 12px; }
+.gm-notif__skeleton-line--sm { width: 35%; }
+
+@keyframes gm-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.gm-notif__empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: var(--gm-space-3);
+}
+
+.gm-notif__empty-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 8px var(--gm-bg-card),
+              0 8px 28px rgba(0, 123, 255, 0.12);
+  margin-bottom: var(--gm-space-2);
+}
+
+.gm-notif__empty h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: var(--gm-weight-extrabold);
+  letter-spacing: var(--gm-tracking-tight);
+  color: var(--gm-text-1);
+}
+
+.gm-notif__empty p {
+  margin: 0;
+  max-width: 360px;
+  font-size: 14px;
+  color: var(--gm-text-2);
+  line-height: 1.55;
+}
+
+.gm-notif__empty-cta {
+  appearance: none;
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: var(--gm-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 22px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  margin-top: var(--gm-space-2);
+  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.32);
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-notif__empty-cta:hover { background: var(--gm-brand-hover); }
+.gm-notif__empty-cta:active { transform: scale(0.97); }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   GROUPED LIST
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-notif__list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.gm-notif__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gm-notif__group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.gm-notif__group-head h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: var(--gm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gm-text-3);
+  line-height: 1;
+}
+
+.gm-notif__group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--gm-bg-sunken);
+  font-size: 10px;
+  font-weight: var(--gm-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--gm-text-3);
+  line-height: 1;
+}
+
+.gm-notif__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ITEM
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-notif-item {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-lg);
+  /* The kebab dropdown menu (`.gm-notif-item__menu`) is absolutely
+     positioned right under the trigger button. We can't use
+     `overflow: hidden` here because it would clip the dropdown
+     (the actual bug the user reported). Instead, the small
+     unread indicator is rendered with a negative `left: -1px`
+     inside the 14px border-radius, which is visually identical
+     to a clipped dot. */
+  overflow: visible;
+  /* `isolation: isolate` would create a new stacking context and
+     trap the menu's z-index below the sticky head. We omit it
+     here and let the menu's `z-index: 90` escape to the page
+     root so it always sits above the glass header. */
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              border-color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-notif-item:hover {
+  background: var(--gm-bg-card-hover);
+  border-color: var(--gm-text-3);
+}
+
+.gm-notif-item--unread {
+  background: var(--gm-brand-soft);
+  border-color: rgba(0, 123, 255, 0.18);
+}
+.gm-notif-item--unread:hover {
+  background: color-mix(in srgb, var(--gm-brand-soft) 80%, var(--gm-bg-card) 20%);
+  border-color: var(--gm-brand);
+}
+
+.gm-notif-item__dot {
+  position: absolute;
+  top: 18px;
+  left: -1px;
+  width: 3px;
+  height: calc(100% - 36px);
+  background: var(--gm-brand);
+  border-radius: 0 3px 3px 0;
+}
+
+.gm-notif-item__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 12px 14px 18px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gm-notif-item__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.gm-notif-item__type-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  border: 2px solid var(--gm-bg-card);
+  box-shadow: 0 2px 6px rgba(10, 14, 26, 0.18);
+}
+
+.gm-notif-item__body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.gm-notif-item__message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gm-text-1);
+  font-weight: var(--gm-weight-medium);
+  word-wrap: break-word;
+}
+.gm-notif-item__message strong {
+  font-weight: var(--gm-weight-bold);
+  color: var(--gm-text-1);
+}
+.gm-notif-item__handle {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+}
+.gm-notif-item__text {
+  color: var(--gm-text-1);
+  /* Breathing room between the actor name button and the message
+     body. The user complained the text felt glued to the name. */
+  margin-left: 6px;
+}
+
+.gm-notif-item__time {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: var(--gm-weight-medium);
+  color: var(--gm-text-3);
+}
+
+.gm-notif-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 12px 10px 0;
+  flex-shrink: 0;
+}
+
+.gm-notif-item__action {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--gm-text-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              color var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-notif-item__action:hover {
+  background: var(--gm-bg-sunken);
+  color: var(--gm-text-1);
+}
+.gm-notif-item__action:active { transform: scale(0.92); }
+
+.gm-notif-item__menu-wrap {
+  position: relative;
+  /* Above sibling item backgrounds so the dropdown can paint on
+     top of the next notification row. */
+  z-index: 2;
+}
+
+.gm-notif-item__menu-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Backdrop is purely a click-catcher; sitting below the menu
+     itself means pointer events on the menu still hit the menu. */
+  z-index: 80;
+}
+
+.gm-notif-item__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  /* Above every other notification item + the sticky header (z-30)
+     so the dropdown is never visually clipped by a sibling or the
+     glass header. Sem `isolation: isolate` no item, este z-index
+     sobe no stacking context global da pÃ¡gina. */
+  z-index: 9999;
+  min-width: 180px;
+  background: var(--gm-bg-card);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius-md);
+  box-shadow: var(--gm-shadow-xl);
+  padding: 4px;
+}
+
+.gm-notif-item__menu-item {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: var(--gm-radius-sm);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  color: var(--gm-text-1);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-notif-item__menu-item:hover { background: var(--gm-bg-sunken); }
+.gm-notif-item__menu-item--danger { color: var(--gm-danger); }
+.gm-notif-item__menu-item--danger:hover { background: var(--gm-danger-soft); }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SENTINEL & STATES
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-notif__sentinel {
+  padding: 24px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 32px;
+}
+
+.gm-notif__loading-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--gm-text-3);
+  font-weight: var(--gm-weight-medium);
+}
+
+.gm-notif__end {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.gm-notif__end-line {
+  flex: 1;
+  height: 1px;
+  background: var(--gm-divider);
+}
+
+.gm-notif__end-label {
+  font-size: 10.5px;
+  font-weight: var(--gm-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gm-text-3);
+  white-space: nowrap;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ANIMATIONS
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.gm-spin { animation: gm-notif-spin 720ms linear infinite; }
+@keyframes gm-notif-spin { to { transform: rotate(360deg); } }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@media (max-width: 640px) {
+  .gm-notif__head-title { font-size: 19px; }
+  .gm-notif__head-icon { width: 40px; height: 40px; }
+  .gm-notif__tabs { flex: 1; padding: 0; }
+  .gm-notif__head-actions { margin-left: auto; }
+  .gm-notif__body { padding: 16px 14px 80px; }
+  .gm-notif-item__main { padding: 12px 10px 12px 14px; gap: 12px; }
+  .gm-notif-item__avatar-wrap { width: 42px; height: 42px; }
+  .gm-notif-item__type-icon { width: 20px; height: 20px; bottom: -1px; right: -1px; }
+  .gm-notif-item__actions { padding: 8px 8px 8px 0; }
+  .gm-notif-item__action { width: 30px; height: 30px; }
+  .gm-notif-item__message { font-size: 13px; }
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DESKTOP
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@media (min-width: 1024px) {
+  .gm-notif__head { box-shadow: 0 1px 0 var(--gm-divider); }
+  .gm-notif__body { padding: 32px 24px 80px; }
+  .gm-notif-item__main { padding: 16px 14px 16px 20px; gap: 16px; }
+  .gm-notif-item__avatar-wrap { width: 52px; height: 52px; }
+}
+
+/* Inline accept/reject buttons for FOLLOW_REQUEST items. The owner
+   can act on a request without leaving the notifications page ï¿½
+   the handlers resolve the requestId server-side and immediately
+   remove the notification on success. */
+.gm-notif-item__follow-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.gm-notif-item__follow-accept,
+.gm-notif-item__follow-reject {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: var(--gm-weight-bold);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-notif-item__follow-accept:active,
+.gm-notif-item__follow-reject:active { transform: scale(0.96); }
+
+.gm-notif-item__follow-accept {
+  background: var(--gm-brand);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.28);
+}
+.gm-notif-item__follow-accept:hover {
+  background: var(--gm-brand-hover);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.36);
+}
+
+.gm-notif-item__follow-reject {
+  background: var(--gm-bg-sunken);
+  color: var(--gm-text-1);
+}
+.gm-notif-item__follow-reject:hover {
+  background: var(--gm-divider);
+  color: var(--gm-danger);
+}
+
+@media (max-width: 480px) {
+  .gm-notif-item__follow-cta { flex-direction: column; }
+  .gm-notif-item__follow-accept,
+  .gm-notif-item__follow-reject { width: 100%; justify-content: center; }
+}
+
+/* Dedicated "Pedidos para te seguir" card ï¿½ sits at the top of
+   the notifications page so the owner can act on incoming
+   follow requests without scrolling. */
+/* Actor name on a notification row is now a button that
+   navigates to the actor's profile (per the latest UX decision).
+   It inherits the strong/primary colour from the parent
+   message block so it still reads as a name. */
+.gm-notif-item__actor {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: var(--gm-weight-bold, 700);
+  color: var(--gm-text-1, #0A0E1A);
+  cursor: pointer;
+  text-align: left;
+}
+.gm-notif-item__actor:hover {
+  color: var(--gm-brand, #007BFF);
+  text-decoration: underline;
+}

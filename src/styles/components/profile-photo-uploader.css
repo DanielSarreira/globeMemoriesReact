@@ -1,6 +1,139 @@
-/* ProfilePhotoUploader — hover overlay */
+/* =========================================================================
+   ProfilePhotoUploader v3
+   Premium circular photo uploader. Used by both Register and EditProfile.
+   Class names use the v3 design tokens and compose with the rest of the app.
+   ========================================================================= */
 
-.profile-photo-uploader:hover .profile-photo-uploader-overlay,
-.profile-photo-uploader-overlay:focus-visible {
-  opacity: 1 !important;
+.gm-ppu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gm-space-3);
+  width: 100%;
+}
+
+.gm-ppu__ring {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--gm-bg-sunken) 0%, var(--gm-bg-card) 100%);
+  box-shadow:
+    0 4px 18px rgba(10, 14, 26, 0.10),
+    0 0 0 4px var(--gm-bg-card),
+    0 0 0 5px var(--gm-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow var(--gm-dur-base) var(--gm-ease-out),
+              transform var(--gm-dur-base) var(--gm-ease-out);
+}
+
+.gm-ppu__ring:hover {
+  transform: scale(1.01);
+  box-shadow:
+    0 8px 24px rgba(0, 123, 255, 0.18),
+    0 0 0 4px var(--gm-bg-card),
+    0 0 0 5px var(--gm-brand-soft);
+}
+
+.gm-ppu__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gm-ppu__placeholder {
+  color: var(--gm-text-4);
+}
+
+.gm-ppu__overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--gm-bg-glass-dark);
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--gm-dur-base) var(--gm-ease-out);
+}
+
+.gm-ppu__ring:hover .gm-ppu__overlay,
+.gm-ppu__overlay:focus-visible {
+  opacity: 1;
+}
+
+.gm-ppu__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.gm-ppu__btn {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--gm-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--gm-radius-pill);
+  cursor: pointer;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out),
+              transform var(--gm-dur-fast) var(--gm-ease-out),
+              box-shadow var(--gm-dur-fast) var(--gm-ease-out);
+}
+
+.gm-ppu__btn:active { transform: scale(0.97); }
+.gm-ppu__btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.gm-ppu__btn--primary {
+  background: var(--gm-grad-brand);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.32);
+}
+.gm-ppu__btn--primary:hover:not(:disabled) {
+  background: var(--gm-brand-hover);
+  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.42);
+}
+
+.gm-ppu__btn--ghost {
+  background: transparent;
+  color: var(--gm-danger);
+  border: 1.5px solid var(--gm-danger-soft);
+}
+.gm-ppu__btn--ghost:hover:not(:disabled) {
+  background: var(--gm-danger-soft);
+  border-color: var(--gm-danger);
+}
+
+.gm-ppu__error {
+  color: var(--gm-danger);
+  font-size: 12px;
+  font-weight: var(--gm-weight-semibold);
+  text-align: center;
+  margin: 0;
+  max-width: 280px;
+  line-height: 1.45;
+}
+
+.gm-ppu__file {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .gm-ppu__ring {
+    width: 120px;
+    height: 120px;
+  }
 }

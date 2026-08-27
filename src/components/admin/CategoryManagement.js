@@ -159,7 +159,7 @@ const CategoryManagement = () => {
             maxLength={55}
           />
           {errors.name && (
-            <div className="field-error" style={{ color: '#e74c3c', fontSize: '14px', marginTop: '5px' }}>
+            <div className="field-error" style={{ color: '#DC2626', fontSize: '14px', marginTop: '5px' }}>
               <FaExclamationCircle style={{ marginRight: '5px' }} />
               {errors.name}
             </div>

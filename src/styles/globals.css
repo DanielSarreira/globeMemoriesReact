@@ -1,8 +1,8 @@
-/* globals.css — Base element resets, typography & body styles.
-   Design tokens live in design-system.css; this file only applies
-   them to raw HTML elements. */
+/* ========================================================================
+   Globe Memories — Globals v3
+   Base resets + typography. New Design System (tokens.css).
+   ======================================================================== */
 
-/* ── Base ────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -18,941 +18,92 @@ html {
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--leading-relaxed);
-  color: var(--text-primary);
-  background-color: var(--bg-secondary);
+  font-family: var(--gm-font-sans);
+  font-size: var(--gm-text-base);
+  line-height: var(--gm-leading-normal);
+  color: var(--gm-text-1);
+  background-color: var(--gm-bg-page);
   overflow-x: hidden;
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Typography ───────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--leading-tight);
-  color: var(--text-primary);
-  letter-spacing: var(--tracking-tight);
-  margin-top: 0;
-  margin-bottom: 0.5em;
+  margin: 0 0 0.5em;
+  font-weight: var(--gm-weight-bold);
+  line-height: var(--gm-leading-tight);
+  color: var(--gm-text-1);
+  letter-spacing: var(--gm-tracking-tight);
+  font-family: var(--gm-font-sans);
 }
 
-h1 { font-size: var(--text-4xl); font-weight: var(--font-weight-bold); }
-h2 { font-size: var(--text-3xl); }
-h3 { font-size: var(--text-2xl); }
-h4 { font-size: var(--text-xl); }
-h5 { font-size: var(--text-lg); }
-h6 { font-size: var(--text-base); }
+h1 { font-size: var(--gm-text-2xl); }
+h2 { font-size: var(--gm-text-xl); }
+h3 { font-size: var(--gm-text-lg); }
+h4 { font-size: var(--gm-text-md); }
+h5 { font-size: var(--gm-text-base); }
+h6 { font-size: var(--gm-text-sm); }
 
-p {
-  margin-top: 0;
-  margin-bottom: 1em;
-  color: var(--text-secondary);
-}
+p { margin: 0 0 1em; line-height: var(--gm-leading-normal); color: var(--gm-text-1); }
 
 a {
-  color: var(--text-link);
+  color: var(--gm-brand);
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition: color var(--gm-dur-fast) var(--gm-ease-out);
 }
-a:hover {
-  color: var(--brand-blue-hover);
-  text-decoration: underline;
-}
+a:hover { color: var(--gm-brand-hover); }
 
-img, video {
+img, video, svg {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-svg {
-  display: inline-block;
-  flex-shrink: 0;
+img { border-radius: inherit; }
+
+button {
+  font-family: var(--gm-font-sans);
+  font-size: inherit;
 }
 
-/* ── Selection ────────────────────────────────────────────────── */
+input, textarea, select {
+  font-family: var(--gm-font-sans);
+  font-size: inherit;
+  color: var(--gm-text-1);
+}
+
 ::selection {
-  background: var(--brand-blue-light);
-  color: var(--brand-blue-dark);
+  background: var(--gm-brand-soft);
+  color: var(--gm-brand-press);
 }
 
-/* ── Focus ────────────────────────────────────────────────────── */
-:focus-visible {
-  outline: 2px solid var(--brand-blue);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
-}
-
-button:focus:not(:focus-visible),
-input:focus:not(:focus-visible),
-textarea:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* ── Scrollbar ────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--gray-300);
-  border-radius: var(--radius-full);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gray-400);
-}
-
-/* ── Horizontal Rule ──────────────────────────────────────────── */
-hr {
-  border: none;
-  border-top: 1px solid var(--border-primary);
-  margin: var(--space-8) 0;
-}
-
-/* ── Lists ────────────────────────────────────────────────────── */
-ul, ol {
-  padding-left: 1.25em;
-  color: var(--text-secondary);
-}
-
-/* ── Code ─────────────────────────────────────────────────────── */
-code, pre {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-}
-/* Estilos gerais */
-html, body {
-  touch-action: pan-x pan-y;
-  overscroll-behavior: none;
-  width: 100%;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-/* ===== SCROLLBAR CUSTOMIZADA - PC E TABLET ===== */
-/* Largura da barra de scroll */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-/* Track (fundo da scrollbar) */
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-/* Thumb (a parte que se move) */
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-/* Thumb ao passar o mouse */
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Para Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
-}
-
-/* Ocultar scrollbar no mobile */
-@media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 0px;
-    height: 0px;
-    display: none;
+/* Scrollbar — refined, only on desktop */
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--gm-border);
+    border-radius: var(--gm-radius-pill);
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
-  
-  * {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  *::-webkit-scrollbar {
-    display: none;
-  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gm-text-4); background-clip: padding-box; }
 }
 
+/* Focus visible — global */
+:focus { outline: none; }
+:focus-visible { box-shadow: var(--gm-shadow-focus); border-radius: var(--gm-radius-sm); }
 
+/* Disable user-select on UI chrome where appropriate */
+button, [role="button"] { user-select: none; }
 
-/* src/styles/styles.css */
-@supports (padding: env(safe-area-inset-top)) {
-  .login-container {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-}
-
-/* Importar fontes do Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap');
-
-.content {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: calc(100% - 200px);
-  background-color: #f9f9fb !important;
-  min-height: 100vh;
-}
-
-header{
-  background-color: #2e2d2f; /* Cor do cabeçalho e rodapé */
-  color: #ecf0f1; /* Cor do texto */
-  padding: 10px;
-  text-align: center;
-  margin-top: -10px;
-  margin-bottom: -10px;
-}
-
-footer{
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-  padding: 10px;
-  text-align: center;
-  margin-top: 0px;
-  display: none;
-}
-
-footer p{
-  color: #fff;
-}
-
-/* Estilos gerais do body */
-body {
-  font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  margin: 0;
-  padding: 0;
-  text-align: center;
-  color: var(--text-color);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Estilos gerais para títulos e parágrafos */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', 'Zilla Slab', serif;
-  font-weight: 600;
-  color: var(--primary-color);
-  line-height: 1.2;
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-h1 { font-size: 2.5rem; font-weight: 700; }
-h2 { font-size: 2rem; font-weight: 600; }
-h3 { font-size: 1.75rem; font-weight: 600; }
-h4 { font-size: 1.5rem; font-weight: 500; }
-h5 { font-size: 1.25rem; font-weight: 500; }
-h6 { font-size: 1rem; font-weight: 500; }
-
-p {
-  font-family: 'Inter', 'Poppins', sans-serif;
-  color: var(--text-color);
-  margin: 0 0 var(--spacing-md) 0;
-  line-height: 1.6;
-}
-
-a {
-  text-decoration: none !important;
-  color: var(--primary-color);
-  transition: color var(--transition-fast);
-}
-
-a:hover {
-  text-decoration: none !important;
-  color: var(--primary-color-hover);
-}
-
-label {
-  color: var(--text-color);
-  font-weight: 500;
-  display: block;
-  margin-bottom: var(--spacing-xs);
-}
-
-li {
-  color: var(--text-color);
-}
-
-/* Melhor estilo para tabelas */
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-tr {
-  border-bottom: 1px solid var(--border-color);
-}
-
-th, td {
-  padding: var(--spacing-sm) var(--spacing-md);
-  text-align: left;
-}
-
-/* Estilo para links e botões genéricos */
-.button,
-a.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-hover) 100%);
-  color: #fff;
-  text-align: center;
-  text-decoration: none;
-  border: none;
-  border-radius: var(--border-radius);
-  font-size: 1rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow);
-  position: relative;
+/* Round 78 — when an auth page (/login, /register) is mounted,
+   AuthLayout.js adds `.gm-auth-page` to <body>. We lock the
+   body to exactly the viewport tall and disable its scrollbar
+   so the auth-layout is the single scroll surface — see
+   auth-layout.css for the rest. */
+body.gm-auth-page {
+  height: 100vh;       /* fallback for browsers without dvh */
+  height: 100dvh;
   overflow: hidden;
-}
-
-.button::before,
-a.button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left var(--transition-slow);
-}
-
-.button:hover,
-a.button:hover {
-  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-color-hover) 100%);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  color: #fff;
-}
-
-.button:hover::before,
-a.button:hover::before {
-  left: 100%;
-}
-
-.button:active,
-a.button:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow);
-}
-
-.button:focus,
-a.button:focus {
-  outline: none;
-  box-shadow: var(--shadow), 0 0 0 3px var(--primary-light);
-}
-
-/* Variações de botões */
-.button-secondary {
-  background: linear-gradient(135deg, var(--button-secondary) 0%, var(--button-secondary-hover) 100%);
-}
-
-.button-success {
-  background: linear-gradient(135deg, var(--button-success) 0%, var(--button-success-hover) 100%);
-}
-
-.button-danger {
-  background: linear-gradient(135deg, var(--button-danger) 0%, var(--button-danger-hover) 100%);
-}
-
-.button-outline {
-  background: transparent;
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
-  box-shadow: none;
-}
-
-.button-outline:hover {
-  background: var(--primary-color);
-  color: #fff;
-}
-
-.button-ghost {
-  background: transparent;
-  color: var(--primary-color);
-  box-shadow: none;
-}
-
-.button-ghost:hover {
-  background: var(--primary-light);
-}
-
-.button-sm {
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: 0.875rem;
-}
-
-.button-lg {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: 1.125rem;
-}
-
-/* Animações modernas e suaves */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
-  from { 
-    opacity: 0; 
-  }
-  to { 
-    opacity: 1; 
-  }
-}
-
-@keyframes slideIn {
-  from { 
-    transform: translateY(-30px); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateY(0); 
-    opacity: 1; 
-  }
-}
-
-@keyframes slideUp {
-  from { 
-    transform: translateY(30px); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateY(0); 
-    opacity: 1; 
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
-    transform: translate3d(0, 0, 0);
-  }
-  40%, 43% {
-    transform: translate3d(0, -30px, 0);
-  }
-  70% {
-    transform: translate3d(0, -15px, 0);
-  }
-  90% {
-    transform: translate3d(0, -4px, 0);
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-10px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(10px);
-  }
-}
-
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    opacity: 1;
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-@keyframes flipInX {
-  from {
-    transform: perspective(400px) rotate3d(1, 0, 0, 90deg);
-    opacity: 0;
-  }
-  40% {
-    transform: perspective(400px) rotate3d(1, 0, 0, -20deg);
-  }
-  60% {
-    transform: perspective(400px) rotate3d(1, 0, 0, 10deg);
-    opacity: 1;
-  }
-  80% {
-    transform: perspective(400px) rotate3d(1, 0, 0, -5deg);
-  }
-  to {
-    transform: perspective(400px);
-  }
-}
-/* Importar fontes do Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600&display=swap');
-
-/* --------------------------------------- Variáveis Globais --------------------------------------- */
-:root {
-  --primary-color: #0066cc;
-  --secondary-color: #ff9900;
-  --primary-color-hover: #004a94;
-  --secondary-color-hover: #e68a00;
-  --accent-color: #ff9900;
-  --error-color: #e74c3c;
-  --text-color: #333;
-  --secondary-text-color: #666;
-  --text-light: #95a5a6;
-  --background-light: #052d36;
-  --background-dark: #34495e;
-  --background-color: #fff;
-  --border-color: #e0e0e0;
-  --shadow-color: rgba(0, 0, 0, 0.05);
-  --card-background: #fff;
-  --button-primary: #0066cc;
-  --button-primary-hover: #004a94;
-  --button-action: #ff9900;
-  --button-action-hover: #e68a00;
-  --button-liked: #ff4d4d;
-  --link-hover: #e0e0e0;
-  width: 100%;
-  height: 100vh;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: column;
-}
-
-
-
-/* Safe area insets for mobile devices */
-@supports (padding: env(safe-area-inset-top)) {
-  .login-container {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-}
-
-/* --------------------------------------- Reset and Base Styles --------------------------------------- */
-html, body {
-  touch-action: pan-x pan-y;
-  overscroll-behavior: none;
-  width: 100%;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-body {
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-  margin: 0;
-  padding: 0;
-  text-align: center;
-}
-
-/* Global Headers and Footers */
-header {
-  background-color: #2e2d2f;
-  color: #ecf0f1;
-  padding: 10px;
-  text-align: center;
-  margin-top: -10px;
-  margin-bottom: -10px;
-}
-
-footer {
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-  padding: 10px;
-  text-align: center;
-  margin-top: 0px;
-  display: none;
-}
-
-footer p {
-  color: #fff;
-}
-
-/* --------------------------------------- Typography --------------------------------------- */
-h1, h2, h3, h4, h5 {
-  font-family: 'Zilla Slab', serif;
-  font-weight: 600;
-  color: var(--primary-color);
-}
-
-p {
-  font-family: 'Poppins', sans-serif;
-  color: #000;
-}
-
-a {
-  text-decoration: none !important;
-  color: var(--button-primary);
-}
-
-a:hover {
-  text-decoration: none !important;
-}
-
-label {
-  color: #000;
-  font-weight: 100;
-}
-
-li {
-  color: #000;
-}
-
-tr {
-  border: solid 1px #000;
-  width: 100%;
-}
-
-/* Generic Button Styles */
-a.button {
-  display: inline-block;
-  margin-top: 15px;
-  padding: 12px 20px;
-  background-color: var(--primary-color);
-  color: #fff;
-  text-align: center;
-  text-decoration: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 400;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-a.button:hover {
-  background-color: var(--secondary-color-hover);
-  transform: translateY(-2px);
-  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
-  color: #fff;
-}
-
-a.button:active {
-  transform: translateY(0);
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* --------------------------------------- Global Animations --------------------------------------- */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideIn {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* --------------------------------------- Global Form Styles --------------------------------------- */
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--button-primary);
-  outline: none;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-}
-
-button:disabled {
-  background-color: var(--secondary-color);
-  cursor: not-allowed;
-}
-
-/* --------------------------------------- Utility Classes --------------------------------------- */
-.loading-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--secondary-color);
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
-  background-color: transparent;
-}
-
-.pull-to-refresh-indicator {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  background-color: #f9f9f9;
-  color: #555;
-  font-size: 0.9rem;
-  transition: height 0.2s ease, opacity 0.2s ease;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10;
-}
-
-.pull-to-refresh-indicator p {
-  margin: 0;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.fade-in {
-  opacity: 0;
-  animation: fadeIn 0.5s forwards;
-}
-
-
-
-/* --------------------------------------- Mobile Typography --------------------------------------- */
-@media (max-width: 768px) {
-  h1 { font-size: 24px; }
-  h2 { font-size: 22px; }
-  h3 { font-size: 20px; }
-  h4 { font-size: 18px; }
-  h5 { font-size: 16px; }
-  h6 { font-size: 14px; }
-  p { font-size: 14px; }
-  a { font-size: 14px; }
-}
-
-/* --------------------------------------- Install App Modal --------------------------------------- */
-.install-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.install-modal {
-  background: var(--card-background);
-  border-radius: 12px;
-  box-shadow: var(--shadow-lg);
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalSlideIn 0.3s ease-out;
-}
-
-.install-modal-header {
-  padding: 20px 20px 15px;
-  border-bottom: 1px solid var(--border-light);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.install-modal-header h3 {
-  margin: 0;
-  color: var(--text-color);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.install-modal-body {
-  padding: 20px;
-}
-
-.install-steps {
-  margin: 0;
-  padding-left: 20px;
-  color: var(--text-color);
-}
-
-.install-steps li {
-  margin-bottom: 10px;
-  line-height: 1.5;
-}
-
-.install-actions {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-.install-action-btn {
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.install-action-btn:hover:not(:disabled) {
-  background: var(--primary-color-hover);
-  transform: translateY(-1px);
-}
-
-.install-action-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .install-modal {
-    max-width: 90vw;
-    margin: 10px;
-  }
-  
-  .install-modal-header,
-  .install-modal-body {
-    padding: 15px;
-  }
-}
-
-/* -- Additional Animations --------------------------------------- */
-@keyframes slideInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideInDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }

@@ -1,0 +1,127 @@
+.gm-sheet__backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--gm-bg-overlay);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: var(--gm-z-sheet);
+  /* No flex — the sheet is positioned absolutely at the
+     bottom of the backdrop. This guarantees the sheet
+     sits flush against the bottom edge on every viewport,
+     regardless of its content height. */
+  display: block;
+}
+
+.gm-sheet {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
+  margin: 0 auto;
+  background: var(--gm-bg-card);
+  color: var(--gm-text-1);
+  width: 100%;
+  max-width: 560px;
+  /* Compact on mobile so the user can still see the map
+     behind the sheet. */
+  max-height: min(70dvh, 640px);
+  border-top-left-radius: var(--gm-radius-xl);
+  border-top-right-radius: var(--gm-radius-xl);
+  /* No bottom radius — the sheet sits flush against the
+     bottom edge of the viewport. */
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: var(--gm-shadow-xl);
+  z-index: var(--gm-z-sheet);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--gm-font-sans);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  /* Round 80 — the mobile `<= 720px` rule keeps the sheet
+     anchored to the bottom edge but DOES NOT shrink its
+     children to their content width. Earlier this rule set
+     `align-items: center` on the sheet (to centre the compact
+     "Explorar mapa" panel horizontally), but that also
+     caused `gm-sheet__body` (which contains the
+     `gm-sheet__content` of the MapBottomSheet) to inherit
+     `align-items: center` and shrink to its content width,
+     while `gm-sheet__header` was force-`width: 100%` to
+     override it. The result was a visually broken sheet:
+     the header spanned the full width, the body sat in the
+     middle as a narrow column. Now both the header AND the
+     body are `width: 100%` so the two are flush at the
+     same width — exactly the same look as on desktop, just
+     with the panel pinned to the bottom of the viewport. */
+  .gm-sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+  }
+  .gm-sheet__header {
+    width: 100%;
+  }
+  .gm-sheet__body {
+    width: 100%;
+  }
+}
+
+.gm-sheet__handle {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 0;
+}
+.gm-sheet__handle::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--gm-divider);
+  border-radius: var(--gm-radius-pill);
+}
+
+.gm-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--gm-space-3) var(--gm-space-5);
+  gap: var(--gm-space-4);
+}
+
+.gm-sheet__title {
+  font-size: var(--gm-text-md);
+  font-weight: var(--gm-weight-bold);
+  letter-spacing: var(--gm-tracking-tight);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.gm-sheet__close {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--gm-text-2);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--gm-radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--gm-dur-fast) var(--gm-ease-out);
+}
+.gm-sheet__close:hover { background: var(--gm-bg-sunken); color: var(--gm-text-1); }
+
+.gm-sheet__body {
+  padding: var(--gm-space-3) var(--gm-space-5) var(--gm-space-5);
+  overflow-y: auto;
+  flex: 1;
+}

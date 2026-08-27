@@ -1,4 +1,4 @@
-/* MyTravels Modal Additional Styles - Enhanced with better alignment and tooltips */
+﻿/* MyTravels Modal Additional Styles - Enhanced with better alignment and tooltips */
 /* Enhanced modal overlay */
 .modal-overlay {
     position: fixed;
@@ -355,7 +355,7 @@
   font-weight: 600;
 }
 .description-section h4::before {
-  content: '✍️';
+  content: 'âœï¸';
   font-size: 16px;
 }
 .description-fields {
@@ -440,10 +440,10 @@
   color: #f39c12;
 }
 .char-counter.danger {
-  color: #e74c3c;
+  color: var(--gm-danger);
 }
 .char-counter::before {
-  content: '📊';
+  content: 'ðŸ“Š';
   font-size: 10px;
 }
 /* Description tips */
@@ -465,7 +465,7 @@
   gap: 8px;
 }
 .description-tips h5::before {
-  content: '💡';
+  content: 'ðŸ’¡';
   font-size: 14px;
 }
 .description-tips ul {
@@ -478,7 +478,7 @@
   position: relative;
 }
 .description-tips li::before {
-  content: '✓';
+  content: 'âœ“';
   position: absolute;
   left: -15px;
   color: #28a745;
@@ -564,7 +564,7 @@
   font-size: 14px;
 }
 .form-group label .required {
-  color: #e74c3c;
+  color: var(--gm-danger);
   font-weight: 700;
 }
 .form-group input,
@@ -595,7 +595,7 @@
 .form-group input:invalid,
 .form-group select:invalid,
 .form-group textarea:invalid {
-  border-color: #e74c3c;
+  border-color: var(--gm-danger);
 }
 .form-group input:invalid:focus,
 .form-group select:invalid:focus,
@@ -631,7 +631,7 @@
   font-size: 15px;
 }
 .privacy-section label::before {
-  content: '🔒';
+  content: 'ðŸ”’';
   font-size: 16px;
 }
 .privacy-section select {
@@ -671,7 +671,7 @@
   gap: 10px;
 }
 .multi-destination-section h4::before {
-  content: '📍';
+  content: 'ðŸ“';
   font-size: 18px;
 }
 /* Enhanced destination controls */
@@ -711,7 +711,7 @@
   justify-content: center;
 }
 .destination-controls button::before {
-  content: '➕';
+  content: 'âž•';
   font-size: 14px;
   transition: transform 0.3s ease;
 }
@@ -743,7 +743,7 @@
   position: relative;
 }
 .destination-item::before {
-  content: '📍';
+  content: 'ðŸ“';
   position: absolute;
   left: -8px;
   top: 50%;
@@ -782,7 +782,7 @@
   font-size: 13px;
 }
 .remove-button::before {
-  content: '🗑️';
+  content: 'ðŸ—‘ï¸';
   font-size: 12px;
   transition: transform 0.3s ease;
 }
@@ -807,14 +807,14 @@
   position: relative;
 }
 .no-destinations::before {
-  content: '🗺️';
+  content: 'ðŸ—ºï¸';
   font-size: 36px;
   display: block;
   margin-bottom: 12px;
   opacity: 0.6;
 }
 .no-destinations::after {
-  content: 'Adicione destinos para começar a planejar sua viagem';
+  content: 'Adicione destinos para comeÃ§ar a planejar sua viagem';
   display: block;
   font-size: 13px;
   color: #868e96;
@@ -838,7 +838,7 @@
   font-weight: 700;
 }
 .prices-section h3::before {
-  content: '💰';
+  content: 'ðŸ’°';
   font-size: 24px;
 }
 .price-total-section {
@@ -1018,7 +1018,7 @@
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
 }
 .button-primary::before {
-  content: '💾';
+  content: 'ðŸ’¾';
   font-size: 16px;
 }
 .button-primary:hover {
@@ -1043,7 +1043,7 @@
   gap: 10px;
 }
 .button-secondary::before {
-  /* removed decorative X to avoid showing close icon on hover for Configurações button */
+  /* removed decorative X to avoid showing close icon on hover for ConfiguraÃ§Ãµes button */
   content: '';
 }
 .button-secondary:hover {
@@ -1070,14 +1070,14 @@
   gap: 12px;
 }
 /* Icon mappings for different sections */
-.section-header.general h3::before { content: '📋'; }
-.section-header.destinations h3::before { content: '🗺️'; }
-.section-header.accommodation h3::before { content: '🏨'; }
-.section-header.itinerary h3::before { content: '📅'; }
-.section-header.food h3::before { content: '🍽️'; }
-.section-header.transport h3::before { content: '🚗'; }
-.section-header.group h3::before { content: '👥'; }
-.section-header.photos h3::before { content: '📸'; }
+.section-header.general h3::before { content: 'ðŸ“‹'; }
+.section-header.destinations h3::before { content: 'ðŸ—ºï¸'; }
+.section-header.accommodation h3::before { content: 'ðŸ¨'; }
+.section-header.itinerary h3::before { content: 'ðŸ“…'; }
+.section-header.food h3::before { content: 'ðŸ½ï¸'; }
+.section-header.transport h3::before { content: 'ðŸš—'; }
+.section-header.group h3::before { content: 'ðŸ‘¥'; }
+.section-header.photos h3::before { content: 'ðŸ“¸'; }
 .itinerary-day-item {
   background: var(--input-background);
   border-radius: 8px;
@@ -1144,7 +1144,7 @@
 .form-group.error input,
 .form-group.error select,
 .form-group.error textarea {
-  border-color: #e74c3c;
+  border-color: var(--gm-danger);
   background: #fdf2f2;
 }
 .form-group.success input,
@@ -1161,17 +1161,17 @@
   gap: 6px;
 }
 .form-feedback.error {
-  color: #e74c3c;
+  color: var(--gm-danger);
 }
 .form-feedback.error::before {
-  content: '⚠️';
+  content: 'âš ï¸';
   font-size: 12px;
 }
 .form-feedback.success {
   color: #27ae60;
 }
 .form-feedback.success::before {
-  content: '✅';
+  content: 'âœ…';
   font-size: 12px;
 }
 /* Enhanced loading states */
@@ -1261,7 +1261,7 @@
   background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
 }
 .image-upload-area::before {
-  content: '📷';
+  content: 'ðŸ“·';
   font-size: 48px;
   display: block;
   margin-bottom: 15px;
@@ -1796,7 +1796,7 @@ label.upload-button{
 }
 /* Enhanced responsive design */
 @media (max-width: 768px) {
-  /* ⬇️ HEADER COLAPSÁVEL PARA MOBILE/TABLET */
+  /* â¬‡ï¸ HEADER COLAPSÃVEL PARA MOBILE/TABLET */
   
   /* Mobile header toggle button */
   .modal-header-toggle-button {
@@ -1872,7 +1872,7 @@ label.upload-button{
     font-size: 13px;
   }
   
-  /* ⬆️ FIM HEADER COLAPSÁVEL */
+  /* â¬†ï¸ FIM HEADER COLAPSÃVEL */
   
   .modal-content {
     max-width: 95vw;
@@ -2040,17 +2040,17 @@ label.upload-button{
   }
 }
 
-/* ── Tab error badge ───────────────────────────────────────────
+/* â”€â”€ Tab error badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    When the form has errors, each tab that owns a failing section
    shows a red pill with the count. Drives the user's attention to
    where they need to look, complementing the TripErrorsModal. */
 .tab-nav button.has-error {
-  border-color: #e74c3c;
+  border-color: var(--gm-danger);
   color: #c0392b;
   background: rgba(231, 76, 60, 0.05);
 }
 .tab-nav button.has-error.active {
-  background: #e74c3c;
+  background: var(--gm-danger);
   color: white;
   border-color: #c0392b;
 }
@@ -2062,7 +2062,7 @@ label.upload-button{
   height: 20px;
   padding: 0 6px;
   margin-left: 6px;
-  background: #e74c3c;
+  background: var(--gm-danger);
   color: white;
   font-size: 11px;
   font-weight: 700;
@@ -2072,7 +2072,7 @@ label.upload-button{
 }
 .tab-nav button.has-error.active .tab-error-badge {
   background: white;
-  color: #e74c3c;
+  color: var(--gm-danger);
 }
 @keyframes tab-badge-pulse {
   0%, 100% { transform: scale(1); }
@@ -2468,7 +2468,7 @@ margin-left: 10px !important;
     background: linear-gradient(135deg, #dc3545, #bb2d3b) !important;
     transform: rotate(180deg) !important;
   }
-  /* Sliding header for mobile - APENAS para modal principal, NÃO para travel-type-modal */
+  /* Sliding header for mobile - APENAS para modal principal, NÃƒO para travel-type-modal */
   .travel-planner-modal:not(.travel-type-modal) .modal-header-actions {
     position: fixed !important;
     top: 0 !important;
@@ -2530,7 +2530,7 @@ margin-left: 10px !important;
   width: 100% !important;
   justify-content: center !important;
 }
-/* Exceções para labels dentro de checkboxes e radios */
+/* ExceÃ§Ãµes para labels dentro de checkboxes e radios */
 .travel-planner-modal .category-item label,
 .travel-planner-modal input[type="checkbox"] + label,
 .travel-planner-modal input[type="radio"] + label {
@@ -2538,7 +2538,7 @@ margin-left: 10px !important;
   display: inline !important;
   width: auto !important;
 }
-/* Exceções para labels dentro de seletores de privacidade */
+/* ExceÃ§Ãµes para labels dentro de seletores de privacidade */
 .travel-planner-modal .privacy-section label {
   text-align: left !important;
   white-space: nowrap !important;
@@ -2698,7 +2698,7 @@ margin-left: 10px !important;
   outline: 2px solid #3498db;
   outline-offset: 2px;
 }
-/* Respeitar preferências de movimento reduzido */
+/* Respeitar preferÃªncias de movimento reduzido */
 @media (prefers-reduced-motion: reduce) {
   .tooltip-icon {
     transition: none;
@@ -2992,7 +2992,7 @@ margin-left: 10px !important;
     right: 0;
     bottom: 0;
   }
-  /* MELHORIAS MOBILE: Header compacto com botões lado a lado */
+  /* MELHORIAS MOBILE: Header compacto com botÃµes lado a lado */
   .modal-header-actions {
     padding: 15px 15px;
     border-radius: 0;
@@ -3070,7 +3070,7 @@ margin-left: 10px !important;
 
 
   
-  /* CRÍTICO: LeftPosition sempre primeiro em mobile */
+  /* CRÃTICO: LeftPosition sempre primeiro em mobile */
   .modal-form-content {
     display: flex;
     flex-direction: column;
@@ -3208,7 +3208,7 @@ margin-left: 10px !important;
     justify-content: flex-end;
     font-size: 13px;
   }
-  /* Fixed Navigation Buttons - Sem sobreposição */
+  /* Fixed Navigation Buttons - Sem sobreposiÃ§Ã£o */
   .fixed-nav-buttons {
     position: fixed !important;
     bottom: 0 !important;
@@ -3370,7 +3370,7 @@ margin-left: 10px !important;
     touch-action: manipulation;
   }
 }
-  /* Modal de Configurações Mobile */
+  /* Modal de ConfiguraÃ§Ãµes Mobile */
   .settings-modal {
     max-width: 100vw !important;
     max-height: 100vh !important;
@@ -3694,7 +3694,7 @@ margin-left: 10px !important;
   }
 }
 
-/* Animação para o painel de configurações mobile */
+/* AnimaÃ§Ã£o para o painel de configuraÃ§Ãµes mobile */
 @keyframes slideDown {
   from { 
     opacity: 0;
@@ -3705,3 +3705,4 @@ margin-left: 10px !important;
     transform: translateY(0) scale(1); 
   }
 }
+

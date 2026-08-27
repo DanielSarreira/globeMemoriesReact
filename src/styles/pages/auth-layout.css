@@ -1,0 +1,225 @@
+/* ─────────────────────────────────────────────────────────────
+   AuthLayout — dedicated full-screen canvas for /login and /register.
+   No sidebar, no topbar chrome, no mobile tab bar.
+   Design system v3.5: brand canvas with subtle gradient + glow.
+
+   Round 54 — replaced the small text "Globe Memories" brand chip
+   with a single prominent logo image (`.gm-auth-layout__logo`)
+   framed by a soft gradient halo. Larger, cleaner, more premium.
+   ───────────────────────────────────────────────────────────── */
+
+.gm-auth-layout {
+  --auth-bg: #f5f7fb;
+  --auth-bg-grad-1: rgba(0, 123, 255, 0.10);
+  --auth-bg-grad-2: rgba(255, 153, 0, 0.08);
+
+  /* Round 78 (final, attempt 4): the auth-layout is exactly the
+     viewport tall (`height: 100dvh`, with `100vh` fallback), and
+     it owns its own vertical scroll when the form is taller than
+     the viewport. The body is `display: block` with `min-height:
+     100vh` from globals.css, but we override that here via a
+     class on the body that the AuthLayout component sets, so
+     the body itself never overflows and never shows a scrollbar.
+     The end result:
+       - body is exactly 100dvh tall, never scrolls.
+       - auth-layout is exactly 100dvh tall, fills the body.
+       - on /login (form shorter than 100dvh) the footer is
+         pinned to the bottom of the auth-layout via the flex-
+         column + `flex: 1` on the main.
+       - on /register (form taller than 100dvh) the auth-layout
+         scrolls internally — the user scrolls within the
+         auth-layout, the footer stays glued to the bottom of
+         the card, no white gap anywhere.
+     This eliminates both the "double scrollbar" (only the
+     auth-layout scrolls) and the "white gap" (the body never
+     shows because it never overflows). */
+  height: 100vh;              /* fallback for browsers without dvh */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--auth-bg);
+  position: relative;
+  /* The auth-layout is the single scroll surface. `overflow-y:
+     auto` adds a scrollbar only when the content exceeds the
+     viewport (i.e. on /register). */
+  overflow-y: auto;
+  /* `overflow-x: clip` clips horizontal overflow WITHOUT
+     interfering with the vertical scrollbar set above. */
+  overflow-x: clip;
+  isolation: isolate;
+}
+
+.gm-auth-layout::before,
+.gm-auth-layout::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gm-auth-layout::before {
+  width: 520px;
+  height: 520px;
+  background: var(--auth-bg-grad-1);
+  top: -160px;
+  right: -120px;
+  animation: authBlobDrift 22s ease-in-out infinite;
+}
+
+.gm-auth-layout::after {
+  width: 480px;
+  height: 480px;
+  background: var(--auth-bg-grad-2);
+  bottom: -180px;
+  left: -140px;
+  animation: authBlobDrift 26s ease-in-out infinite reverse;
+}
+
+@keyframes authBlobDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(40px, -30px) scale(1.08); }
+}
+
+/* ── Top bar — centered logo, no text brand ─────────────── */
+.gm-auth-layout__topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Round 59+ — reduced bottom padding so the logo sits closer
+     to the form card. */
+  padding: 24px 32px 8px;
+}
+
+.gm-auth-layout__logo-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 18px;
+  transition: transform 0.25s ease;
+}
+
+.gm-auth-layout__logo-wrap:hover { transform: translateY(-1px); }
+.gm-auth-layout__logo-wrap:active { transform: translateY(0); }
+
+/* Soft halo behind the logo — brand colours, very subtle. */
+.gm-auth-layout__logo-halo {
+  position: absolute;
+  inset: -8px -10px;
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(0, 123, 255, 0.18) 0%, rgba(0, 123, 255, 0) 60%),
+    radial-gradient(ellipse at 70% 50%, rgba(255, 153, 0, 0.16) 0%, rgba(255, 153, 0, 0) 60%);
+  filter: blur(6px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gm-auth-layout__logo {
+  display: block;
+  height: 96px;          /* Round 59+ — bigger default. The login /
+                            register pages no longer carry their own
+                            logo, so this is the only brand mark on
+                            the auth canvas. */
+  width: auto;
+  max-width: min(420px, 70vw);
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  /* Round 79 — override `border-radius: inherit` from
+     `globals.css`. The auth layout's logo-wrap has
+     `border-radius: 18px` (a soft chip behind the logo) and the
+     global `img { border-radius: inherit; }` rule was making the
+     PNG itself get clipped at the corners — you could see the
+     top of the "G", the palm-tree fronds and the airplane
+     silhouette cut off. The logo is a transparent PNG so it
+     should never inherit the parent chip's rounding; force it
+     back to zero here. */
+  border-radius: 0;
+  /* tiny drop shadow so the PNG lifts off the canvas */
+  filter: drop-shadow(0 4px 14px rgba(15, 23, 42, 0.10));
+}
+
+/* ── Main content (top-aligned, footer at bottom) ──────────── */
+.gm-auth-layout__main {
+  flex: 1;                   /* Round 78: restored. The auth-layout
+                                is `min-height: 100dvh` and a
+                                flex-column, so `flex: 1` here
+                                pushes the footer to the bottom
+                                of the auth-layout (= bottom of
+                                the viewport on /login). The card
+                                inside the main is
+                                `align-items: flex-start` so it
+                                sits at the top of the main; the
+                                gap between card and footer is
+                                filled by the auth-layout's own
+                                `#f5f7fb` background (NOT the
+                                body's white), so no visible
+                                white band. */
+  display: flex;
+  align-items: flex-start;   /* card hugs the top of the main */
+  justify-content: center;
+  /* Round 59+ — tighter top padding so the eyebrow chip / form
+     card sits right under the logo. */
+  padding: 8px 24px 48px;
+  position: relative;
+  z-index: 1;
+}
+
+.gm-auth-layout__content {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wide variant for the registration form (more fields) */
+.gm-auth-layout__content--wide {
+  max-width: 880px;
+}
+
+@media (max-width: 1024px) {
+  .gm-auth-layout__content--wide { max-width: 720px; }
+}
+@media (max-width: 640px) {
+  .gm-auth-layout__content--wide { max-width: 100%; }
+}
+
+/* ── Footer (slim) ─────────────────────────────────────────── */
+.gm-auth-layout__footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 24px 28px;
+  font-size: 13px;
+  color: var(--gm-text-muted, #64748b);
+  font-weight: 500;
+}
+
+.gm-auth-layout__footer-dot {
+  color: var(--gm-text-muted, #94a3b8);
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .gm-auth-layout__topbar    { padding: 20px 18px 12px; }
+  .gm-auth-layout__main      { padding: 12px 16px 32px; }
+  .gm-auth-layout__footer    { font-size: 12px; padding: 16px 18px 20px; }
+  .gm-auth-layout__logo      { height: 72px; max-width: 75vw; }
+  .gm-auth-layout__logo-halo { inset: -6px -8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-auth-layout::before,
+  .gm-auth-layout::after,
+  .gm-auth-layout__logo-wrap { animation: none; transition: none; }
+}

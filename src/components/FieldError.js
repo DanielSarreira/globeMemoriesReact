@@ -35,7 +35,7 @@ const FieldError = ({ error, children, className = '' }) => {
         'aria-invalid': 'true',
         style: {
           ...(children.props.style || {}),
-          borderColor: '#e74c3c',
+          borderColor: '#DC2626',
           borderWidth: '2px',
           backgroundColor: '#fff5f5',
         },

@@ -1,0 +1,223 @@
+
+> globe-memories@0.1.0 build
+> react-scripts build
+
+Creating an optimized production build...
+Compiled with warnings.
+
+[eslint] 
+src\components\Notifications.js
+  Line 49:10:  'formatRelativeTime' is defined but never used        no-unused-vars
+  Line 70:10:  'formatTimeOfDay' is defined but never used           no-unused-vars
+  Line 388:9:  'handleDeleteAll' is assigned a value but never used  no-unused-vars
+
+src\components\TravelDetails.jsx
+  Line 7:31:   'Send' is defined but never used                                                                            no-unused-vars
+  Line 8:3:    'Trash2' is defined but never used                                                                          no-unused-vars
+  Line 15:44:  'flattenCommentTree' is defined but never used                                                              no-unused-vars
+  Line 768:6:  React Hook useCallback has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\admin\AdvancedNotifications.js
+  Line 9:51:   'useMemo' is defined but never used             no-unused-vars
+  Line 30:10:  'isLoading' is assigned a value but never used  no-unused-vars
+
+src\components\admin\CommentsModeration.js
+  Line 11:10:  'page' is assigned a value but never used        no-unused-vars
+  Line 11:16:  'setPage' is assigned a value but never used     no-unused-vars
+  Line 12:10:  'totalPages' is assigned a value but never used  no-unused-vars
+
+src\components\admin\RoleManagement.js
+  Line 21:10:  'isLoading' is assigned a value but never used  no-unused-vars
+
+src\components\admin\TravelModeration.js
+  Line 2:27:    'useEffect' is defined but never used                  no-unused-vars
+  Line 3:8:     'axios' is defined but never used                      no-unused-vars
+  Line 7:50:    'FaCheck' is defined but never used                    no-unused-vars
+  Line 8:13:    'FaFilter' is defined but never used                   no-unused-vars
+  Line 8:57:    'FaCalendarAlt' is defined but never used              no-unused-vars
+  Line 9:3:     'FaMoneyBillWave' is defined but never used            no-unused-vars
+  Line 9:20:    'FaClock' is defined but never used                    no-unused-vars
+  Line 9:29:    'FaUser' is defined but never used                     no-unused-vars
+  Line 10:3:    'FaFileAlt' is defined but never used                  no-unused-vars
+  Line 10:14:   'FaChevronDown' is defined but never used              no-unused-vars
+  Line 10:29:   'FaChevronUp' is defined but never used                no-unused-vars
+  Line 10:42:   'FaAlertTriangle' is defined but never used            no-unused-vars
+  Line 93:17:   'setStats' is assigned a value but never used          no-unused-vars
+  Line 111:10:  'actionType' is assigned a value but never used        no-unused-vars
+  Line 111:22:  'setActionType' is assigned a value but never used     no-unused-vars
+  Line 112:10:  'actionMessage' is assigned a value but never used     no-unused-vars
+  Line 112:25:  'setActionMessage' is assigned a value but never used  no-unused-vars
+
+src\components\admin\TravelModerationComplete.js
+  Line 7:144:  'FaPlus' is defined but never used  no-unused-vars
+
+src\components\admin\UserProfilesManagement.js
+  Line 21:10:  'isLoading' is assigned a value but never used  no-unused-vars
+
+src\components\admin\UserReports.js
+  Line 16:10:  'getDisplayName' is defined but never used  no-unused-vars
+
+src\components\ui\AppShell.jsx
+  Line 1:51:  'useMemo' is defined but never used                 no-unused-vars
+  Line 5:39:  'UsersIcon' is defined but never used               no-unused-vars
+  Line 24:7:  'SECONDARY_NAV' is assigned a value but never used  no-unused-vars
+
+src\components\ui\Footer.jsx
+  Line 2:8:  'PropTypes' is defined but never used  no-unused-vars
+
+src\components\ui\Lightbox.jsx
+  Line 5:46:  'Pause' is defined but never used  no-unused-vars
+
+src\components\ui\SearchableDropdown.jsx
+  Line 123:11:  Elements with the ARIA role "combobox" must have the following attributes defined: aria-controls,aria-expanded  jsx-a11y/role-has-required-aria-props
+
+src\pages\EditProfile.js
+  Line 7:13:    'IconMapPin' is defined but never used                                                                                                                           no-unused-vars
+  Line 115:11:  Elements with the ARIA role "combobox" must have the following attributes defined: aria-controls,aria-expanded                                                   jsx-a11y/role-has-required-aria-props
+  Line 245:13:  Elements with the ARIA role "combobox" must have the following attributes defined: aria-controls,aria-expanded                                                   jsx-a11y/role-has-required-aria-props
+  Line 532:6:   React Hook useCallback has missing dependencies: 'form.firstName', 'form.lastName', and 'form.profilePhoto'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Feedback.js
+  Line 16:59:  'Grid' is defined but never used           no-unused-vars
+  Line 29:11:  'user' is assigned a value but never used  no-unused-vars
+
+src\pages\Home\index.jsx
+  Line 145:10:  'refreshing' is assigned a value but never used      no-unused-vars
+  Line 155:10:  'feedMode' is assigned a value but never used        no-unused-vars
+  Line 159:10:  'followingCount' is assigned a value but never used  no-unused-vars
+
+src\pages\InteractiveMap\InteractiveMapPage.jsx
+  Line 63:31:  'publicTrips' is assigned a value but never used  no-unused-vars
+
+src\pages\InteractiveMap\components\panels\MapPanel.jsx
+  Line 9:17:  'useState' is defined but never used  no-unused-vars
+
+src\pages\InteractiveMap\components\panels\MapSearch.jsx
+  Line 63:73:  Elements with the ARIA role "option" must have the following attributes defined: aria-selected  jsx-a11y/role-has-required-aria-props
+
+src\pages\InteractiveMap\hooks\useMapState.js
+  Line 11:10:  'useCallback' is defined but never used  no-unused-vars
+
+src\pages\InteractiveMap\layers\VisitedCountriesLayer.jsx
+  Line 24:8:  'React' is defined but never used  no-unused-vars
+
+src\pages\InteractiveMap\utils\cityCoordinates.js
+  Line 84:3:   Duplicate key 'funchal'    no-dupe-keys
+  Line 194:3:  Duplicate key 'santiago'   no-dupe-keys
+  Line 200:3:  Duplicate key 'porto'      no-dupe-keys
+  Line 212:3:  Duplicate key 'cuiaba'     no-dupe-keys
+  Line 275:3:  Duplicate key 'bali'       no-dupe-keys
+  Line 309:3:  Duplicate key 'colombo'    no-dupe-keys
+  Line 319:3:  Duplicate key 'cancun'     no-dupe-keys
+  Line 333:3:  Duplicate key 'roma'       no-dupe-keys
+  Line 334:3:  Duplicate key 'rome'       no-dupe-keys
+  Line 335:3:  Duplicate key 'veneza'     no-dupe-keys
+  Line 347:3:  Duplicate key 'viena'      no-dupe-keys
+  Line 348:3:  Duplicate key 'vienna'     no-dupe-keys
+  Line 351:3:  Duplicate key 'munique'    no-dupe-keys
+  Line 352:3:  Duplicate key 'munich'     no-dupe-keys
+  Line 369:3:  Duplicate key 'edinburgh'  no-dupe-keys
+  Line 394:3:  Duplicate key 'stuttgart'  no-dupe-keys
+  Line 422:3:  Duplicate key 'oslo'       no-dupe-keys
+  Line 428:3:  Duplicate key 'reykjavik'  no-dupe-keys
+  Line 496:3:  Duplicate key 'lagos'      no-dupe-keys
+
+src\pages\InteractiveMap\utils\leafletConfig.js
+  Line 138:1:  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+src\pages\Login.js
+  Line 22:10:  'LegalSheet' is defined but never used                                                                    no-unused-vars
+  Line 77:6:   React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\QandA.js
+  Line 5:18:    'Reply' is defined but never used                                                                                                                   no-unused-vars
+  Line 7:28:    'Flag' is defined but never used                                                                                                                    no-unused-vars
+  Line 7:49:    'MoreHorizontal' is defined but never used                                                                                                          no-unused-vars
+  Line 89:11:   Elements with the ARIA role "combobox" must have the following attributes defined: aria-controls,aria-expanded                                      jsx-a11y/role-has-required-aria-props
+  Line 151:10:  'getRelativeTime' is defined but never used                                                                                                         no-unused-vars
+  Line 272:10:  'newReply' is assigned a value but never used                                                                                                       no-unused-vars
+  Line 272:20:  'setNewReply' is assigned a value but never used                                                                                                    no-unused-vars
+  Line 273:10:  'replyOpen' is assigned a value but never used                                                                                                      no-unused-vars
+  Line 742:9:   'toggleReply' is assigned a value but never used                                                                                                    no-unused-vars
+  Line 889:6:   React Hook useCallback has missing dependencies: 'handleDeleteComment' and 'handleLikeComment'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Register.js
+  Line 26:8:  'logo' is defined but never used  no-unused-vars
+
+src\pages\SettingsAndPrivacy.js
+  Line 1:46:   'useCallback' is defined but never used                                                                  no-unused-vars
+  Line 5:22:   'Moon' is defined but never used                                                                         no-unused-vars
+  Line 125:6:  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Travels.js
+  Line 5:26:     'ChevronDown' is defined but never used                                                                   no-unused-vars
+  Line 7:22:     'Eye' is defined but never used                                                                           no-unused-vars
+  Line 143:10:   'error' is assigned a value but never used                                                                no-unused-vars
+  Line 148:10:   'loadingCategories' is assigned a value but never used                                                    no-unused-vars
+  Line 149:29:   'setShowAllCategories' is assigned a value but never used                                                 no-unused-vars
+  Line 168:25:   'setTravellerSort' is assigned a value but never used                                                     no-unused-vars
+  Line 169:32:   'setTravellerNationality' is assigned a value but never used                                              no-unused-vars
+  Line 435:9:    'onTravellerRelationshipChange' is assigned a value but never used                                        no-unused-vars
+  Line 694:9:    'visibleCategories' is assigned a value but never used                                                    no-unused-vars
+  Line 1009:13:  The element ul has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src\pages\UserProfile.js
+  Line 5:3:     'Star' is defined but never used                               no-unused-vars
+  Line 6:44:    'Calendar' is defined but never used                           no-unused-vars
+  Line 7:63:    'Users' is defined but never used                              no-unused-vars
+  Line 11:40:   'getUserAvatar' is defined but never used                      no-unused-vars
+  Line 132:9:   'navigate' is assigned a value but never used                  no-unused-vars
+  Line 146:10:  'reportedUsers' is assigned a value but never used             no-unused-vars
+  Line 189:28:  'setShowRequestToast' is assigned a value but never used       no-unused-vars
+  Line 194:10:  'showReportTravelModal' is assigned a value but never used     no-unused-vars
+  Line 220:10:  'travelsLoaded' is assigned a value but never used             no-unused-vars
+  Line 700:9:   'handleTravelReasonChange' is assigned a value but never used  no-unused-vars
+  Line 823:9:   'confirmReportTravel' is assigned a value but never used       no-unused-vars
+  Line 2437:7:  'ReportTravelModal' is assigned a value but never used         no-unused-vars
+
+src\pages\weather.js
+  Line 27:15:   'SettingsIcon' is defined but never used      no-unused-vars
+  Line 49:3:    'PageHeader' is defined but never used        no-unused-vars
+  Line 54:3:    'Row' is defined but never used               no-unused-vars
+  Line 57:3:    'IconButton' is defined but never used        no-unused-vars
+  Line 382:16:  'setUnit' is assigned a value but never used  no-unused-vars
+
+src\utils\countryIso.js
+  Line 37:52:   Duplicate key 'espanha'      no-dupe-keys
+  Line 50:38:   Duplicate key 'austria'      no-dupe-keys
+  Line 57:37:   Duplicate key 'bulgaria'     no-dupe-keys
+  Line 75:35:   Duplicate key 'estonia'      no-dupe-keys
+  Line 147:35:  Duplicate key 'tunisia'      no-dupe-keys
+  Line 273:3:   Duplicate key 'holland'      no-dupe-keys
+  Line 274:3:   Duplicate key 'switzerland'  no-dupe-keys
+  Line 275:3:   Duplicate key 'korea'        no-dupe-keys
+  Line 276:3:   Duplicate key 'russia'       no-dupe-keys
+  Line 278:3:   Duplicate key 'uae'          no-dupe-keys
+  Line 279:3:   Duplicate key 'us'           no-dupe-keys
+  Line 280:3:   Duplicate key 'uk'           no-dupe-keys
+
+src\utils\emojiCode.js
+  Line 81:3:  Duplicate key ':camping:'  no-dupe-keys
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  446.7 kB (+95 B)  build\static\js\main.57549410.js
+  113.97 kB         build\static\css\main.0f4c71ba.css
+  2.35 kB           build\static\js\953.64fc2e44.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
